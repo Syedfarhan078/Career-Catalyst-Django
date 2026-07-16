@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard | Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Welcome, {{ user.username|title }}!</h1>
+        <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm rounded-pill">Logout</a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Resume Builder</h5>
+                    <p class="card-text">Create and manage your professional career documents.</p>
+                    <a href="#" class="btn btn-primary btn-sm rounded-pill">Open Builder</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Career Roadmap</h5>
+                    <p class="card-text">Track your progress and upcoming milestones.</p>
+                    <a href="#" class="btn btn-primary btn-sm rounded-pill">View Roadmap</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">AI Assistant</h5>
+                    <p class="card-text">Get personalized career guidance and insights.</p>
+                    <a href="#" class="btn btn-primary btn-sm rounded-pill">Chat Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

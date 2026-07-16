@@ -1,0 +1,199 @@
+/* ============================================================
+   BASE.CSS — Design Foundation & Utility System
+   Career Catalyst SaaS Landing Page
+   ============================================================
+   This file establishes the core design tokens (colors, spacing,
+   typography, shadows, transitions) and provides global resets,
+   base element styles, and reusable utility classes.
+   ============================================================ */
+
+
+/* ------------------------------------------------------------
+   1. CSS CUSTOM PROPERTIES (Design Tokens)
+   ------------------------------------------------------------ */
+:root {
+    /* --- Colors --- */
+    --primary:      #2563EB;
+    --secondary:    #0F172A;
+    --accent:       #14B8A6;
+    --bg:           #F8FAFC;
+    --card-bg:      #FFFFFF;
+    --text:         #334155;
+    --text-muted:   #64748B;
+    --success:      #22C55E;
+    --warning:      #F59E0B;
+    --border:       #E2E8F0;
+
+    /* --- Spacing (8px scale) --- */
+    --space-1:  0.25rem;  /*  4px */
+    --space-2:  0.5rem;   /*  8px */
+    --space-3:  0.75rem;  /* 12px */
+    --space-4:  1rem;     /* 16px */
+    --space-5:  1.25rem;  /* 20px */
+    --space-6:  1.5rem;   /* 24px */
+    --space-8:  2rem;     /* 32px */
+    --space-10: 2.5rem;   /* 40px */
+    --space-12: 3rem;     /* 48px */
+    --space-16: 4rem;     /* 64px */
+    --space-20: 5rem;     /* 80px */
+    --space-24: 6rem;     /* 96px */
+
+    /* --- Typography — Font Sizes --- */
+    --text-xs:   0.75rem;    /* 12px */
+    --text-sm:   0.875rem;   /* 14px */
+    --text-base: 1rem;       /* 16px */
+    --text-md:   1.125rem;   /* 18px */
+    --text-lg:   1.25rem;    /* 20px */
+    --text-xl:   1.5rem;     /* 24px */
+    --text-2xl:  1.75rem;    /* 28px */
+    --text-3xl:  2rem;       /* 32px */
+    --text-4xl:  2.5rem;     /* 40px */
+    --text-5xl:  3rem;       /* 48px */
+    --text-6xl:  3.5rem;     /* 56px */
+
+    /* --- Typography — Font Weights --- */
+    --font-light:     300;
+    --font-regular:   400;
+    --font-medium:    500;
+    --font-semibold:  600;
+    --font-bold:      700;
+    --font-extrabold: 800;
+
+    /* --- Shadows --- */
+    --shadow-sm:  0  1px  2px  rgba(0, 0, 0, 0.05);
+    --shadow-md:  0  4px  6px  rgba(0, 0, 0, 0.07),
+                  0  2px  4px  rgba(0, 0, 0, 0.06);
+    --shadow-lg:  0 10px 15px  rgba(0, 0, 0, 0.1),
+                  0  4px  6px  rgba(0, 0, 0, 0.05);
+    --shadow-xl:  0 20px 25px  rgba(0, 0, 0, 0.1),
+                  0  8px 10px  rgba(0, 0, 0, 0.04);
+
+    /* --- Border Radii --- */
+    --radius-sm:   4px;
+    --radius-md:   8px;
+    --radius-lg:   12px;
+    --radius-xl:   16px;
+    --radius-2xl:  24px;
+    --radius-full: 50px;
+
+    /* --- Transitions --- */
+    --transition-fast: all 150ms ease;
+    --transition-base: all 300ms ease;
+    --transition-slow: all 500ms ease;
+}
+
+
+/* ------------------------------------------------------------
+   2. GLOBAL RESET
+   ------------------------------------------------------------ */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--bg);
+    font-family: 'Poppins', sans-serif;
+    color: var(--text);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* ------------------------------------------------------------
+   3. BASE ELEMENT STYLES
+   ------------------------------------------------------------ */
+
+/* --- Headings --- */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    color: var(--secondary);
+    line-height: 1.2;
+    margin-top: 0;
+}
+
+/* --- Links --- */
+a {
+    color: var(--primary);
+    transition: var(--transition-base);
+    text-decoration: none;
+}
+
+a:hover {
+    color: #1e40af;
+}
+
+/* --- Paragraphs --- */
+p {
+    margin-bottom: 1rem;
+    margin-top: 0;
+}
+
+/* --- Images --- */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+
+/* ------------------------------------------------------------
+   4. UTILITY CLASSES
+   ------------------------------------------------------------ */
+
+/* --- Section Spacing --- */
+.section-padding {
+    padding: 6rem 0;
+}
+
+/* --- Section Title --- */
+.section-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(to right, var(--primary), var(--accent));
+    margin-top: 1rem;
+    border-radius: 2px;
+}
+
+/* Center the underline when inside a .text-center parent */
+.text-center .section-title::after {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* --- Section Subtitle --- */
+.section-subtitle {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    max-width: 600px;
+}
+
+/* --- Text Gradient --- */
+.text-gradient {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* --- Gradient Background --- */
+.gradient-bg {
+    background: linear-gradient(135deg, var(--primary), #1e40af);
+}

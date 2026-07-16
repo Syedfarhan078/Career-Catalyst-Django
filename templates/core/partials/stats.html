@@ -1,45 +1,42 @@
-<div class="container my-5">
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
-        
-        <!-- Stat 1 -->
-        <div class="col">
-            <div class="card h-100 shadow-sm text-center p-3">
-                <div class="card-body">
-                    <h2 class="card-title fw-bold text-primary">10K+</h2>
-                    <p class="card-text text-muted">Students</p>
+{% load static %}
+<section class="stats-section" id="stats">
+    <div class="container">
+        <div class="row g-4 justify-content-center">
+            <!-- Stat Card 1 -->
+            <div class="col-6 col-lg-3">
+                <div class="stat-card animate-on-scroll animate-delay-1">
+                    <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+                    <div class="stat-number"><span class="counter" data-target="10000">0</span>+</div>
+                    <div class="stat-label">Students Guided</div>
+                </div>
+            </div>
+            
+            <!-- Stat Card 2 -->
+            <div class="col-6 col-lg-3">
+                <div class="stat-card animate-on-scroll animate-delay-2">
+                    <div class="stat-icon"><i class="bi bi-signpost-2-fill"></i></div>
+                    <div class="stat-number"><span class="counter" data-target="50">0</span>+</div>
+                    <div class="stat-label">Career Paths</div>
+                </div>
+            </div>
+            
+            <!-- Stat Card 3 -->
+            <div class="col-6 col-lg-3">
+                <div class="stat-card animate-on-scroll animate-delay-3">
+                    <div class="stat-icon"><i class="bi bi-file-earmark-check-fill"></i></div>
+                    <div class="stat-number"><span class="counter" data-target="25000">0</span>+</div>
+                    <div class="stat-label">Resume Reviews</div>
+                </div>
+            </div>
+            
+            <!-- Stat Card 4 -->
+            <div class="col-6 col-lg-3">
+                <div class="stat-card animate-on-scroll animate-delay-4">
+                    <div class="stat-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                    <div class="stat-number"><span class="counter" data-target="94">0</span>%</div>
+                    <div class="stat-label">Success Rate</div>
                 </div>
             </div>
         </div>
-        
-        <!-- Stat 2 -->
-        <div class="col">
-            <div class="card h-100 shadow-sm text-center p-3">
-                <div class="card-body">
-                    <h2 class="card-title fw-bold text-primary">500+</h2>
-                    <p class="card-text text-muted">Career Paths</p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Stat 3 -->
-        <div class="col">
-            <div class="card h-100 shadow-sm text-center p-3">
-                <div class="card-body">
-                    <h2 class="card-title fw-bold text-primary">100+</h2>
-                    <p class="card-text text-muted">Mentors</p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Stat 4 -->
-        <div class="col">
-            <div class="card h-100 shadow-sm text-center p-3">
-                <div class="card-body">
-                    <h2 class="card-title fw-bold text-primary">95%</h2>
-                    <p class="card-text text-muted">Success Rate</p>
-                </div>
-            </div>
-        </div>
-        
     </div>
-</div>
+</section>

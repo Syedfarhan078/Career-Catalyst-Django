@@ -142,3 +142,9 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # This tells Django to use our custom model instead of the default one.
 AUTH_USER_MODEL = "accounts.User"
+
+
+# Authentication Redirections
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'home' 
+LOGOUT_REDIRECT_URL = 'home'

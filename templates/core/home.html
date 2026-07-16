@@ -1,14 +1,26 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Career Catalyst{% endblock %}
+{% block title %}Career Catalyst — AI-Powered Career Development Platform{% endblock %}
+{% block body_class %}home-page{% endblock %}
 
-{% block content %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=1.3">
+{% endblock %}
 
-{% include "core/partials/hero.html" %}
-{% include "core/partials/stats.html" %}
-{% include "core/partials/features.html" %}
-{% include "core/partials/testimonials.html" %}
-{% include "core/partials/faq.html" %}
-{% include "core/partials/cta.html" %}
+{% block main_wrapper %}
+<main>
+    {% include "core/partials/hero.html" %}
+    {% include "core/partials/stats.html" %}
+    {% include "core/partials/features.html" %}
+    {% include "core/partials/how_it_works.html" %}
+    {% include "core/partials/timeline.html" %}
+    {% include "core/partials/testimonials.html" %}
+    {% include "core/partials/faq.html" %}
+    {% include "core/partials/cta.html" %}
+</main>
+{% endblock %}
 
+{% block extra_js %}
+<script src="{% static 'js/home.js' %}?v=1.3"></script>
 {% endblock %}

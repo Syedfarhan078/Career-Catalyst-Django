@@ -1,41 +1,53 @@
-<section class="hero py-5">
+{% load static %}
+<section class="hero-section" id="hero">
     <div class="container">
-
         <div class="row align-items-center">
-
-            <div class="col-lg-6">
-
-                <span class="badge bg-primary mb-3">
-                    AI Powered Career Platform
-                </span>
-
-                <h1>
-                    Build Your Career with Confidence
+            <!-- Hero Content -->
+            <div class="col-lg-6 hero-content text-start">
+                <div class="hero-badge animate-on-scroll">
+                    <i class="bi bi-rocket-takeoff"></i>
+                    AI-Powered Career Platform
+                </div>
+                <h1 class="hero-title animate-on-scroll animate-delay-1">
+                    Launch Your Career with <span class="highlight text-gradient">Confidence</span>
                 </h1>
-
-                <p>
-                    Career Catalyst helps students discover career paths,
-                    build resumes, track skills, and receive AI-powered
-                    career guidance.
+                <p class="hero-description animate-on-scroll animate-delay-2">
+                    Discover career paths, build ATS-friendly resumes, track your skills, and get AI-powered career guidance — all in one platform.
                 </p>
-
-                <a href="#" class="btn btn-primary">
-                    Get Started
-                </a>
-
-                <a href="#" class="btn btn-outline-primary ms-2">
-                    Learn More
-                </a>
-
+                <div class="hero-buttons animate-on-scroll animate-delay-3">
+                    <a href="{% url 'register' %}" class="btn-primary-custom">
+                        Get Started <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="#features" class="btn-secondary-custom">
+                        Explore Features
+                    </a>
+                </div>
             </div>
-
-            <div class="col-lg-6">
-
-                <!-- Hero image will go here -->
-
+            
+            <!-- Hero Image / Illustration inside Premium Card -->
+            <div class="col-lg-6 mt-5 mt-lg-0">
+                <div class="hero-image-card animate-on-scroll animate-delay-2">
+                    <div class="hero-image-wrapper">
+                        <img src="{% static 'images/hero/hero-illustration.jpg' %}" alt="Career Catalyst platform illustration showing career growth and professional development" class="img-fluid rounded-4">
+                        
+                        <!-- Floating Card 1 -->
+                        <div class="hero-float-card card-1">
+                            <div class="float-icon green">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <span class="float-text">10,000+ Students Guided</span>
+                        </div>
+                        
+                        <!-- Floating Card 2 -->
+                        <div class="hero-float-card card-2">
+                            <div class="float-icon yellow">
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                            <span class="float-text">94% Success Rate</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-
         </div>
-
     </div>
 </section>
