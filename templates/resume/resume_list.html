@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}My Resumes - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="fw-bold mb-1">My Resumes</h1>
+            <p class="text-muted">Manage and export your professional resumes.</p>
+        </div>
+        <a href="{% url 'resume:create' %}" class="btn btn-primary-custom">
+            <i class="bi bi-plus-lg"></i> Create Resume
+        </a>
+    </div>
+
+    {% if resumes %}
+        <div class="row g-4">
+            {% for resume in resumes %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0 rounded-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h4 class="fw-bold mb-0 text-truncate" style="max-width: 85%;">{{ resume.title }}</h4>
+                            {% if resume.is_default %}
+                                <span class="badge bg-success rounded-pill px-2 py-1"><i class="bi bi-check-circle me-1"></i>Default</span>
+                            {% endif %}
+                        </div>
+                        <p class="text-muted small mb-4">
+                            Template: <span class="text-capitalize">{{ resume.template }}</span><br>
+                            Updated: {{ resume.updated_at|date:"M d, Y" }}
+                        </p>
+                        
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{% url 'resume:builder' resume.pk %}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                <i class="bi bi-pencil me-1"></i> Edit
+                            </a>
+                            <a href="{% url 'resume:download' resume.pk %}" class="btn btn-sm btn-outline-success rounded-pill">
+                                <i class="bi bi-download me-1"></i> PDF
+                            </a>
+                            <form action="{% url 'resume:delete' resume.pk %}" method="POST" class="d-inline" onsubmit="return confirm('Delete this resume?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="display-1 text-muted mb-4">
+                <i class="bi bi-file-earmark-person"></i>
+            </div>
+            <h3>No resumes found</h3>
+            <p class="text-muted mb-4">You haven't created any resumes yet.</p>
+            <a href="{% url 'resume:create' %}" class="btn btn-primary-custom px-4">
+                Build Your First Resume
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

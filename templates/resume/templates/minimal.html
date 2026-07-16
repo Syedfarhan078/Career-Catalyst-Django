@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ resume.title }}</title>
+<style>
+    @page {
+        size: a4 portrait;
+        margin: 2.5cm;
+    }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+        font-size: 10pt;
+        color: #222;
+        line-height: 1.6;
+        background-color: #fff;
+    }
+    h1, h2, h3, p { margin: 0; padding: 0; }
+    
+    .header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .name {
+        font-size: 22pt;
+        font-weight: 300;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+    .contact {
+        font-size: 9pt;
+        color: #555;
+        letter-spacing: 0.5px;
+    }
+    
+    .section {
+        margin-bottom: 25px;
+    }
+    .section-title {
+        font-size: 11pt;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #000;
+        margin-bottom: 15px;
+    }
+    
+    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    td { vertical-align: top; padding-bottom: 8px; }
+    
+    .item-title {
+        font-weight: 600;
+        font-size: 10.5pt;
+    }
+    .item-subtitle {
+        color: #555;
+        font-size: 10pt;
+    }
+    .date-col {
+        width: 120px;
+        text-align: right;
+        color: #777;
+        font-size: 9pt;
+    }
+    
+    ul {
+        margin: 5px 0 10px 15px;
+        padding: 0;
+        color: #444;
+    }
+    
+    .skills-text {
+        color: #444;
+        line-height: 1.8;
+    }
+</style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="name">{{ user.first_name }} {{ user.last_name }}</div>
+        <div class="contact">
+            {{ user.email }}
+            {% if profile and profile.phone_number %} &nbsp;&middot;&nbsp; {{ profile.phone_number }}{% endif %}
+            {% if profile and profile.linkedin %} &nbsp;&middot;&nbsp; {{ profile.linkedin }}{% endif %}
+            {% if profile and profile.github %} &nbsp;&middot;&nbsp; {{ profile.github }}{% endif %}
+        </div>
+    </div>
+
+    {% if profile and profile.bio %}
+    <div class="section">
+        <p style="color:#444;">{{ profile.bio }}</p>
+    </div>
+    {% endif %}
+
+    {% if resume.experiences.exists %}
+    <div class="section">
+        <div class="section-title">Experience</div>
+        {% for exp in resume.experiences.all %}
+        <table>
+            <tr>
+                <td>
+                    <div class="item-title">{{ exp.position }}</div>
+                    <div class="item-subtitle">{{ exp.company }}{% if exp.location %}, {{ exp.location }}{% endif %}</div>
+                </td>
+                <td class="date-col">
+                    {{ exp.start_date|date:"M Y" }} - {% if exp.is_current %}Present{% else %}{{ exp.end_date|date:"M Y" }}{% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding-top:5px; color:#444;">
+                    {{ exp.description|linebreaksbr }}
+                </td>
+            </tr>
+        </table>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if resume.educations.exists %}
+    <div class="section">
+        <div class="section-title">Education</div>
+        {% for edu in resume.educations.all %}
+        <table>
+            <tr>
+                <td>
+                    <div class="item-title">{{ edu.college }}</div>
+                    <div class="item-subtitle">{{ edu.degree }} in {{ edu.branch }}</div>
+                </td>
+                <td class="date-col">
+                    {{ edu.start_year }} - {{ edu.end_year }}
+                </td>
+            </tr>
+            {% if edu.cgpa %}
+            <tr>
+                <td colspan="2" style="color:#555; font-size:9pt;">
+                    CGPA: {{ edu.cgpa }}
+                </td>
+            </tr>
+            {% endif %}
+        </table>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if resume.projects.exists %}
+    <div class="section">
+        <div class="section-title">Projects</div>
+        {% for proj in resume.projects.all %}
+        <table>
+            <tr>
+                <td>
+                    <span class="item-title">{{ proj.title }}</span>
+                    {% if proj.github_url or proj.live_demo_url %}
+                    <span style="font-size:8.5pt; color:#777; margin-left:10px;">
+                        {% if proj.github_url %}[<a href="{{ proj.github_url }}" style="color:#777; text-decoration:none;">Code</a>]{% endif %}
+                        {% if proj.live_demo_url %}[<a href="{{ proj.live_demo_url }}" style="color:#777; text-decoration:none;">Demo</a>]{% endif %}
+                    </span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if proj.technologies_used %}
+            <tr>
+                <td style="font-size:9pt; color:#666; font-style:italic;">
+                    {{ proj.technologies_used }}
+                </td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td style="padding-top:5px; color:#444;">
+                    {{ proj.description|linebreaksbr }}
+                </td>
+            </tr>
+        </table>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if resume.skills.exists %}
+    <div class="section">
+        <div class="section-title">Skills</div>
+        <div class="skills-text">
+            {% for skill in resume.skills.all %}
+                {{ skill.name }}{% if not forloop.last %} &nbsp;&middot;&nbsp; {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if resume.certifications.exists %}
+    <div class="section">
+        <div class="section-title">Certifications</div>
+        {% for cert in resume.certifications.all %}
+        <table>
+            <tr>
+                <td>
+                    <span class="item-title">{{ cert.name }}</span> <span style="color:#777;">| {{ cert.organization }}</span>
+                    {% if cert.credential_url %}<span style="font-size:8pt; margin-left:5px;"><a href="{{ cert.credential_url }}" style="color:#555; text-decoration:none;">[Link]</a></span>{% endif %}
+                </td>
+                <td class="date-col">
+                    {% if cert.issue_date %}{{ cert.issue_date|date:"M Y" }}{% endif %}
+                </td>
+            </tr>
+        </table>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</body>
+</html>

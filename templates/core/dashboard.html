@@ -46,45 +46,52 @@
 
     <!-- Core Features Row -->
     <h4 class="fw-bold text-secondary mb-4">Explore Core Services</h4>
-    <div class="row g-4">
-        <!-- Resume Builder -->
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 h-100 rounded-4 overflow-hidden">
-                <div class="card-body p-4">
-                    <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 48px; height: 48px;">
-                        <i class="bi bi-file-earmark-text-fill fs-4"></i>
+    <div class="row g-4 mb-5">
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100 shadow-sm border-0 rounded-4 feature-card">
+                <div class="card-body p-4 text-center">
+                    <div class="icon-wrapper mx-auto mb-3">
+                        <i class="bi bi-file-earmark-person"></i>
                     </div>
-                    <h5 class="card-title fw-bold text-secondary">Resume Builder</h5>
-                    <p class="card-text text-muted small">Create, refine, and download ATS-friendly, professional resumes with intelligent feedback.</p>
-                    <a href="#" class="btn btn-light btn-sm rounded-pill px-3 mt-2">Open Builder</a>
+                    <h5 class="fw-bold">Resume Builder</h5>
+                    <p class="text-muted small">Create ATS-friendly resumes from your profile data in minutes.</p>
+                    <a href="{% url 'resume:list' %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">Open Builder</a>
                 </div>
             </div>
         </div>
-
-        <!-- Career Roadmap -->
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 h-100 rounded-4 overflow-hidden">
-                <div class="card-body p-4">
-                    <div class="d-inline-flex align-items-center justify-content-center bg-info bg-opacity-10 text-info rounded-circle mb-3" style="width: 48px; height: 48px;">
-                        <i class="bi bi-compass-fill fs-4"></i>
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100 shadow-sm border-0 rounded-4 feature-card">
+                <div class="card-body p-4 text-center">
+                    <div class="icon-wrapper mx-auto mb-3">
+                        <i class="bi bi-person-lines-fill"></i>
                     </div>
-                    <h5 class="card-title fw-bold text-secondary">Career Roadmap</h5>
-                    <p class="card-text text-muted small">Access structured guidelines, steps, and progress trackers mapped out for your domain goals.</p>
-                    <a href="#" class="btn btn-light btn-sm rounded-pill px-3 mt-2">View Roadmap</a>
+                    <h5 class="fw-bold">Profile Editor</h5>
+                    <p class="text-muted small">Update your personal details, education, and career preferences.</p>
+                    <a href="{% url 'profile_detail' %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">View Profile</a>
                 </div>
             </div>
         </div>
-
-        <!-- AI Assistant -->
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 h-100 rounded-4 overflow-hidden">
-                <div class="card-body p-4">
-                    <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle mb-3" style="width: 48px; height: 48px;">
-                        <i class="bi bi-chat-left-text-fill fs-4"></i>
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100 shadow-sm border-0 rounded-4 feature-card">
+                <div class="card-body p-4 text-center">
+                    <div class="icon-wrapper mx-auto mb-3">
+                        <i class="bi bi-shield-check"></i>
                     </div>
-                    <h5 class="card-title fw-bold text-secondary">AI Assistant</h5>
-                    <p class="card-text text-muted small">Chat with our intelligent guidance bot to identify skills gaps and discover new career roles.</p>
-                    <a href="#" class="btn btn-light btn-sm rounded-pill px-3 mt-2">Chat Now</a>
+                    <h5 class="fw-bold">ATS Resume Analyzer</h5>
+                    <p class="text-muted small">Scan your resume against target roles and receive grading and gap suggestions.</p>
+                    <a href="{% url 'ai_resume:history' %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">Analyze Resume</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100 shadow-sm border-0 rounded-4 feature-card">
+                <div class="card-body p-4 text-center">
+                    <div class="icon-wrapper mx-auto mb-3">
+                        <i class="bi bi-compass"></i>
+                    </div>
+                    <h5 class="fw-bold">Career Roadmaps</h5>
+                    <p class="text-muted small">Access structured weekly learning plans with curated learning resources.</p>
+                    <a href="{% url 'roadmaps:path_list' %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">Explore Paths</a>
                 </div>
             </div>
         </div>

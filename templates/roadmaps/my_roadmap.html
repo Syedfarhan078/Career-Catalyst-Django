@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}My Active Roadmaps - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="fw-bold mb-1">My Career Roadmaps</h1>
+            <p class="text-muted">Track your progress across enrolled career paths and milestones.</p>
+        </div>
+        <a href="{% url 'roadmaps:path_list' %}" class="btn btn-primary-custom">
+            <i class="bi bi-compass"></i> Explore All Paths
+        </a>
+    </div>
+
+    {% if enrollments %}
+        <div class="row g-4">
+            {% for enrollment in enrollments %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 d-flex flex-column hover-lift">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                                <i class="{{ enrollment.career_path.icon }} fs-3 text-primary"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0 text-secondary">{{ enrollment.career_path.name }}</h5>
+                                <span class="badge {% if enrollment.career_path.difficulty == 'Beginner' %}bg-success{% elif enrollment.career_path.difficulty == 'Intermediate' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-10 {% if enrollment.career_path.difficulty == 'Beginner' %}text-success{% elif enrollment.career_path.difficulty == 'Intermediate' %}text-warning{% else %}text-danger{% endif %} rounded-pill small mt-1">
+                                    {{ enrollment.career_path.difficulty }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <p class="text-muted small flex-grow-1 mb-4">{{ enrollment.career_path.description }}</p>
+                        
+                        <!-- Progress Metrics -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between text-muted small mb-1">
+                                <span>Roadmap Progress</span>
+                                <span class="fw-bold">{{ enrollment.progress_percentage }}%</span>
+                            </div>
+                            <div class="progress" style="height: 8px; border-radius: 50px;">
+                                <div class="progress-bar" role="progressbar" style="width: {{ enrollment.progress_percentage }}%; background: linear-gradient(to right, var(--primary), var(--accent)); border-radius: 50px;" aria-valuenow="{{ enrollment.progress_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small mt-2">
+                                <span>Completed Topics:</span>
+                                <span>{{ enrollment.completed_count }}/{{ enrollment.career_path.total_topics }}</span>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-auto">
+                            <a href="{% url 'roadmaps:path_detail' enrollment.career_path.slug %}" class="btn btn-outline-primary rounded-pill btn-sm py-2">
+                                <i class="bi bi-arrow-right-circle me-1"></i> Continue Roadmap
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="display-1 text-muted mb-4">
+                <i class="bi bi-compass"></i>
+            </div>
+            <h3>No active roadmaps</h3>
+            <p class="text-muted mb-4">You haven't enrolled in any learning paths yet.</p>
+            <a href="{% url 'roadmaps:path_list' %}" class="btn btn-primary-custom px-4">
+                Explore Available Career Paths
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+    }
+</style>

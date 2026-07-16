@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ path.name }} Roadmap - Career Catalyst{% endblock %}
+
+{% block extra_css %}
+<style>
+    .milestone-card {
+        border-left: 4px solid var(--primary);
+        transition: all 0.2s ease;
+    }
+    .milestone-card.level-beginner { border-left-color: #22c55e; }
+    .milestone-card.level-intermediate { border-left-color: #f59e0b; }
+    .milestone-card.level-advanced { border-left-color: #ef4444; }
+    
+    .topic-check {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        border-radius: 12px;
+    }
+    .topic-check:hover {
+        background-color: #f1f5f9;
+    }
+    .topic-check.completed {
+        background-color: #f0fdf4;
+    }
+    .topic-check.completed .topic-title {
+        text-decoration: line-through;
+        color: #9ca3af;
+    }
+    .week-badge {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+    .resource-badge {
+        font-size: 0.7rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container py-5 mt-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <a href="{% url 'roadmaps:path_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
+                <i class="bi bi-arrow-left"></i> All Paths
+            </a>
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                    <i class="{{ path.icon }} fs-2 text-primary"></i>
+                </div>
+                <div>
+                    <h1 class="fw-bold mb-0">{{ path.name }}</h1>
+                    <p class="text-muted mb-0">{{ path.description }}</p>
+                </div>
+            </div>
+        </div>
+        {% if not user_roadmap %}
+        <form method="POST" action="{% url 'roadmaps:enroll' path.slug %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary-custom btn-lg">
+                <i class="bi bi-play-circle me-2"></i> Start Learning
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- Progress Bar (if enrolled) -->
+    {% if user_roadmap %}
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="fw-bold mb-0">Your Progress</h5>
+            <span class="fw-bold text-primary" id="progressText">{{ completed_count }}/{{ total_topics }} topics ({{ progress }}%)</span>
+        </div>
+        <div class="progress" style="height: 12px;" id="progressBarWrapper">
+            <div class="progress-bar" id="progressBar" role="progressbar" 
+                 style="width: {{ progress }}%; background: linear-gradient(to right, var(--primary), var(--accent));"
+                 aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Info badges -->
+    <div class="d-flex gap-3 mb-5">
+        <span class="badge bg-light text-secondary px-3 py-2 rounded-pill">
+            <i class="bi bi-calendar3"></i> {{ path.estimated_weeks }} Weeks
+        </span>
+        <span class="badge {% if path.difficulty == 'Beginner' %}bg-success{% elif path.difficulty == 'Intermediate' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-10 {% if path.difficulty == 'Beginner' %}text-success{% elif path.difficulty == 'Intermediate' %}text-warning{% else %}text-danger{% endif %} px-3 py-2 rounded-pill">
+            {{ path.difficulty }}
+        </span>
+        <span class="badge bg-light text-secondary px-3 py-2 rounded-pill">
+            <i class="bi bi-book"></i> {{ total_topics }} Topics
+        </span>
+    </div>
+
+    <!-- Milestones Timeline -->
+    {% for milestone in milestones %}
+    <div class="card border-0 shadow-sm rounded-4 mb-4 milestone-card level-{{ milestone.level|lower }}">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="week-badge bg-primary bg-opacity-10 text-primary">
+                    W{{ milestone.week_number }}
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-0">{{ milestone.title }}</h4>
+                    <span class="badge {% if milestone.level == 'Beginner' %}bg-success{% elif milestone.level == 'Intermediate' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-10 {% if milestone.level == 'Beginner' %}text-success{% elif milestone.level == 'Intermediate' %}text-warning{% else %}text-danger{% endif %} rounded-pill small">
+                        {{ milestone.level }}
+                    </span>
+                </div>
+            </div>
+
+            {% for topic in milestone.topics.all %}
+            <div class="topic-check d-flex align-items-center justify-content-between p-3 mb-2 {% if topic.id in completed_ids %}completed{% endif %}"
+                 {% if user_roadmap %}data-topic-id="{{ topic.id }}"{% endif %}>
+                <div class="d-flex align-items-center gap-3">
+                    {% if user_roadmap %}
+                    <div class="form-check mb-0">
+                        <input class="form-check-input topic-checkbox" type="checkbox" 
+                               id="topic-{{ topic.id }}"
+                               data-topic-id="{{ topic.id }}"
+                               {% if topic.id in completed_ids %}checked{% endif %}>
+                    </div>
+                    {% else %}
+                    <i class="bi bi-circle text-muted"></i>
+                    {% endif %}
+                    <div>
+                        <span class="fw-semibold topic-title">{{ topic.title }}</span>
+                        <p class="text-muted small mb-0">{{ topic.description }}</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-muted resource-badge rounded-pill px-2 py-1">
+                        <i class="bi bi-clock"></i> {{ topic.estimated_hours }}h
+                    </span>
+                    {% if topic.resource_url %}
+                    <a href="{{ topic.resource_url }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0 resource-badge" onclick="event.stopPropagation()">
+                        {% if topic.resource_type == 'Video' %}<i class="bi bi-play-circle"></i>
+                        {% elif topic.resource_type == 'Course' %}<i class="bi bi-mortarboard"></i>
+                        {% elif topic.resource_type == 'Documentation' %}<i class="bi bi-file-text"></i>
+                        {% else %}<i class="bi bi-link-45deg"></i>{% endif %}
+                        {{ topic.resource_type }}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if user_roadmap %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Make entire row clickable to toggle status
+    document.querySelectorAll('.topic-check').forEach(function(row) {
+        row.addEventListener('click', function(e) {
+            // If click was on checkbox or resource link, don't double-trigger
+            if (e.target.classList.contains('topic-checkbox') || e.target.closest('a')) return;
+            
+            const checkbox = this.querySelector('.topic-checkbox');
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+
+    document.querySelectorAll('.topic-checkbox').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            const topicId = this.dataset.topicId;
+            const topicRow = this.closest('.topic-check');
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(`/roadmaps/api/toggle/${topicId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.is_completed) {
+                        topicRow.classList.add('completed');
+                    } else {
+                        topicRow.classList.remove('completed');
+                    }
+                    // Update progress bar
+                    document.getElementById('progressBar').style.width = data.progress_percentage + '%';
+                    document.getElementById('progressText').textContent = 
+                        `${data.completed_count}/${data.total_topics} topics (${data.progress_percentage}%)`;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

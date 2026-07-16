@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Career Roadmaps - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold mb-2">Career Learning Roadmaps</h1>
+        <p class="text-muted fs-5">Choose a career path and follow a structured weekly plan with curated resources.</p>
+    </div>
+
+    {% if enrollments %}
+    <div class="mb-5">
+        <h4 class="fw-bold text-secondary mb-3"><i class="bi bi-bookmark-star"></i> Your Active Roadmaps</h4>
+        <div class="row g-3 mb-4">
+            {% for enrollment in enrollments %}
+            <div class="col-md-4">
+                <a href="{% url 'roadmaps:path_detail' enrollment.career_path.slug %}" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 h-100 hover-lift">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                                <i class="{{ enrollment.career_path.icon }} fs-4 text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0 text-secondary">{{ enrollment.career_path.name }}</h6>
+                                <small class="text-muted">Started {{ enrollment.started_at|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar" role="progressbar" style="width: {{ enrollment.progress_percentage }}%; background: linear-gradient(to right, var(--primary), var(--accent));">
+                            </div>
+                        </div>
+                        <small class="text-muted mt-1">{{ enrollment.progress_percentage }}% complete</small>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        <hr class="my-4">
+    </div>
+    {% endif %}
+
+    <h4 class="fw-bold text-secondary mb-4"><i class="bi bi-compass"></i> All Career Paths</h4>
+    <div class="row g-4">
+        {% for path in paths %}
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden hover-lift">
+                <div class="card-body p-4 text-center d-flex flex-column">
+                    <div class="rounded-circle bg-primary bg-opacity-10 mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                        <i class="{{ path.icon }} fs-3 text-primary"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">{{ path.name }}</h5>
+                    <p class="text-muted small flex-grow-1">{{ path.description|truncatewords:18 }}</p>
+                    <div class="d-flex justify-content-center gap-2 mb-3">
+                        <span class="badge bg-light text-secondary rounded-pill px-2 py-1 small">
+                            <i class="bi bi-calendar3"></i> {{ path.estimated_weeks }} weeks
+                        </span>
+                        <span class="badge {% if path.difficulty == 'Beginner' %}bg-success{% elif path.difficulty == 'Intermediate' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-10 {% if path.difficulty == 'Beginner' %}text-success{% elif path.difficulty == 'Intermediate' %}text-warning{% else %}text-danger{% endif %} rounded-pill px-2 py-1 small">
+                            {{ path.difficulty }}
+                        </span>
+                    </div>
+                    {% if path.id in enrolled_ids %}
+                        <a href="{% url 'roadmaps:path_detail' path.slug %}" class="btn btn-outline-success rounded-pill btn-sm px-4">
+                            <i class="bi bi-check-circle"></i> Continue
+                        </a>
+                    {% else %}
+                        <a href="{% url 'roadmaps:path_detail' path.slug %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">
+                            View Path
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+    }
+</style>
+{% endblock %}

@@ -23,6 +23,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("accounts/", include("apps.accounts.urls")),
     path("profile/", include("apps.profiles.urls")),
+    path("resume/", include("apps.resume.urls")),
+    path("ai-resume/", include("apps.ai_resume.urls")),
+    path("roadmaps/", include("apps.roadmaps.urls")),
     path("", include("apps.core.urls")),
 ]
 

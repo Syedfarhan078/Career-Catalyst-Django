@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}Resume Analysis Report - Career Catalyst{% endblock %}
+
+{% block extra_css %}
+<style>
+    .score-circle {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin: 0 auto;
+        border: 10px solid #f1f5f9;
+        position: relative;
+    }
+    .score-circle.success {
+        border-color: #22c55e;
+    }
+    .score-circle.warning {
+        border-color: #f59e0b;
+    }
+    .score-circle.danger {
+        border-color: #ef4444;
+    }
+    .score-number {
+        font-size: 2.75rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1;
+    }
+    .score-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <a href="{% url 'ai_resume:history' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
+                <i class="bi bi-arrow-left"></i> History
+            </a>
+            <h1 class="fw-bold mb-1">Analysis Report</h1>
+            <p class="text-muted">Targeting: <span class="badge bg-secondary px-3 py-2 fs-6 rounded-pill">{{ analysis.target_role }}</span></p>
+        </div>
+        <a href="{% url 'ai_resume:analyze' %}" class="btn btn-primary-custom">
+            <i class="bi bi-arrow-repeat"></i> Analyze Another
+        </a>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <!-- Overall Score Card -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 rounded-4 p-4 text-center">
+                <h5 class="fw-bold text-secondary mb-4">Overall Score</h5>
+                <div class="score-circle {% if analysis.overall_score >= 80 %}success{% elif analysis.overall_score >= 50 %}warning{% else %}danger{% endif %} mb-3">
+                    <span class="score-number">{{ analysis.overall_score }}</span>
+                    <span class="score-label">out of 100</span>
+                </div>
+                <p class="text-muted small mt-2">
+                    {% if analysis.overall_score >= 80 %}
+                        Great job! Your resume aligns highly with ATS standards and role requirements.
+                    {% elif analysis.overall_score >= 50 %}
+                        Good start! Try incorporating missing skills and fixing contact layout options.
+                    {% else %}
+                        Your resume needs improvements to pass basic parsing checks.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Breakdown Score Card -->
+        <div class="col-md-8">
+            <div class="card h-100 shadow-sm border-0 rounded-4 p-4">
+                <h5 class="fw-bold text-secondary mb-4">ATS Checklist Subscores</h5>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-semibold small">Formatting & Contacts</span>
+                        <span class="fw-bold small">{{ analysis.ats_score }}%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ analysis.ats_score }}%;"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-semibold small">Readability & Word Count</span>
+                        <span class="fw-bold small">{{ analysis.grammar_score }}%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ analysis.grammar_score }}%;"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-semibold small">Keyword Relevance</span>
+                        <span class="fw-bold small">{{ analysis.keyword_score }}%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ analysis.keyword_score }}%;"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-semibold small">Skills Completeness</span>
+                        <span class="fw-bold small">{{ analysis.skill_score }}%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ analysis.skill_score }}%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations & Missing Skills -->
+    <div class="row g-4">
+        <!-- Priority Suggestions -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 rounded-4 p-4">
+                <h4 class="fw-bold text-secondary mb-4"><i class="bi bi-lightning-charge text-warning"></i> Improvement Checklist</h4>
+                
+                {% if not high_suggestions and not medium_suggestions and not low_suggestions %}
+                    <div class="alert alert-success d-flex align-items-center" role="alert">
+                        <i class="bi bi-patch-check-fill fs-4 me-2"></i>
+                        <div>No major layout or completeness issues detected!</div>
+                    </div>
+                {% endif %}
+
+                {% if high_suggestions %}
+                    <h6 class="text-danger fw-bold text-uppercase mb-3"><i class="bi bi-exclamation-triangle"></i> High Priority</h6>
+                    <ul class="list-group list-group-flush mb-4">
+                        {% for suggestion in high_suggestions %}
+                        <li class="list-group-item bg-transparent px-0 border-light d-flex align-items-start">
+                            <span class="badge bg-danger me-3 mt-1">High</span>
+                            <div>
+                                <strong class="text-secondary">{{ suggestion.category }}:</strong> {{ suggestion.description }}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                {% if medium_suggestions %}
+                    <h6 class="text-warning fw-bold text-uppercase mb-3"><i class="bi bi-info-circle"></i> Medium Priority</h6>
+                    <ul class="list-group list-group-flush mb-4">
+                        {% for suggestion in medium_suggestions %}
+                        <li class="list-group-item bg-transparent px-0 border-light d-flex align-items-start">
+                            <span class="badge bg-warning text-dark me-3 mt-1">Med</span>
+                            <div>
+                                <strong class="text-secondary">{{ suggestion.category }}:</strong> {{ suggestion.description }}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                {% if low_suggestions %}
+                    <h6 class="text-info fw-bold text-uppercase mb-3"><i class="bi bi-lightbulb"></i> Low Priority</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for suggestion in low_suggestions %}
+                        <li class="list-group-item bg-transparent px-0 border-light d-flex align-items-start">
+                            <span class="badge bg-info text-dark me-3 mt-1">Low</span>
+                            <div>
+                                <strong class="text-secondary">{{ suggestion.category }}:</strong> {{ suggestion.description }}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Missing Skills & Gap Analysis -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 rounded-4 p-4 h-100">
+                <h4 class="fw-bold text-secondary mb-4"><i class="bi bi-patch-question text-primary"></i> Skills Gap Analysis</h4>
+                
+                {% if analysis.missing_skills.exists %}
+                    <p class="text-muted small"> hThese skills are typical for <b>{{ analysis.target_role }}</b> but were not detected in your resume:</p>
+                    <div class="list-group list-group-flush">
+                        {% for m_skill in analysis.missing_skills.all %}
+                        <div class="list-group-item bg-transparent px-0 border-light py-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-secondary">{{ m_skill.skill_name }}</span>
+                                {% if m_skill.importance == 'High' %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2">High Importance</span>
+                                {% else %}
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2">Medium</span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted d-block">{{ m_skill.recommendation }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="display-3 text-success mb-3">
+                            <i class="bi bi-award-fill"></i>
+                        </div>
+                        <h5 class="fw-bold text-success">Perfect Match!</h5>
+                        <p class="text-muted small">We found all key technical skills matching this target role in your resume.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

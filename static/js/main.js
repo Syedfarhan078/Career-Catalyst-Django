@@ -87,4 +87,31 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('scroll', highlightNav, { passive: true });
     }
 
+    // =============================================
+    // Intersection Observer — Scroll Animations
+    // =============================================
+    const animatedElements = document.querySelectorAll('.animate-on-scroll');
+
+    if (animatedElements.length > 0) {
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px 0px -80px 0px',
+            threshold: 0.1
+        };
+
+        const animationObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animated');
+                    // Don't unobserve — animation only triggers once
+                    animationObserver.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        animatedElements.forEach(el => {
+            animationObserver.observe(el);
+        });
+    }
+
 });

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ resume.title }}</title>
+<style>
+    @page {
+        size: a4 portrait;
+        margin: 2cm;
+    }
+    body {
+        font-family: "Times New Roman", Times, serif;
+        font-size: 11pt;
+        color: #000;
+        line-height: 1.4;
+        background-color: #fff;
+    }
+    h1, h2, h3, p {
+        margin: 0;
+        padding: 0;
+    }
+    .header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .name {
+        font-size: 24pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+    .contact {
+        font-size: 10pt;
+    }
+    .section-title {
+        font-size: 13pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        border-bottom: 1px solid #000;
+        margin-top: 15px;
+        margin-bottom: 10px;
+        padding-bottom: 2px;
+    }
+    .item-title {
+        font-weight: bold;
+    }
+    .item-subtitle {
+        font-style: italic;
+    }
+    .right-align {
+        text-align: right;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    td {
+        vertical-align: top;
+        padding-bottom: 5px;
+    }
+    .date-col {
+        width: 150px;
+        text-align: right;
+        font-style: italic;
+    }
+    ul {
+        margin: 5px 0 10px 20px;
+        padding: 0;
+    }
+</style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="name">{{ user.first_name }} {{ user.last_name }}</div>
+        <div class="contact">
+            {{ user.email }}
+            {% if profile and profile.phone_number %} | {{ profile.phone_number }}{% endif %}
+            {% if profile and profile.linkedin %} | {{ profile.linkedin }}{% endif %}
+            {% if profile and profile.github %} | {{ profile.github }}{% endif %}
+        </div>
+    </div>
+
+    {% if profile and profile.bio %}
+    <div class="summary" style="margin-bottom: 15px;">
+        <p>{{ profile.bio }}</p>
+    </div>
+    {% endif %}
+
+    {% if resume.educations.exists %}
+    <div class="section-title">Education</div>
+    <table>
+        {% for edu in resume.educations.all %}
+        <tr>
+            <td>
+                <span class="item-title">{{ edu.college }}</span><br>
+                <span class="item-subtitle">{{ edu.degree }} in {{ edu.branch }}</span>
+                {% if edu.cgpa %}<br>CGPA: {{ edu.cgpa }}{% endif %}
+            </td>
+            <td class="date-col">
+                {{ edu.start_year }} - {{ edu.end_year }}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if resume.experiences.exists %}
+    <div class="section-title">Experience</div>
+    <table>
+        {% for exp in resume.experiences.all %}
+        <tr>
+            <td>
+                <span class="item-title">{{ exp.position }}</span> - {{ exp.company }}{% if exp.location %}, {{ exp.location }}{% endif %}<br>
+                <p style="margin-top:5px;">{{ exp.description|linebreaksbr }}</p>
+            </td>
+            <td class="date-col">
+                {{ exp.start_date|date:"M Y" }} - {% if exp.is_current %}Present{% else %}{{ exp.end_date|date:"M Y" }}{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if resume.projects.exists %}
+    <div class="section-title">Projects</div>
+    <table>
+        {% for proj in resume.projects.all %}
+        <tr>
+            <td colspan="2">
+                <span class="item-title">{{ proj.title }}</span> 
+                {% if proj.technologies_used %} | <i>{{ proj.technologies_used }}</i>{% endif %}
+                <br>
+                <p style="margin-top:5px;">{{ proj.description|linebreaksbr }}</p>
+                {% if proj.github_url or proj.live_demo_url %}
+                <div style="font-size:9pt; margin-top:3px;">
+                    {% if proj.github_url %}GitHub: {{ proj.github_url }} {% endif %}
+                    {% if proj.live_demo_url %} | Demo: {{ proj.live_demo_url }}{% endif %}
+                </div>
+                {% endif %}
+                <div style="margin-bottom: 10px;"></div>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if resume.skills.exists %}
+    <div class="section-title">Skills</div>
+    <p>
+        {% for skill in resume.skills.all %}
+            {{ skill.name }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </p>
+    {% endif %}
+
+    {% if resume.certifications.exists %}
+    <div class="section-title">Certifications</div>
+    <table>
+        {% for cert in resume.certifications.all %}
+        <tr>
+            <td>
+                <span class="item-title">{{ cert.name }}</span> - {{ cert.organization }}
+                {% if cert.credential_url %}<br><a href="{{ cert.credential_url }}" style="font-size:9pt; color:#000;">View Credential</a>{% endif %}
+            </td>
+            <td class="date-col">
+                {% if cert.issue_date %}{{ cert.issue_date|date:"M Y" }}{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+</body>
+</html>

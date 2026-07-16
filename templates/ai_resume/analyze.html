@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Analyze Resume - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4 p-4 p-md-5">
+                <div class="text-center mb-5">
+                    <div class="display-4 text-primary mb-3">
+                        <i class="bi bi-shield-shaded"></i>
+                    </div>
+                    <h2 class="fw-bold">Local ATS Resume Analyzer</h2>
+                    <p class="text-muted">Compare your resume structure, keyword densities, and formatting against target job roles locally on our server.</p>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            {{ form.target_role|as_crispy_field }}
+                            <div class="form-text text-muted mb-3">
+                                Tip: Enter standard roles like <b>Software Engineer</b>, <b>Data Scientist</b>, <b>Product Manager</b>, or <b>ML Engineer</b> for targeted keyword evaluation.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-light border-0 rounded-3 p-4 mb-4">
+                        <h5 class="fw-bold mb-3">Resume Source</h5>
+                        
+                        <div class="mb-4">
+                            {{ form.resume|as_crispy_field }}
+                        </div>
+                        
+                        <div class="text-center text-muted fw-bold mb-3">&mdash; OR &mdash;</div>
+                        
+                        <div class="mb-2">
+                            {{ form.uploaded_file|as_crispy_field }}
+                            <div class="form-text text-muted">
+                                Supported formats: <b>PDF, DOCX</b> (Max 5MB)
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary-custom btn-lg">
+                            <i class="bi bi-cpu me-2"></i> Start Analysis
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'ai_resume:history' %}" class="text-decoration-none text-muted">
+                        <i class="bi bi-arrow-left"></i> Back to History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Resume Builder - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 mt-5">
+    <div class="row h-100 min-vh-100">
+        <!-- Forms Pane -->
+        <div class="col-lg-5 col-xl-4 overflow-auto pe-lg-4 pb-5" style="height: 100vh;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <a href="{% url 'resume:list' %}" class="btn btn-outline-secondary btn-sm rounded-pill">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
+                <h4 class="fw-bold mb-0">Builder</h4>
+                <a href="{% url 'resume:download' resume.pk %}" class="btn btn-success btn-sm rounded-pill">
+                    <i class="bi bi-download"></i> PDF
+                </a>
+            </div>
+
+            <div class="accordion" id="resumeAccordion">
+                
+                <!-- Settings -->
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSettings">
+                            <i class="bi bi-gear me-2 text-primary"></i> Resume Settings
+                        </button>
+                    </h2>
+                    <div id="collapseSettings" class="accordion-collapse collapse show" data-bs-parent="#resumeAccordion">
+                        <div class="accordion-body bg-light">
+                            <form id="settingsForm" onsubmit="submitForm(event, 'settings', '{% url 'resume:api_update_settings' resume.pk %}')">
+                                {% csrf_token %}
+                                {{ resume_form|crispy }}
+                                <button type="submit" class="btn btn-primary btn-sm w-100 mt-2">Save Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Education -->
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEdu">
+                            <i class="bi bi-book me-2 text-primary"></i> Education
+                        </button>
+                    </h2>
+                    <div id="collapseEdu" class="accordion-collapse collapse" data-bs-parent="#resumeAccordion">
+                        <div class="accordion-body bg-light">
+                            <!-- List existing -->
+                            <div id="eduList" class="mb-3">
+                                {% for edu in resume.educations.all %}
+                                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                                    <div>
+                                        <div class="fw-bold">{{ edu.degree }}</div>
+                                        <small class="text-muted">{{ edu.college }}</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem('education', {{ edu.pk }})"><i class="bi bi-trash"></i></button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <!-- Add form -->
+                            <form id="eduForm" onsubmit="submitForm(event, 'education', '{% url 'resume:api_add_section' resume.pk 'education' %}')">
+                                {% csrf_token %}
+                                {{ edu_form|crispy }}
+                                <button type="submit" class="btn btn-outline-primary btn-sm w-100 mt-2"><i class="bi bi-plus"></i> Add Education</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Experience -->
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExp">
+                            <i class="bi bi-briefcase me-2 text-primary"></i> Experience
+                        </button>
+                    </h2>
+                    <div id="collapseExp" class="accordion-collapse collapse" data-bs-parent="#resumeAccordion">
+                        <div class="accordion-body bg-light">
+                            <div id="expList" class="mb-3">
+                                {% for exp in resume.experiences.all %}
+                                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                                    <div>
+                                        <div class="fw-bold">{{ exp.position }}</div>
+                                        <small class="text-muted">{{ exp.company }}</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem('experience', {{ exp.pk }})"><i class="bi bi-trash"></i></button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <form id="expForm" onsubmit="submitForm(event, 'experience', '{% url 'resume:api_add_section' resume.pk 'experience' %}')">
+                                {% csrf_token %}
+                                {{ exp_form|crispy }}
+                                <button type="submit" class="btn btn-outline-primary btn-sm w-100 mt-2"><i class="bi bi-plus"></i> Add Experience</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Projects -->
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProj">
+                            <i class="bi bi-code-slash me-2 text-primary"></i> Projects
+                        </button>
+                    </h2>
+                    <div id="collapseProj" class="accordion-collapse collapse" data-bs-parent="#resumeAccordion">
+                        <div class="accordion-body bg-light">
+                            <div id="projList" class="mb-3">
+                                {% for proj in resume.projects.all %}
+                                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                                    <div class="fw-bold">{{ proj.title }}</div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem('project', {{ proj.pk }})"><i class="bi bi-trash"></i></button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <form id="projForm" onsubmit="submitForm(event, 'project', '{% url 'resume:api_add_section' resume.pk 'project' %}')">
+                                {% csrf_token %}
+                                {{ proj_form|crispy }}
+                                <button type="submit" class="btn btn-outline-primary btn-sm w-100 mt-2"><i class="bi bi-plus"></i> Add Project</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skills -->
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSkill">
+                            <i class="bi bi-star me-2 text-primary"></i> Skills
+                        </button>
+                    </h2>
+                    <div id="collapseSkill" class="accordion-collapse collapse" data-bs-parent="#resumeAccordion">
+                        <div class="accordion-body bg-light">
+                            <div id="skillList" class="mb-3 d-flex flex-wrap gap-2">
+                                {% for skill in resume.skills.all %}
+                                <span class="badge bg-secondary">
+                                    {{ skill.name }} 
+                                    <i class="bi bi-x-circle ms-1" style="cursor:pointer;" onclick="deleteItem('skill', {{ skill.pk }})"></i>
+                                </span>
+                                {% endfor %}
+                            </div>
+                            <form id="skillForm" onsubmit="submitForm(event, 'skill', '{% url 'resume:api_add_section' resume.pk 'skill' %}')">
+                                {% csrf_token %}
+                                {{ skill_form|crispy }}
+                                <button type="submit" class="btn btn-outline-primary btn-sm w-100 mt-2"><i class="bi bi-plus"></i> Add Skill</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Certifications -->
+                <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCert">
+                            <i class="bi bi-award me-2 text-primary"></i> Certifications
+                        </button>
+                    </h2>
+                    <div id="collapseCert" class="accordion-collapse collapse" data-bs-parent="#resumeAccordion">
+                        <div class="accordion-body bg-light">
+                            <div id="certList" class="mb-3">
+                                {% for cert in resume.certifications.all %}
+                                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                                    <div>
+                                        <div class="fw-bold">{{ cert.name }}</div>
+                                        <small class="text-muted">{{ cert.organization }}</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem('certification', {{ cert.pk }})"><i class="bi bi-trash"></i></button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <form id="certForm" onsubmit="submitForm(event, 'certification', '{% url 'resume:api_add_section' resume.pk 'certification' %}')">
+                                {% csrf_token %}
+                                {{ cert_form|crispy }}
+                                <button type="submit" class="btn btn-outline-primary btn-sm w-100 mt-2"><i class="bi bi-plus"></i> Add Certification</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Live Preview Pane -->
+        <div class="col-lg-7 col-xl-8 bg-dark p-0 position-relative d-none d-lg-block">
+            <div class="position-absolute top-0 start-0 w-100 p-3 bg-dark bg-opacity-75 z-index-1 text-center border-bottom border-secondary">
+                <span class="text-light fw-bold"><i class="bi bi-eye"></i> Live Preview</span>
+                <button class="btn btn-sm btn-outline-light ms-3" onclick="refreshPreview()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+            </div>
+            <iframe id="previewFrame" src="{% url 'resume:preview' resume.pk %}" class="w-100 h-100 border-0 pt-5"></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Re-open the last used accordion
+        const openSection = localStorage.getItem('openResumeSection');
+        if (openSection) {
+            // Close all first
+            document.querySelectorAll('.accordion-collapse').forEach(el => el.classList.remove('show'));
+            document.querySelectorAll('.accordion-button').forEach(el => el.classList.add('collapsed'));
+            
+            // Open the saved one
+            const targetEl = document.getElementById(openSection);
+            if (targetEl) {
+                targetEl.classList.add('show');
+                const btn = document.querySelector(`[data-bs-target="#${openSection}"]`);
+                if (btn) btn.classList.remove('collapsed');
+            }
+        }
+        
+        // Save accordion state when opened
+        document.querySelectorAll('.accordion-collapse').forEach(el => {
+            el.addEventListener('shown.bs.collapse', function(e) {
+                localStorage.setItem('openResumeSection', e.target.id);
+            });
+        });
+    });
+
+    function refreshPreview() {
+        const frame = document.getElementById('previewFrame');
+        frame.src = frame.src;
+    }
+
+    async function submitForm(e, section, url) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                if (section !== 'settings') {
+                    form.reset();
+                }
+                // Reload the page to reflect changes
+                window.location.reload();
+            } else {
+                alert('Error saving section. Please check the fields.');
+                console.error(data.errors);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Something went wrong.');
+        }
+    }
+
+    async function deleteItem(section, id) {
+        if (!confirm('Are you sure you want to delete this?')) return;
+        
+        const url = `/resume/{{ resume.pk }}/api/delete/${section}/${id}/`;
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await response.json();
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error deleting item.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+</script>
+{% endblock %}
