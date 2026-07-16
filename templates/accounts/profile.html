@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}My Profile | Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="row mb-5">
+        <div class="col-10 mx-auto">
+            <h1 class="fw-bold mb-1 text-gradient">Account Settings</h1>
+            <p class="text-muted">Manage your profile information and social presence.</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row g-4 justify-content-center">
+        <!-- Left Column: User Card -->
+        <div class="col-lg-4 col-10">
+            <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100">
+                <!-- Card Header Accent -->
+                <div class="bg-gradient-primary" style="height: 100px; background: linear-gradient(135deg, var(--primary), #1e40af);"></div>
+                
+                <!-- Card Body -->
+                <div class="card-body p-4 text-center" style="margin-top: -60px;">
+                    <!-- Profile Picture -->
+                    <div class="mb-3">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle border border-4 border-white shadow-sm object-fit-cover" style="width: 110px; height: 110px;">
+                        {% else %}
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle border border-4 border-white shadow-sm bg-gradient text-white fw-bold fs-2" style="width: 110px; height: 110px; background: linear-gradient(135deg, var(--primary), var(--accent));">
+                                {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h3 class="fw-bold mb-1 text-secondary">{{ user.get_full_name }}</h3>
+                    <p class="text-muted small mb-3">@{{ user.username }}</p>
+                    
+                    {% if user.bio %}
+                        <p class="text-muted small px-3 mb-4 italic">"{{ user.bio }}"</p>
+                    {% else %}
+                        <p class="text-muted small px-3 mb-4 text-white-50">No bio written yet. Add one in settings!</p>
+                    {% endif %}
+                    
+                    <!-- Social Links -->
+                    <div class="d-flex justify-content-center gap-2 mb-4">
+                        {% if user.github %}
+                            <a href="{{ user.github }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" aria-label="GitHub">
+                                <i class="bi bi-github fs-5"></i>
+                            </a>
+                        {% endif %}
+                        {% if user.linkedin %}
+                            <a href="{{ user.linkedin }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" aria-label="LinkedIn">
+                                <i class="bi bi-linkedin fs-5"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                    
+                    <hr class="text-black-50 my-4">
+                    
+                    <!-- Meta Stats -->
+                    <div class="row text-start ps-3">
+                        <div class="col-12 mb-2">
+                            <span class="text-muted small d-block">Email address</span>
+                            <span class="fw-semibold text-secondary small">{{ user.email }}</span>
+                        </div>
+                        <div class="col-12">
+                            <span class="text-muted small d-block">Member since</span>
+                            <span class="fw-semibold text-secondary small">{{ user.created_at|date:"F Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Settings Form -->
+        <div class="col-lg-6 col-10">
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+                <div class="card-body p-5">
+                    <h4 class="fw-bold mb-4 text-secondary">Edit Personal Details</h4>
+                    
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'dashboard' %}" class="btn btn-light rounded-pill px-4">Cancel</a>
+                            <button type="submit" class="btn-primary-custom px-4 py-2">Save Updates</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

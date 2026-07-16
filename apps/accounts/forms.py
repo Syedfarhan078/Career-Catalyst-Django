@@ -18,11 +18,32 @@ class UserRegistrationForm(UserCreationForm):
         super().__init__(*args, **kwargs)
         # Apply Bootstrap classes to all fields
         for field in self.fields.values():
-            field.widget.attrs.update({'class': 'form-control rounded-pill'})
+            field.widget.attrs.update({'class': 'form-control'})
 
 class UserLoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Apply Bootstrap classes to username and password
-        self.fields['username'].widget.attrs.update({'class': 'form-control rounded-pill'})
-        self.fields['password'].widget.attrs.update({'class': 'form-control rounded-pill'})
+        self.fields['username'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password'].widget.attrs.update({'class': 'form-control'})
+
+class UserProfileForm(forms.ModelForm):
+    first_name = forms.CharField(required=True)
+    last_name = forms.CharField(required=True)
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email', 'profile_picture', 'bio', 'github', 'linkedin')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name == 'profile_picture':
+                field.widget.attrs.update({'class': 'form-control-file'})
+            else:
+                field.widget.attrs.update({'class': 'form-control'})
+            
+            # Make bio input look like a proper text area with size limits
+            if name == 'bio':
+                field.widget.attrs.update({'rows': 4})

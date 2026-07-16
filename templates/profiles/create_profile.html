@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Complete Student Profile | Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header Banner -->
+            <div class="card bg-gradient-primary text-white border-0 shadow-sm rounded-4 mb-4" style="background: linear-gradient(135deg, var(--primary), #1e40af);">
+                <div class="card-body p-5 text-center">
+                    <h1 class="fw-bold mb-2">Welcome to Career Catalyst!</h1>
+                    <p class="mb-0 opacity-90">Let's complete your student profile to customize your dashboard and unlock AI guidance.</p>
+                </div>
+            </div>
+
+            <form method="POST" enctype="multipart/form-data" class="needs-validation">
+                {% csrf_token %}
+                
+                <!-- Section 1: Personal Details -->
+                <div class="card shadow-sm border-0 rounded-4 mb-4">
+                    <div class="card-body p-5">
+                        <h4 class="fw-bold text-secondary mb-4">
+                            <i class="bi bi-person-fill me-2 text-primary"></i> 1. Personal Information
+                        </h4>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.profile_picture|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.phone_number|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.date_of_birth|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.gender|as_crispy_field }}
+                            </div>
+                            <div class="col-12">
+                                {{ form.bio|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Academic Details -->
+                <div class="card shadow-sm border-0 rounded-4 mb-4">
+                    <div class="card-body p-5">
+                        <h4 class="fw-bold text-secondary mb-4">
+                            <i class="bi bi-book-fill me-2 text-primary"></i> 2. Academic Details
+                        </h4>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.college|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.university|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.degree|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.branch|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.semester|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.graduation_year|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.cgpa|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Career Details -->
+                <div class="card shadow-sm border-0 rounded-4 mb-4">
+                    <div class="card-body p-5">
+                        <h4 class="fw-bold text-secondary mb-4">
+                            <i class="bi bi-briefcase-fill me-2 text-primary"></i> 3. Career Preferences
+                        </h4>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.career_goal|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.current_skill_level|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.preferred_domain|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.expected_salary|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.preferred_location|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Skills -->
+                <div class="card shadow-sm border-0 rounded-4 mb-4">
+                    <div class="card-body p-5">
+                        <h4 class="fw-bold text-secondary mb-4">
+                            <i class="bi bi-cpu-fill me-2 text-primary"></i> 4. Technical Skills
+                        </h4>
+                        {{ form.skills|as_crispy_field }}
+                        <small class="text-muted d-block mt-1">Please enter your technical skills, listing each on a new line or separated by commas (e.g. Python, Django, SQL).</small>
+                    </div>
+                </div>
+
+                <!-- Section 5: Social Links -->
+                <div class="card shadow-sm border-0 rounded-4 mb-4">
+                    <div class="card-body p-5">
+                        <h4 class="fw-bold text-secondary mb-4">
+                            <i class="bi bi-share-fill me-2 text-primary"></i> 5. Social & Professional Profiles
+                        </h4>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.github|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.linkedin|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.portfolio|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.leetcode|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.hackerrank|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-flex justify-content-end gap-3 mb-5">
+                    <button type="submit" class="btn-primary-custom px-5 py-3 fs-5">Save & Build Dashboard</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

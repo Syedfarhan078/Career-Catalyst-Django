@@ -1,33 +1,24 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load crispy_forms_tags %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 70vh; padding: 4rem 0;">
+    <div class="row justify-content-center w-100">
+        <div class="col-md-6 col-lg-5">
             <div class="card shadow-lg border-0 rounded-4">
                 <div class="card-body p-5">
-                    <h2 class="text-center mb-4">Create Account</h2>
+                    <h2 class="text-center mb-4 fw-bold">Create Account</h2>
                     
                     <form method="POST">
                         {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label class="form-label">{{ field.label }}</label>
-                                {{ field }}
-                                {% if field.errors %}
-                                    <div class="text-danger small">{{ field.errors }}</div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                        
+                        {{ form|crispy }}
                         <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg rounded-pill">Register</button>
+                            <button type="submit" class="btn-primary-custom w-100 py-3 text-center d-flex justify-content-center align-items-center">Register</button>
                         </div>
                     </form>
                     
-                    <p class="text-center mt-3">
-                        Already have an account? <a href="{% url 'login' %}">Login</a>
+                    <p class="text-center mt-3 mb-0 small text-muted">
+                        Already have an account? <a href="{% url 'login' %}" class="fw-semibold text-primary">Login</a>
                     </p>
                 </div>
             </div>
