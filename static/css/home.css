@@ -1,0 +1,17 @@
+body{
+    font-family: 'Poppins', sans-serif;
+}
+
+.hero{
+    padding:100px 0;
+}
+
+.hero h1{
+    font-size:3rem;
+    font-weight:700;
+}
+
+.hero p{
+    font-size:1.1rem;
+    color:#6b7280;
+}

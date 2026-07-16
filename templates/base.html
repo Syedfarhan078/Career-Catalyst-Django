@@ -11,9 +11,19 @@
 
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+
+<!-- In your HTML body -->
+<div class="hero-section">
+    <img src="{% static 'images/hero/hero-office.jpg' %}" alt="Professional team working in an office">
+</div>
 
 {% include "partials/navbar.html" %}
 

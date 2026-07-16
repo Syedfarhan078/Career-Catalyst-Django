@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Career Catalyst{% endblock %}
 
 {% block content %}
 
-<h1>Welcome to Career Catalyst</h1>
-
-<p>Your AI-powered career guidance platform.</p>
+{% include "core/partials/hero.html" %}
+{% include "core/partials/stats.html" %}
+{% include "core/partials/features.html" %}
+{% include "core/partials/testimonials.html" %}
+{% include "core/partials/faq.html" %}
+{% include "core/partials/cta.html" %}
 
 {% endblock %}
