@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ category.name }} Quiz - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <!-- Proctor warning overlay banner -->
+    <div id="proctorOverlay" class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-none justify-content-center align-items-center" style="z-index: 9999;">
+        <div class="card border-0 shadow rounded-4 p-5 text-center max-width-500 bg-white">
+            <i class="bi bi-exclamation-triangle-fill text-danger display-3 mb-3"></i>
+            <h3 class="fw-bold text-danger">Proctor Warning!</h3>
+            <p class="text-muted fs-5 mb-4">You switched tabs or lost window focus. This activity is flagged as a violation.</p>
+            <button id="resumeTestBtn" class="btn btn-primary-custom px-4 py-2 rounded-pill">Resume Assessment</button>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                    <div>
+                        <h3 class="fw-bold mb-1">{{ category.name }}</h3>
+                        <p class="text-muted mb-0"><i class="bi bi-shield-check"></i> Proctored Assessment Mode</p>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-danger rounded-pill px-3 py-2" id="violationBadge">
+                            Warnings: 0/3
+                        </span>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning border-0 rounded-4 d-flex align-items-center mb-5" role="alert">
+                    <i class="bi bi-info-circle-fill me-3 fs-4"></i>
+                    <div>
+                        <strong>Proctoring Enforced:</strong> Do not change tabs, copy/paste, exit fullscreen, or right-click. Your quiz will be automatically submitted after 3 violations.
+                    </div>
+                </div>
+
+                <form id="quizForm" method="POST" action="{% url 'interviews:submit_quiz' %}">
+                    {% csrf_token %}
+                    <!-- Keep count of violations in a hidden input for backend grading -->
+                    <input type="hidden" name="proctor_violations" id="proctorViolationsInput" value="0">
+
+                    {% for q in questions %}
+                    <div class="mb-5">
+                        <h5 class="fw-bold text-secondary mb-3 d-flex align-items-start gap-2">
+                            <span>{{ forloop.counter }}.</span>
+                            <span>{{ q.content|linebreaksbr }}</span>
+                        </h5>
+                        
+                        <div class="d-flex flex-column gap-2 ms-4">
+                            {% for option in q.options %}
+                            <label class="d-flex align-items-center gap-3 p-3 border rounded-3 option-label cursor-pointer transition">
+                                <input type="radio" name="question_{{ q.id }}" value="{% if forloop.counter == 1 %}A{% elif forloop.counter == 2 %}B{% elif forloop.counter == 3 %}C{% else %}D{% endif %}" required>
+                                <span>{{ option }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-grid mt-5">
+                        <button type="submit" class="btn btn-primary-custom btn-lg rounded-pill py-3">Submit Quiz</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .option-label:hover {
+        background-color: #f8fafc;
+        border-color: var(--primary) !important;
+    }
+    .option-label input:checked + span {
+        font-weight: 600;
+    }
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    .transition {
+        transition: all 0.2s ease;
+    }
+    .max-width-500 {
+        max-width: 500px;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let violationCount = 0;
+    const maxViolations = 3;
+    const form = document.getElementById('quizForm');
+    const inputViolations = document.getElementById('proctorViolationsInput');
+    const badge = document.getElementById('violationBadge');
+    const overlay = document.getElementById('proctorOverlay');
+    const resumeBtn = document.getElementById('resumeTestBtn');
+
+    // 1. Disable Right Click
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        triggerProctorViolation('Right-Click Blocked');
+    });
+
+    // 2. Disable Copy/Paste and standard inspection shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'u' || e.key === 'a')) {
+            e.preventDefault();
+            triggerProctorViolation('Copy-Paste Attempted');
+        }
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+            e.preventDefault();
+            triggerProctorViolation('DevTools Attempted');
+        }
+    });
+
+    // 3. Tab Switched / Lost Focus detection
+    let isWindowFocused = true;
+    
+    window.addEventListener('blur', function() {
+        if (isWindowFocused) {
+            isWindowFocused = false;
+            triggerProctorViolation('Tab Switched / Focus Lost');
+        }
+    });
+
+    window.addEventListener('focus', function() {
+        isWindowFocused = true;
+    });
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            triggerProctorViolation('Tab Switched (Hidden)');
+        }
+    });
+
+    // Request fullscreen mode on first click
+    document.addEventListener('click', function enterFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.log('Fullscreen failed:', err);
+            });
+            document.removeEventListener('click', enterFullscreen);
+        }
+    });
+
+    // Fullscreen exit detection
+    document.addEventListener('fullscreenchange', function() {
+        if (!document.fullscreenElement) {
+            triggerProctorViolation('Exited Fullscreen');
+        }
+    });
+
+    // Helper to log and warn
+    function triggerProctorViolation(type) {
+        violationCount++;
+        inputViolations.value = violationCount;
+        badge.textContent = `Warnings: ${violationCount}/${maxViolations}`;
+
+        // Log violation on backend via AJAX
+        fetch("{% url 'interviews:log_proctor_violation' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                session_type: 'Quiz',
+                session_id: 0, // Placeholder during active session
+                violation_type: type
+            })
+        }).catch(err => console.error('Violation logging failed:', err));
+
+        if (violationCount >= maxViolations) {
+            alert('Multiple proctoring violations detected. Your assessment is automatically submitting.');
+            form.submit();
+        } else {
+            // Show overlay warning
+            overlay.classList.remove('d-none');
+            overlay.classList.add('d-flex');
+        }
+    }
+
+    resumeBtn.addEventListener('click', function() {
+        overlay.classList.add('d-none');
+        overlay.classList.remove('d-flex');
+        // Re-enforce fullscreen
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+        }
+    });
+});
+</script>
+{% endblock %}

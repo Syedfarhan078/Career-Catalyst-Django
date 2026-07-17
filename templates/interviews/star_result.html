@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}STAR Assessment Result - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+                <div class="rounded-circle {% if score >= 75 %}bg-success bg-opacity-10{% else %}bg-warning bg-opacity-10{% endif %} p-3 mx-auto mb-4 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                    <i class="bi bi-award fs-1 {% if score >= 75 %}text-success{% else %}text-warning{% endif %}"></i>
+                </div>
+                
+                <h2 class="fw-bold mb-2">STAR Assessment Graded</h2>
+                <p class="text-muted">Your behavioral interview response has been analyzed structurally.</p>
+                
+                <hr class="my-4">
+                
+                <div class="mb-4">
+                    <h6 class="text-uppercase text-muted fw-bold small">Structure Completeness</h6>
+                    <div class="display-3 fw-bold {% if score >= 75 %}text-success{% elif score >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                        {{ score }}%
+                    </div>
+                    <p class="text-muted mt-3 fs-6 px-4">
+                        {{ feedback }}
+                    </p>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-center mt-5">
+                    <a href="{% url 'interviews:behavioral_list' %}" class="btn btn-primary-custom px-4 py-2 rounded-pill">
+                        Practice More
+                    </a>
+                    <a href="{% url 'interviews:reports' %}" class="btn btn-outline-primary px-4 py-2 rounded-pill">
+                        View Scorecard Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

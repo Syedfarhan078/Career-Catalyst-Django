@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Performance Reports - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="mb-5">
+        <a href="{% url 'interviews:hub' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3">
+            <i class="bi bi-arrow-left"></i> Hub Dashboard
+        </a>
+        <h1 class="fw-bold mb-1">Performance & Proctoring Reports</h1>
+        <p class="text-muted">Review your test historical scores and audit logged proctoring metrics.</p>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills mb-4 gap-2 bg-light p-2 rounded-4" id="reportTabs" role="tablist" style="width: fit-content;">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill px-4 fw-semibold" id="quizzes-tab" data-bs-toggle="tab" data-bs-target="#quizzes" type="button" role="tab" aria-controls="quizzes" aria-selected="true">
+                <i class="bi bi-patch-question"></i> Quiz Attempts
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4 fw-semibold" id="mocks-tab" data-bs-toggle="tab" data-bs-target="#mocks" type="button" role="tab" aria-controls="mocks" aria-selected="false">
+                <i class="bi bi-robot"></i> Mock Interviews
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4 fw-semibold" id="proctor-tab" data-bs-toggle="tab" data-bs-target="#proctor" type="button" role="tab" aria-controls="proctor" aria-selected="false">
+                <i class="bi bi-shield-alert"></i> Proctor Audit Log
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="reportTabsContent">
+        <!-- Quizzes Tab -->
+        <div class="tab-pane fade show active" id="quizzes" role="tabpanel" aria-labelledby="quizzes-tab">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h4 class="fw-bold mb-4 text-secondary">Aptitude & Technical MCQ Quizzes</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr class="table-light">
+                                <th class="ps-3 py-3">Category</th>
+                                <th class="py-3">Attempted At</th>
+                                <th class="py-3">Proctor Warnings</th>
+                                <th class="py-3 pe-3 text-end">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attempt in attempts %}
+                            <tr>
+                                <td class="ps-3 py-3 fw-bold text-secondary">{{ attempt.category.name }}</td>
+                                <td class="py-3 text-muted">{{ attempt.attempted_at|date:"M d, Y - h:i A" }}</td>
+                                <td class="py-3">
+                                    <span class="badge {% if attempt.proctor_violations_count == 0 %}bg-success{% else %}bg-danger{% endif %} rounded-pill px-3">
+                                        {{ attempt.proctor_violations_count }} warnings
+                                    </span>
+                                </td>
+                                <td class="py-3 pe-3 text-end fw-bold fs-5 {% if attempt.score >= 70 %}text-success{% elif attempt.score >= 55 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ attempt.score }}%
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">No quiz attempts logged yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mocks Tab -->
+        <div class="tab-pane fade" id="mocks" role="tabpanel" aria-labelledby="mocks-tab">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h4 class="fw-bold mb-4 text-secondary">AI Mock Interview Sessions</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr class="table-light">
+                                <th class="ps-3 py-3">Target Role</th>
+                                <th class="py-3">Started At</th>
+                                <th class="py-3">Proctor Warnings</th>
+                                <th class="py-3">Status</th>
+                                <th class="py-3 pe-3 text-end">Overall Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mock in mocks %}
+                            <tr>
+                                <td class="ps-3 py-3 fw-bold text-secondary">
+                                    {{ mock.role }}
+                                    {% if mock.is_completed %}
+                                    <div class="small mt-1"><a href="{% url 'interviews:mock_report' mock.id %}" class="text-decoration-none">View Details</a></div>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 text-muted">{{ mock.started_at|date:"M d, Y - h:i A" }}</td>
+                                <td class="py-3">
+                                    <span class="badge {% if mock.proctor_violations_count == 0 %}bg-success{% else %}bg-danger{% endif %} rounded-pill px-3">
+                                        {{ mock.proctor_violations_count }} warnings
+                                    </span>
+                                </td>
+                                <td class="py-3">
+                                    <span class="badge bg-success rounded-pill px-3">Completed</span>
+                                </td>
+                                <td class="py-3 pe-3 text-end fw-bold fs-5 {% if mock.overall_score >= 70 %}text-success{% elif mock.overall_score >= 55 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ mock.overall_score }}%
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">No mock interviews completed yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Proctor Tab -->
+        <div class="tab-pane fade" id="proctor" role="tabpanel" aria-labelledby="proctor-tab">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h4 class="fw-bold mb-4 text-danger"><i class="bi bi-shield-alert"></i> System Security Violation Logs</h4>
+                <p class="text-muted small">Automatic logs recorded via Page Visibility, Window Focus Loss, or Fullscreen change API listeners.</p>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                        <thead>
+                            <tr class="table-danger">
+                                <th class="ps-3 py-3">Violation Event</th>
+                                <th class="py-3">Assessment Type</th>
+                                <th class="py-3">Logged Timestamp</th>
+                                <th class="py-3 pe-3">Action Taken</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in proctor_logs %}
+                            <tr>
+                                <td class="ps-3 py-3 fw-bold text-danger">{{ log.violation_type }}</td>
+                                <td class="py-3">{{ log.session_type }}</td>
+                                <td class="py-3 text-muted">{{ log.timestamp|date:"M d, Y - h:i:s A" }}</td>
+                                <td class="py-3 pe-3 text-secondary">Warning displayed, violations counter updated</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-success"><i class="bi bi-shield-check"></i> No proctoring violations logged! Your session audit is completely clean.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

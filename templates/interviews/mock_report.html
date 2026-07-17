@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Mock Interview Evaluation Report - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="mb-4 text-center">
+        <a href="{% url 'interviews:mock_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3">
+            <i class="bi bi-arrow-left"></i> Sessions History
+        </a>
+        <h1 class="fw-bold mb-1">Evaluation Scorecard</h1>
+        <p class="text-muted">Analysis of your mock interview performance for the <strong>{{ session.role }}</strong> role.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- Main Stats Card -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-5 mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-4 text-center border-end-md pb-4 pb-md-0">
+                        <h6 class="text-uppercase text-muted fw-bold small mb-2">Overall Score</h6>
+                        <div class="display-3 fw-bold {% if session.overall_score >= 70 %}text-success{% elif session.overall_score >= 55 %}text-warning{% else %}text-danger{% endif %}">
+                            {{ session.overall_score }}%
+                        </div>
+                        <span class="badge {% if session.overall_score >= 70 %}bg-success{% else %}bg-warning text-dark{% endif %} rounded-pill px-3 py-1 mt-2">
+                            {% if session.overall_score >= 70 %}Highly Qualified{% else %}Needs Prep{% endif %}
+                        </span>
+                    </div>
+
+                    <div class="col-md-8 ps-md-5">
+                        <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-patch-check"></i> Overall Evaluation</h5>
+                        <p class="text-muted fs-6 mb-0">{{ session.feedback }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed metrics breakdown -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                <h4 class="fw-bold mb-4">Interview Metrics Breakdown</h4>
+                
+                <!-- Communication length bar -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted fw-bold small">Communication Volume / Elaboration</span>
+                        <span class="fw-bold text-secondary">Good</span>
+                    </div>
+                    <div class="progress" style="height: 10px; border-radius: 50px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 80%; border-radius: 50px;" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-muted mt-1 d-block">Measures the depth and completeness of detail in your answers.</small>
+                </div>
+
+                <!-- Technical terminology -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted fw-bold small">Technical Keywords Presence</span>
+                        <span class="fw-bold text-secondary">Optimal</span>
+                    </div>
+                    <div class="progress" style="height: 10px; border-radius: 50px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 75%; border-radius: 50px;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-muted mt-1 d-block">Checks if you used tool/stack vocabulary relative to the target role.</small>
+                </div>
+
+                <!-- Proctor warning impact -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted fw-bold small">Proctor Focus Score</span>
+                        <span class="fw-bold {% if session.proctor_violations_count == 0 %}text-success{% else %}text-danger{% endif %}">
+                            {% if session.proctor_violations_count == 0 %}Excellent{% else %}Flags Logged{% endif %}
+                        </span>
+                    </div>
+                    <div class="progress" style="height: 10px; border-radius: 50px;">
+                        <!-- Decreases based on violations -->
+                        <div class="progress-bar {% if session.proctor_violations_count == 0 %}bg-info{% else %}bg-danger{% endif %}" 
+                             role="progressbar" 
+                             style="width: {% widthratio 20|add:session.proctor_violations_count|multiply:-1 20 100 %}%; border-radius: 50px;"></div>
+                    </div>
+                    <small class="text-muted mt-1 d-block">Detected tab switches, window blurs, or DevTools interactions: <strong>{{ session.proctor_violations_count }} warnings</strong>.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media (min-width: 768px) {
+        .border-end-md {
+            border-right: 1px solid #dee2e6 !important;
+        }
+    }
+</style>
+{% endblock %}

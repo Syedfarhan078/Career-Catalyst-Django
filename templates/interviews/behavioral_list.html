@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}HR & Behavioral Interview Prep - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="mb-4">
+        <a href="{% url 'interviews:hub' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
+            <i class="bi bi-arrow-left"></i> Back to Hub
+        </a>
+        <h1 class="fw-bold mb-1">HR & Behavioral Practice</h1>
+        <p class="text-muted">Master structured storytelling for soft-skills questions using the STAR framework.</p>
+    </div>
+
+    <div class="row g-4">
+        {% for question in questions %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden hover-lift d-flex flex-column">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge {% if question.difficulty == 'Easy' %}bg-success{% elif question.difficulty == 'Medium' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-10 {% if question.difficulty == 'Easy' %}text-success{% elif question.difficulty == 'Medium' %}text-warning{% else %}text-danger{% endif %} rounded-pill px-3 py-1">
+                            {{ question.difficulty }}
+                        </span>
+                        <span class="text-muted small"><i class="bi bi-star"></i> STAR Method</span>
+                    </div>
+
+                    <h5 class="fw-bold mb-2">{{ question.title }}</h5>
+                    <p class="text-muted small flex-grow-1">{{ question.content|truncatewords:20 }}</p>
+
+                    <div class="d-grid mt-4">
+                        <a href="{% url 'interviews:behavioral_detail' question.id %}" class="btn btn-primary-custom rounded-pill btn-sm">
+                            Write Response
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <p class="text-muted">No behavioral questions found. Run `python manage.py seed_interviews` first.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+    }
+</style>
+{% endblock %}

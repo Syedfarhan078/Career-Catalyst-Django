@@ -26,6 +26,7 @@ urlpatterns = [
     path("resume/", include("apps.resume.urls")),
     path("ai-resume/", include("apps.ai_resume.urls")),
     path("roadmaps/", include("apps.roadmaps.urls")),
+    path("interviews/", include("apps.interviews.urls")),
     path("", include("apps.core.urls")),
 ]
 

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Coding Challenges - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="mb-4">
+        <a href="{% url 'interviews:hub' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
+            <i class="bi bi-arrow-left"></i> Back to Hub
+        </a>
+        <h1 class="fw-bold mb-1">Coding Challenges</h1>
+        <p class="text-muted">Solve algorithms and data structure problems in Python with instant local unit testing verification.</p>
+    </div>
+
+    <div class="row g-4">
+        {% for challenge in challenges %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden hover-lift d-flex flex-column">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge {% if challenge.difficulty == 'Easy' %}bg-success{% elif challenge.difficulty == 'Medium' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-10 {% if challenge.difficulty == 'Easy' %}text-success{% elif challenge.difficulty == 'Medium' %}text-warning{% else %}text-danger{% endif %} rounded-pill px-3 py-1">
+                            {{ challenge.difficulty }}
+                        </span>
+                        <span class="text-muted small"><i class="bi bi-clock"></i> 30 mins</span>
+                    </div>
+
+                    <h5 class="fw-bold mb-2">{{ challenge.title }}</h5>
+                    <p class="text-muted small flex-grow-1">{{ challenge.content|truncatewords:20 }}</p>
+
+                    <div class="d-grid mt-4">
+                        <a href="{% url 'interviews:coding_detail' challenge.id %}" class="btn btn-primary-custom rounded-pill btn-sm">
+                            <i class="bi bi-code-slash"></i> Solve Challenge
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <p class="text-muted">No coding challenges found. Run `python manage.py seed_interviews` first.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+    }
+</style>
+{% endblock %}

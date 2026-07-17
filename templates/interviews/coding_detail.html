@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ challenge.title }} - Coding Challenge - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5 mt-5 px-md-5">
+    <!-- Proctoring Alert overlay -->
+    <div id="proctorOverlay" class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-none justify-content-center align-items-center" style="z-index: 9999;">
+        <div class="card border-0 shadow rounded-4 p-5 text-center max-width-500 bg-white">
+            <i class="bi bi-exclamation-triangle-fill text-danger display-3 mb-3"></i>
+            <h3 class="fw-bold text-danger">Proctor Warning!</h3>
+            <p class="text-muted fs-5 mb-4">You switched tabs or lost window focus during this coding challenge. This violation is logged.</p>
+            <button id="resumeTestBtn" class="btn btn-primary-custom px-4 py-2 rounded-pill">Resume Workspace</button>
+        </div>
+    </div>
+
+    {% csrf_token %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'interviews:coding_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
+                <i class="bi bi-arrow-left"></i> Challenges List
+            </a>
+            <h2 class="fw-bold mb-0">{{ challenge.title }}</h2>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-danger rounded-pill px-3 py-2" id="violationBadge">
+                Proctor Warnings: 0
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column: Description & Test Cases -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h4 class="fw-bold text-secondary mb-3">Problem Description</h4>
+                <div class="problem-content mb-4 bg-light p-3 rounded-4 overflow-auto fs-6">
+                    {{ challenge.content|linebreaks }}
+                </div>
+
+                <h5 class="fw-bold text-secondary mb-3">Test Cases</h5>
+                <div class="table-responsive">
+                    <table class="table table-borderless bg-light rounded-4 overflow-hidden align-middle">
+                        <thead>
+                            <tr class="table-secondary">
+                                <th class="ps-3 py-3">Case</th>
+                                <th class="py-3">Function Input</th>
+                                <th class="py-3 pe-3">Expected Output</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for case in challenge.test_cases %}
+                            <tr>
+                                <td class="ps-3 py-2 fw-semibold">{{ forloop.counter }}</td>
+                                <td class="py-2"><code class="text-primary">{{ case.input }}</code></td>
+                                <td class="py-2 pe-3"><code class="text-success">{{ case.expected }}</code></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Code Editor & Console Output -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 d-flex flex-column h-100">
+                <h4 class="fw-bold text-secondary mb-3">Code Workspace (Python)</h4>
+                
+                <textarea id="codeEditor" class="form-control font-monospace p-3 bg-dark text-light border-0 rounded-4 flex-grow-1" style="height: 350px; font-size: 0.95rem; resize: none;" placeholder="# Write your python code here..."></textarea>
+                
+                <div class="d-flex gap-3 justify-content-end mt-3 mb-4">
+                    <button id="resetCodeBtn" class="btn btn-outline-secondary rounded-pill px-4 btn-sm">Reset template</button>
+                    <button id="submitCodeBtn" class="btn btn-primary-custom rounded-pill px-5 btn-sm fw-bold">
+                        <i class="bi bi-play-fill"></i> Submit & Run Tests
+                    </button>
+                </div>
+
+                <!-- Execution Output Console -->
+                <div id="outputConsole" class="d-none bg-light p-4 border border-secondary border-opacity-10 rounded-4">
+                    <h5 class="fw-bold text-secondary mb-3" id="consoleStatus">Console Output</h5>
+                    
+                    <div id="runtimeErrorAlert" class="alert alert-danger border-0 rounded-4 d-none">
+                        <strong>Compilation / Runtime Error:</strong>
+                        <pre class="mb-0 mt-2 font-monospace text-wrap" id="errorMsg"></pre>
+                    </div>
+
+                    <div id="testCasesList" class="d-flex flex-column gap-2">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .font-monospace {
+        font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+    }
+    .max-width-500 {
+        max-width: 500px;
+    }
+    textarea:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const defaultTemplates = {
+        "Two Sum": "def two_sum(nums, target):\n    # Write your solution here\n    pass\n",
+        "Integer Factorial": "def factorial(n):\n    # Write your solution here\n    pass\n",
+        "Valid Palindrome": "def is_palindrome(s):\n    # Write your solution here\n    pass\n"
+    };
+
+    const challengeTitle = "{{ challenge.title }}";
+    const editor = document.getElementById('codeEditor');
+    
+    // Set starting template
+    editor.value = defaultTemplates[challengeTitle] || "# Complete the implementation\n";
+
+    // 1. Reset templates
+    document.getElementById('resetCodeBtn').addEventListener('click', function() {
+        if(confirm('Are you sure you want to reset your workspace?')) {
+            editor.value = defaultTemplates[challengeTitle] || "";
+        }
+    });
+
+    // AI Proctoring
+    let violationCount = 0;
+    const badge = document.getElementById('violationBadge');
+    const overlay = document.getElementById('proctorOverlay');
+    const resumeBtn = document.getElementById('resumeTestBtn');
+
+    // Disable Right Click
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        triggerProctorViolation('Right-Click Blocked');
+    });
+
+    // Disable copy-paste key combinations
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+            e.preventDefault();
+            triggerProctorViolation('Copy-Paste Attempted');
+        }
+    });
+
+    // Tab switch focus checks
+    let isWindowFocused = true;
+    window.addEventListener('blur', function() {
+        if (isWindowFocused) {
+            isWindowFocused = false;
+            triggerProctorViolation('Tab Switched / Focus Lost');
+        }
+    });
+    window.addEventListener('focus', function() {
+        isWindowFocused = true;
+    });
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            triggerProctorViolation('Tab Switched (Hidden)');
+        }
+    });
+
+    function triggerProctorViolation(type) {
+        violationCount++;
+        badge.textContent = `Proctor Warnings: ${violationCount}`;
+
+        // Asynchronously log to the DB
+        fetch("{% url 'interviews:log_proctor_violation' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                session_type: 'Coding',
+                session_id: {{ challenge.id }},
+                violation_type: type
+            })
+        }).catch(err => console.error('Violation logging failed:', err));
+
+        overlay.classList.remove('d-none');
+        overlay.classList.add('d-flex');
+    }
+
+    resumeBtn.addEventListener('click', function() {
+        overlay.classList.add('d-none');
+        overlay.classList.remove('d-flex');
+    });
+
+    // Submission Handler
+    const submitBtn = document.getElementById('submitCodeBtn');
+    const consoleBox = document.getElementById('outputConsole');
+    const consoleStatus = document.getElementById('consoleStatus');
+    const errorAlert = document.getElementById('runtimeErrorAlert');
+    const errorMsg = document.getElementById('errorMsg');
+    const testCasesList = document.getElementById('testCasesList');
+
+    submitBtn.addEventListener('click', function() {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Executing...';
+
+        fetch("{% url 'interviews:submit_code' challenge.id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                code: editor.value,
+                proctor_violations: violationCount
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-play-fill"></i> Submit & Run Tests';
+
+            consoleBox.classList.remove('d-none');
+            testCasesList.innerHTML = '';
+            errorAlert.classList.add('d-none');
+
+            if (data.error) {
+                consoleStatus.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle-fill"></i> Compilation Failed</span>';
+                errorAlert.classList.remove('d-none');
+                errorMsg.textContent = data.error;
+            } else if (data.success) {
+                consoleStatus.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> All Test Cases Passed!</span>';
+                renderTestCases(data.results);
+            } else {
+                consoleStatus.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-circle-fill"></i> Some Test Cases Failed</span>';
+                renderTestCases(data.results);
+            }
+        })
+        .catch(err => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-play-fill"></i> Submit & Run Tests';
+            alert('Submission failed: ' + err);
+        });
+    });
+
+    function renderTestCases(results) {
+        results.forEach(res => {
+            const item = document.createElement('div');
+            item.className = `d-flex justify-content-between align-items-center p-3 rounded-3 ${res.passed ? 'bg-success bg-opacity-10 border border-success border-opacity-25' : 'bg-danger bg-opacity-10 border border-danger border-opacity-25'}`;
+            
+            const icon = res.passed ? '<i class="bi bi-check-circle-fill text-success fs-5"></i>' : '<i class="bi bi-x-circle-fill text-danger fs-5"></i>';
+            
+            item.innerHTML = `
+                <div class="d-flex align-items-center gap-3">
+                    ${icon}
+                    <div>
+                        <span class="fw-bold">Test Case ${res.case}</span>
+                        <div class="text-muted small mt-1">Expected: <code>${JSON.stringify(res.expected)}</code></div>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <span class="badge ${res.passed ? 'bg-success' : 'bg-danger'} rounded-pill px-3">${res.passed ? 'Passed' : 'Failed'}</span>
+                    <div class="text-muted small mt-1">Output: <code>${JSON.stringify(res.output)}</code></div>
+                </div>
+            `;
+            testCasesList.appendChild(item);
+        });
+    }
+});
+</script>
+{% endblock %}

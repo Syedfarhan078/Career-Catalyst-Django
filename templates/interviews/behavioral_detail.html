@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}STAR Response - {{ question.title }} - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                <a href="{% url 'interviews:behavioral_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3 align-self-start">
+                    <i class="bi bi-arrow-left"></i> Questions List
+                </a>
+                
+                <h2 class="fw-bold mb-1">{{ question.title }}</h2>
+                <p class="text-muted fs-6 mb-4">{{ question.content }}</p>
+
+                <div class="alert alert-info border-0 rounded-4 d-flex align-items-center mb-5" role="alert">
+                    <i class="bi bi-lightbulb-fill text-info me-3 fs-4"></i>
+                    <div>
+                        <strong>STAR Method:</strong> Break your answer down. Spend the most time detailing your <strong>Action</strong> and the final quantifiable <strong>Result</strong>. Aim for at least 40 characters in each section.
+                    </div>
+                </div>
+
+                <form method="POST" action="{% url 'interviews:submit_star' question.id %}">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary">S - Situation</label>
+                        <div class="form-text text-muted mb-2">Set the scene. What was the project, team, or challenge you faced?</div>
+                        <textarea class="form-control rounded-3 p-3" name="situation" rows="3" required placeholder="Example: During my final year project, we had to implement a real-time chat interface, but the team had conflicting database design views..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary">T - Task</label>
+                        <div class="form-text text-muted mb-2">What was your specific responsibility or milestone to achieve?</div>
+                        <textarea class="form-control rounded-3 p-3" name="task" rows="3" required placeholder="Example: My task was to resolve the schema conflict and ensure we had a scalable model ready within 3 days..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary">A - Action</label>
+                        <div class="form-text text-muted mb-2">What did you do? Mention team communication, research, coding, or diagnostic steps.</div>
+                        <textarea class="form-control rounded-3 p-3" name="action" rows="4" required placeholder="Example: I organized a meeting to compare both PostgreSQL and MongoDB. I ran benchmark tests, mapped models, and proposed a hybrid design..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary">R - Result</label>
+                        <div class="form-text text-muted mb-2">What was the outcome? How did the project perform? What did you learn?</div>
+                        <textarea class="form-control rounded-3 p-3" name="result" rows="3" required placeholder="Example: The team approved the hybrid PostgreSQL model. We completed the sprint on time, and query latencies dropped by 20%..."></textarea>
+                    </div>
+
+                    <div class="d-grid mt-5">
+                        <button type="submit" class="btn btn-primary-custom btn-lg rounded-pill py-3">Submit Response</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

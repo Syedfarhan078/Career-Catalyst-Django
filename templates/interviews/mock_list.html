@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Mock Interview Simulator - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="mb-5 text-center">
+        <a href="{% url 'interviews:hub' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3">
+            <i class="bi bi-arrow-left"></i> Hub Dashboard
+        </a>
+        <h1 class="fw-bold mb-2">AI Mock Interview Simulator</h1>
+        <p class="text-muted fs-5">Practice live technical and behavioral Q&A conversations. Includes active focus proctoring.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- New Session Form Card -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 h-100">
+                <h4 class="fw-bold mb-3"><i class="bi bi-play-circle text-primary"></i> Start New Interview</h4>
+                <p class="text-muted small">Select your target career track to tailor the interviewer's technical questions.</p>
+                
+                <form method="POST" action="{% url 'interviews:start_mock' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary">Target Role</label>
+                        <select name="role" class="form-select rounded-pill px-3 py-2">
+                            <option value="Software Developer">Software Developer (Full Stack / Web)</option>
+                            <option value="Data Scientist">Data Scientist / Analyst</option>
+                            <option value="ML Engineer">Machine Learning Engineer</option>
+                            <option value="DevOps Engineer">DevOps & Cloud Engineer</option>
+                            <option value="Product Manager">Product Manager</option>
+                        </select>
+                    </div>
+
+                    <div class="alert alert-warning border-0 rounded-4 small mb-4">
+                        <i class="bi bi-info-circle-fill"></i> Fullscreen mode and tab focus monitors will be enabled once the interview begins.
+                    </div>
+
+                    <button type="submit" class="btn btn-primary-custom w-100 rounded-pill py-2 fw-bold">
+                        Begin Interview Session
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- History List Card -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h4 class="fw-bold mb-3"><i class="bi bi-history text-secondary"></i> Past Sessions</h4>
+                
+                <div class="overflow-auto" style="max-height: 380px;">
+                    {% for session in sessions %}
+                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                        <div>
+                            <h6 class="fw-bold mb-0 text-secondary">{{ session.role }}</h6>
+                            <small class="text-muted">{{ session.started_at|date:"M d, Y" }}</small>
+                        </div>
+                        <div class="text-end">
+                            {% if session.is_completed %}
+                                <span class="badge bg-success rounded-pill px-3">Grade: {{ session.overall_score }}%</span>
+                                <div class="mt-1"><a href="{% url 'interviews:mock_report' session.id %}" class="small text-decoration-none">View Report</a></div>
+                            {% else %}
+                                <span class="badge bg-warning text-dark rounded-pill px-3">Incomplete</span>
+                                <div class="mt-1"><a href="{% url 'interviews:mock_session' session.id %}" class="small text-decoration-none">Resume</a></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted">
+                        No mock interviews attempted yet.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

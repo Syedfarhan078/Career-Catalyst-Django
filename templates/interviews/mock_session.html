@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}Mock Interview Session - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <!-- Proctoring Alert overlay -->
+    <div id="proctorOverlay" class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-none justify-content-center align-items-center" style="z-index: 9999;">
+        <div class="card border-0 shadow rounded-4 p-5 text-center max-width-500 bg-white">
+            <i class="bi bi-exclamation-triangle-fill text-danger display-3 mb-3"></i>
+            <h3 class="fw-bold text-danger">Proctor Warning!</h3>
+            <p class="text-muted fs-5 mb-4">You switched tabs or lost window focus during this mock interview. This violation is logged.</p>
+            <button id="resumeTestBtn" class="btn btn-primary-custom px-4 py-2 rounded-pill">Resume Interview</button>
+        </div>
+    </div>
+
+    {% csrf_token %}
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden d-flex flex-column" style="height: 600px;">
+                <!-- Header -->
+                <div class="bg-dark text-white p-3 px-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-robot"></i> AI Technical Interviewer</h5>
+                        <small class="text-light text-opacity-75">Target Role: {{ session.role }}</small>
+                    </div>
+                    <span class="badge bg-danger rounded-pill px-3 py-2" id="violationBadge">
+                        Warnings: 0
+                    </span>
+                </div>
+
+                <!-- Chat Box Body -->
+                <div class="card-body bg-light p-4 overflow-auto flex-grow-1" id="chatContainer">
+                    {% for msg in session.chats.all %}
+                    <div class="d-flex mb-3 {% if msg.sender == 'Candidate' %}justify-content-end{% endif %}">
+                        <div class="card border-0 rounded-4 px-3 py-2 max-width-75 {% if msg.sender == 'Candidate' %}bg-primary text-white{% else %}bg-white text-secondary{% endif %} shadow-sm">
+                            <span class="small fw-semibold mb-1 d-block text-opacity-75 {% if msg.sender == 'Candidate' %}text-white{% else %}text-muted{% endif %}">
+                                {{ msg.sender }}
+                            </span>
+                            <span>{{ msg.message|linebreaksbr }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Typing Indicator -->
+                    <div class="d-none mb-3" id="typingIndicator">
+                        <div class="card border-0 rounded-4 px-3 py-2 bg-white text-secondary shadow-sm align-self-start" style="width: 100px;">
+                            <span class="small fw-semibold mb-1 d-block text-muted">Interviewer</span>
+                            <div class="typing-dots d-flex gap-1 py-1">
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Footer -->
+                <div class="border-top p-3 bg-white">
+                    <div class="input-group">
+                        <textarea class="form-control rounded-start-4 p-3" id="chatInput" rows="2" style="resize: none;" placeholder="Type your detailed response here..."></textarea>
+                        <button class="btn btn-primary-custom px-4 rounded-end-4" id="sendBtn" type="button">
+                            <i class="bi bi-send-fill fs-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .max-width-75 {
+        max-width: 75%;
+    }
+    .max-width-500 {
+        max-width: 500px;
+    }
+    /* Typing indicator animation */
+    .typing-dots .dot {
+        width: 8px;
+        height: 8px;
+        background-color: #9ca3af;
+        border-radius: 50%;
+        display: inline-block;
+        animation: typing 1.4s infinite both;
+    }
+    .typing-dots .dot:nth-child(2) { animation-delay: .2s; }
+    .typing-dots .dot:nth-child(3) { animation-delay: .4s; }
+    
+    @keyframes typing {
+        0%, 80%, 100% { transform: scale(0.6); }
+        40% { transform: scale(1.2); }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatContainer = document.getElementById('chatContainer');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const typing = document.getElementById('typingIndicator');
+
+    // Auto scroll chat to bottom
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    // AI Proctoring
+    let violationCount = 0;
+    const badge = document.getElementById('violationBadge');
+    const overlay = document.getElementById('proctorOverlay');
+    const resumeBtn = document.getElementById('resumeTestBtn');
+
+    // Disable Right Click
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        triggerProctorViolation('Right-Click Blocked');
+    });
+
+    // Disable copy-paste key combinations
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+            e.preventDefault();
+            triggerProctorViolation('Copy-Paste Attempted');
+        }
+    });
+
+    // Tab switches focus monitoring
+    let isWindowFocused = true;
+    window.addEventListener('blur', function() {
+        if (isWindowFocused) {
+            isWindowFocused = false;
+            triggerProctorViolation('Tab Switched / Focus Lost');
+        }
+    });
+    window.addEventListener('focus', function() {
+        isWindowFocused = true;
+    });
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            triggerProctorViolation('Tab Switched (Hidden)');
+        }
+    });
+
+    function triggerProctorViolation(type) {
+        violationCount++;
+        badge.textContent = `Warnings: ${violationCount}`;
+
+        // Asynchronously log to the DB
+        fetch("{% url 'interviews:log_proctor_violation' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                session_type: 'MockInterview',
+                session_id: {{ session.id }},
+                violation_type: type
+            })
+        }).catch(err => console.error('Violation logging failed:', err));
+
+        overlay.classList.remove('d-none');
+        overlay.classList.add('d-flex');
+    }
+
+    resumeBtn.addEventListener('click', function() {
+        overlay.classList.add('d-none');
+        overlay.classList.remove('d-flex');
+    });
+
+    // Chat reply handler
+    sendBtn.addEventListener('click', function() {
+        const msg = chatInput.value.strip ? chatInput.value.strip() : chatInput.value.trim();
+        if (!msg) return;
+
+        // Append Candidate bubble immediately on screen
+        appendBubble('Candidate', msg);
+        chatInput.value = '';
+
+        // Disable input while interviewer is writing
+        chatInput.disabled = true;
+        sendBtn.disabled = true;
+        
+        // Show typing indicator
+        typing.classList.remove('d-none');
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        // Send to backend via AJAX
+        fetch("{% url 'interviews:chat_reply' session.id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                message: msg,
+                proctor_violations: violationCount
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            // Hide typing
+            typing.classList.add('d-none');
+            
+            if (data.completed) {
+                // Redirect to report scorecard
+                window.location.href = data.redirect_url;
+            } else {
+                appendBubble('Interviewer', data.message);
+                // Re-enable inputs
+                chatInput.disabled = false;
+                sendBtn.disabled = false;
+                chatInput.focus();
+            }
+        })
+        .catch(err => {
+            typing.classList.add('d-none');
+            chatInput.disabled = false;
+            sendBtn.disabled = false;
+            alert('Interviewer reply failed: ' + err);
+        });
+    });
+
+    // Helper to render message bubble
+    function appendBubble(sender, text) {
+        const wrap = document.createElement('div');
+        wrap.className = `d-flex mb-3 ${sender === 'Candidate' ? 'justify-content-end' : ''}`;
+        
+        const card = document.createElement('div');
+        card.className = `card border-0 rounded-4 px-3 py-2 max-width-75 ${sender === 'Candidate' ? 'bg-primary text-white' : 'bg-white text-secondary'} shadow-sm`;
+        
+        card.innerHTML = `
+            <span class="small fw-semibold mb-1 d-block text-opacity-75 ${sender === 'Candidate' ? 'text-white' : 'text-muted'}">${sender}</span>
+            <span>${text.replace(/\n/g, '<br>')}</span>
+        `;
+        
+        wrap.appendChild(card);
+        chatContainer.insertBefore(wrap, typing);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+});
+</script>
+{% endblock %}

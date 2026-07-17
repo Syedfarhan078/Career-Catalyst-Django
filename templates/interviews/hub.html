@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Interview Preparation Hub - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold mb-2">Interview Preparation Hub</h1>
+        <p class="text-muted fs-5">Train across all aspects of the recruitment process. Features built-in AI proctoring.</p>
+    </div>
+
+    <!-- Quick Stats Row -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                <h6 class="text-uppercase text-muted fw-bold small mb-2">Practice Quizzes Taken</h6>
+                <div class="display-5 fw-bold text-primary">{{ total_attempts }}</div>
+                <small class="text-muted mt-2">Average Score: <span class="fw-bold text-success">{{ avg_score|floatformat:1 }}%</span></small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                <h6 class="text-uppercase text-muted fw-bold small mb-2">Mock Interviews Completed</h6>
+                <div class="display-5 fw-bold text-primary">{{ total_mocks }}</div>
+                <small class="text-muted mt-2">Average Score: <span class="fw-bold text-success">{{ avg_mock_score|floatformat:1 }}%</span></small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                <h6 class="text-uppercase text-muted fw-bold small mb-2">Proctor Warnings Logged</h6>
+                <div class="display-5 fw-bold text-danger">{{ total_violations }}</div>
+                <small class="text-muted mt-2">Tab switches / window blurs detected</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold text-secondary mb-0"><i class="bi bi-mortarboard"></i> Practice Categories</h4>
+        <a href="{% url 'interviews:reports' %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">
+            <i class="bi bi-graph-up-arrow"></i> View Performance Reports
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {% for cat in categories %}
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden hover-lift d-flex flex-column">
+                <div class="card-body p-4 text-center d-flex flex-column">
+                    <div class="rounded-circle bg-primary bg-opacity-10 mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                        {% if cat.slug == 'aptitude' %}<i class="bi bi-calculator fs-3 text-primary"></i>
+                        {% elif cat.slug == 'technical' %}<i class="bi bi-terminal fs-3 text-primary"></i>
+                        {% elif cat.slug == 'coding' %}<i class="bi bi-code-square fs-3 text-primary"></i>
+                        {% else %}<i class="bi bi-chat-quote fs-3 text-primary"></i>{% endif %}
+                    </div>
+                    <h5 class="fw-bold mb-2">{{ cat.name }}</h5>
+                    <p class="text-muted small flex-grow-1">{{ cat.description }}</p>
+                    
+                    <div class="d-grid mt-3">
+                        {% if cat.slug == 'coding' %}
+                            <a href="{% url 'interviews:coding_list' %}" class="btn btn-primary-custom rounded-pill btn-sm">Start Coding</a>
+                        {% elif cat.slug == 'behavioral' %}
+                            <a href="{% url 'interviews:behavioral_list' %}" class="btn btn-primary-custom rounded-pill btn-sm">Practice STAR Qs</a>
+                        {% else %}
+                            <a href="{% url 'interviews:start_quiz' cat.slug %}" class="btn btn-primary-custom rounded-pill btn-sm">Take Practice Quiz</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- AI Mock Interview Card -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden hover-lift d-flex flex-column bg-dark text-white">
+                <div class="card-body p-4 text-center d-flex flex-column">
+                    <div class="rounded-circle bg-white bg-opacity-10 mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                        <i class="bi bi-robot fs-3 text-white"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 text-white">AI Mock Interview</h5>
+                    <p class="text-light text-opacity-75 small flex-grow-1">Simulated chat-based technical & communication interview for developer or analyst roles.</p>
+                    
+                    <div class="d-grid mt-3">
+                        <a href="{% url 'interviews:mock_list' %}" class="btn btn-light text-dark rounded-pill btn-sm fw-bold">
+                            Open Simulator
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+    }
+</style>
+{% endblock %}
