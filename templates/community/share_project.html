@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Share Project - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                <a href="{% url 'community:project_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3 align-self-start">
+                    <i class="bi bi-arrow-left"></i> Shared Projects
+                </a>
+                
+                <h2 class="fw-bold mb-2">Share Your Project</h2>
+                <p class="text-muted mb-4">Post your repository or demo links to showcase your coding milestones to the community and mentors.</p>
+
+                <form method="POST" action="{% url 'community:share_project' %}">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary">Project Title</label>
+                        <input type="text" class="form-control rounded-pill px-3 py-2" name="title" required placeholder="e.g. Distributed Chat Room with Django Channels">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary">Description</label>
+                        <textarea class="form-control rounded-4 p-3" name="description" rows="5" required placeholder="Explain what the project does, the architecture, tools used, and key milestones solved..."></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-secondary">GitHub Repository Link (Optional)</label>
+                            <input type="url" class="form-control rounded-pill px-3 py-2" name="github_link" placeholder="https://github.com/yourusername/project">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-secondary">Live Demo Link (Optional)</label>
+                            <input type="url" class="form-control rounded-pill px-3 py-2" name="live_link" placeholder="https://project.herokuap.com">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary">Tags / Skills</label>
+                        <div class="form-text text-muted mb-2">Comma-separated list (e.g. Django, WebSockets, Python, React)</div>
+                        <input type="text" class="form-control rounded-pill px-3 py-2" name="tags" placeholder="Django, WebSockets, JavaScript">
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary-custom btn-lg rounded-pill py-2 fw-bold">Share Project</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

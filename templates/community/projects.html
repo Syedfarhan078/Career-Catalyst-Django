@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Shared Student Projects - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <a href="{% url 'community:hub' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
+                <i class="bi bi-arrow-left"></i> Hub Home
+            </a>
+            <h1 class="fw-bold mb-0">Shared Student Projects</h1>
+            <p class="text-muted">Showcase your programming projects, get peer reviews, and inspect other students' codebases.</p>
+        </div>
+        <a href="{% url 'community:share_project' %}" class="btn btn-primary-custom rounded-pill">
+            <i class="bi bi-plus-circle"></i> Share Project
+        </a>
+    </div>
+
+    {% csrf_token %}
+    <div class="row g-4">
+        {% for project in projects %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden d-flex flex-column hover-lift">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h4 class="fw-bold text-secondary mb-0">{{ project.title }}</h4>
+                        <!-- Like upvote toggle -->
+                        <button class="btn like-btn border-0 p-0 fs-5 transition" 
+                                data-project-id="{{ project.id }}"
+                                style="color: {% if project.id in liked_project_ids %}#ef4444{% else %}#9ca3af{% endif %};">
+                            <i class="{% if project.id in liked_project_ids %}bi bi-heart-fill{% else %}bi bi-heart{% endif %}"></i> 
+                            <span class="likes-count fs-6" id="likes-{{ project.id }}">{{ project.likes_count }}</span>
+                        </button>
+                    </div>
+
+                    <p class="text-muted small mb-4 flex-grow-1">{{ project.description }}</p>
+
+                    <div class="mb-4">
+                        <div class="d-flex gap-1 flex-wrap">
+                            {% for tag in project.get_tags_list %}
+                            <span class="badge bg-light text-muted border small">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3 small text-muted border-top pt-3">
+                        <span><i class="bi bi-person"></i> Shared by {{ project.author.username }}</span>
+                        <span>{{ project.created_at|date:"M d, Y" }}</span>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-auto">
+                        {% if project.github_link %}
+                        <a href="{{ project.github_link }}" target="_blank" class="btn btn-outline-dark btn-sm rounded-pill flex-grow-1">
+                            <i class="bi bi-github"></i> Repository
+                        </a>
+                        {% endif %}
+                        {% if project.live_link %}
+                        <a href="{{ project.live_link }}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1">
+                            <i class="bi bi-eye"></i> Live Demo
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5 text-muted">
+            <i class="bi bi-code-square display-3 mb-3 d-block"></i>
+            <h5>No student projects shared yet.</h5>
+            <p>Share your GitHub project repository now!</p>
+            <a href="{% url 'community:share_project' %}" class="btn btn-primary-custom rounded-pill mt-2">Share Project</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="d-flex justify-content-center mt-5">
+        <nav>
+            <ul class="pagination pagination-sm gap-1">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link rounded-circle border-0 bg-light text-dark" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+                </li>
+                {% endif %}
+                <li class="page-item active">
+                    <span class="page-link rounded-circle border-0 bg-primary">{{ page_obj.number }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link rounded-circle border-0 bg-light text-dark" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+    }
+    .like-btn:hover {
+        transform: scale(1.1);
+    }
+    .transition {
+        transition: all 0.2s ease;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.like-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const projectId = this.dataset.projectId;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const heartIcon = this.querySelector('i');
+
+            btn.disabled = true;
+
+            fetch(`/community/projects/like/${projectId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                if (data.success) {
+                    if (data.is_liked) {
+                        btn.style.color = "#ef4444";
+                        heartIcon.className = "bi bi-heart-fill";
+                    } else {
+                        btn.style.color = "#9ca3af";
+                        heartIcon.className = "bi bi-heart";
+                    }
+                    // Update count
+                    document.getElementById(`likes-${projectId}`).textContent = data.likes_count;
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                console.error('Like error:', err);
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

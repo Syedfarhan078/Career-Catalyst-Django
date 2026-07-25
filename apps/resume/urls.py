@@ -15,4 +15,5 @@ urlpatterns = [
     path('<int:pk>/api/add/<str:section>/', views.add_section, name='api_add_section'),
     path('<int:pk>/api/delete/<str:section>/<int:item_id>/', views.delete_section, name='api_delete_section'),
     path('<int:pk>/api/settings/', views.update_resume_settings, name='api_update_settings'),
+    path('<int:pk>/api/import-profile/', views.import_profile_data, name='api_import_profile'),
 ]

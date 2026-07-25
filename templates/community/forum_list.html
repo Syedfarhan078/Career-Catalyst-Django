@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Discussion Forum - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'community:hub' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
+                <i class="bi bi-arrow-left"></i> Hub Home
+            </a>
+            <h1 class="fw-bold mb-0">Discussion Forum</h1>
+            <p class="text-muted">Ask questions and collaborate with peers and mentors.</p>
+        </div>
+        <a href="{% url 'community:create_thread' %}" class="btn btn-primary-custom rounded-pill">
+            <i class="bi bi-plus-circle"></i> Ask Question
+        </a>
+    </div>
+
+    <!-- Category Filters -->
+    <div class="d-flex gap-2 flex-wrap mb-4 bg-light p-2 rounded-4" style="width: fit-content;">
+        <a href="{% url 'community:forum_list' %}" class="btn btn-sm rounded-pill px-3 {% if not active_category %}btn-primary{% else %}btn-light{% endif %}">
+            All Discussions
+        </a>
+        {% for cat in categories %}
+        <a href="{% url 'community:forum_list' %}?category={{ cat.slug }}" class="btn btn-sm rounded-pill px-3 {% if active_category == cat.slug %}btn-primary{% else %}btn-light{% endif %}">
+            {{ cat.name }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Threads List -->
+    <div class="card border-0 shadow-sm rounded-4 p-4">
+        <div class="d-flex flex-column gap-3">
+            {% for thread in threads %}
+            <div class="p-3 bg-light rounded-4 d-flex justify-content-between align-items-center transition hover-bg">
+                <div class="flex-grow-1">
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary mb-2 small">{{ thread.category.name }}</span>
+                    <h5 class="fw-bold mb-1">
+                        <a href="{% url 'community:forum_detail' thread.id %}" class="text-dark text-decoration-none">{{ thread.title }}</a>
+                    </h5>
+                    <p class="text-muted small mb-0">{{ thread.content|truncatewords:25 }}</p>
+                    <div class="d-flex align-items-center gap-3 mt-3 small text-muted">
+                        <span><i class="bi bi-person"></i> {{ thread.author.username }}</span>
+                        <span><i class="bi bi-calendar"></i> {{ thread.created_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+                <div class="text-end ms-4">
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fs-6">
+                        <i class="bi bi-chat-dots-fill"></i> {{ thread.replies_count }}
+                    </span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-chat-left-dots display-3 mb-3 d-block"></i>
+                <h5>No discussion threads found in this category.</h5>
+                <p>Be the first to ask a question!</p>
+                <a href="{% url 'community:create_thread' %}" class="btn btn-primary-custom rounded-pill mt-2">Start Discussion</a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="d-flex justify-content-center mt-4">
+            <nav>
+                <ul class="pagination pagination-sm gap-1">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link rounded-circle border-0 bg-light text-dark" href="?page={{ page_obj.previous_page_number }}{% if active_category %}&category={{ active_category }}{% endif %}">&laquo;</a>
+                    </li>
+                    {% endif %}
+                    <li class="page-item active">
+                        <span class="page-link rounded-circle border-0 bg-primary">{{ page_obj.number }}</span>
+                    </li>
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link rounded-circle border-0 bg-light text-dark" href="?page={{ page_obj.next_page_number }}{% if active_category %}&category={{ active_category }}{% endif %}">&raquo;</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .hover-bg:hover {
+        background-color: #e2e8f0 !important;
+    }
+    .transition {
+        transition: background-color 0.2s ease;
+    }
+</style>
+{% endblock %}

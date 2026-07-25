@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}Mentor Marketplace - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h1 class="fw-bold mb-2">Mentor Marketplace</h1>
+        <p class="text-muted fs-5">Browse and book 1-to-1 sessions with verified industry experts matching your career path.</p>
+        <a href="{% url 'community:mentor_register' %}" class="btn btn-primary-custom rounded-pill mt-2 px-4 py-2">
+            <i class="bi bi-person-workspace"></i> Register as a Mentor
+        </a>
+    </div>
+
+    <!-- Search & Filters Container -->
+    <div class="row g-4">
+        <!-- Sidebar Filters -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h5 class="fw-bold mb-4 text-secondary"><i class="bi bi-funnel"></i> Filters</h5>
+                
+                <form method="GET" action="{% url 'community:mentor_list' %}">
+                    <!-- Search Input -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small">Keyword Search</label>
+                        <input type="text" name="search" class="form-control rounded-pill px-3" placeholder="Name, skills, company..." value="{{ current_filters.search }}">
+                    </div>
+
+                    <!-- Domain -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small">Career Domain</label>
+                        <select name="domain" class="form-select rounded-pill px-3">
+                            <option value="">All Domains</option>
+                            {% for dom in all_domains %}
+                            <option value="{{ dom }}" {% if current_filters.domain == dom %}selected{% endif %}>{{ dom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Company -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small">Company</label>
+                        <input type="text" name="company" class="form-control rounded-pill px-3" placeholder="e.g. Google, Meta" value="{{ current_filters.company }}">
+                    </div>
+
+                    <!-- Min Experience -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small">Min Experience (Years)</label>
+                        <input type="number" name="experience" min="0" class="form-control rounded-pill px-3" placeholder="e.g. 3" value="{{ current_filters.experience }}">
+                    </div>
+
+                    <!-- Location -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small">Location</label>
+                        <input type="text" name="location" class="form-control rounded-pill px-3" placeholder="e.g. New York, Bengaluru" value="{{ current_filters.location }}">
+                    </div>
+
+                    <!-- Min Rating -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small">Min Rating</label>
+                        <select name="rating" class="form-select rounded-pill px-3">
+                            <option value="">Any Rating</option>
+                            <option value="4.5" {% if current_filters.rating == "4.5" %}selected{% endif %}>4.5 ★ &amp; above</option>
+                            <option value="4.0" {% if current_filters.rating == "4.0" %}selected{% endif %}>4.0 ★ &amp; above</option>
+                            <option value="3.5" {% if current_filters.rating == "3.5" %}selected{% endif %}>3.5 ★ &amp; above</option>
+                        </select>
+                    </div>
+
+                    <!-- Sorting -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small">Sort By</label>
+                        <select name="sort" class="form-select rounded-pill px-3">
+                            <option value="">Default</option>
+                            <option value="recommended" {% if current_filters.sort == "recommended" %}selected{% endif %}>Recommended Matching (Recommended)</option>
+                            <option value="highest_rated" {% if current_filters.sort == "highest_rated" %}selected{% endif %}>Highest Rated</option>
+                            <option value="most_experienced" {% if current_filters.sort == "most_experienced" %}selected{% endif %}>Most Experienced</option>
+                            <option value="newest" {% if current_filters.sort == "newest" %}selected{% endif %}>Newest</option>
+                        </select>
+                    </div>
+
+                    <!-- Submit & Clear buttons -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary rounded-pill">Apply Filters</button>
+                        <a href="{% url 'community:mentor_list' %}" class="btn btn-outline-secondary rounded-pill">Clear All</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Mentors Cards Grid -->
+        <div class="col-lg-9">
+            <div class="row g-4">
+                {% for mentor in mentors %}
+                <div class="col-md-6 col-xxl-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden d-flex flex-column hover-lift">
+                        <!-- Card Body -->
+                        <div class="card-body p-4 d-flex flex-column">
+                            <!-- Match Score Tag (if logged in and score calculated) -->
+                            {% if mentor.match_score is not None %}
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-bold">
+                                    <i class="bi bi-cpu-fill"></i> {{ mentor.match_score }}% Match
+                                </span>
+                            </div>
+                            {% endif %}
+
+                            <!-- Mentor Profile Summary -->
+                            <div class="d-flex align-items-center mb-3">
+                                {% if mentor.profile_photo %}
+                                <img src="{{ mentor.profile_photo.url }}" class="rounded-circle me-3 object-fit-cover" style="width: 56px; height: 56px;" alt="{{ mentor.full_name }}">
+                                {% else %}
+                                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                                    <i class="bi bi-person-badge fs-3"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <h5 class="fw-bold mb-0 text-secondary">{{ mentor.full_name }}</h5>
+                                    <span class="text-primary small fw-semibold">{{ mentor.designation }} at {{ mentor.company }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Rating & Location -->
+                            <div class="d-flex gap-3 mb-3 text-muted small">
+                                <span><i class="bi bi-star-fill text-warning"></i> {{ mentor.rating|default:"0.0" }} ({{ mentor.total_reviews }})</span>
+                                <span><i class="bi bi-geo-alt"></i> {{ mentor.current_location }}</span>
+                            </div>
+
+                            <!-- Bio -->
+                            <p class="text-muted small mb-3 flex-grow-1">{{ mentor.bio|truncatewords:18 }}</p>
+
+                            <!-- Domain tags -->
+                            <div class="mb-3">
+                                <div class="d-flex gap-1 flex-wrap">
+                                    {% for dom in mentor.get_domains_list %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary small">{{ dom }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Skills badges -->
+                            <div class="mb-4">
+                                <h6 class="fw-bold text-secondary small mb-2">Skills</h6>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    {% for skill in mentor.get_skills_list %}
+                                    <span class="badge bg-light text-muted border small">{{ skill }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Available Details -->
+                            <div class="d-flex justify-content-between align-items-center border-top pt-3 small text-muted mb-3">
+                                <span><i class="bi bi-briefcase"></i> {{ mentor.experience_years }} Years Exp</span>
+                                <span><i class="bi bi-laptop"></i> {{ mentor.mentorship_type }}</span>
+                            </div>
+
+                            <!-- View Profile Button -->
+                            <div class="d-grid mt-auto">
+                                <a href="{% url 'community:mentor_detail' mentor.id %}" class="btn btn-outline-primary rounded-pill btn-sm py-2">
+                                    View Full Profile
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5 text-muted">
+                    <i class="bi bi-people display-2 mb-3 d-block"></i>
+                    <h5>No active mentors found matching your filters.</h5>
+                    <p>Try clearing some filters or searching for different keywords.</p>
+                    <a href="{% url 'community:mentor_list' %}" class="btn btn-primary-custom rounded-pill mt-2">Reset Filters</a>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="d-flex justify-content-center mt-5">
+                <nav>
+                    <ul class="pagination pagination-sm gap-1">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link rounded-circle border-0 bg-light text-dark" href="?page={{ page_obj.previous_page_number }}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}{% if current_filters.domain %}&domain={{ current_filters.domain }}{% endif %}{% if current_filters.company %}&company={{ current_filters.company }}{% endif %}{% if current_filters.sort %}&sort={{ current_filters.sort }}{% endif %}">&laquo;</a>
+                        </li>
+                        {% endif %}
+                        <li class="page-item active">
+                            <span class="page-link rounded-circle border-0 bg-primary">{{ page_obj.number }}</span>
+                        </li>
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link rounded-circle border-0 bg-light text-dark" href="?page={{ page_obj.next_page_number }}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}{% if current_filters.domain %}&domain={{ current_filters.domain }}{% endif %}{% if current_filters.company %}&company={{ current_filters.company }}{% endif %}{% if current_filters.sort %}&sort={{ current_filters.sort }}{% endif %}">&raquo;</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+    }
+</style>
+{% endblock %}

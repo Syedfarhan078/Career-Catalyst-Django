@@ -99,6 +99,21 @@ def resume_download_pdf(request, pk):
 
 # AJAX Endpoints for builder
 
+from apps.profiles.models import StudentProfile
+
+def get_section_items(resume, section):
+    if section == 'education':
+        return [{'pk': x.pk, 'title': x.degree, 'subtitle': x.college} for x in resume.educations.all()]
+    elif section == 'experience':
+        return [{'pk': x.pk, 'title': x.position, 'subtitle': x.company} for x in resume.experiences.all()]
+    elif section == 'project':
+        return [{'pk': x.pk, 'title': x.title} for x in resume.projects.all()]
+    elif section == 'skill':
+        return [{'pk': x.pk, 'title': x.name} for x in resume.skills.all()]
+    elif section == 'certification':
+        return [{'pk': x.pk, 'title': x.name, 'subtitle': x.organization} for x in resume.certifications.all()]
+    return []
+
 @login_required
 @require_POST
 def add_section(request, pk, section):
@@ -120,7 +135,7 @@ def add_section(request, pk, section):
         instance = form.save(commit=False)
         instance.resume = resume
         instance.save()
-        return JsonResponse({'success': True})
+        return JsonResponse({'success': True, 'items': get_section_items(resume, section)})
     else:
         return JsonResponse({'success': False, 'errors': form.errors})
 
@@ -142,7 +157,7 @@ def delete_section(request, pk, section, item_id):
         
     item = get_object_or_404(model_classes[section], pk=item_id, resume=resume)
     item.delete()
-    return JsonResponse({'success': True})
+    return JsonResponse({'success': True, 'items': get_section_items(resume, section)})
 
 @login_required
 @require_POST
@@ -160,3 +175,45 @@ def delete_resume(request, pk):
     resume = get_object_or_404(Resume, pk=pk, user=request.user)
     resume.delete()
     return redirect('resume:list')
+
+@login_required
+@require_POST
+def import_profile_data(request, pk):
+    resume = get_object_or_404(Resume, pk=pk, user=request.user)
+    try:
+        profile = request.user.studentprofile
+    except StudentProfile.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Student Profile not found. Please create one first.'})
+
+    imported_edu = False
+    imported_skills_count = 0
+
+    # 1. Import Education
+    if profile.college and profile.degree and not resume.educations.exists():
+        Education.objects.create(
+            resume=resume,
+            college=profile.college,
+            degree=profile.degree,
+            branch=profile.branch or "General",
+            cgpa=profile.cgpa or 0.0,
+            start_year=2022,
+            end_year=profile.graduation_year or 2026
+        )
+        imported_edu = True
+
+    # 2. Import Skills
+    if profile.skills:
+        skills_raw = profile.skills.replace('\n', ',')
+        skills_list = [s.strip() for s in skills_raw.split(',') if s.strip()]
+        for s_name in skills_list:
+            if not resume.skills.filter(name__iexact=s_name).exists():
+                Skill.objects.create(resume=resume, name=s_name)
+                imported_skills_count += 1
+
+    return JsonResponse({
+        'success': True,
+        'educations': get_section_items(resume, 'education'),
+        'skills': get_section_items(resume, 'skill'),
+        'imported_edu': imported_edu,
+        'imported_skills_count': imported_skills_count
+    })

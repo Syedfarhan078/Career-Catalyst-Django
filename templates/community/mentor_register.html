@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Register as Mentor - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                <a href="{% url 'community:mentor_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3 align-self-start">
+                    <i class="bi bi-arrow-left"></i> Marketplace
+                </a>
+
+                <h2 class="fw-bold mb-2">Register as a Mentor</h2>
+                <p class="text-muted mb-4">Complete your professional background profile to submit a verification request. Approved mentors become visible in the marketplace.</p>
+
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">1. Personal & Contact Information</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            {{ form.full_name|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.email|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.phone_number|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.current_location|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">2. Professional Details & Bio</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-5">
+                            {{ form.company|as_crispy_field }}
+                        </div>
+                        <div class="col-md-5">
+                            {{ form.designation|as_crispy_field }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.experience_years|as_crispy_field }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.bio|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">3. Domains, Skills & Languages</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            {{ form.career_domains|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.skills_csv|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.languages|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.mentorship_type|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">4. Portfolio & Resume Links</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            {{ form.linkedin_url|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.github_url|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.portfolio_url|as_crispy_field }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.resume|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">5. General Availability Config</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-5">
+                            {{ form.available_days|as_crispy_field }}
+                        </div>
+                        <div class="col-md-5">
+                            {{ form.available_time_slots|as_crispy_field }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.max_sessions_per_week|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4 bg-light p-3 rounded-3 border">
+                        {{ form.agreement|as_crispy_field }}
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary-custom btn-lg rounded-pill fw-bold">Submit Registration Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

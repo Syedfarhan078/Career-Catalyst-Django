@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Manage Availability - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row g-4">
+        <!-- Sidebar Navigation & Add Form -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                <a href="{% url 'community:mentor_dashboard' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3 align-self-start">
+                    <i class="bi bi-arrow-left"></i> Dashboard
+                </a>
+                
+                <h3 class="fw-bold mb-2">Configure Availability</h3>
+                <p class="text-muted mb-4">Set up specific day and time slots when students can request bookings.</p>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-success rounded-pill py-2"><i class="bi bi-plus-lg"></i> Add Availability Slot</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Available Slots Display -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                <h4 class="fw-bold mb-4 text-secondary"><i class="bi bi-calendar-check"></i> Configured Slots</h4>
+                
+                <div class="d-flex flex-column gap-3">
+                    {% for avail in availabilities %}
+                    <div class="p-3 bg-light rounded-4 d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="fw-bold mb-1 text-secondary">{{ avail.day }}</h6>
+                            <span class="badge bg-primary bg-opacity-10 text-primary fs-6">
+                                <i class="bi bi-clock"></i> {{ avail.start_time|time:"g:i A" }} - {{ avail.end_time|time:"g:i A" }}
+                            </span>
+                            <small class="text-muted d-block mt-2">Max Sessions: {{ avail.max_sessions }} per day</small>
+                        </div>
+                        <div>
+                            <a href="{% url 'community:delete_availability' avail.id %}" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                <i class="bi bi-trash"></i> Remove
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-calendar-x display-4 mb-3 d-block"></i>
+                        <p class="my-0">No active availability slots configured yet.</p>
+                        <small>Use the form on the left to set up your slots.</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

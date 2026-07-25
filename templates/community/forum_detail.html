@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ thread.title }} - Discussion Forum{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <!-- Back to forum list -->
+            <a href="{% url 'community:forum_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-4">
+                <i class="bi bi-arrow-left"></i> Discussions List
+            </a>
+
+            <!-- Main Thread Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1">{{ thread.category.name }}</span>
+                    <span class="text-muted small"><i class="bi bi-clock"></i> {{ thread.created_at|date:"M d, Y - h:i A" }}</span>
+                </div>
+                <h2 class="fw-bold mb-3">{{ thread.title }}</h2>
+                
+                <div class="d-flex align-items-center mb-4 bg-light p-3 rounded-4">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="bi bi-person fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-secondary">{{ thread.author.username }}</h6>
+                        <small class="text-muted">Author / Student</small>
+                    </div>
+                </div>
+
+                <div class="fs-5 text-secondary lh-lg mb-0" style="white-space: pre-wrap;">{{ thread.content }}</div>
+            </div>
+
+            <!-- Replies Listing Card -->
+            <h4 class="fw-bold text-secondary mb-3"><i class="bi bi-reply"></i> Replies</h4>
+            <div class="d-flex flex-column gap-3 mb-4">
+                {% for reply in replies %}
+                <div class="card border-0 shadow-sm rounded-4 p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-secondary bg-opacity-10 text-secondary p-2 me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                <i class="bi bi-person fs-6"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0 text-secondary small">{{ reply.author.username }}</h6>
+                            </div>
+                        </div>
+                        <span class="text-muted small">{{ reply.created_at|date:"M d, Y - h:i A" }}</span>
+                    </div>
+                    <div class="text-secondary mb-0" style="white-space: pre-wrap;">{{ reply.content }}</div>
+                </div>
+                {% empty %}
+                <div class="card border-0 shadow-sm rounded-4 p-5 text-center text-muted">
+                    No replies yet. Be the first to start the conversation!
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Write a Reply Form Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h5 class="fw-bold text-secondary mb-3">Post a Reply</h5>
+                <form method="POST" action="{% url 'community:add_reply' thread.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <textarea class="form-control rounded-3 p-3" name="content" rows="4" required placeholder="Type your constructive response here..."></textarea>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary-custom rounded-pill px-4">Post Reply</button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

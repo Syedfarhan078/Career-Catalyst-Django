@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}Mentor Dashboard - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <!-- Header banner -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+        <div>
+            <h1 class="fw-bold mb-1">Mentor Dashboard</h1>
+            <p class="text-muted">Welcome back, {{ mentor.full_name }}! Manage your sessions, reviews, and availability.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'community:edit_profile' %}" class="btn btn-outline-primary rounded-pill btn-sm px-3 py-2"><i class="bi bi-pencil"></i> Edit Profile</a>
+            <a href="{% url 'community:manage_availability' %}" class="btn btn-outline-success rounded-pill btn-sm px-3 py-2"><i class="bi bi-calendar-range"></i> Manage Availability</a>
+            <a href="{% url 'community:mentor_requests' %}" class="btn btn-outline-warning rounded-pill btn-sm px-3 py-2"><i class="bi bi-card-checklist"></i> View Requests</a>
+        </div>
+    </div>
+
+    <!-- Stats summary grid -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                <div class="rounded-circle bg-success bg-opacity-10 text-success p-3 mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                    <i class="bi bi-check-circle fs-3"></i>
+                </div>
+                <h2 class="fw-bold mb-1 text-secondary">{{ total_sessions }}</h2>
+                <span class="text-muted small">Completed Sessions</span>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-3 mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                    <i class="bi bi-calendar-event fs-3"></i>
+                </div>
+                <h2 class="fw-bold mb-1 text-secondary">{{ upcoming_sessions }}</h2>
+                <span class="text-muted small">Upcoming Bookings</span>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                <div class="rounded-circle bg-warning bg-opacity-10 text-warning p-3 mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                    <i class="bi bi-hourglass-split fs-3"></i>
+                </div>
+                <h2 class="fw-bold mb-1 text-secondary">{{ pending_sessions }}</h2>
+                <span class="text-muted small">Pending Requests</span>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+                <div class="rounded-circle bg-info bg-opacity-10 text-info p-3 mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                    <i class="bi bi-star-fill text-warning fs-3"></i>
+                </div>
+                <h2 class="fw-bold mb-1 text-secondary">{{ mentor.rating|default:"0.0" }}</h2>
+                <span class="text-muted small">Average Rating</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Content rows -->
+    <div class="row g-4">
+        <!-- Student requests pending review -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold mb-0 text-secondary"><i class="bi bi-bell"></i> New Session Requests</h4>
+                    <a href="{% url 'community:mentor_requests' %}" class="small text-decoration-none">Manage All</a>
+                </div>
+                
+                <div class="d-flex flex-column gap-3">
+                    {% for req in recent_requests %}
+                    <div class="p-3 bg-light rounded-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                        <div>
+                            <span class="badge bg-primary bg-opacity-10 text-primary mb-2 small">{{ req.purpose }}</span>
+                            <h6 class="fw-bold mb-1">From student: {{ req.student.username }}</h6>
+                            <p class="text-muted small mb-2">{{ req.student_message|truncatewords:20 }}</p>
+                            <div class="d-flex gap-3 small text-muted">
+                                <span><i class="bi bi-calendar"></i> Proposed: {{ req.requested_date }}</span>
+                                <span><i class="bi bi-clock"></i> Time: {{ req.requested_time|time:"g:i A" }}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <a href="{% url 'community:mentor_requests' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">Review Request</a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center py-4 my-0">No new pending session requests.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Profile Completeness tracker banner -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-primary text-white position-relative overflow-hidden">
+                <div class="row align-items-center">
+                    <div class="col-md-8 position-relative" style="z-index: 1;">
+                        <h4 class="fw-bold text-white mb-2">Mentor Profile Completion</h4>
+                        <p class="text-white text-opacity-75 small">Fill in all fields, bio description, portfolios, and upload your resume to reach 100% profile completeness.</p>
+                        <div class="progress rounded-pill bg-white bg-opacity-20 mb-0" style="height: 12px; max-width: 400px;">
+                            <div class="progress-bar bg-white rounded-pill" role="progressbar" style="width: {{ profile_completion }}%;" aria-valuenow="{{ profile_completion }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <span class="small d-block mt-2">{{ profile_completion }}% Completed</span>
+                    </div>
+                    <div class="col-md-4 text-end d-none d-md-block opacity-25">
+                        <i class="bi bi-speedometer2 display-1 text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent reviews log -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <h4 class="fw-bold mb-4 text-secondary"><i class="bi bi-chat-square-quote"></i> Recent Reviews</h4>
+                <div class="d-flex flex-column gap-3">
+                    {% for rev in recent_reviews %}
+                    <div class="p-3 bg-light rounded-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0 text-secondary small">{{ rev.student.username }}</h6>
+                            <span class="text-warning small">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= rev.rating %}★{% else %}☆{% endif %}
+                                {% endfor %}
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-0">{{ rev.comment|truncatewords:15 }}</p>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center py-4 my-0">No reviews received yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat with {{ mentor.username }} - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Back Button -->
+            <a href="{% url 'community:mentor_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3 align-self-start">
+                <i class="bi bi-arrow-left"></i> Mentors Directory
+            </a>
+
+            <!-- Chat Interface Card -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden d-flex flex-column" style="height: 580px;">
+                <!-- Header -->
+                <div class="bg-primary text-white p-3 px-4 d-flex align-items-center">
+                    <div class="rounded-circle bg-white bg-opacity-20 p-2 me-3 text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="bi bi-person-badge-fill fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0 text-white">{{ mentor.username }}</h5>
+                        <small class="text-white text-opacity-75">{{ profile.job_title }} at {{ profile.company }}</small>
+                    </div>
+                </div>
+
+                <!-- Messages Log Box -->
+                <div class="card-body bg-light p-4 overflow-auto flex-grow-1" id="chatContainer">
+                    {% for msg in chat_messages %}
+                    <div class="d-flex mb-3 {% if msg.sender == request.user %}justify-content-end{% endif %}">
+                        <div class="card border-0 rounded-4 px-3 py-2 max-width-75 {% if msg.sender == request.user %}bg-primary text-white{% else %}bg-white text-secondary{% endif %} shadow-sm">
+                            <span class="small fw-semibold mb-1 d-block text-opacity-75 {% if msg.sender == request.user %}text-white{% else %}text-muted{% endif %}">
+                                {% if msg.sender == request.user %}You{% else %}{{ mentor.username }}{% endif %}
+                            </span>
+                            <span>{{ msg.content|linebreaksbr }}</span>
+                            <small class="text-end d-block mt-1 text-opacity-50 {% if msg.sender == request.user %}text-white{% else %}text-muted{% endif %}" style="font-size: 0.7rem;">
+                                {{ msg.sent_at|date:"h:i A" }}
+                            </small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted" id="noMessagesPlaceholder">
+                        <i class="bi bi-chat-dots display-4 mb-3 d-block"></i>
+                        <h5>No messages yet.</h5>
+                        <p>Ask a question about their career goal or tech stack to start the discussion!</p>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Typing Indicator -->
+                    <div class="d-none mb-3" id="typingIndicator">
+                        <div class="card border-0 rounded-4 px-3 py-2 bg-white text-secondary shadow-sm align-self-start" style="width: 100px;">
+                            <span class="small fw-semibold mb-1 d-block text-muted">{{ mentor.username }}</span>
+                            <div class="typing-dots d-flex gap-1 py-1">
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input box Footer -->
+                <div class="border-top p-3 bg-white">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <textarea class="form-control rounded-start-4 p-3" id="chatInput" rows="2" style="resize: none;" placeholder="Ask for career advice, resume tips..."></textarea>
+                        <button class="btn btn-primary-custom px-4 rounded-end-4" id="sendBtn" type="button">
+                            <i class="bi bi-send-fill fs-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .max-width-75 {
+        max-width: 75%;
+    }
+    textarea:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    /* Typing dots */
+    .typing-dots .dot {
+        width: 8px;
+        height: 8px;
+        background-color: #9ca3af;
+        border-radius: 50%;
+        display: inline-block;
+        animation: typing 1.4s infinite both;
+    }
+    .typing-dots .dot:nth-child(2) { animation-delay: .2s; }
+    .typing-dots .dot:nth-child(3) { animation-delay: .4s; }
+    
+    @keyframes typing {
+        0%, 80%, 100% { transform: scale(0.6); }
+        40% { transform: scale(1.2); }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatContainer = document.getElementById('chatContainer');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const typing = document.getElementById('typingIndicator');
+    const noMsgPlaceholder = document.getElementById('noMessagesPlaceholder');
+
+    // Scroll to bottom
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    sendBtn.addEventListener('click', function() {
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        if (noMsgPlaceholder) {
+            noMsgPlaceholder.classList.add('d-none');
+        }
+
+        // 1. Render student bubble locally
+        appendBubble('Candidate', text, new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+        chatInput.value = '';
+
+        // Disable input
+        chatInput.disabled = true;
+        sendBtn.disabled = true;
+        
+        // Show typing indicator
+        typing.classList.remove('d-none');
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // 2. Submit to database via AJAX
+        fetch("{% url 'community:send_mentor_message' mentor.id %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ content: text })
+        })
+        .then(res => res.json())
+        .then(data => {
+            // Hide typing indicator
+            typing.classList.add('d-none');
+            chatInput.disabled = false;
+            sendBtn.disabled = false;
+            chatInput.focus();
+
+            if (data.success) {
+                // Rerender the dynamically added replies
+                // The backend returns user message and the simulated mentor response
+                // Since we already rendered Candidate locally, we just render the Mentor response!
+                const mentorMsg = data.messages[1];
+                appendBubble('Mentor', mentorMsg.content, mentorMsg.sent_at);
+            } else if (data.error) {
+                alert(data.error);
+            }
+        })
+        .catch(err => {
+            typing.classList.add('d-none');
+            chatInput.disabled = false;
+            sendBtn.disabled = false;
+            console.error('Send error:', err);
+        });
+    });
+
+    function appendBubble(sender, text, timeStr) {
+        const wrap = document.createElement('div');
+        wrap.className = `d-flex mb-3 ${sender === 'Candidate' ? 'justify-content-end' : ''}`;
+        
+        const card = document.createElement('div');
+        card.className = `card border-0 rounded-4 px-3 py-2 max-width-75 ${sender === 'Candidate' ? 'bg-primary text-white' : 'bg-white text-secondary'} shadow-sm`;
+        
+        card.innerHTML = `
+            <span class="small fw-semibold mb-1 d-block text-opacity-75 ${sender === 'Candidate' ? 'text-white' : 'text-muted'}">${sender === 'Candidate' ? 'You' : '{{ mentor.username }}'}</span>
+            <span>${text.replace(/\n/g, '<br>')}</span>
+            <small class="text-end d-block mt-1 text-opacity-50 ${sender === 'Candidate' ? 'text-white' : 'text-muted'}" style="font-size: 0.7rem;">${timeStr}</small>
+        `;
+        
+        wrap.appendChild(card);
+        chatContainer.insertBefore(wrap, typing);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+});
+</script>
+{% endblock %}

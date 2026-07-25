@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Ask a Question - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                <a href="{% url 'community:forum_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3 align-self-start">
+                    <i class="bi bi-arrow-left"></i> Forum Home
+                </a>
+                
+                <h2 class="fw-bold mb-2">Ask a Question</h2>
+                <p class="text-muted mb-4">Start a discussion with peers and mentors. Share your thoughts or issues.</p>
+
+                <form method="POST" action="{% url 'community:create_thread' %}">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary">Topic Category</label>
+                        <select name="category" class="form-select rounded-pill px-3 py-2" required>
+                            <option value="" disabled selected>Select category...</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary">Discussion Title</label>
+                        <input type="text" class="form-control rounded-pill px-3 py-2" name="title" required placeholder="e.g. Tips for passing off-campus Django screening rounds?">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary">Content Details</label>
+                        <textarea class="form-control rounded-4 p-3" name="content" rows="6" required placeholder="Describe your question or problem statement in detail..."></textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary-custom btn-lg rounded-pill py-2 fw-bold">Post Discussion</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

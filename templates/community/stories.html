@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Career Success Stories - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="mb-5">
+        <a href="{% url 'community:hub' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
+            <i class="bi bi-arrow-left"></i> Hub Home
+        </a>
+        <h1 class="fw-bold mb-1">Career Success Stories</h1>
+        <p class="text-muted">Read how past students landed placements at top tech organizations. Get tips, resume feedback advice, and interview structures.</p>
+    </div>
+
+    <div class="row g-4">
+        {% for story in stories %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden d-flex flex-column hover-lift">
+                <div class="card-body p-4 d-flex flex-column">
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 align-self-start mb-3">
+                        Placed in {{ story.grad_year }}
+                    </span>
+                    
+                    <h4 class="fw-bold text-secondary mb-1">{{ story.title }}</h4>
+                    <span class="text-primary small fw-semibold mb-3 d-block">{{ story.author_name }} &middot; {{ story.placed_role }} at {{ story.placed_company }}</span>
+
+                    <p class="text-muted small lh-lg flex-grow-1" style="white-space: pre-wrap;">{{ story.content }}</p>
+                    
+                    <div class="border-top pt-3 mt-4 text-muted small">
+                        <i class="bi bi-check-circle-fill text-success"></i> Verified placement by Career Catalyst
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5 text-muted">
+            No success stories published yet. Run `python manage.py seed_community` to populate.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+    }
+</style>
+{% endblock %}

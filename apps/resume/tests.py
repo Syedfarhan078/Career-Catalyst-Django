@@ -76,3 +76,26 @@ class ResumeBuilderTests(TestCase):
         response = self.client.get(reverse('resume:builder', args=[other_resume.id]))
         # Should be 404 because get_object_or_404 uses user=request.user
         self.assertEqual(response.status_code, 404)
+
+    def test_import_profile_autofill_api(self):
+        from apps.profiles.models import StudentProfile
+        # Create StudentProfile
+        StudentProfile.objects.create(
+            user=self.user,
+            college='Autofill Tech University',
+            degree='B.Tech',
+            branch='AI & ML',
+            graduation_year=2027,
+            cgpa=9.5,
+            skills='Python, Django, SQL'
+        )
+        
+        response = self.client.post(
+            reverse('resume:api_import_profile', args=[self.resume.id]),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['success'], True)
+        self.assertEqual(self.resume.educations.count(), 1)
+        self.assertEqual(self.resume.skills.count(), 3)
+        self.assertEqual(self.resume.educations.first().college, 'Autofill Tech University')

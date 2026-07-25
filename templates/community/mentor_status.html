@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Application Status - Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+            <div class="card border-0 shadow-sm rounded-4 p-5">
+                {% if profile.status == 'Pending' %}
+                <i class="bi bi-clock-history text-warning display-1 mb-4"></i>
+                <h2 class="fw-bold text-secondary mb-3">Verification Pending</h2>
+                <p class="text-muted leading-relaxed mb-4">Your registration request as a mentor has been received and is currently under review by our administrators.</p>
+                <div class="badge bg-warning bg-opacity-10 text-warning px-4 py-2 fs-6 rounded-pill">Status: Pending Verification</div>
+                
+                {% elif profile.status == 'Rejected' %}
+                <i class="bi bi-exclamation-triangle-fill text-danger display-1 mb-4"></i>
+                <h2 class="fw-bold text-secondary mb-3">Application Declined</h2>
+                <p class="text-muted leading-relaxed mb-4">Unfortunately, your application was not approved at this time. Please check your qualifications or URLs, update your details, and submit a new request.</p>
+                <div class="badge bg-danger bg-opacity-10 text-danger px-4 py-2 fs-6 rounded-pill mb-4">Status: Rejected</div>
+                <div class="d-grid mt-2">
+                    <!-- Overwrite registration profile -->
+                    <a href="{% url 'community:mentor_register' %}" class="btn btn-primary rounded-pill">Resubmit Registration Form</a>
+                </div>
+                
+                {% elif profile.status == 'Blocked' %}
+                <i class="bi bi-shield-slash-fill text-danger display-1 mb-4"></i>
+                <h2 class="fw-bold text-secondary mb-3">Profile Blocked</h2>
+                <p class="text-muted leading-relaxed mb-4">Your mentor account has been blocked by administrators due to violations of our community guidelines.</p>
+                <div class="badge bg-danger bg-opacity-10 text-danger px-4 py-2 fs-6 rounded-pill">Status: Blocked</div>
+                {% endif %}
+                
+                <hr class="my-4">
+                <a href="{% url 'community:mentor_list' %}" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> Return to Marketplace</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'apps.ai_resume',
     'apps.roadmaps',
     'apps.interviews',
+    'apps.community',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

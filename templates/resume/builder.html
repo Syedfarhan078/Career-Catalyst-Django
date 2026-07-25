@@ -18,6 +18,13 @@
                 </a>
             </div>
 
+            <!-- Profile autofill helper -->
+            <div class="d-grid mb-3">
+                <button class="btn btn-primary-custom rounded-pill fw-bold" onclick="importFromProfile()">
+                    <i class="bi bi-cloud-arrow-down"></i> Autofill from My Profile
+                </button>
+            </div>
+
             <div class="accordion" id="resumeAccordion">
                 
                 <!-- Settings -->
@@ -224,6 +231,59 @@
         frame.src = frame.src;
     }
 
+    function renderItemsList(section, items) {
+        if (section === 'education') {
+            const container = document.getElementById('eduList');
+            container.innerHTML = items.map(item => `
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                    <div>
+                        <div class="fw-bold">${item.title}</div>
+                        <small class="text-muted">${item.subtitle}</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem('education', ${item.pk})"><i class="bi bi-trash"></i></button>
+                </div>
+            `).join('');
+        } else if (section === 'experience') {
+            const container = document.getElementById('expList');
+            container.innerHTML = items.map(item => `
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                    <div>
+                        <div class="fw-bold">${item.title}</div>
+                        <small class="text-muted">${item.subtitle}</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem('experience', ${item.pk})"><i class="bi bi-trash"></i></button>
+                </div>
+            `).join('');
+        } else if (section === 'project') {
+            const container = document.getElementById('projList');
+            container.innerHTML = items.map(item => `
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                    <div class="fw-bold">${item.title}</div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem('project', ${item.pk})"><i class="bi bi-trash"></i></button>
+                </div>
+            `).join('');
+        } else if (section === 'skill') {
+            const container = document.getElementById('skillList');
+            container.innerHTML = items.map(item => `
+                <span class="badge bg-secondary me-2 mb-2">
+                    ${item.title} 
+                    <i class="bi bi-x-circle ms-1" style="cursor:pointer;" onclick="deleteItem('skill', ${item.pk})"></i>
+                </span>
+            `).join('');
+        } else if (section === 'certification') {
+            const container = document.getElementById('certList');
+            container.innerHTML = items.map(item => `
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                    <div>
+                        <div class="fw-bold">${item.title}</div>
+                        <small class="text-muted">${item.subtitle}</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem('certification', ${item.pk})"><i class="bi bi-trash"></i></button>
+                </div>
+            `).join('');
+        }
+    }
+
     async function submitForm(e, section, url) {
         e.preventDefault();
         const form = e.target;
@@ -242,9 +302,9 @@
             if (data.success) {
                 if (section !== 'settings') {
                     form.reset();
+                    renderItemsList(section, data.items);
                 }
-                // Reload the page to reflect changes
-                window.location.reload();
+                refreshPreview();
             } else {
                 alert('Error saving section. Please check the fields.');
                 console.error(data.errors);
@@ -272,12 +332,43 @@
             });
             const data = await response.json();
             if (data.success) {
-                window.location.reload();
+                renderItemsList(section, data.items);
+                refreshPreview();
             } else {
                 alert('Error deleting item.');
             }
         } catch (error) {
             console.error('Error:', error);
+        }
+    }
+
+    async function importFromProfile() {
+        if (!confirm('Are you sure you want to autofill details from your student profile? This will auto-populate education and skills.')) return;
+        
+        const url = "{% url 'resume:api_import_profile' resume.pk %}";
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await response.json();
+            if (data.success) {
+                renderItemsList('education', data.educations);
+                renderItemsList('skill', data.skills);
+                refreshPreview();
+                alert(`Import successful! Added your academic education and ${data.imported_skills_count} skills.`);
+            } else {
+                alert(data.error || 'Autofill failed.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Something went wrong.');
         }
     }
 </script>
