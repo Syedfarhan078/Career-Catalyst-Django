@@ -121,6 +121,39 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set starting template
     editor.value = defaultTemplates[challengeTitle] || "# Complete the implementation\n";
 
+    // Smart Auto-Indentation & Tab handling inside plain textarea
+    editor.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+            this.selectionStart = this.selectionEnd = start + 4;
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const val = this.value;
+            
+            const beforeCursor = val.substring(0, start);
+            const afterCursor = val.substring(end);
+            
+            const lines = beforeCursor.split('\n');
+            const currentLine = lines[lines.length - 1];
+            
+            const match = currentLine.match(/^(\s*)/);
+            let indent = match ? match[1] : '';
+            
+            if (currentLine.trim().endsWith(':')) {
+                indent += '    ';
+            }
+            
+            const insertText = '\n' + indent;
+            this.value = beforeCursor + insertText + afterCursor;
+            this.selectionStart = this.selectionEnd = start + insertText.length;
+        }
+    });
+
     // 1. Reset templates
     document.getElementById('resetCodeBtn').addEventListener('click', function() {
         if(confirm('Are you sure you want to reset your workspace?')) {
