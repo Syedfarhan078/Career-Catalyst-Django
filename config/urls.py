@@ -28,6 +28,7 @@ urlpatterns = [
     path("roadmaps/", include("apps.roadmaps.urls")),
     path("interviews/", include("apps.interviews.urls")),
     path("community/", include("apps.community.urls")),
+    path("recommendation/", include("apps.recommendation.urls")),
     path("", include("apps.core.urls")),
 ]
 

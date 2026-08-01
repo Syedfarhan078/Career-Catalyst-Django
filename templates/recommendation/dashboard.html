@@ -1,0 +1,482 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Career Recommendation Hub | Career Catalyst{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Premium Dashboard Styles */
+    .dashboard-header-bg {
+        background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+        color: white;
+        border-radius: 20px;
+    }
+    .score-circle {
+        position: relative;
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        background: radial-gradient(closest-side, white 79%, transparent 80% 100%),
+                    conic-gradient(var(--primary) calc(var(--score-val) * 1%), #e2e8f0 0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .score-circle-inner {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--secondary);
+    }
+    .score-circle-ats {
+        position: relative;
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        background: radial-gradient(closest-side, white 79%, transparent 80% 100%),
+                    conic-gradient(var(--accent) calc(var(--score-val) * 1%), #e2e8f0 0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .score-circle-ats-inner {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--secondary);
+    }
+    .timeline-steps {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline-steps::before {
+        content: '';
+        position: absolute;
+        left: 9px;
+        top: 5px;
+        bottom: 5px;
+        width: 3px;
+        background: linear-gradient(to bottom, var(--primary), var(--accent));
+        border-radius: 3px;
+    }
+    .timeline-step-item {
+        position: relative;
+        margin-bottom: 25px;
+    }
+    .timeline-step-item::before {
+        content: '';
+        position: absolute;
+        left: -26px;
+        top: 4px;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: white;
+        border: 4px solid var(--primary);
+    }
+    .timeline-step-item.advanced::before {
+        border-color: var(--accent);
+    }
+    .badge-chip {
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        border: 1px solid rgba(0,0,0,0.08);
+    }
+    .plan-card {
+        border-left: 5px solid var(--primary);
+    }
+    .plan-card-90 {
+        border-left: 5px solid var(--accent);
+    }
+    .motivational-alert {
+        background: linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(20,184,166,0.05) 100%);
+        border: 1px solid rgba(37,99,235,0.15);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    
+    {% if not analysis %}
+    <!-- LANDING INTRO STATE -->
+    <div class="row justify-content-center py-5">
+        <div class="col-lg-8 text-center">
+            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-bold mb-3">
+                <i class="bi bi-cpu-fill"></i> Hybrid AI Core Layer
+            </span>
+            <h1 class="display-4 fw-bold text-secondary mb-3">AI Career Recommendation Hub</h1>
+            <p class="text-muted fs-5 mb-5 mx-auto" style="max-width: 650px;">
+                Analyze your academic performance, skill completeness, and resume content against real database career roadmaps to calculate placement readiness and uncover missing skill gaps.
+            </p>
+            
+            <div class="card border-0 shadow-sm rounded-4 p-5 mb-5 text-start bg-white">
+                <h5 class="fw-bold mb-4 text-secondary"><i class="bi bi-diagram-3-fill text-primary"></i> Analysis Workflow</h5>
+                <div class="row g-4 text-center">
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded-4 h-100">
+                            <i class="bi bi-person-badge text-primary display-6 mb-2"></i>
+                            <h6 class="fw-bold small mb-1">1. Student Profile</h6>
+                            <span class="text-muted" style="font-size: 0.75rem;">Skills, CGPA, and career goal details.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded-4 h-100">
+                            <i class="bi bi-database text-success display-6 mb-2"></i>
+                            <h6 class="fw-bold small mb-1">2. Core Database</h6>
+                            <span class="text-muted" style="font-size: 0.75rem;">Match against active roadmaps & topics.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded-4 h-100">
+                            <i class="bi bi-shield-check text-warning display-6 mb-2"></i>
+                            <h6 class="fw-bold small mb-1">3. Score Matching</h6>
+                            <span class="text-muted" style="font-size: 0.75rem;">Extract skill gap list & base metrics.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded-4 h-100">
+                            <i class="bi bi-robot text-info display-6 mb-2"></i>
+                            <h6 class="fw-bold small mb-1">4. Groq LLM Refinement</h6>
+                            <span class="text-muted" style="font-size: 0.75rem;">Synthesize 30-90 day plans & advice.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Form -->
+            <form action="{% url 'recommendation:analyze' %}" method="POST" class="d-flex flex-column align-items-center gap-3">
+                {% csrf_token %}
+                <div class="w-100" style="max-width: 400px;">
+                    {{ form.target_career }}
+                </div>
+                <button type="submit" class="btn btn-primary-custom px-5 py-3 fs-5 rounded-pill shadow-lg">
+                    <i class="bi bi-play-circle-fill"></i> Run Career Analysis
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- DASHBOARD VIEW STATE -->
+    <div class="dashboard-header-bg p-5 mb-5 shadow-sm text-start">
+        <div class="row align-items-center g-4">
+            <div class="col-md-8">
+                <span class="badge bg-white bg-opacity-25 text-white px-3 py-2 rounded-pill fw-bold mb-3">
+                    <i class="bi bi-shield-fill-check"></i> Analysis Complete
+                </span>
+                <h1 class="fw-bold text-white mb-2">My Career Recommendations</h1>
+                <p class="mb-0 text-white text-opacity-75">
+                    Analyzed on {{ analysis.created_at|date:"F d, Y - H:i" }}. Matches against active syllabus, project models, and learning parameters.
+                </p>
+            </div>
+            
+            <div class="col-md-4 text-md-end">
+                <!-- Trigger Regenerate Modal/Dropdown -->
+                <button class="btn btn-light rounded-pill px-4 py-2 fw-bold text-primary shadow-sm" data-bs-toggle="collapse" data-bs-target="#regeneratePanel">
+                    <i class="bi bi-arrow-repeat"></i> Analyze Again
+                </button>
+            </div>
+        </div>
+
+        <!-- Hidden Collapse Panel to selection target and re-analyze -->
+        <div class="collapse mt-4 p-4 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-4" id="regeneratePanel">
+            <h5 class="fw-bold text-white mb-3">Choose Target Career Pathway</h5>
+            <form action="{% url 'recommendation:analyze' %}" method="POST" class="row g-3 align-items-center">
+                {% csrf_token %}
+                <div class="col-md-8">
+                    {{ form.target_career }}
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-success w-100 rounded-pill py-2 fw-bold">
+                        Regenerate Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Core Metrics Cards Row -->
+    <div class="row g-4 mb-5">
+        <!-- 1. Readiness Score -->
+        <div class="col-md-4 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white h-100">
+                <h6 class="fw-bold text-secondary mb-3">Career Readiness Score</h6>
+                <div class="score-circle" style="--score-val: {{ analysis.career_readiness_score }};">
+                    <div class="score-circle-inner">{{ analysis.career_readiness_score }}%</div>
+                </div>
+                <p class="text-muted small mt-3 mb-0">Weighted by CGPA, skills checklist, projects, and certifications.</p>
+            </div>
+        </div>
+
+        <!-- 2. Recommended Career -->
+        <div class="col-md-4 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h6 class="fw-bold text-secondary mb-3">Recommended Career</h6>
+                    <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-briefcase display-6"></i>
+                    </div>
+                    <h5 class="fw-bold text-secondary mb-1">{{ analysis.recommended_career }}</h5>
+                    <span class="badge bg-success rounded-pill px-3 py-1 mt-2">Best Match</span>
+                </div>
+                <div class="w-100 mt-3 text-start">
+                    <div class="d-flex justify-content-between mb-1 small text-muted">
+                        <span>Confidence Level</span>
+                        <span>{{ analysis.confidence_score }}%</span>
+                    </div>
+                    <div class="progress" style="height: 6px; border-radius: 50px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ analysis.confidence_score }}%;" aria-valuenow="{{ analysis.confidence_score }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. ATS Resume Score -->
+        <div class="col-md-4 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white h-100">
+                <h6 class="fw-bold text-secondary mb-3">ATS Resume Match</h6>
+                <div class="score-circle-ats" style="--score-val: {{ analysis.ats_resume_score }};">
+                    <div class="score-circle-ats-inner">{{ analysis.ats_resume_score }}%</div>
+                </div>
+                <p class="text-muted small mt-3 mb-0">Compliance grade comparing keywords with selected role profiles.</p>
+            </div>
+        </div>
+
+        <!-- 4. Target Indicators -->
+        <div class="col-md-12 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-center gap-3">
+                <div class="p-3 bg-light rounded-4 border">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-secondary small">Internship Readiness</span>
+                        {% if "Almost" in analysis.internship_readiness or "Need" in analysis.internship_readiness %}
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-bold">{{ analysis.internship_readiness }}</span>
+                        {% else %}
+                        <span class="badge bg-success text-white rounded-pill px-3 py-2 fw-bold">{{ analysis.internship_readiness }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="p-3 bg-light rounded-4 border">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-secondary small">Placement Readiness</span>
+                        {% if "Almost" in analysis.placement_readiness or "Need" in analysis.placement_readiness %}
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-bold">{{ analysis.placement_readiness }}</span>
+                        {% else %}
+                        <span class="badge bg-success text-white rounded-pill px-3 py-2 fw-bold">{{ analysis.placement_readiness }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Strengths, Weaknesses, and Missing Skills -->
+    <div class="row g-4 mb-5">
+        <!-- Strengths -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-patch-check-fill text-success"></i> My Strengths</h5>
+                <ul class="list-group list-group-flush">
+                    {% for str in analysis.strengths %}
+                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-start gap-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <span>{{ str }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Weaknesses -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-exclamation-triangle-fill text-warning"></i> Growth Areas</h5>
+                <ul class="list-group list-group-flush">
+                    {% for wk in analysis.weaknesses %}
+                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-start gap-2">
+                        <i class="bi bi-exclamation-circle-fill text-warning mt-1"></i>
+                        <span>{{ wk }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Missing Skills Gaps -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white w-100">
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-tag-fill text-primary"></i> Missing Skill Gaps</h5>
+                <p class="text-muted small">Acquiring these key technical concepts and tools will significantly boost your readiness match.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for skill in analysis.missing_skills %}
+                    <span class="badge badge-chip bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20">
+                        <i class="bi bi-x-circle-fill me-1"></i> {{ skill }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Career Roadmap Timeline & Learning Resources -->
+    <div class="row g-4 mb-5">
+        <!-- Roadmap Timeline -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <h5 class="fw-bold text-secondary mb-4"><i class="bi bi-compass-fill text-primary"></i> Curriculum Milestone Roadmap</h5>
+                <div class="timeline-steps overflow-auto" style="max-height: 480px;">
+                    {% for step in analysis.roadmap_json %}
+                    <div class="timeline-step-item {% if step.level == 'Advanced' %}advanced{% endif %}">
+                        <div class="fw-bold text-secondary">Week {{ step.week }}: {{ step.title }}</div>
+                        <span class="badge bg-light text-muted border small py-1 px-2 mt-1 mb-2">{{ step.level }}</span>
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            {% for topic in step.topics %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border small" style="font-size: 0.75rem;">{{ topic }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Learning Resources -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-book-fill text-success"></i> Learning Resources</h5>
+                    <p class="text-muted small mb-4">Top database resource modules linked to your recommended path milestones.</p>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <tbody>
+                                {% for res in analysis.learning_resources_json %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-secondary" style="font-size: 0.9rem;">{{ res.title }}</div>
+                                        <span class="badge bg-light text-muted border small">{{ res.type }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ res.url }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                            <i class="bi bi-box-arrow-up-right"></i> Open Link
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations: Certs, Projects, Interview topics & Resume suggestions -->
+    <div class="row g-4 mb-5">
+        <!-- Certs -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-shield-lock-fill text-info"></i> Recommended Certifications</h5>
+                <ul class="list-group list-group-flush">
+                    {% for cert in analysis.recommended_certifications %}
+                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-award-fill text-info"></i>
+                        <span class="small fw-semibold">{{ cert }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Projects -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-cpu-fill text-primary"></i> Recommended Projects</h5>
+                <ul class="list-group list-group-flush">
+                    {% for proj in analysis.recommended_projects %}
+                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-start gap-2">
+                        <i class="bi bi-folder-fill text-primary mt-1"></i>
+                        <span class="small">{{ proj }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Interview Topics -->
+        <div class="col-md-12 col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-people-fill text-warning"></i> Key Interview Topics</h5>
+                <ul class="list-group list-group-flush">
+                    {% for topic in analysis.interview_topics %}
+                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-chevron-right text-warning"></i>
+                        <span class="small fw-semibold">{{ topic }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resume Suggestions -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-5">
+        <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-file-earmark-text-fill text-danger"></i> Resume Suggestions</h5>
+        <div class="row g-3">
+            {% for suggestion in analysis.resume_suggestions %}
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-4 border-start border-danger border-4 h-100">
+                    <p class="mb-0 text-secondary small fw-semibold">{{ suggestion }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Execution Plan (30 Day & 90 Day) -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 plan-card">
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-calendar-event text-primary"></i> 30-Day Transition Plan</h5>
+                <ul class="list-group list-group-flush">
+                    {% for step in analysis.thirty_day_plan %}
+                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-start gap-2">
+                        <span class="badge bg-primary rounded-circle text-white" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;">{{ forloop.counter }}</span>
+                        <span class="small mt-1">{{ step }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 plan-card-90">
+                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-calendar-check text-accent"></i> 90-Day Transition Plan</h5>
+                <ul class="list-group list-group-flush">
+                    {% for step in analysis.ninety_day_plan %}
+                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-start gap-2">
+                        <span class="badge bg-accent rounded-circle text-white" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;">{{ forloop.counter }}</span>
+                        <span class="small mt-1">{{ step }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Motivational Callout Alert -->
+    <div class="alert motivational-alert rounded-4 p-4 d-flex align-items-center gap-3 mb-5" role="alert">
+        <i class="bi bi-lightning-charge-fill text-primary display-5"></i>
+        <div>
+            <h5 class="alert-heading fw-bold text-secondary mb-1">Career Coach Message</h5>
+            <p class="mb-0 text-muted italic">"{{ analysis.motivational_message }}"</p>
+        </div>
+    </div>
+
+    {% endif %}
+
+</div>
+{% endblock %}
