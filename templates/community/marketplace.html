@@ -8,9 +8,14 @@
     <div class="text-center mb-5">
         <h1 class="fw-bold mb-2">Mentor Marketplace</h1>
         <p class="text-muted fs-5">Browse and book 1-to-1 sessions with verified industry experts matching your career path.</p>
-        <a href="{% url 'community:mentor_register' %}" class="btn btn-primary-custom rounded-pill mt-2 px-4 py-2">
-            <i class="bi bi-person-workspace"></i> Register as a Mentor
-        </a>
+        <div class="d-flex gap-2 justify-content-center mt-2 flex-wrap">
+            <a href="{% url 'community:mentor_register' %}" class="btn btn-primary-custom rounded-pill px-4 py-2">
+                <i class="bi bi-person-workspace"></i> Register as a Mentor
+            </a>
+            <a href="{% url 'community:student_bookings' %}" class="btn btn-outline-primary rounded-pill px-4 py-2">
+                <i class="bi bi-calendar-check"></i> My Booking History
+            </a>
+        </div>
     </div>
 
     <!-- Search & Filters Container -->

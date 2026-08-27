@@ -320,6 +320,16 @@ class MentorDetailView(DetailView):
         else:
             context["match_score"] = None
 
+        # Check for accepted bookings to enable messaging
+        if self.request.user.is_authenticated:
+            context["has_accepted_booking"] = MentorshipRequest.objects.filter(
+                student=self.request.user,
+                mentor=self.object,
+                status='Accepted'
+            ).exists()
+        else:
+            context["has_accepted_booking"] = False
+
         return context
 
 
@@ -585,9 +595,21 @@ def mentor_chat_view(request, mentor_id):
     mentor = get_object_or_404(User, pk=mentor_id)
     profile = get_object_or_404(MentorProfile, user=mentor)
     
+    # Restrict chat access to accepted bookings
+    is_mentor = (request.user == mentor)
+    if not is_mentor:
+        has_accepted = MentorshipRequest.objects.filter(
+            student=request.user,
+            mentor=profile,
+            status='Accepted'
+        ).exists()
+        if not has_accepted:
+            messages.error(request, "Chat access is locked until the mentor accepts your booking request.")
+            return redirect('community:mentor_detail', pk=profile.id)
+    
     messages_query = MentorMessage.objects.filter(
-        (models.Q(sender=request.user) & models.Q(recipient=mentor)) |
-        (models.Q(sender=mentor) & models.Q(recipient=request.user))
+        (Q(sender=request.user) & Q(recipient=mentor)) |
+        (Q(sender=mentor) & Q(recipient=request.user))
     ).order_by('sent_at')
 
     messages_query.filter(recipient=request.user, is_read=False).update(is_read=True)
@@ -605,6 +627,17 @@ def send_mentor_message(request, mentor_id):
         mentor = get_object_or_404(User, pk=mentor_id)
         profile = get_object_or_404(MentorProfile, user=mentor)
         
+        # Restrict message sending to accepted bookings
+        is_mentor = (request.user == mentor)
+        if not is_mentor:
+            has_accepted = MentorshipRequest.objects.filter(
+                student=request.user,
+                mentor=profile,
+                status='Accepted'
+            ).exists()
+            if not has_accepted:
+                return JsonResponse({"error": "Chat access is locked until the booking is accepted."}, status=403)
+
         import json
         data = json.loads(request.body)
         content = data.get("content", "").strip()
@@ -618,27 +651,12 @@ def send_mentor_message(request, mentor_id):
             content=content
         )
 
-        mentor_response_txt = f"Hello {request.user.username}! Thanks for reaching out. As a {profile.job_title} at {profile.company}, I'd be happy to guide you on this path. What specific learning milestone or project query are you tackling right now?"
-        
-        mentor_msg = MentorMessage.objects.create(
-            sender=mentor,
-            recipient=request.user,
-            content=mentor_response_txt
-        )
-
         return JsonResponse({
             "success": True,
-            "messages": [
-                {
-                    "sender": "Candidate",
-                    "content": user_msg.content,
-                    "sent_at": user_msg.sent_at.strftime("%I:%M %p")
-                },
-                {
-                    "sender": "Mentor",
-                    "content": mentor_msg.content,
-                    "sent_at": mentor_msg.sent_at.strftime("%I:%M %p")
-                }
-            ]
+            "message": {
+                "sender": "Candidate",
+                "content": user_msg.content,
+                "sent_at": user_msg.sent_at.strftime("%I:%M %p")
+            }
         })
     return JsonResponse({"error": "POST method required"}, status=405)

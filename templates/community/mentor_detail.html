@@ -150,9 +150,15 @@
                 <button class="btn btn-primary-custom rounded-pill w-100 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#bookingModal">
                     <i class="bi bi-calendar-event"></i> Book Mentorship Session
                 </button>
+                {% if has_accepted_booking %}
                 <a href="{% url 'community:mentor_chat' mentor.user.id %}" class="btn btn-outline-success rounded-pill w-100 py-2 mt-2 fw-bold">
                     <i class="bi bi-chat-dots"></i> Message Mentor
                 </a>
+                {% else %}
+                <button class="btn btn-outline-secondary rounded-pill w-100 py-2 mt-2 fw-bold" disabled data-bs-toggle="tooltip" title="Chat option is locked until a booking request is accepted.">
+                    <i class="bi bi-lock-fill"></i> Message Mentor (Locked)
+                </button>
+                {% endif %}
                 {% endif %}
             </div>
         </div>

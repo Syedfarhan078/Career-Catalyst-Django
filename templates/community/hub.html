@@ -11,7 +11,7 @@
 
     <!-- Quick Navigation Banner -->
     <div class="row g-3 mb-5 justify-content-center text-center">
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md">
             <a href="{% url 'community:forum_list' %}" class="text-decoration-none">
                 <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-4 hover-lift">
                     <i class="bi bi-chat-left-text fs-3"></i>
@@ -19,7 +19,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md">
             <a href="{% url 'community:mentor_list' %}" class="text-decoration-none">
                 <div class="bg-success bg-opacity-10 text-success p-3 rounded-4 hover-lift">
                     <i class="bi bi-people fs-3"></i>
@@ -27,7 +27,15 @@
                 </div>
             </a>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md">
+            <a href="{% url 'community:student_bookings' %}" class="text-decoration-none">
+                <div class="bg-danger bg-opacity-10 text-danger p-3 rounded-4 hover-lift">
+                    <i class="bi bi-calendar-check fs-3"></i>
+                    <h6 class="fw-bold mt-2 mb-0">My Bookings</h6>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md">
             <a href="{% url 'community:project_list' %}" class="text-decoration-none">
                 <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-4 hover-lift">
                     <i class="bi bi-code-slash fs-3"></i>
@@ -35,7 +43,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md">
             <a href="{% url 'community:story_list' %}" class="text-decoration-none">
                 <div class="bg-info bg-opacity-10 text-info p-3 rounded-4 hover-lift">
                     <i class="bi bi-award fs-3"></i>

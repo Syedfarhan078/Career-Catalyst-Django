@@ -4,14 +4,34 @@
 
 {% block content %}
 <div class="container py-5 mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
+    <!-- Proctor warning overlay banner -->
+    <div id="proctorOverlay" class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-none justify-content-center align-items-center" style="z-index: 9999;">
+        <div class="card border-0 shadow rounded-4 p-5 text-center max-width-500 bg-white">
+            <i class="bi bi-exclamation-triangle-fill text-danger display-3 mb-3"></i>
+            <h3 class="fw-bold text-danger">Proctor Warning!</h3>
+            <p class="text-muted fs-5 mb-4">You switched tabs or lost window focus during this assessment. This violation is logged.</p>
+            <button id="resumeTestBtn" class="btn btn-primary-custom px-4 py-2 rounded-pill">Resume Assessment</button>
+        </div>
+    </div>
+
+    <div class="row align-items-center mb-4">
+        <div class="col-8">
+            <a href="{% url 'interviews:behavioral_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
+                <i class="bi bi-arrow-left"></i> Questions List
+            </a>
+            <h2 class="fw-bold mb-0">{{ question.title }}</h2>
+        </div>
+        <div class="col-4 text-end">
+            <span class="badge bg-danger rounded-pill px-3 py-2" id="violationBadge">
+                Warnings: 0
+            </span>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: STAR Form -->
+        <div class="col-lg-8 mb-4">
             <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-                <a href="{% url 'interviews:behavioral_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3 align-self-start">
-                    <i class="bi bi-arrow-left"></i> Questions List
-                </a>
-                
-                <h2 class="fw-bold mb-1">{{ question.title }}</h2>
                 <p class="text-muted fs-6 mb-4">{{ question.content }}</p>
 
                 <div class="alert alert-info border-0 rounded-4 d-flex align-items-center mb-5" role="alert">
@@ -21,31 +41,33 @@
                     </div>
                 </div>
 
-                <form method="POST" action="{% url 'interviews:submit_star' question.id %}">
+                <form method="POST" action="{% url 'interviews:submit_star' question.id %}" id="starForm">
                     {% csrf_token %}
+                    <!-- Keep count of violations in a hidden input -->
+                    <input type="hidden" name="proctor_violations" id="proctorViolationsInput" value="0">
 
                     <div class="mb-4">
                         <label class="form-label fw-bold text-secondary">S - Situation</label>
                         <div class="form-text text-muted mb-2">Set the scene. What was the project, team, or challenge you faced?</div>
-                        <textarea class="form-control rounded-3 p-3" name="situation" rows="3" required placeholder="Example: During my final year project, we had to implement a real-time chat interface, but the team had conflicting database design views..."></textarea>
+                        <textarea class="form-control rounded-3 p-3" name="situation" rows="3" required placeholder="Example: During my final year project, we had to implement a real-time chat interface..."></textarea>
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label fw-bold text-secondary">T - Task</label>
                         <div class="form-text text-muted mb-2">What was your specific responsibility or milestone to achieve?</div>
-                        <textarea class="form-control rounded-3 p-3" name="task" rows="3" required placeholder="Example: My task was to resolve the schema conflict and ensure we had a scalable model ready within 3 days..."></textarea>
+                        <textarea class="form-control rounded-3 p-3" name="task" rows="3" required placeholder="Example: My task was to resolve the schema conflict and ensure we had a scalable model..."></textarea>
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label fw-bold text-secondary">A - Action</label>
                         <div class="form-text text-muted mb-2">What did you do? Mention team communication, research, coding, or diagnostic steps.</div>
-                        <textarea class="form-control rounded-3 p-3" name="action" rows="4" required placeholder="Example: I organized a meeting to compare both PostgreSQL and MongoDB. I ran benchmark tests, mapped models, and proposed a hybrid design..."></textarea>
+                        <textarea class="form-control rounded-3 p-3" name="action" rows="4" required placeholder="Example: I organized a meeting to compare both PostgreSQL and MongoDB. I ran benchmark tests..."></textarea>
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label fw-bold text-secondary">R - Result</label>
                         <div class="form-text text-muted mb-2">What was the outcome? How did the project perform? What did you learn?</div>
-                        <textarea class="form-control rounded-3 p-3" name="result" rows="3" required placeholder="Example: The team approved the hybrid PostgreSQL model. We completed the sprint on time, and query latencies dropped by 20%..."></textarea>
+                        <textarea class="form-control rounded-3 p-3" name="result" rows="3" required placeholder="Example: The team approved the hybrid PostgreSQL model. We completed the sprint on time..."></textarea>
                     </div>
 
                     <div class="d-grid mt-5">
@@ -54,6 +76,87 @@
                 </form>
             </div>
         </div>
+
+        <!-- Right Column: Reusable Proctoring Stream -->
+        <div class="col-lg-4 mb-4">
+            {% include 'interviews/partials/proctor_stream.html' with session_type='Behavioral' session_id=question.id %}
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.getElementById('proctorOverlay');
+    const resumeBtn = document.getElementById('resumeTestBtn');
+
+    // 1. Disable Right Click
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        triggerProctorViolation('Right-Click Blocked');
+    });
+
+    // 2. Disable Copy/Paste and standard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'u' || e.key === 'a')) {
+            e.preventDefault();
+            triggerProctorViolation('Copy-Paste Attempted');
+        }
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+            e.preventDefault();
+            triggerProctorViolation('DevTools Attempted');
+        }
+    });
+
+    // 3. Tab Switched / Lost Focus detection
+    let isWindowFocused = true;
+    
+    window.addEventListener('blur', function() {
+        if (isWindowFocused) {
+            isWindowFocused = false;
+            triggerProctorViolation('Tab Switched / Focus Lost');
+        }
+    });
+
+    window.addEventListener('focus', function() {
+        isWindowFocused = true;
+    });
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            triggerProctorViolation('Tab Switched (Hidden)');
+        }
+    });
+
+    // Request fullscreen mode on first click
+    document.addEventListener('click', function enterFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+            document.removeEventListener('click', enterFullscreen);
+        }
+    });
+
+    // Fullscreen exit detection
+    document.addEventListener('fullscreenchange', function() {
+        if (!document.fullscreenElement) {
+            triggerProctorViolation('Exited Fullscreen');
+        }
+    });
+
+    function triggerProctorViolation(type) {
+        if (typeof window.triggerProctorViolation === 'function') {
+            window.triggerProctorViolation(type);
+        }
+    }
+
+    resumeBtn.addEventListener('click', function() {
+        overlay.classList.add('d-none');
+        overlay.classList.remove('d-flex');
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+        }
+    });
+});
+</script>
 {% endblock %}

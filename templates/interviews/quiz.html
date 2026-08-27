@@ -14,9 +14,9 @@
         </div>
     </div>
 
-    <!-- Main Card -->
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
+    <!-- Main Card with 2-Column Split -->
+    <div class="row">
+        <div class="col-lg-8 mb-4">
             <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
                 <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
                     <div>
@@ -65,6 +65,11 @@
                     </div>
                 </form>
             </div>
+        </div>
+        
+        <!-- Right Column: Reusable Proctoring Stream -->
+        <div class="col-lg-4 mb-4">
+            {% include 'interviews/partials/proctor_stream.html' with session_type='Quiz' session_id=category.id %}
         </div>
     </div>
 </div>
@@ -155,31 +160,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Helper to log and warn
     function triggerProctorViolation(type) {
-        violationCount++;
-        inputViolations.value = violationCount;
-        badge.textContent = `Warnings: ${violationCount}/${maxViolations}`;
-
-        // Log violation on backend via AJAX
-        fetch("{% url 'interviews:log_proctor_violation' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({
-                session_type: 'Quiz',
-                session_id: 0, // Placeholder during active session
-                violation_type: type
-            })
-        }).catch(err => console.error('Violation logging failed:', err));
-
-        if (violationCount >= maxViolations) {
-            alert('Multiple proctoring violations detected. Your assessment is automatically submitting.');
-            form.submit();
-        } else {
-            // Show overlay warning
-            overlay.classList.remove('d-none');
-            overlay.classList.add('d-flex');
+        if (typeof window.triggerProctorViolation === 'function') {
+            window.triggerProctorViolation(type);
         }
     }
 
