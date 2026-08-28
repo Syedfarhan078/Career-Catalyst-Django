@@ -18,6 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/base.css' %}?v=1.8">
     <link rel="stylesheet" href="{% static 'css/components.css' %}?v=1.8">
+    <link rel="stylesheet" href="{% static 'css/chatbot.css' %}?v=1.8">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -44,8 +45,49 @@
 
 {% include "partials/footer.html" %}
 
+<!-- Floating Chatbot Launcher -->
+<button id="chatbot-launcher" aria-label="Open support chat">
+    <img src="{% static 'images/chatbot_robot.png' %}" alt="Career Assistant Bot" style="width: 100%; height: 100%; object-fit: contain;">
+</button>
+
+<!-- Floating Chatbot Window -->
+<div id="chatbot-window" 
+     data-url-career="{% url 'recommendation:dashboard' %}" 
+     data-url-resume="{% url 'resume:list' %}" 
+     data-url-ats="{% url 'ai_resume:history' %}" 
+     data-url-community="{% url 'community:hub' %}" 
+     data-url-interview="{% url 'interviews:hub' %}">
+    
+    <!-- Header -->
+    <div class="chatbot-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-robot text-white fs-5"></i>
+            <h6 class="mb-0 text-white">Career Assistant</h6>
+        </div>
+        <button class="btn btn-link text-white p-0 border-0" id="chatbot-close" aria-label="Close chat" style="font-size: 1.25rem;">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>
+    
+    <!-- Message Area -->
+    <div class="chatbot-messages" id="chatbot-messages"></div>
+    
+    <!-- Input Area -->
+    <div class="chatbot-footer">
+        <form id="chatbot-form">
+            <div class="chatbot-input-group">
+                <input type="text" id="chatbot-input" placeholder="Type a message..." required autocomplete="off">
+                <button type="submit" aria-label="Send message">
+                    <i class="bi bi-send-fill" style="font-size: 0.85rem;"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{% static 'js/main.js' %}?v=1.8"></script>
+<script src="{% static 'js/chatbot.js' %}?v=1.8"></script>
 {% block extra_js %}{% endblock %}
 
 </body>
