@@ -65,9 +65,20 @@
         <!-- Middle Column: Code Editor & Console Output -->
         <div class="col-xl-5 col-lg-7">
             <div class="card border-0 shadow-sm rounded-4 p-4 d-flex flex-column h-100">
-                <h4 class="fw-bold text-secondary mb-3">Code Workspace (Python)</h4>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="fw-bold text-secondary mb-0">Code Workspace (Python)</h4>
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="themeSelect" class="small text-muted mb-0 d-none d-sm-inline">IDE Theme:</label>
+                        <select id="themeSelect" class="form-select form-select-sm rounded-pill py-1 px-3 border" style="width: auto; font-size: 0.8rem;">
+                            <option value="vs-dark">VS Dark</option>
+                            <option value="monokai">Monokai</option>
+                            <option value="github-light">GitHub Light</option>
+                            <option value="solarized-dark">Solarized Dark</option>
+                        </select>
+                    </div>
+                </div>
                 
-                <textarea id="codeEditor" class="form-control font-monospace p-3 bg-dark text-light border-0 rounded-4 flex-grow-1" style="height: 350px; font-size: 0.95rem; resize: none;" placeholder="# Write your python code here..."></textarea>
+                <textarea id="codeEditor" class="form-control font-monospace p-3 border-0 rounded-4 flex-grow-1" style="height: 350px; font-size: 0.95rem; resize: none;" placeholder="# Write your python code here..."></textarea>
                 
                 <div class="d-flex gap-3 justify-content-end mt-3 mb-4">
                     <button id="resetCodeBtn" class="btn btn-outline-secondary rounded-pill px-4 btn-sm">Reset template</button>
@@ -93,7 +104,7 @@
         </div>
 
         <!-- Right Column: Reusable Proctoring Stream -->
-        <div class="col-xl-3 col-lg-12">
+        <div class="col-xl-3 col-lg-12" style="position: sticky; top: 90px; align-self: start;">
             {% include 'interviews/partials/proctor_stream.html' with session_type='Coding' session_id=challenge.id %}
         </div>
     </div>
@@ -123,6 +134,46 @@ document.addEventListener('DOMContentLoaded', function() {
     const challengeTitle = "{{ challenge.title }}";
     const editor = document.getElementById('codeEditor');
     
+    // --- Editor Theme Switcher ---
+    const themeSelect = document.getElementById('themeSelect');
+    const applyEditorTheme = (themeName) => {
+        if (!editor) return;
+        
+        // Reset base styles
+        editor.removeAttribute('style');
+        editor.style.height = '350px';
+        editor.style.fontSize = '0.95rem';
+        editor.style.resize = 'none';
+        
+        if (themeName === 'monokai') {
+            editor.style.backgroundColor = '#272822';
+            editor.style.color = '#f8f8f2';
+        } else if (themeName === 'github-light') {
+            editor.style.backgroundColor = '#ffffff';
+            editor.style.color = '#24292e';
+            editor.style.border = '1px solid #e2e8f0';
+        } else if (themeName === 'solarized-dark') {
+            editor.style.backgroundColor = '#002b36';
+            editor.style.color = '#839496';
+        } else {
+            // Default VS Dark
+            editor.style.backgroundColor = '#1e1e1e';
+            editor.style.color = '#d4d4d4';
+        }
+    };
+
+    if (themeSelect) {
+        const savedEditorTheme = localStorage.getItem('editor-theme') || 'vs-dark';
+        themeSelect.value = savedEditorTheme;
+        applyEditorTheme(savedEditorTheme);
+
+        themeSelect.addEventListener('change', function() {
+            const selected = this.value;
+            applyEditorTheme(selected);
+            localStorage.setItem('editor-theme', selected);
+        });
+    }
+
     // Set starting template
     editor.value = defaultTemplates[challengeTitle] || "# Complete the implementation\n";
 

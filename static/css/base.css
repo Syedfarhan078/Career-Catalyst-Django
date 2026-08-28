@@ -23,6 +23,7 @@
     --success:      #22C55E;
     --warning:      #F59E0B;
     --border:       #E2E8F0;
+    --welcome-bg:   linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
 
     /* --- Spacing (8px scale) --- */
     --space-1:  0.25rem;  /*  4px */
@@ -197,3 +198,90 @@ img {
 .gradient-bg {
     background: linear-gradient(135deg, var(--primary), #1e40af);
 }
+
+/* ------------------------------------------------------------
+   DARK MODE OVERRIDES
+   ------------------------------------------------------------ */
+html[data-theme="dark"] {
+    --bg:           #0F172A;
+    --card-bg:      #1E293B;
+    --text:         #E2E8F0;
+    --text-muted:   #94A3B8;
+    --secondary:    #F1F5F9;
+    --border:       #334155;
+    --navbar-bg:    rgba(15, 23, 42, 0.95);
+    --welcome-bg:   linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+html[data-theme="dark"] body {
+    background-color: var(--bg);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .card {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border) !important;
+    color: var(--text);
+}
+
+html[data-theme="dark"] .bg-white {
+    background-color: var(--card-bg) !important;
+}
+
+html[data-theme="dark"] .bg-light {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+html[data-theme="dark"] .text-secondary {
+    color: var(--secondary) !important;
+}
+
+html[data-theme="dark"] .text-muted {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] .border {
+    border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .list-group-item {
+    color: var(--text);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .accordion-item {
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .accordion-button {
+    color: var(--secondary);
+}
+
+html[data-theme="dark"] .option-label {
+    border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .option-label:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+html[data-theme="dark"] .table {
+    color: var(--text);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+html[data-theme="dark"] .form-control {
+    background-color: #0F172A;
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-theme="dark"] .form-control:focus {
+    background-color: #0F172A;
+    color: var(--text);
+}
+

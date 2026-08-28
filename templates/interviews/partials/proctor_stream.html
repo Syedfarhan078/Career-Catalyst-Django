@@ -1,3 +1,17 @@
+<!-- Proctoring Floating Toasts Container -->
+<div id="proctorToastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1090;"></div>
+
+<!-- Full-screen Auto-submission Overlay -->
+<div id="proctorSubmissionOverlay" class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-none justify-content-center align-items-center" style="z-index: 10000; backdrop-filter: blur(4px);">
+    <div class="card border-0 shadow-lg rounded-4 p-5 text-center bg-white" style="max-width: 500px;">
+        <div class="spinner-border text-danger mb-4" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h3 class="fw-bold text-danger mb-2">Warnings Limit Reached</h3>
+        <p class="text-muted fs-5 mb-0">Your proctor warning threshold has been exceeded. Automatically submitting your assessment, please do not close the tab...</p>
+    </div>
+</div>
+
 <div class="card border-0 shadow-sm rounded-4 p-4 text-center d-flex flex-column align-items-center" style="max-height: 600px; min-height: 600px; width: 100%;">
     <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-shield-fill-check text-primary"></i> AI Proctoring Stream</h5>
     
@@ -72,6 +86,28 @@ document.addEventListener('DOMContentLoaded', function() {
     let violationCount = 0;
     let riskScore = 0;
     let isSessionTerminated = false;
+    
+    function showProctorToast(message, tags='warning') {
+        const container = document.getElementById('proctorToastContainer');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${tags === 'danger' ? 'danger' : 'warning'} border-0 show mb-2 shadow-lg transition`;
+        toast.role = 'alert';
+        toast.style.minWidth = '280px';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body fw-bold">
+                    <i class="bi ${tags === 'danger' ? 'bi-exclamation-triangle-fill' : 'bi-exclamation-circle-fill'} me-2"></i> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    }
     
     const badge = document.getElementById('violationBadge');
     const overlay = document.getElementById('proctorOverlay');
@@ -183,6 +219,9 @@ document.addEventListener('DOMContentLoaded', function() {
     window.triggerProctorViolation = function(type, forcePopup = false) {
         if (isSessionTerminated) return;
 
+        // Show real-time screen toast warning
+        showProctorToast(`[WARN] Proctor Flagged: ${type}`, 'warning');
+
         violationCount++;
         if (badge) {
             badge.textContent = sessionType === 'Quiz' ? `Warnings: ${violationCount}/3` : `Warnings: ${violationCount}`;
@@ -215,9 +254,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (videoStream) {
                 videoStream.getTracks().forEach(track => track.stop());
             }
-            alert('Proctor warning limit reached! Automatically submitting quiz.');
-            const quizForm = document.getElementById('quizForm');
-            if (quizForm) quizForm.submit();
+            
+            // Show custom full-screen overlay instead of browser alert
+            const subOverlay = document.getElementById('proctorSubmissionOverlay');
+            if (subOverlay) {
+                subOverlay.classList.remove('d-none');
+                subOverlay.classList.add('d-flex');
+            }
+            
+            // Short delay to let candidate read the status before redirecting
+            setTimeout(() => {
+                const quizForm = document.getElementById('quizForm');
+                if (quizForm) quizForm.submit();
+            }, 2500);
             return;
         }
 

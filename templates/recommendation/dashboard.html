@@ -307,16 +307,29 @@
         </div>
         
         <!-- Missing Skills Gaps -->
-        <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white w-100">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
                 <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-tag-fill text-primary"></i> Missing Skill Gaps</h5>
                 <p class="text-muted small">Acquiring these key technical concepts and tools will significantly boost your readiness match.</p>
-                <div class="d-flex flex-wrap gap-2">
+                <div class="d-flex flex-wrap gap-2 flex-grow-1">
                     {% for skill in analysis.missing_skills %}
-                    <span class="badge badge-chip bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20">
+                    <span class="badge badge-chip bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20 align-self-start">
                         <i class="bi bi-x-circle-fill me-1"></i> {{ skill }}
                     </span>
+                    {% empty %}
+                    <span class="text-success small fw-semibold"><i class="bi bi-check-circle-fill"></i> No missing skills identified! You are fully aligned.</span>
                     {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Radar Chart Card -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <h5 class="fw-bold text-secondary mb-2"><i class="bi bi-bar-chart-fill text-accent"></i> Skill Coverage Analysis</h5>
+                <p class="text-muted small mb-3">Comparison of your current profile against target syllabus milestones.</p>
+                <div class="d-flex justify-content-center align-items-center" style="position: relative; height: 260px;">
+                    <canvas id="skillRadarChart" style="max-height: 250px; max-width: 250px;"></canvas>
                 </div>
             </div>
         </div>
@@ -330,13 +343,22 @@
                 <h5 class="fw-bold text-secondary mb-4"><i class="bi bi-compass-fill text-primary"></i> Curriculum Milestone Roadmap</h5>
                 <div class="timeline-steps overflow-auto" style="max-height: 480px;">
                     {% for step in analysis.roadmap_json %}
-                    <div class="timeline-step-item {% if step.level == 'Advanced' %}advanced{% endif %}">
-                        <div class="fw-bold text-secondary">Week {{ step.week }}: {{ step.title }}</div>
+                    <div class="timeline-step-item {% if step.level == 'Advanced' %}advanced{% endif %} cursor-pointer p-2 rounded-3 hover-bg" onclick="toggleMilestone(this)" style="transition: all 0.2s ease;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="fw-bold text-secondary">Week {{ step.week }}: {{ step.title }}</div>
+                            <i class="bi bi-chevron-down text-muted small collapse-icon"></i>
+                        </div>
                         <span class="badge bg-light text-muted border small py-1 px-2 mt-1 mb-2">{{ step.level }}</span>
-                        <div class="d-flex flex-wrap gap-1 mt-1">
-                            {% for topic in step.topics %}
-                            <span class="badge bg-secondary bg-opacity-10 text-secondary border small" style="font-size: 0.75rem;">{{ topic }}</span>
-                            {% endfor %}
+                        <div class="topics-wrapper mt-1 d-none">
+                            <p class="small text-muted mb-2"><i class="bi bi-list-task text-primary"></i> Checklist Tasks:</p>
+                            <div class="d-flex flex-column gap-2 ms-2">
+                                {% for topic in step.topics %}
+                                <label class="d-flex align-items-center gap-2 small text-secondary cursor-pointer">
+                                    <input type="checkbox" class="milestone-check" data-week="{{ step.week }}" data-topic="{{ topic }}" onclick="event.stopPropagation(); saveProgress(this)">
+                                    <span class="topic-name">{{ topic }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
@@ -479,4 +501,139 @@
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('skillRadarChart');
+    if (!ctx) return;
+
+    // Load data from template context
+    const studentSkills = [{% for skill in profile.get_skills_list %}"{{ skill }}",{% endfor %}];
+
+    // Define 5 Core Dimensions
+    const categories = ['Languages', 'Frameworks', 'Databases', 'Cloud/DevOps', 'Architecture'];
+    
+    // Keyword filters to score student skills
+    const langKeywords = ['python', 'javascript', 'java', 'c++', 'c#', 'ruby', 'go', 'php', 'typescript', 'sql', 'html', 'css'];
+    const fwKeywords = ['django', 'flask', 'react', 'angular', 'vue', 'spring', 'express', 'laravel', 'bootstrap', 'tailwind', 'nest'];
+    const dbKeywords = ['postgres', 'mysql', 'sqlite', 'mongodb', 'redis', 'oracle', 'mariadb', 'nosql', 'dynamodb'];
+    const devopsKeywords = ['docker', 'kubernetes', 'aws', 'gcp', 'azure', 'git', 'github', 'jenkins', 'ci/cd', 'linux', 'nginx'];
+    const archKeywords = ['api', 'rest', 'oop', 'system design', 'microservices', 'graphql', 'data structures', 'algorithms'];
+
+    const countMatches = (list, keywords) => {
+        return list.filter(s => keywords.some(k => s.toLowerCase().includes(k))).length;
+    };
+
+    // Calculate score (out of 10) dynamically
+    const studentScores = [
+        Math.min(countMatches(studentSkills, langKeywords) * 3 + 3, 10),
+        Math.min(countMatches(studentSkills, fwKeywords) * 3 + 2, 10),
+        Math.min(countMatches(studentSkills, dbKeywords) * 4 + 2, 10),
+        Math.min(countMatches(studentSkills, devopsKeywords) * 3 + 2, 10),
+        Math.min(countMatches(studentSkills, archKeywords) * 4 + 2, 10),
+    ];
+
+    // Target/Milestone score expectations
+    const targetScores = [9, 8, 9, 8, 9];
+
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: categories,
+            datasets: [
+                {
+                    label: 'Your Score',
+                    data: studentScores,
+                    fill: true,
+                    backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                    borderColor: 'rgb(37, 99, 235)',
+                    pointBackgroundColor: 'rgb(37, 99, 235)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(37, 99, 235)'
+                },
+                {
+                    label: 'Target Syllabus',
+                    data: targetScores,
+                    fill: true,
+                    backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                    borderColor: 'rgb(20, 184, 166)',
+                    pointBackgroundColor: 'rgb(20, 184, 166)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(20, 184, 166)'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: { display: true },
+                    suggestedMin: 0,
+                    suggestedMax: 10,
+                    ticks: { stepSize: 2, display: false }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, font: { size: 10 } }
+                }
+            }
+        }
+    });
+
+    // --- Interactive Milestone Progress Tracker ---
+    window.saveProgress = function(checkbox) {
+        const key = `milestone-${checkbox.dataset.week}-${checkbox.dataset.topic}`;
+        localStorage.setItem(key, checkbox.checked ? 'true' : 'false');
+        
+        const labelText = checkbox.nextElementSibling;
+        if (labelText) {
+            if (checkbox.checked) {
+                labelText.style.textDecoration = 'line-through';
+                labelText.style.opacity = '0.6';
+            } else {
+                labelText.style.textDecoration = 'none';
+                labelText.style.opacity = '1';
+            }
+        }
+    };
+
+    window.toggleMilestone = function(element) {
+        const wrapper = element.querySelector('.topics-wrapper');
+        const icon = element.querySelector('.collapse-icon');
+        if (wrapper) {
+            if (wrapper.classList.contains('d-none')) {
+                wrapper.classList.remove('d-none');
+                if (icon) icon.className = 'bi bi-chevron-up text-muted small collapse-icon';
+                element.style.backgroundColor = 'rgba(37, 99, 235, 0.04)';
+            } else {
+                wrapper.classList.add('d-none');
+                if (icon) icon.className = 'bi bi-chevron-down text-muted small collapse-icon';
+                element.style.backgroundColor = 'transparent';
+            }
+        }
+    };
+
+    // Load initial checkmark state from localStorage
+    document.querySelectorAll('.milestone-check').forEach(checkbox => {
+        const key = `milestone-${checkbox.dataset.week}-${checkbox.dataset.topic}`;
+        const isChecked = localStorage.getItem(key) === 'true';
+        checkbox.checked = isChecked;
+        
+        const labelText = checkbox.nextElementSibling;
+        if (labelText && isChecked) {
+            labelText.style.textDecoration = 'line-through';
+            labelText.style.opacity = '0.6';
+        }
+    });
+});
+</script>
 {% endblock %}

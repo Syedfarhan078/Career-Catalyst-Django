@@ -13,6 +13,7 @@
         
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mx-auto"> <!-- Centered links for Stripe-style aesthetic -->
+                {% if request.resolver_match.url_name == 'home' %}
                 <li class="nav-item">
                     <a class="nav-link" href="#features">Features</a>
                 </li>
@@ -25,9 +26,15 @@
                 <li class="nav-item">
                     <a class="nav-link" href="#faq">FAQ</a>
                 </li>
+                {% endif %}
             </ul>
             
             <ul class="navbar-nav ms-auto align-items-center gap-3">
+                <li class="nav-item">
+                    <button class="btn btn-link nav-link p-0 border-0" id="theme-toggle" aria-label="Toggle theme" style="font-size: 1.2rem;">
+                        <i class="bi bi-moon-stars-fill text-secondary" id="theme-icon"></i>
+                    </button>
+                </li>
                 {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>

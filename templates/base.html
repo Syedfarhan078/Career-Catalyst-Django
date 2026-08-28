@@ -3,6 +3,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script>
+        // Apply theme early to prevent color flashes
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Career Catalyst - AI-powered career development platform for students. Build resumes, discover career paths, track skills, and get personalized guidance.">
     <title>{% block title %}Career Catalyst{% endblock %}</title>
@@ -11,8 +16,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/base.css' %}?v=1.4">
-    <link rel="stylesheet" href="{% static 'css/components.css' %}?v=1.4">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}?v=1.8">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}?v=1.8">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -40,7 +45,7 @@
 {% include "partials/footer.html" %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{% static 'js/main.js' %}?v=1.4"></script>
+<script src="{% static 'js/main.js' %}?v=1.8"></script>
 {% block extra_js %}{% endblock %}
 
 </body>

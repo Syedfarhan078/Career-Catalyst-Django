@@ -4,14 +4,14 @@
 {% block title %}Dashboard | Career Catalyst{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <!-- Welcome Header & Profile Indicator -->
-    <div class="card border-0 shadow-sm rounded-4 mb-5 overflow-hidden">
-        <div class="card-body p-5">
-            <div class="row align-items-center g-4">
-                <!-- Welcome text -->
-                <div class="col-md-7">
-                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-semibold mb-2">Student Dashboard</span>
+<div class="container py-5 mt-5">
+    <div class="row g-4">
+        <!-- Left Column: Welcome Banner & Core Services -->
+        <div class="col-lg-8">
+            <!-- Welcome Header -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden animate-on-scroll" style="background: var(--welcome-bg); border: 1px solid var(--border) !important;">
+                <div class="card-body p-4 p-md-5">
+                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-semibold mb-3">Student Dashboard</span>
                     <h1 class="fw-bold mb-2 text-secondary">Welcome back, {{ user.first_name }} {{ user.last_name }}!</h1>
                     <p class="text-muted mb-0 fs-5">
                         {% if profile.degree and profile.branch %}
@@ -24,110 +24,149 @@
                         {% endif %}
                     </p>
                 </div>
-                <!-- Profile completion percentage bar card -->
-                <div class="col-md-5">
-                    <div class="p-4 rounded-4 bg-light bg-opacity-50 border">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-bold text-secondary small">Profile Setup Progress</span>
-                            <span class="badge bg-primary text-white fw-bold fs-7">{{ completion_percentage }}% Complete</span>
-                        </div>
-                        <div class="progress mb-3" style="height: 10px; border-radius: 50px; background-color: #e2e8f0;">
-                            <div class="progress-bar" role="progressbar" style="width: {{ completion_percentage }}%; background: linear-gradient(to right, var(--primary), var(--accent)); border-radius: 50px;" aria-valuenow="{{ completion_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a href="{% url 'profile_detail' %}" class="small text-decoration-none fw-semibold text-primary">View My Profile <i class="bi bi-chevron-right"></i></a>
-                            <a href="{% url 'profile_edit' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">Update Info</a>
-                        </div>
-                    </div>
-                </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Core Features Row -->
-    <h4 class="fw-bold text-secondary mb-4">Explore Core Services</h4>
-    <div class="row g-4 mb-5">
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 shadow-sm border-0 rounded-4 feature-card border-top border-primary border-4 shadow-sm">
-                <div class="card-body p-4 text-center">
-                    <div class="icon-wrapper mx-auto mb-3" style="background: rgba(37,99,235,0.1); color: var(--primary);">
-                        <i class="bi bi-robot"></i>
+            <!-- Core Services Title -->
+            <h4 class="fw-bold text-secondary mb-4"><i class="bi bi-grid-fill text-primary me-2"></i> Explore Core Services</h4>
+            
+            <!-- Services Grid (2 Columns) -->
+            <div class="row g-4 mb-5">
+                <!-- Card 1: AI Career Guidance -->
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm border-0 rounded-4 feature-card transition-all animate-on-scroll" style="border: 1px solid #e2e8f0; background: #ffffff;">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-wrapper me-3" style="width: 48px; height: 48px; border-radius: 12px; background: rgba(37,99,235,0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                    <i class="bi bi-robot"></i>
+                                </div>
+                                <h5 class="fw-bold mb-0 text-secondary">AI Career Guidance</h5>
+                            </div>
+                            <p class="text-muted small mb-4 flex-grow-1">Analyze profile readiness, missing skills, and get personalized roadmap advice.</p>
+                            <a href="{% url 'recommendation:dashboard' %}" class="btn btn-primary-custom btn-sm rounded-pill px-4 align-self-start shadow-sm mt-auto">Analyze My Career</a>
+                        </div>
                     </div>
-                    <h5 class="fw-bold">AI Career Guidance</h5>
-                    <p class="text-muted small">Analyze profile readiness, missing skills, and get personalized roadmap advice.</p>
-                    <a href="{% url 'recommendation:dashboard' %}" class="btn btn-primary-custom rounded-pill btn-sm px-4 shadow-sm">Analyze My Career</a>
+                </div>
+
+                <!-- Card 2: ATS Resume Analyzer -->
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm border-0 rounded-4 feature-card transition-all animate-on-scroll animate-delay-1" style="border: 1px solid #e2e8f0; background: #ffffff;">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-wrapper me-3" style="width: 48px; height: 48px; border-radius: 12px; background: rgba(37,99,235,0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                    <i class="bi bi-shield-check"></i>
+                                </div>
+                                <h5 class="fw-bold mb-0 text-secondary">ATS Resume Analyzer</h5>
+                            </div>
+                            <p class="text-muted small mb-4 flex-grow-1">Scan your resume against target roles and receive grading and gap suggestions.</p>
+                            <a href="{% url 'ai_resume:history' %}" class="btn btn-outline-primary btn-sm rounded-pill px-4 align-self-start mt-auto">Analyze Resume</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Interview Prep Hub -->
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm border-0 rounded-4 feature-card transition-all animate-on-scroll animate-delay-2" style="border: 1px solid #e2e8f0; background: #ffffff;">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-wrapper me-3" style="width: 48px; height: 48px; border-radius: 12px; background: rgba(37,99,235,0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                    <i class="bi bi-mortarboard"></i>
+                                </div>
+                                <h5 class="fw-bold mb-0 text-secondary">Interview Prep Hub</h5>
+                            </div>
+                            <p class="text-muted small mb-4 flex-grow-1">Practice MCQs, coding challenges, and mock interviews with AI proctoring.</p>
+                            <a href="{% url 'interviews:hub' %}" class="btn btn-outline-primary btn-sm rounded-pill px-4 align-self-start mt-auto">Prepare Now</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Resume Builder -->
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm border-0 rounded-4 feature-card transition-all animate-on-scroll animate-delay-3" style="border: 1px solid #e2e8f0; background: #ffffff;">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-wrapper me-3" style="width: 48px; height: 48px; border-radius: 12px; background: rgba(37,99,235,0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                    <i class="bi bi-file-earmark-person"></i>
+                                </div>
+                                <h5 class="fw-bold mb-0 text-secondary">Resume Builder</h5>
+                            </div>
+                            <p class="text-muted small mb-4 flex-grow-1">Create ATS-friendly resumes from your profile data in minutes.</p>
+                            <a href="{% url 'resume:list' %}" class="btn btn-outline-primary btn-sm rounded-pill px-4 align-self-start mt-auto">Open Builder</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5: Career Roadmaps -->
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm border-0 rounded-4 feature-card transition-all animate-on-scroll animate-delay-4" style="border: 1px solid #e2e8f0; background: #ffffff;">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-wrapper me-3" style="width: 48px; height: 48px; border-radius: 12px; background: rgba(37,99,235,0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                    <i class="bi bi-compass"></i>
+                                </div>
+                                <h5 class="fw-bold mb-0 text-secondary">Career Roadmaps</h5>
+                            </div>
+                            <p class="text-muted small mb-4 flex-grow-1">Access structured weekly learning plans with curated learning resources.</p>
+                            <a href="{% url 'roadmaps:path_list' %}" class="btn btn-outline-primary btn-sm rounded-pill px-4 align-self-start mt-auto">Explore Paths</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 6: Profile Editor -->
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm border-0 rounded-4 feature-card transition-all animate-on-scroll animate-delay-5" style="border: 1px solid #e2e8f0; background: #ffffff;">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-wrapper me-3" style="width: 48px; height: 48px; border-radius: 12px; background: rgba(37,99,235,0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                    <i class="bi bi-person-lines-fill"></i>
+                                </div>
+                                <h5 class="fw-bold mb-0 text-secondary">Profile Editor</h5>
+                            </div>
+                            <p class="text-muted small mb-4 flex-grow-1">Update your personal details, education, and career preferences.</p>
+                            <a href="{% url 'profile_detail' %}" class="btn btn-outline-primary btn-sm rounded-pill px-4 align-self-start mt-auto">View Profile</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 shadow-sm border-0 rounded-4 feature-card">
-                <div class="card-body p-4 text-center">
-                    <div class="icon-wrapper mx-auto mb-3">
-                        <i class="bi bi-file-earmark-person"></i>
+
+        <!-- Right Column: Profile Setup Progress & Community Hub -->
+        <div class="col-lg-4">
+            <!-- Profile Setup Progress Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 animate-on-scroll" style="border: 1px solid #e2e8f0 !important; background: #ffffff;">
+                <div class="text-center mb-3">
+                    <div class="avatar-circle mx-auto mb-3 d-flex align-items-center justify-content-center text-white fw-bold fs-3" style="width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);">
+                        {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
                     </div>
-                    <h5 class="fw-bold">Resume Builder</h5>
-                    <p class="text-muted small">Create ATS-friendly resumes from your profile data in minutes.</p>
-                    <a href="{% url 'resume:list' %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">Open Builder</a>
+                    <h5 class="fw-bold text-secondary mb-1">{{ user.first_name }} {{ user.last_name }}</h5>
+                    <p class="text-muted small mb-0">{{ user.email }}</p>
+                </div>
+                
+                <div class="p-3 rounded-4 bg-light bg-opacity-50 border">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-secondary small">Profile Setup Progress</span>
+                        <span class="badge bg-primary text-white fw-bold fs-7">{{ completion_percentage }}% Complete</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 10px; border-radius: 50px; background-color: #e2e8f0;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ completion_percentage }}%; background: linear-gradient(to right, var(--primary), var(--accent)); border-radius: 50px;" aria-valuenow="{{ completion_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <a href="{% url 'profile_detail' %}" class="small text-decoration-none fw-semibold text-primary">View My Profile <i class="bi bi-chevron-right"></i></a>
+                        <a href="{% url 'profile_edit' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">Update Info</a>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 shadow-sm border-0 rounded-4 feature-card">
-                <div class="card-body p-4 text-center">
-                    <div class="icon-wrapper mx-auto mb-3">
-                        <i class="bi bi-person-lines-fill"></i>
+
+            <!-- Community Hub Card -->
+            <div class="card border-0 rounded-4 text-white overflow-hidden shadow-sm animate-on-scroll animate-delay-1" style="background: linear-gradient(135deg, #0F172A 0%, #1e293b 100%); height: 322px;">
+                <div class="card-body p-4 d-flex flex-column h-100">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-wrapper bg-white bg-opacity-10 text-white me-3" style="width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0 text-white">Community Hub</h5>
                     </div>
-                    <h5 class="fw-bold">Profile Editor</h5>
-                    <p class="text-muted small">Update your personal details, education, and career preferences.</p>
-                    <a href="{% url 'profile_detail' %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">View Profile</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 shadow-sm border-0 rounded-4 feature-card">
-                <div class="card-body p-4 text-center">
-                    <div class="icon-wrapper mx-auto mb-3">
-                        <i class="bi bi-shield-check"></i>
-                    </div>
-                    <h5 class="fw-bold">ATS Resume Analyzer</h5>
-                    <p class="text-muted small">Scan your resume against target roles and receive grading and gap suggestions.</p>
-                    <a href="{% url 'ai_resume:history' %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">Analyze Resume</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 shadow-sm border-0 rounded-4 feature-card">
-                <div class="card-body p-4 text-center">
-                    <div class="icon-wrapper mx-auto mb-3">
-                        <i class="bi bi-compass"></i>
-                    </div>
-                    <h5 class="fw-bold">Career Roadmaps</h5>
-                    <p class="text-muted small">Access structured weekly learning plans with curated learning resources.</p>
-                    <a href="{% url 'roadmaps:path_list' %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">Explore Paths</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 shadow-sm border-0 rounded-4 feature-card">
-                <div class="card-body p-4 text-center">
-                    <div class="icon-wrapper mx-auto mb-3">
-                        <i class="bi bi-mortarboard"></i>
-                    </div>
-                    <h5 class="fw-bold">Interview Prep Hub</h5>
-                    <p class="text-muted small">Practice MCQs, coding challenges, and mock interviews with AI proctoring.</p>
-                    <a href="{% url 'interviews:hub' %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">Prepare Now</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 shadow-sm border-0 rounded-4 feature-card">
-                <div class="card-body p-4 text-center">
-                    <div class="icon-wrapper mx-auto mb-3">
-                        <i class="bi bi-people"></i>
-                    </div>
-                    <h5 class="fw-bold">Community & Mentorship</h5>
-                    <p class="text-muted small">Ask questions in discussion forums, follow mentors, and share projects.</p>
-                    <a href="{% url 'community:hub' %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">Join Community</a>
+                    <p class="text-white text-opacity-75 small mb-4 flex-grow-1">Connect with industry professionals, book mentorship sessions, and participate in forum discussions.</p>
+                    <a href="{% url 'community:hub' %}" class="btn btn-light btn-sm rounded-pill px-4 fw-semibold align-self-start mt-auto shadow-sm">Explore Community</a>
                 </div>
             </div>
         </div>

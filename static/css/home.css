@@ -10,7 +10,7 @@
     padding: 3rem 0 5rem; /* Reduced top padding to pull layout closer to navbar */
     position: relative;
     overflow: hidden;
-    background-color: #ffffff; /* White background for the hero section */
+    background-color: var(--card-bg); /* Theme variable background */
 }
 
 .hero-section::before {
@@ -187,7 +187,7 @@
    ------------------------------------------------------------ */
 .stats-section {
     padding: 5rem 0;
-    background-color: #F8FAFC;
+    background-color: var(--bg);
     position: relative;
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
@@ -197,14 +197,14 @@
    3. FEATURES SECTION (Alternating Background - White)
    ------------------------------------------------------------ */
 .features-section {
-    background-color: #ffffff;
+    background-color: var(--card-bg);
 }
 
 /* ------------------------------------------------------------
    4. HOW IT WORKS SECTION (Alternating Background - Light blue/gray)
    ------------------------------------------------------------ */
 .how-it-works-section {
-    background-color: #F8FAFC;
+    background-color: var(--bg);
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
 }
@@ -213,14 +213,14 @@
    5. TIMELINE SECTION (Alternating Background - White)
    ------------------------------------------------------------ */
 .timeline-section {
-    background-color: #ffffff;
+    background-color: var(--card-bg);
 }
 
 /* ------------------------------------------------------------
    6. TESTIMONIALS SECTION (Alternating Background - Light blue/gray)
    ------------------------------------------------------------ */
 .testimonials-section {
-    background-color: #F8FAFC;
+    background-color: var(--bg);
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
 }
@@ -229,7 +229,7 @@
    7. FAQ SECTION (Alternating Background - White)
    ------------------------------------------------------------ */
 .faq-section {
-    background-color: #ffffff;
+    background-color: var(--card-bg);
 }
 
 .faq-wrapper {

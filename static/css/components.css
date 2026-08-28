@@ -512,7 +512,7 @@
    9. NAVBAR OVERRIDES (Global)
    ------------------------------------------------------------ */
 .navbar-custom {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--navbar-bg, rgba(255, 255, 255, 0.95));
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid transparent;
@@ -587,7 +587,7 @@
    10. FOOTER STYLING (Global)
    ------------------------------------------------------------ */
 .footer-section {
-    background: var(--secondary);
+    background: #0F172A;
     color: rgba(255, 255, 255, 0.7);
     padding: 4rem 0 2rem;
 }
