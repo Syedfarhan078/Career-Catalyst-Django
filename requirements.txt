@@ -10,6 +10,7 @@ cssselect2==0.9.0
 dj-database-url==3.1.2
 Django==5.2.16
 django-crispy-forms==2.6
+gunicorn==26.2.0
 html5lib==1.1
 idna==3.18
 lxml==6.1.1
@@ -41,4 +42,5 @@ tzlocal==5.4.4
 uritools==6.1.2
 urllib3==2.7.0
 webencodings==0.5.1
+whitenoise==6.12.0
 xhtml2pdf==0.2.17
