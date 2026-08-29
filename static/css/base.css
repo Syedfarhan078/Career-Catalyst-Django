@@ -327,6 +327,62 @@ html[data-theme="dark"] label {
     color: var(--secondary) !important;
 }
 
+/* Global Dark Mode Contrast Fixes */
+html[data-theme="dark"] .text-dark:not(.badge),
+html[data-theme="dark"] .text-dark-custom {
+    color: var(--secondary) !important;
+}
+
+html[data-theme="dark"] a:hover {
+    color: #60a5fa !important;
+}
+
+html[data-theme="dark"] .btn-outline-dark {
+    color: var(--secondary) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .btn-outline-dark:hover {
+    background-color: var(--secondary) !important;
+    color: var(--bg) !important;
+}
+
+html[data-theme="dark"] .card-header {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    border-bottom-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .list-group-item {
+    background-color: var(--card-bg) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .dropdown-menu {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+
+html[data-theme="dark"] .dropdown-item {
+    color: var(--text) !important;
+}
+
+html[data-theme="dark"] .dropdown-item:hover {
+    background-color: var(--hover-bg) !important;
+    color: var(--secondary) !important;
+}
+
+html[data-theme="dark"] .form-text,
+html[data-theme="dark"] .help-block,
+html[data-theme="dark"] .helptext,
+html[data-theme="dark"] .helptext li,
+html[data-theme="dark"] ul.text-muted,
+html[data-theme="dark"] ul.text-muted li,
+html[data-theme="dark"] small.text-muted {
+    color: var(--text-muted) !important;
+}
+
 .hover-bg {
     transition: background-color 0.2s ease;
 }

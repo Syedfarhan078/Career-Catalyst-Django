@@ -8,7 +8,9 @@ from django.contrib.auth import views as auth_views
 from django.contrib import messages
 from django.urls import reverse_lazy
 
-from .forms import UserRegistrationForm, UserLoginForm, UserProfileForm
+from django.core.exceptions import ValidationError
+from .forms import UserRegistrationForm, UserLoginForm, UserProfileForm, OTPVerificationForm
+from .services import create_user_with_otp, verify_user_otp, resend_user_otp
 
 def register_view(request):
     if request.user.is_authenticated:
@@ -16,13 +18,59 @@ def register_view(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, "Registration successful! Welcome to Career Catalyst.")
-            return redirect('dashboard')
+            try:
+                user = create_user_with_otp(form.cleaned_data)
+                request.session['verify_user_id'] = user.id
+                messages.info(request, "An OTP verification code has been sent to your email. Please enter it below to activate your account.")
+                return redirect('verify_otp')
+            except Exception as e:
+                messages.error(request, f"Error generating verification code: {str(e)}")
     else:
         form = UserRegistrationForm()
     return render(request, 'accounts/register.html', {'form': form})
+
+def verify_otp_view(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+        
+    user_id = request.session.get('verify_user_id')
+    if not user_id:
+        messages.error(request, "Please register first.")
+        return redirect('register')
+        
+    if request.method == 'POST':
+        form = OTPVerificationForm(request.POST)
+        if form.is_valid():
+            otp_code = form.cleaned_data['otp_code']
+            try:
+                user = verify_user_otp(user_id, otp_code)
+                if 'verify_user_id' in request.session:
+                    del request.session['verify_user_id']
+                login(request, user)
+                messages.success(request, "Email verified successfully! Welcome to Career Catalyst.")
+                return redirect('dashboard')
+            except ValidationError as e:
+                form.add_error('otp_code', e.message)
+    else:
+        form = OTPVerificationForm()
+    return render(request, 'accounts/verify_otp.html', {'form': form})
+
+def resend_otp_view(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+        
+    user_id = request.session.get('verify_user_id')
+    if not user_id:
+        messages.error(request, "Please register first.")
+        return redirect('register')
+        
+    try:
+        resend_user_otp(user_id)
+        messages.success(request, "A new OTP code has been sent to your email.")
+    except ValidationError as e:
+        messages.error(request, e.message)
+        
+    return redirect('verify_otp')
 
 def login_view(request):
     if request.user.is_authenticated:

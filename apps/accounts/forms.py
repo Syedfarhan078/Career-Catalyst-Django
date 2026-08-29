@@ -47,3 +47,17 @@ class UserProfileForm(forms.ModelForm):
             # Make bio input look like a proper text area with size limits
             if name == 'bio':
                 field.widget.attrs.update({'rows': 4})
+
+class OTPVerificationForm(forms.Form):
+    otp_code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        required=True,
+        label="Enter 6-Digit OTP",
+        widget=forms.TextInput(attrs={
+            'placeholder': '123456',
+            'class': 'form-control text-center font-monospace fs-4',
+            'autocomplete': 'off',
+            'maxlength': '6'
+        })
+    )
