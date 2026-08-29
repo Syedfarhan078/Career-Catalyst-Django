@@ -1,4 +1,5 @@
 import random
+import os
 from datetime import timedelta
 from django.core.mail import send_mail
 from django.conf import settings
@@ -15,8 +16,43 @@ def generate_otp_code():
     """Generates a secure 6-digit numeric string."""
     return "".join(random.choices("0123456789", k=6))
 
+import requests
+
 def send_otp_email(user, otp_code):
-    """Sends OTP verification code via configured Django Email Backend."""
+    """Sends OTP verification code. Uses Brevo HTTP API if configured (bypassing Render SMTP block)."""
+    brevo_api_key = os.getenv('BREVO_API_KEY')
+    if brevo_api_key:
+        url = "https://api.brevo.com/v3/smtp/email"
+        headers = {
+            "accept": "application/json",
+            "api-key": brevo_api_key,
+            "content-type": "application/json"
+        }
+        payload = {
+            "sender": {
+                "email": settings.DEFAULT_FROM_EMAIL,
+                "name": "Career Catalyst"
+            },
+            "to": [{"email": user.email, "name": user.username}],
+            "subject": "Confirm your Career Catalyst account activation",
+            "textContent": (
+                f"Hello {user.first_name or user.username},\n\n"
+                f"Thank you for creating an account with Career Catalyst, your personalized portal for career guidance and interview preparation.\n\n"
+                f"To complete your registration and activate your account, please enter the following verification code on the registration page:\n\n"
+                f"Verification Code: {otp_code}\n\n"
+                f"This code is valid for 5 minutes. If you did not register for a Career Catalyst account, you can safely ignore this email.\n\n"
+                f"Best regards,\n"
+                f"The Career Catalyst Team"
+            )
+        }
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=10)
+            response.raise_for_status()
+            return
+        except Exception as e:
+            # Fallback to standard Django mailer if API call fails
+            pass
+
     subject = "Confirm your Career Catalyst account activation"
     message = (
         f"Hello {user.first_name or user.username},\n\n"
