@@ -177,11 +177,11 @@
 }
 
 .stat-card .stat-number {
-    font-size: var(--text-4xl);
+    font-size: 1.65rem;
     font-weight: var(--font-bold);
     color: var(--secondary);
-    line-height: 1.1;
-    margin-bottom: 0.25rem;
+    line-height: 1.25;
+    margin-bottom: 0.35rem;
 }
 
 .stat-card .stat-label {
