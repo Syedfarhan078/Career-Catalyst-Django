@@ -118,13 +118,8 @@ Career-Catalyst-Django/
 - Python 3.10+
 - Git
 
-### 2. Clone the Repository
-```bash
-git clone https://github.com/Syedfarhan078/Career-Catalyst-Django.git
-cd Career-Catalyst-Django
-```
 
-### 3. Create & Activate a Virtual Environment
+### 2. Create & Activate a Virtual Environment
 ```bash
 # Windows (PowerShell)
 python -m venv .venv
@@ -135,22 +130,13 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 4. Install Dependencies
+### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
-
-### 5. Configure Environment Variables
-Create a `.env` file in the root directory:
-```env
-SECRET_KEY=your_secure_django_secret_key
-DEBUG=True
-DATABASE_URL=postgres://user:password@localhost:5432/career_catalyst_db
-GROQ_API_KEY=your_groq_api_key_here
-DEFAULT_FROM_EMAIL=your_email@gmail.com
 ```
 
-### 6. Apply Migrations & Seed Baseline Data
+### 4. Apply Migrations & Seed Baseline Data
 ```bash
 python manage.py migrate
 python manage.py seed_roadmaps
@@ -158,7 +144,7 @@ python manage.py seed_community
 python manage.py seed_interviews
 ```
 
-### 7. Run the Development Server
+### 5. Run the Development Server
 ```bash
 python manage.py runserver
 ```
