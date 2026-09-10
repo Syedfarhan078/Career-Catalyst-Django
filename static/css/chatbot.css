@@ -34,24 +34,34 @@
     position: fixed;
     bottom: 25px;
     right: 25px;
-    width: 75px;
-    height: 75px;
+    width: 68px;
+    height: 68px;
     background: none;
     border: none;
     outline: none;
     cursor: pointer;
     z-index: 1050;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, filter 0.3s ease;
     animation: bot-float 3s ease-in-out infinite;
     padding: 0;
-    box-shadow: none;
+    border-radius: 50%;
+}
+
+#chatbot-launcher img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    box-shadow: 0 8px 24px rgba(20, 184, 166, 0.35), 0 4px 12px rgba(37, 99, 235, 0.25);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 #chatbot-launcher:hover {
-    transform: scale(1.08);
+    transform: scale(1.1);
 }
 
 #chatbot-launcher:hover img {
+    box-shadow: 0 12px 30px rgba(20, 184, 166, 0.5), 0 6px 18px rgba(37, 99, 235, 0.35);
     animation: bot-wave 1.2s ease-in-out;
 }
 
