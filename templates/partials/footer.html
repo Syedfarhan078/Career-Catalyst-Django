@@ -3,7 +3,7 @@
     <div class="container">
         <div class="row">
             <!-- Brand & Description -->
-            <div class="{% if user.is_authenticated %}col-lg-7{% else %}col-lg-5{% endif %} mb-4 mb-lg-0">
+            <div class="col-lg-7 mb-4 mb-lg-0">
                 <div class="footer-brand d-flex align-items-center mb-3">
                     <img src="{% static 'images/favicon.png' %}" alt="Career Catalyst Logo" class="me-2" style="height: 32px; width: 32px; border-radius: 6px;">
                     <span>Career<span class="brand-accent">Catalyst</span></span>
@@ -12,8 +12,8 @@
             </div>
             
             {% if not user.is_authenticated %}
-            <!-- Quick Links -->
-            <div class="col-6 col-lg-3 offset-lg-1 mb-4 mb-lg-0">
+            <!-- Quick Links (Only for Unauthenticated Users) -->
+            <div class="col-6 col-lg-4 offset-lg-1 mb-4 mb-lg-0">
                 <h5>Quick Links</h5>
                 <ul class="footer-links">
                     <li><a href="{% url 'home' %}#hero">Home</a></li>
@@ -22,16 +22,16 @@
                     <li><a href="{% url 'home' %}#faq">FAQ</a></li>
                 </ul>
             </div>
-            {% endif %}
-            
-            <!-- Contact Info -->
-            <div class="{% if user.is_authenticated %}col-lg-4 offset-lg-1{% else %}col-6 col-lg-3{% endif %}">
+            {% else %}
+            <!-- Contact Info (Only for Authenticated Users) -->
+            <div class="col-6 col-lg-4 offset-lg-1 mb-4 mb-lg-0">
                 <h5>Contact</h5>
                 <ul class="footer-links text-white-50">
                     <li class="mb-2"><i class="bi bi-envelope me-2 text-primary"></i>devfarhan7890@gmail.com</li>
                     <li class="mb-2"><i class="bi bi-geo-alt me-2 text-primary"></i>Bengaluru, India</li>
                 </ul>
             </div>
+            {% endif %}
         </div>
         
         <!-- Bottom Bar -->
