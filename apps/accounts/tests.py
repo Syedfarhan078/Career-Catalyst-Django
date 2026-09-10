@@ -1,4 +1,5 @@
-from django.test import TestCase
+from django.test import TestCase, Client
+from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
@@ -119,3 +120,35 @@ class EmailOTPVerificationTests(TestCase):
         new_otp = EmailOTP.objects.filter(user=user).last()
         self.assertIsNotNone(new_otp)
         self.assertNotEqual(new_otp.id, otp.id)
+
+
+class AccountDeletionTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='deletionuser',
+            email='delete@test.com',
+            password='TestPassword123!'
+        )
+
+    def test_delete_account_get_renders_page(self):
+        """Verify GET request to delete_account renders the confirmation page."""
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('delete_account'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'accounts/delete_account.html')
+
+    def test_delete_account_success_with_matching_username(self):
+        """Verify user is deleted and logged out when typing matching username."""
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('delete_account'), {'confirm_username': 'deletionuser'})
+        self.assertRedirects(response, reverse('home'))
+        self.assertFalse(User.objects.filter(username='deletionuser').exists())
+
+    def test_delete_account_fails_with_mismatched_username(self):
+        """Verify user is NOT deleted if typed username doesn't match."""
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('delete_account'), {'confirm_username': 'wrongusername'})
+        self.assertRedirects(response, reverse('delete_account'))
+        self.assertTrue(User.objects.filter(username='deletionuser').exists())
+

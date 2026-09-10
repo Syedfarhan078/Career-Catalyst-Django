@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Account | Career Catalyst{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <!-- Breadcrumb / Back Link -->
+            <div class="mb-4">
+                <a href="{% url 'profile_edit' %}" class="text-decoration-none text-muted">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Profile Settings
+                </a>
+            </div>
+
+            <!-- Danger Zone Card -->
+            <div class="card border-danger border-opacity-50 shadow-lg rounded-4 overflow-hidden">
+                <!-- Header Banner -->
+                <div class="card-header bg-danger bg-opacity-10 border-bottom border-danger border-opacity-25 p-4 text-center">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-circle mb-3" style="width: 64px; height: 64px;">
+                        <i class="bi bi-exclamation-triangle-fill fs-2"></i>
+                    </div>
+                    <h2 class="fw-bold text-danger mb-1">Delete Account</h2>
+                    <p class="text-muted small mb-0">This action is permanent and cannot be undone.</p>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <!-- Warning Details -->
+                    <div class="alert alert-danger border-danger border-opacity-25 rounded-3 mb-4 small" role="alert">
+                        <h6 class="fw-bold text-danger mb-2"><i class="bi bi-shield-x me-1"></i> Unexpected bad things will happen if you don't read this!</h6>
+                        <ul class="mb-0 ps-3">
+                            <li>All your profile information and contact details will be deleted.</li>
+                            <li>Your saved ATS resumes and interview scores will be permanently lost.</li>
+                            <li>Your roadmap milestones, progress tracking, and mentorship chats will be purged.</li>
+                        </ul>
+                    </div>
+
+                    <form method="POST" id="deleteAccountForm">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label for="confirm_username" class="form-label fw-semibold text-secondary">
+                                Please type <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1 user-select-all">{{ user.username }}</span> to confirm:
+                            </label>
+                            <input 
+                                type="text" 
+                                class="form-control form-control-lg border-danger border-opacity-50" 
+                                id="confirm_username" 
+                                name="confirm_username" 
+                                placeholder="Type your username here" 
+                                autocomplete="off" 
+                                required
+                            >
+                            <div class="form-text text-muted small mt-2">
+                                Case-sensitive verification required for account deletion.
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2">
+                            <button 
+                                type="submit" 
+                                class="btn btn-danger py-3 fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" 
+                                id="deleteSubmitBtn" 
+                                disabled
+                            >
+                                <i class="bi bi-trash3-fill"></i>
+                                I understand the consequences, delete my account
+                            </button>
+                            <a href="{% url 'profile_edit' %}" class="btn btn-light py-2 text-muted mt-2 rounded-3">
+                                Cancel, keep my account
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const expectedUsername = "{{ user.username|escapejs }}";
+    const input = document.getElementById('confirm_username');
+    const deleteBtn = document.getElementById('deleteSubmitBtn');
+
+    if (input && deleteBtn) {
+        input.addEventListener('input', () => {
+            if (input.value.trim() === expectedUsername) {
+                deleteBtn.removeAttribute('disabled');
+                deleteBtn.classList.remove('opacity-50');
+            } else {
+                deleteBtn.setAttribute('disabled', 'true');
+                deleteBtn.classList.add('opacity-50');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

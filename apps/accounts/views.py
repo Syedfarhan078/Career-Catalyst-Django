@@ -107,6 +107,21 @@ def profile_view(request):
         form = UserProfileForm(instance=request.user)
     return render(request, 'accounts/profile.html', {'form': form})
 
+@login_required
+def delete_account_view(request):
+    if request.method == 'POST':
+        confirm_username = request.POST.get('confirm_username', '').strip()
+        if confirm_username == request.user.username:
+            user = request.user
+            logout(request)
+            user.delete()
+            messages.success(request, "Your account has been permanently deleted. We're sorry to see you go!")
+            return redirect('home')
+        else:
+            messages.error(request, "The entered username does not match. Account deletion has been cancelled.")
+            return redirect('delete_account')
+    return render(request, 'accounts/delete_account.html')
+
 class CustomPasswordResetView(SuccessMessageMixin, auth_views.PasswordResetView):
     template_name = 'accounts/forgot_password.html'
     email_template_name = 'accounts/password_reset_email.html'
