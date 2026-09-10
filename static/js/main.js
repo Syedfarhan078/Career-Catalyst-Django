@@ -230,4 +230,208 @@ document.addEventListener('DOMContentLoaded', () => {
         wrapper.appendChild(toggleBtn);
     });
 
+    // =============================================
+    // Top Navigation Progress Bar
+    // =============================================
+    const progressBar = {
+        element: null,
+        timer: null,
+        currentProgress: 0,
+        init() {
+            if (!this.element) {
+                this.element = document.createElement('div');
+                this.element.id = 'top-progress-bar';
+                document.body.appendChild(this.element);
+            }
+        },
+        start() {
+            this.init();
+            if (this.timer) clearInterval(this.timer);
+            this.currentProgress = 15;
+            this.element.style.opacity = '1';
+            this.element.style.width = '15%';
+
+            this.timer = setInterval(() => {
+                if (this.currentProgress < 75) {
+                    this.currentProgress += Math.random() * 15;
+                    this.element.style.width = `${Math.min(this.currentProgress, 75)}%`;
+                } else if (this.currentProgress < 90) {
+                    this.currentProgress += Math.random() * 3;
+                    this.element.style.width = `${Math.min(this.currentProgress, 90)}%`;
+                }
+            }, 200);
+        },
+        done() {
+            if (!this.element) return;
+            if (this.timer) clearInterval(this.timer);
+            this.element.style.width = '100%';
+            setTimeout(() => {
+                this.element.style.opacity = '0';
+                setTimeout(() => {
+                    this.element.style.width = '0%';
+                    this.currentProgress = 0;
+                }, 300);
+            }, 200);
+        }
+    };
+    window.ProgressBar = progressBar;
+
+    // Trigger progress bar on internal link clicks
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (!link) return;
+
+        const href = link.getAttribute('href');
+        const target = link.getAttribute('target');
+
+        // Check if it's an external link, anchor hash, or new tab
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:') || target === '_blank') {
+            return;
+        }
+
+        // Check if same origin
+        try {
+            const url = new URL(link.href, window.location.origin);
+            if (url.origin === window.location.origin && url.pathname !== window.location.pathname) {
+                progressBar.start();
+            }
+        } catch (err) {
+            // Ignore URL parse error
+        }
+    });
+
+    // Trigger on form submissions
+    document.addEventListener('submit', (e) => {
+        if (!e.defaultPrevented) {
+            progressBar.start();
+        }
+    });
+
+    // Complete on page load or pageshow (back/forward cache)
+    window.addEventListener('pageshow', () => {
+        progressBar.done();
+    });
+
+    // =============================================
+    // Toast Notification System
+    // =============================================
+    const toastContainer = document.getElementById('toast-container');
+
+    const initToast = (toastEl) => {
+        if (!toastEl) return;
+        const closeBtn = toastEl.querySelector('.toast-close-btn');
+        const progressEl = toastEl.querySelector('.toast-progress');
+        const duration = parseInt(toastEl.getAttribute('data-auto-dismiss') || '4000', 10);
+
+        let timeoutId = null;
+        let isPaused = false;
+        let startTime = Date.now();
+        let remainingTime = duration;
+
+        const dismiss = () => {
+            if (toastEl.classList.contains('toast-hiding')) return;
+            toastEl.classList.add('toast-hiding');
+            setTimeout(() => {
+                toastEl.remove();
+            }, 300);
+        };
+
+        if (progressEl) {
+            progressEl.style.transition = `transform ${duration}ms linear`;
+            // Trigger animation in next frame
+            requestAnimationFrame(() => {
+                progressEl.style.transform = 'scaleX(0)';
+            });
+        }
+
+        const startTimer = (time) => {
+            startTime = Date.now();
+            timeoutId = setTimeout(dismiss, time);
+        };
+
+        const pauseTimer = () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                remainingTime -= (Date.now() - startTime);
+                isPaused = true;
+                if (progressEl) {
+                    const computedWidth = window.getComputedStyle(progressEl).transform;
+                    progressEl.style.transition = 'none';
+                    progressEl.style.transform = computedWidth;
+                }
+            }
+        };
+
+        const resumeTimer = () => {
+            if (isPaused && remainingTime > 0) {
+                isPaused = false;
+                if (progressEl) {
+                    progressEl.style.transition = `transform ${remainingTime}ms linear`;
+                    progressEl.style.transform = 'scaleX(0)';
+                }
+                startTimer(remainingTime);
+            }
+        };
+
+        if (duration > 0) {
+            startTimer(duration);
+            toastEl.addEventListener('mouseenter', pauseTimer);
+            toastEl.addEventListener('mouseleave', resumeTimer);
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                if (timeoutId) clearTimeout(timeoutId);
+                dismiss();
+            });
+        }
+    };
+
+    // Initialize all existing server toasts
+    if (toastContainer) {
+        toastContainer.querySelectorAll('.custom-toast').forEach(initToast);
+    }
+
+    // Global helper to show client-side toasts
+    window.showToast = (message, type = 'info', duration = 4000) => {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container-custom';
+            container.setAttribute('aria-live', 'polite');
+            container.setAttribute('aria-atomic', 'true');
+            document.body.appendChild(container);
+        }
+
+        const icons = {
+            success: 'bi-check-circle-fill text-success',
+            error: 'bi-exclamation-octagon-fill text-danger',
+            danger: 'bi-exclamation-octagon-fill text-danger',
+            warning: 'bi-exclamation-triangle-fill text-warning',
+            info: 'bi-info-circle-fill text-primary'
+        };
+
+        const toastEl = document.createElement('div');
+        toastEl.className = `custom-toast toast-${type}`;
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('data-auto-dismiss', duration);
+
+        toastEl.innerHTML = `
+            <div class="toast-icon">
+                <i class="bi ${icons[type] || icons.info}"></i>
+            </div>
+            <div class="toast-body-content">
+                <div class="toast-msg">${message}</div>
+            </div>
+            <button type="button" class="toast-close-btn" aria-label="Close">
+                <i class="bi bi-x"></i>
+            </button>
+            <div class="toast-progress"></div>
+        `;
+
+        container.appendChild(toastEl);
+        initToast(toastEl);
+    };
+
 });

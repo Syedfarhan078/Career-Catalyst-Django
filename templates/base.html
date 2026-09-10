@@ -26,16 +26,28 @@
 
 {% include "partials/navbar.html" %}
 
-{% if messages %}
-    <div class="container mt-3">
+<!-- Floating Toast Notifications -->
+<div id="toast-container" class="toast-container-custom" aria-live="polite" aria-atomic="true">
+    {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="custom-toast toast-{{ message.tags }}" role="alert" data-auto-dismiss="4000">
+                <div class="toast-icon">
+                    {% if 'success' in message.tags %}<i class="bi bi-check-circle-fill text-success"></i>
+                    {% elif 'error' in message.tags or 'danger' in message.tags %}<i class="bi bi-exclamation-octagon-fill text-danger"></i>
+                    {% elif 'warning' in message.tags %}<i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                    {% else %}<i class="bi bi-info-circle-fill text-primary"></i>{% endif %}
+                </div>
+                <div class="toast-body-content">
+                    <div class="toast-msg">{{ message }}</div>
+                </div>
+                <button type="button" class="toast-close-btn" aria-label="Close">
+                    <i class="bi bi-x"></i>
+                </button>
+                <div class="toast-progress"></div>
             </div>
         {% endfor %}
-    </div>
-{% endif %}
+    {% endif %}
+</div>
 
 {% block main_wrapper %}
 <main class="container py-5">
@@ -87,8 +99,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{% static 'js/main.js' %}?v=1.8"></script>
+<script src="{% static 'js/main.js' %}?v=1.9"></script>
 <script src="{% static 'js/chatbot.js' %}?v=1.8"></script>
+<script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.min.js" type="module"></script>
 {% block extra_js %}{% endblock %}
 
 </body>
