@@ -571,8 +571,10 @@
 
 .navbar-custom .navbar-toggler {
     border: none;
-    padding: 0.25rem;
+    padding: 0.25rem 0.5rem;
     box-shadow: none;
+    border-radius: var(--radius-md);
+    background: transparent;
 }
 
 .navbar-custom .navbar-toggler:focus {
@@ -581,6 +583,31 @@
 
 .navbar-custom .navbar-toggler-icon {
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%230F172A' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+html[data-theme="dark"] .navbar-custom .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23F1F5F9' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+@media (max-width: 991.98px) {
+    .navbar-custom .navbar-collapse {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        margin-top: 0.75rem;
+        box-shadow: var(--shadow-lg);
+    }
+    .navbar-custom .navbar-nav {
+        gap: 0.5rem;
+    }
+    .navbar-custom .nav-link {
+        padding: 0.6rem 0.85rem !important;
+        border-radius: var(--radius-md);
+    }
+    .navbar-custom .nav-link:hover {
+        background-color: var(--hover-bg);
+    }
 }
 
 /* ------------------------------------------------------------
