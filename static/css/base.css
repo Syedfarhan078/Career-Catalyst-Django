@@ -390,3 +390,30 @@ html[data-theme="dark"] small.text-muted {
     background-color: var(--hover-bg) !important;
 }
 
+/* Password Toggle Visibility Styling */
+.password-toggle-wrapper {
+    width: 100%;
+}
+
+.password-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted) !important;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.password-toggle-btn:hover {
+    color: var(--primary) !important;
+    transform: translateY(-50%) scale(1.15) !important;
+}
+
+html[data-theme="dark"] .password-toggle-btn {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] .password-toggle-btn:hover {
+    color: var(--primary) !important;
+}
+
+

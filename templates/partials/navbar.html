@@ -40,6 +40,18 @@
                         <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center gap-2" href="{% url 'profile_detail' %}">
+                            {% if user.studentprofile.profile_picture %}
+                                <img src="{{ user.studentprofile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border" style="width: 26px; height: 26px;">
+                            {% elif user.profile_picture %}
+                                <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border" style="width: 26px; height: 26px;">
+                            {% else %}
+                                <i class="bi bi-person-circle fs-5"></i>
+                            {% endif %}
+                            <span>Profile</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm rounded-pill px-4 py-2 fw-semibold">Logout</a>
                     </li>
                 {% else %}

@@ -134,9 +134,15 @@
             <!-- Profile Setup Progress Card -->
             <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 animate-on-scroll" style="border: 1px solid #e2e8f0 !important; background: #ffffff;">
                 <div class="text-center mb-3">
-                    <div class="avatar-circle mx-auto mb-3 d-flex align-items-center justify-content-center text-white fw-bold fs-3" style="width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);">
-                        {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
-                    </div>
+                    {% if profile.profile_picture %}
+                        <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle border border-3 border-primary shadow-sm object-fit-cover mx-auto mb-3 d-block" style="width: 76px; height: 76px;">
+                    {% elif user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle border border-3 border-primary shadow-sm object-fit-cover mx-auto mb-3 d-block" style="width: 76px; height: 76px;">
+                    {% else %}
+                        <div class="avatar-circle mx-auto mb-3 d-flex align-items-center justify-content-center text-white fw-bold fs-3" style="width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);">
+                            {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+                        </div>
+                    {% endif %}
                     <h5 class="fw-bold text-secondary mb-1">{{ user.first_name }} {{ user.last_name }}</h5>
                     <p class="text-muted small mb-0">{{ user.email }}</p>
                 </div>

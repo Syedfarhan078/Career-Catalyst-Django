@@ -184,4 +184,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // =============================================
+    // Show / Hide Password Toggle on Password Fields
+    // =============================================
+    const passwordInputs = document.querySelectorAll('input[type="password"]');
+    passwordInputs.forEach(input => {
+        // Prevent duplicate wrappers
+        if (input.closest('.password-toggle-wrapper')) return;
+
+        // Create container wrapper
+        const wrapper = document.createElement('div');
+        wrapper.className = 'position-relative password-toggle-wrapper';
+
+        // Insert wrapper into DOM and move input inside
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+
+        // Reserve space on the right for the eye icon
+        input.style.paddingRight = '2.75rem';
+
+        // Create toggle button
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted text-decoration-none border-0 p-0 me-3 password-toggle-btn';
+        toggleBtn.setAttribute('aria-label', 'Toggle password visibility');
+        toggleBtn.setAttribute('tabindex', '-1');
+        toggleBtn.innerHTML = '<i class="bi bi-eye-slash-fill fs-5"></i>';
+        toggleBtn.style.zIndex = '5';
+        toggleBtn.style.cursor = 'pointer';
+
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggleBtn.innerHTML = '<i class="bi bi-eye-fill fs-5 text-primary"></i>';
+                toggleBtn.setAttribute('aria-label', 'Hide password');
+            } else {
+                input.type = 'password';
+                toggleBtn.innerHTML = '<i class="bi bi-eye-slash-fill fs-5"></i>';
+                toggleBtn.setAttribute('aria-label', 'Show password');
+            }
+        });
+
+        wrapper.appendChild(toggleBtn);
+    });
+
 });
