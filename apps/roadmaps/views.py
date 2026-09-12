@@ -20,12 +20,47 @@ class CareerPathListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Get user's active enrollments
         if self.request.user.is_authenticated:
-            enrolled_ids = UserRoadmap.objects.filter(
+            enrollments = UserRoadmap.objects.filter(
                 user=self.request.user
-            ).values_list('career_path_id', flat=True)
-            context['enrolled_ids'] = list(enrolled_ids)
+            ).select_related('career_path')
+            
+            # Map progress and categorize into in-progress vs completed
+            progress_map = {}
+            completed_enrollments = []
+            in_progress_enrollments = []
+            
+            for enrollment in enrollments:
+                p = enrollment.progress_percentage()
+                progress_map[enrollment.career_path_id] = p
+                if p >= 100:
+                    completed_enrollments.append(enrollment)
+                else:
+                    in_progress_enrollments.append(enrollment)
+
+            context['enrollments'] = enrollments
+            context['in_progress_enrollments'] = in_progress_enrollments
+            context['completed_enrollments'] = completed_enrollments
+            context['enrolled_ids'] = list(enrollments.values_list('career_path_id', flat=True))
+            context['progress_map'] = progress_map
+            context['completed_path_ids'] = [e.career_path_id for e in completed_enrollments]
+            context['in_progress_path_ids'] = [e.career_path_id for e in in_progress_enrollments]
+
+            # Reorder all paths so started roadmaps come at top (in-progress first, then completed, then not started)
+            all_paths = list(context['paths'])
+            completed_ids_set = set(context['completed_path_ids'])
+            in_progress_ids_set = set(context['in_progress_path_ids'])
+            
+            def sort_key(path):
+                if path.id in in_progress_ids_set:
+                    return 0  # In-progress roadmaps at the top
+                elif path.id in completed_ids_set:
+                    return 1  # Completed roadmaps next
+                return 2      # Unstarted roadmaps last
+            
+            all_paths.sort(key=sort_key)
+            context['paths'] = all_paths
+
         return context
 
 
@@ -109,12 +144,25 @@ def toggle_topic(request, topic_id):
         progress.completed_at = timezone.now() if progress.is_completed else None
         progress.save()
 
+        # Check if this specific week (milestone) is now completely finished
+        milestone = topic.milestone
+        milestone_topic_ids = list(milestone.topics.values_list('id', flat=True))
+        completed_milestone_topics_count = TopicProgress.objects.filter(
+            user_roadmap=user_roadmap,
+            topic_id__in=milestone_topic_ids,
+            is_completed=True
+        ).count()
+        week_completed = (completed_milestone_topics_count == len(milestone_topic_ids)) and progress.is_completed
+
         return JsonResponse({
             'success': True,
             'is_completed': progress.is_completed,
             'progress_percentage': user_roadmap.progress_percentage(),
             'completed_count': user_roadmap.completed_count(),
             'total_topics': user_roadmap.career_path.total_topics(),
+            'week_completed': week_completed,
+            'week_number': milestone.week_number,
+            'week_title': milestone.title,
         })
     return JsonResponse({'success': False}, status=405)
 

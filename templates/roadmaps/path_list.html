@@ -18,26 +18,64 @@
 
     {% if enrollments %}
     <div class="mb-5">
-        <h4 class="fw-bold text-secondary mb-3"><i class="bi bi-bookmark-star"></i> Your Active Roadmaps</h4>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold text-secondary mb-0"><i class="bi bi-bookmark-star text-primary"></i> Your Roadmaps</h4>
+            <a href="{% url 'roadmaps:my_roadmap' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">View All Active</a>
+        </div>
         <div class="row g-3 mb-4">
-            {% for enrollment in enrollments %}
-            <div class="col-md-4">
+            {% for enrollment in in_progress_enrollments %}
+            <div class="col-md-6 col-lg-4">
                 <a href="{% url 'roadmaps:path_detail' enrollment.career_path.slug %}" class="text-decoration-none">
-                    <div class="card border-0 shadow-sm rounded-4 p-3 h-100 hover-lift">
-                        <div class="d-flex align-items-center mb-2">
-                            <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
-                                <i class="{{ enrollment.career_path.icon }} fs-4 text-primary"></i>
+                    <div class="card border-0 shadow-sm rounded-4 p-3 h-100 hover-lift position-relative overflow-hidden" style="border-left: 4px solid var(--primary) !important;">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                                    <i class="{{ enrollment.career_path.icon }} fs-4 text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-secondary">{{ enrollment.career_path.name }}</h6>
+                                    <small class="text-muted">Started {{ enrollment.started_at|date:"M d, Y" }}</small>
+                                </div>
                             </div>
-                            <div>
-                                <h6 class="fw-bold mb-0 text-secondary">{{ enrollment.career_path.name }}</h6>
-                                <small class="text-muted">Started {{ enrollment.started_at|date:"M d, Y" }}</small>
-                            </div>
+                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1 small">In Progress</span>
                         </div>
-                        <div class="progress" style="height: 8px;">
+                        <div class="progress mt-2" style="height: 8px;">
                             <div class="progress-bar" role="progressbar" style="width: {{ enrollment.progress_percentage }}%; background: linear-gradient(to right, var(--primary), var(--accent));">
                             </div>
                         </div>
-                        <small class="text-muted mt-1">{{ enrollment.progress_percentage }}% complete</small>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <small class="text-muted">{{ enrollment.progress_percentage }}% complete</small>
+                            <small class="text-primary fw-semibold">Continue <i class="bi bi-arrow-right"></i></small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+
+            {% for enrollment in completed_enrollments %}
+            <div class="col-md-6 col-lg-4">
+                <a href="{% url 'roadmaps:path_detail' enrollment.career_path.slug %}" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 h-100 hover-lift position-relative overflow-hidden" style="border-left: 4px solid #22c55e !important;">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-success bg-opacity-10 p-2 me-3">
+                                    <i class="{{ enrollment.career_path.icon }} fs-4 text-success"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-secondary">{{ enrollment.career_path.name }}</h6>
+                                    <small class="text-muted">Completed 🎉</small>
+                                </div>
+                            </div>
+                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small"><i class="bi bi-check-circle-fill me-1"></i> Completed</span>
+                        </div>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%;">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <small class="text-success fw-semibold">100% Mastered</small>
+                            <small class="text-success fw-semibold">Review <i class="bi bi-arrow-right"></i></small>
+                        </div>
                     </div>
                 </a>
             </div>
@@ -51,10 +89,24 @@
     <div class="row g-4">
         {% for path in paths %}
         <div class="col-md-4 col-lg-3">
-            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden hover-lift">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden hover-lift position-relative">
+                {% if path.id in completed_path_ids %}
+                <div class="position-absolute top-0 end-0 m-3">
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small fw-bold">
+                        <i class="bi bi-check-circle-fill me-1"></i> Completed
+                    </span>
+                </div>
+                {% elif path.id in in_progress_path_ids %}
+                <div class="position-absolute top-0 end-0 m-3">
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-bold">
+                        In Progress
+                    </span>
+                </div>
+                {% endif %}
+
                 <div class="card-body p-4 text-center d-flex flex-column">
-                    <div class="rounded-circle bg-primary bg-opacity-10 mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
-                        <i class="{{ path.icon }} fs-3 text-primary"></i>
+                    <div class="rounded-circle {% if path.id in completed_path_ids %}bg-success bg-opacity-10 text-success{% else %}bg-primary bg-opacity-10 text-primary{% endif %} mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                        <i class="{{ path.icon }} fs-3"></i>
                     </div>
                     <h5 class="fw-bold mb-2">{{ path.name }}</h5>
                     <p class="text-muted small flex-grow-1">{{ path.description|truncatewords:18 }}</p>
@@ -66,9 +118,13 @@
                             {{ path.difficulty }}
                         </span>
                     </div>
-                    {% if path.id in enrolled_ids %}
+                    {% if path.id in completed_path_ids %}
                         <a href="{% url 'roadmaps:path_detail' path.slug %}" class="btn btn-outline-success rounded-pill btn-sm px-4">
-                            <i class="bi bi-check-circle"></i> Continue
+                            <i class="bi bi-check-circle-fill me-1"></i> Completed
+                        </a>
+                    {% elif path.id in in_progress_path_ids %}
+                        <a href="{% url 'roadmaps:path_detail' path.slug %}" class="btn btn-primary-custom rounded-pill btn-sm px-4">
+                            Continue Path <i class="bi bi-arrow-right ms-1"></i>
                         </a>
                     {% else %}
                         <a href="{% url 'roadmaps:path_detail' path.slug %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">

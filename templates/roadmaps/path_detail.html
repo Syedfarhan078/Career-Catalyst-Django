@@ -40,6 +40,20 @@
     .resource-badge {
         font-size: 0.7rem;
     }
+    @keyframes floatBounce {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-8px) scale(1.08); }
+    }
+    .celebration-emoji {
+        animation: floatBounce 2s ease-in-out infinite;
+        display: inline-block;
+        font-size: 3.25rem;
+        line-height: 1;
+    }
+    .modal-celebration {
+        border-radius: 24px;
+        background: radial-gradient(circle at top, rgba(37,99,235,0.06) 0%, var(--card-bg, #ffffff) 70%);
+    }
 </style>
 {% endblock %}
 
@@ -141,29 +155,32 @@
 
     <!-- Milestones Timeline -->
     {% for milestone in milestones %}
-    <div class="card border-0 shadow-sm rounded-4 mb-4 milestone-card level-{{ milestone.level|lower }}">
+    <div class="card border-0 shadow-sm rounded-4 mb-4 milestone-card level-{{ milestone.level|lower }}" id="milestone-card-{{ milestone.week_number }}">
         <div class="card-body p-4">
-            <div class="d-flex align-items-center gap-3 mb-3">
-                <div class="week-badge bg-primary bg-opacity-10 text-primary">
-                    W{{ milestone.week_number }}
-                </div>
-                <div>
-                    <h4 class="fw-bold mb-0">{{ milestone.title }}</h4>
-                    <span class="badge {% if milestone.level == 'Beginner' %}bg-success{% elif milestone.level == 'Intermediate' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-10 {% if milestone.level == 'Beginner' %}text-success{% elif milestone.level == 'Intermediate' %}text-warning{% else %}text-danger{% endif %} rounded-pill small">
-                        {{ milestone.level }}
-                    </span>
+            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="week-badge bg-primary bg-opacity-10 text-primary">
+                        W{{ milestone.week_number }}
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0">{{ milestone.title }}</h4>
+                        <span class="badge {% if milestone.level == 'Beginner' %}bg-success{% elif milestone.level == 'Intermediate' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-10 {% if milestone.level == 'Beginner' %}text-success{% elif milestone.level == 'Intermediate' %}text-warning{% else %}text-danger{% endif %} rounded-pill small">
+                            {{ milestone.level }}
+                        </span>
+                    </div>
                 </div>
             </div>
 
             {% for topic in milestone.topics.all %}
             <div class="topic-check d-flex align-items-center justify-content-between p-3 mb-2 {% if topic.id in completed_ids %}completed{% endif %}"
-                 {% if user_roadmap %}data-topic-id="{{ topic.id }}"{% endif %}>
+                 {% if user_roadmap %}data-topic-id="{{ topic.id }}" data-week="{{ milestone.week_number }}"{% endif %}>
                 <div class="d-flex align-items-center gap-3">
                     {% if user_roadmap %}
                     <div class="form-check mb-0">
                         <input class="form-check-input topic-checkbox" type="checkbox" 
                                id="topic-{{ topic.id }}"
                                data-topic-id="{{ topic.id }}"
+                               data-week="{{ milestone.week_number }}"
                                {% if topic.id in completed_ids %}checked{% endif %}>
                     </div>
                     {% else %}
@@ -195,13 +212,72 @@
     {% endfor %}
 </div>
 
+<!-- Week Completion Celebration Modal -->
+<div class="modal fade" id="weekCompletedModal" tabindex="-1" aria-labelledby="weekCompletedTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-celebration border-0 shadow-lg p-4 p-md-5 text-center position-relative">
+            <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            
+            <div class="mb-2">
+                <span class="celebration-emoji">🎉</span>
+            </div>
+            
+            <div class="d-inline-flex align-items-center justify-content-center gap-1 mb-2">
+                <span class="text-warning fs-5">✨</span>
+                <span class="fw-bold text-uppercase text-primary small" style="letter-spacing: 0.1em;">Congratulations!</span>
+                <span class="text-warning fs-5">✨</span>
+            </div>
+            
+            <h2 class="fw-bold text-secondary mb-2" id="weekCompletedTitle">Week 1 completed!</h2>
+            
+            <p class="text-muted fs-6 mb-4">
+                You're one step closer to<br>
+                <strong class="text-secondary">your target career</strong>.
+            </p>
+            
+            <div class="d-flex justify-content-center">
+                <button type="button" class="btn btn-primary-custom rounded-pill px-5 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" data-bs-dismiss="modal">
+                    <i class="bi bi-check-lg"></i> Continue
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
 {% if user_roadmap %}
 <script>
+function triggerWeekConfetti() {
+    if (typeof confetti === 'function') {
+        // Initial center burst
+        confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+        // Side cannons for extra celebration
+        setTimeout(() => {
+            confetti({
+                particleCount: 50,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 }
+            });
+            confetti({
+                particleCount: 50,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 }
+            });
+        }, 200);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Make entire row clickable to toggle status
     document.querySelectorAll('.topic-check').forEach(function(row) {
         row.addEventListener('click', function(e) {
-            // If click was on checkbox or resource link, don't double-trigger
             if (e.target.classList.contains('topic-checkbox') || e.target.closest('a')) return;
             
             const checkbox = this.querySelector('.topic-checkbox');
@@ -248,6 +324,22 @@ document.addEventListener('DOMContentLoaded', function() {
                             banner.classList.remove('d-none');
                         } else {
                             banner.classList.add('d-none');
+                        }
+                    }
+
+                    // Week Completion Celebration with Confetti!
+                    if (data.week_completed) {
+                        const titleEl = document.getElementById('weekCompletedTitle');
+                        if (titleEl) {
+                            titleEl.textContent = `Week ${data.week_number} completed!`;
+                        }
+                        
+                        triggerWeekConfetti();
+
+                        const modalEl = document.getElementById('weekCompletedModal');
+                        if (modalEl && window.bootstrap) {
+                            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                            modal.show();
                         }
                     }
                 }
