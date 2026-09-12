@@ -1,25 +1,98 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load crispy_forms_tags %}
 
+{% block title %}Create Account | Career Catalyst{% endblock %}
+
 {% block content %}
-<div class="container d-flex align-items-center justify-content-center" style="min-height: 70vh; padding: 4rem 0;">
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 75vh; padding: 2.5rem 0;">
     <div class="row justify-content-center w-100">
-        <div class="col-md-6 col-lg-5">
-            <div class="card shadow-lg border-0 rounded-4">
-                <div class="card-body p-5">
-                    <h2 class="text-center mb-4 fw-bold">Create Account</h2>
+        <div class="col-lg-10 col-xl-9">
+            <div class="card shadow-sm border-0 rounded-4 overflow-hidden" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
+                <div class="row g-0">
                     
-                    <form method="POST">
-                        {% csrf_token %}
-                        {{ form|crispy }}
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn-primary-custom w-100 py-3 text-center d-flex justify-content-center align-items-center">Register</button>
+                    <!-- Left Column: Branded Value Context -->
+                    <div class="col-lg-5 p-4 p-md-5 d-flex flex-column justify-content-between border-end" style="background: var(--welcome-bg, #f8fafc); border-color: var(--border) !important;">
+                        <div>
+                            <!-- Brand -->
+                            <div class="d-flex align-items-center mb-4">
+                                <img src="{% static 'images/favicon.png' %}" alt="Career Catalyst Logo" class="me-2" style="height: 32px; width: 32px; border-radius: 6px;">
+                                <span class="fw-bold fs-5 text-secondary">Career<span class="brand-accent text-primary">Catalyst</span></span>
+                            </div>
+
+                            <!-- Value Headline -->
+                            <h4 class="fw-bold text-secondary mb-2">Launch your career trajectory.</h4>
+                            <p class="text-muted small mb-4" style="line-height: 1.6;">
+                                Join thousands of students discovering their ideal career roadmaps and accelerating their job readiness.
+                            </p>
+
+                            <!-- Feature Points -->
+                            <div class="d-flex flex-column gap-3 mb-4">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-compass"></i>
+                                    </div>
+                                    <div class="small">
+                                        <span class="fw-semibold text-secondary d-block">Structured Roadmaps</span>
+                                        <span class="text-muted">Curated milestones from beginner to advanced</span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-robot"></i>
+                                    </div>
+                                    <div class="small">
+                                        <span class="fw-semibold text-secondary d-block">AI Skill Readiness</span>
+                                        <span class="text-muted">Uncover exact missing skills for top roles</span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-mortarboard"></i>
+                                    </div>
+                                    <div class="small">
+                                        <span class="fw-semibold text-secondary d-block">Interview & Resume Suite</span>
+                                        <span class="text-muted">ATS resume scan & mock practice in one place</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </form>
-                    
-                    <p class="text-center mt-3 mb-0 small text-muted">
-                        Already have an account? <a href="{% url 'login' %}" class="fw-semibold text-primary">Login</a>
-                    </p>
+
+                        <!-- Footer Trust Badge -->
+                        <div class="pt-3 border-top mt-auto" style="border-color: var(--border) !important;">
+                            <div class="d-flex align-items-center gap-2 text-muted small">
+                                <i class="bi bi-shield-lock text-success"></i>
+                                <span>100% Free student account • Quick setup</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Registration Form -->
+                    <div class="col-lg-7 p-4 p-md-5 d-flex flex-column justify-content-center">
+                        <div class="mb-4">
+                            <h3 class="fw-bold text-secondary mb-1">Create your account</h3>
+                            <p class="text-muted small mb-0">Get started in seconds with your email.</p>
+                        </div>
+
+                        <form method="POST" novalidate>
+                            {% csrf_token %}
+                            {{ form|crispy }}
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn-primary-custom w-100 py-3 text-center d-flex justify-content-center align-items-center shadow-sm">
+                                    Create Account <i class="bi bi-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="text-center mt-4 pt-2 border-top" style="border-color: var(--border) !important;">
+                            <p class="mb-0 small text-muted">
+                                Already have an account? <a href="{% url 'login' %}" class="fw-semibold text-primary text-decoration-none">Sign in here</a>
+                            </p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
