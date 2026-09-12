@@ -3,92 +3,98 @@
     <div class="container">
         <!-- Section Header -->
         <div class="text-center mb-5">
-            <h2 class="section-title animate-on-scroll">Everything You Need to <span class="text-gradient">Succeed</span></h2>
-            <p class="section-subtitle mx-auto animate-on-scroll animate-delay-1">Comprehensive tools and AI-powered features designed to accelerate your career growth from start to finish.</p>
+            <h2 class="section-title animate-on-scroll">A Unified Platform for Your <span class="text-gradient">Career Trajectory</span></h2>
+            <p class="section-subtitle mx-auto animate-on-scroll animate-delay-1">Built around intelligent career guidance and step-by-step roadmaps, supported by a complete suite of resume, interview, and mentorship tools.</p>
         </div>
         
         <!-- Features Grid -->
         <div class="row g-4">
-            <!-- Feature 1 -->
+            <!-- Feature 1: Core Hero Feature -->
             <div class="col-md-6 col-lg-4">
-                <div class="feature-card animate-on-scroll animate-delay-1 d-flex flex-column h-100">
-                    <div class="icon-wrapper">
-                        <i class="bi bi-robot"></i>
+                <div class="feature-card animate-on-scroll animate-delay-1 d-flex flex-column h-100 position-relative">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="icon-wrapper mb-0">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 fw-semibold small">Core Feature</span>
                     </div>
                     <h3>AI Career Guidance</h3>
-                    <p>Get personalized career recommendations powered by advanced AI that understands your skills, interests, and goals.</p>
-                    <a href="#" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Learn More <i class="bi bi-arrow-right ms-1"></i>
+                    <p>Evaluate your profile readiness, detect missing skill gaps for your target engineering domain, and receive personalized career advice.</p>
+                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
+                        Get Guidance <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
             
-            <!-- Feature 2 -->
+            <!-- Feature 2: Core Hero Feature -->
             <div class="col-md-6 col-lg-4">
-                <div class="feature-card animate-on-scroll animate-delay-2 d-flex flex-column h-100">
-                    <div class="icon-wrapper">
-                        <i class="bi bi-file-earmark-richtext"></i>
+                <div class="feature-card animate-on-scroll animate-delay-2 d-flex flex-column h-100 position-relative">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="icon-wrapper mb-0" style="background: rgba(20,184,166,0.1); color: var(--accent, #14b8a6);">
+                            <i class="bi bi-map-fill"></i>
+                        </div>
+                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-semibold small">Core Feature</span>
                     </div>
-                    <h3>Resume Builder</h3>
-                    <p>Create ATS-friendly, professional resumes with our intelligent builder that highlights your strengths.</p>
-                    <a href="#" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Learn More <i class="bi bi-arrow-right ms-1"></i>
+                    <h3>Career Roadmaps</h3>
+                    <p>Follow structured 12-week learning roadmaps tailored for modern tech roles with curated documentation, practice topics, and milestone projects.</p>
+                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
+                        Explore Roadmaps <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
             
-            <!-- Feature 3 -->
+            <!-- Feature 3: Supporting Feature -->
             <div class="col-md-6 col-lg-4">
                 <div class="feature-card animate-on-scroll animate-delay-3 d-flex flex-column h-100">
                     <div class="icon-wrapper">
-                        <i class="bi bi-bar-chart-line"></i>
+                        <i class="bi bi-shield-check"></i>
                     </div>
-                    <h3>Skill Tracking</h3>
-                    <p>Monitor your skill development over time and identify gaps to focus your learning efforts.</p>
-                    <a href="#" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Learn More <i class="bi bi-arrow-right ms-1"></i>
+                    <h3>ATS Resume Analyzer</h3>
+                    <p>Scan and score your resume against real job descriptions to pinpoint missing industry keywords and improve parseability.</p>
+                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
+                        Scan Resume <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
             
-            <!-- Feature 4 -->
+            <!-- Feature 4: Supporting Feature -->
             <div class="col-md-6 col-lg-4">
                 <div class="feature-card animate-on-scroll animate-delay-4 d-flex flex-column h-100">
                     <div class="icon-wrapper">
-                        <i class="bi bi-map"></i>
+                        <i class="bi bi-file-earmark-person"></i>
                     </div>
-                    <h3>Career Roadmaps</h3>
-                    <p>Follow curated step-by-step roadmaps designed for your chosen career path and experience level.</p>
-                    <a href="#" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Learn More <i class="bi bi-arrow-right ms-1"></i>
+                    <h3>Resume Builder</h3>
+                    <p>Generate clean, ATS-compliant resumes directly from your profile data with one-click export and formatting.</p>
+                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
+                        Build Resume <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
             
-            <!-- Feature 5 -->
+            <!-- Feature 5: Supporting Feature -->
             <div class="col-md-6 col-lg-4">
                 <div class="feature-card animate-on-scroll animate-delay-5 d-flex flex-column h-100">
                     <div class="icon-wrapper">
-                        <i class="bi bi-briefcase"></i>
+                        <i class="bi bi-mortarboard"></i>
                     </div>
-                    <h3>Job Recommendations</h3>
-                    <p>Receive tailored job matches based on your profile, skills, and career aspirations.</p>
-                    <a href="#" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Learn More <i class="bi bi-arrow-right ms-1"></i>
+                    <h3>Interview Prep Hub</h3>
+                    <p>Practice technical MCQs, coding challenges, and mock technical interviews with proctored evaluation feedback.</p>
+                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
+                        Practice Interviews <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
             
-            <!-- Feature 6 -->
+            <!-- Feature 6: Supporting Feature -->
             <div class="col-md-6 col-lg-4">
                 <div class="feature-card animate-on-scroll animate-delay-6 d-flex flex-column h-100">
                     <div class="icon-wrapper">
-                        <i class="bi bi-person-workspace"></i>
+                        <i class="bi bi-people-fill"></i>
                     </div>
-                    <h3>Mentor Support</h3>
-                    <p>Connect with industry mentors who provide guidance, feedback, and real-world career insights.</p>
-                    <a href="#" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Learn More <i class="bi bi-arrow-right ms-1"></i>
+                    <h3>Community & Mentorship</h3>
+                    <p>Connect with peers, participate in student developer forums, and book 1-on-1 mentorship sessions with verified professionals.</p>
+                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
+                        Join Community <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
