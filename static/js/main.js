@@ -6,35 +6,11 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // =============================================
-    // Dark/Light Theme Toggle Switcher
+    // Dark/Light Theme Toggle Switcher Initialization
     // =============================================
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeIcon = document.getElementById('theme-icon');
-    
-    // Check initial theme from localStorage
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    if (themeIcon) {
-        if (savedTheme === 'dark') {
-            themeIcon.className = 'bi bi-sun-fill text-warning';
-        } else {
-            themeIcon.className = 'bi bi-moon-stars-fill text-secondary';
-        }
-    }
-    
-    if (themeToggle) {
-        themeToggle.addEventListener('click', () => {
-            const activeTheme = document.documentElement.getAttribute('data-theme');
-            let newTheme = 'light';
-            if (activeTheme === 'light') {
-                newTheme = 'dark';
-                themeIcon.className = 'bi bi-sun-fill text-warning';
-            } else {
-                themeIcon.className = 'bi bi-moon-stars-fill text-secondary';
-            }
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        });
+    const currentTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'light';
+    if (typeof window.applyAppTheme === 'function') {
+        window.applyAppTheme(currentTheme);
     }
 
     // =============================================

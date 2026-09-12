@@ -17,7 +17,7 @@
                         <i class="bi bi-speedometer2 me-1"></i> Dashboard
                     </a>
                     <a href="{% url 'profile_edit' %}" class="btn-primary-custom px-4 py-2">
-                        <i class="bi bi-pencil-fill me-1"></i> Edit Profile
+                        <i class="bi bi-pencil me-1"></i> Edit Profile
                     </a>
                 </div>
             </div>
@@ -40,83 +40,80 @@
                             </div>
                         {% endif %}
                     </div>
-                    <h3 class="fw-bold mb-1 text-secondary">{{ profile.user.get_full_name }}</h3>
-                    <p class="text-muted small mb-0">@{{ profile.user.username }}</p>
+                    <h3 class="fw-bold text-secondary mb-1">{{ profile.user.first_name }} {{ profile.user.last_name }}</h3>
+                    <p class="text-muted mb-2">{{ profile.user.email }}</p>
+                    {% if profile.career_goal %}
+                        <span class="badge bg-primary px-3 py-2 rounded-pill fs-7 fw-semibold shadow-sm">
+                            <i class="bi bi-bullseye me-1"></i> {{ profile.career_goal }}
+                        </span>
+                    {% endif %}
                 </div>
-                
+
                 <div class="card-body p-4">
-                    <!-- Profile Completion -->
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="text-secondary fw-semibold small">Profile Completion</span>
-                            <span class="text-primary fw-bold small">{{ completion_percentage }}%</span>
+                    <!-- Quick Stats Badges -->
+                    <div class="row g-2 mb-4 text-center">
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded-4 border">
+                                <span class="d-block text-muted small">Skill Level</span>
+                                <span class="fw-bold text-secondary">{{ profile.current_skill_level|default:"Beginner" }}</span>
+                            </div>
                         </div>
-                        <div class="progress" style="height: 8px; border-radius: 50px; background-color: #f1f5f9;">
-                            <div class="progress-bar" role="progressbar" style="width: {{ completion_percentage }}%; background: linear-gradient(to right, var(--primary), var(--accent)); border-radius: 50px;" aria-valuenow="{{ completion_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded-4 border">
+                                <span class="d-block text-muted small">Completion</span>
+                                <span class="fw-bold text-primary">{{ profile.calculate_completion_percentage }}%</span>
+                            </div>
                         </div>
                     </div>
 
-                    {% if profile.bio %}
-                        <div class="mb-4">
-                            <h6 class="fw-bold text-secondary mb-2 small text-uppercase tracking-wider">Biography</h6>
-                            <p class="text-muted small italic mb-0">"{{ profile.bio }}"</p>
-                        </div>
-                    {% endif %}
-
-                    <!-- Social Icons Row -->
+                    <!-- Personal Bio -->
                     <div class="mb-4">
-                        <h6 class="fw-bold text-secondary mb-3 small text-uppercase tracking-wider">Connected Accounts</h6>
-                        <div class="d-flex flex-wrap gap-2">
+                        <h6 class="fw-bold text-secondary mb-2">About</h6>
+                        <p class="text-muted small mb-0 lh-base">
+                            {{ profile.bio|default:"No bio provided yet. Click 'Edit Profile' to add a short professional summary." }}
+                        </p>
+                    </div>
+
+                    <hr class="text-muted opacity-25">
+
+                    <!-- Social / Dev Profiles -->
+                    <div>
+                        <h6 class="fw-bold text-secondary mb-3">Links & Profiles</h6>
+                        <div class="d-flex flex-column gap-2">
                             {% if profile.github %}
-                                <a href="{{ profile.github }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-dark rounded-pill px-3">
-                                    <i class="bi bi-github me-1"></i> GitHub
+                                <a href="{{ profile.github }}" target="_blank" class="btn btn-outline-dark btn-sm rounded-pill text-start px-3 py-2 d-flex align-items-center justify-content-between">
+                                    <span><i class="bi bi-github me-2"></i> GitHub</span>
+                                    <i class="bi bi-box-arrow-up-right small"></i>
                                 </a>
                             {% endif %}
                             {% if profile.linkedin %}
-                                <a href="{{ profile.linkedin }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                    <i class="bi bi-linkedin me-1"></i> LinkedIn
+                                <a href="{{ profile.linkedin }}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill text-start px-3 py-2 d-flex align-items-center justify-content-between">
+                                    <span><i class="bi bi-linkedin me-2"></i> LinkedIn</span>
+                                    <i class="bi bi-box-arrow-up-right small"></i>
                                 </a>
                             {% endif %}
                             {% if profile.portfolio %}
-                                <a href="{{ profile.portfolio }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info rounded-pill px-3">
-                                    <i class="bi bi-globe me-1"></i> Portfolio
+                                <a href="{{ profile.portfolio }}" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill text-start px-3 py-2 d-flex align-items-center justify-content-between">
+                                    <span><i class="bi bi-globe me-2"></i> Portfolio</span>
+                                    <i class="bi bi-box-arrow-up-right small"></i>
                                 </a>
                             {% endif %}
                             {% if profile.leetcode %}
-                                <a href="{{ profile.leetcode }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-warning rounded-pill px-3 text-dark">
-                                    <i class="bi bi-code-slash me-1"></i> LeetCode
+                                <a href="{{ profile.leetcode }}" target="_blank" class="btn btn-outline-warning btn-sm rounded-pill text-start px-3 py-2 d-flex align-items-center justify-content-between text-dark">
+                                    <span><i class="bi bi-code-slash me-2"></i> LeetCode</span>
+                                    <i class="bi bi-box-arrow-up-right small"></i>
                                 </a>
                             {% endif %}
                             {% if profile.hackerrank %}
-                                <a href="{{ profile.hackerrank }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success rounded-pill px-3">
-                                    <i class="bi bi-trophy-fill me-1"></i> HackerRank
+                                <a href="{{ profile.hackerrank }}" target="_blank" class="btn btn-outline-success btn-sm rounded-pill text-start px-3 py-2 d-flex align-items-center justify-content-between">
+                                    <span><i class="bi bi-trophy me-2"></i> HackerRank</span>
+                                    <i class="bi bi-box-arrow-up-right small"></i>
                                 </a>
                             {% endif %}
+                            {% if not profile.github and not profile.linkedin and not profile.portfolio and not profile.leetcode and not profile.hackerrank %}
+                                <span class="text-muted small">No social or coding links linked yet.</span>
+                            {% endif %}
                         </div>
-                    </div>
-
-                    <hr class="text-black-50 my-4">
-
-                    <!-- Personal Meta -->
-                    <div class="row g-3 text-start">
-                        {% if profile.phone_number %}
-                            <div class="col-12">
-                                <span class="text-muted small d-block">Phone Number</span>
-                                <span class="fw-semibold text-secondary small">{{ profile.phone_number }}</span>
-                            </div>
-                        {% endif %}
-                        {% if profile.date_of_birth %}
-                            <div class="col-6">
-                                <span class="text-muted small d-block">Date of Birth</span>
-                                <span class="fw-semibold text-secondary small">{{ profile.date_of_birth|date:"d M Y" }}</span>
-                            </div>
-                        {% endif %}
-                        {% if profile.gender %}
-                            <div class="col-6">
-                                <span class="text-muted small d-block">Gender</span>
-                                <span class="fw-semibold text-secondary small">{{ profile.gender }}</span>
-                            </div>
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -128,7 +125,7 @@
             <div class="card shadow-sm border-0 rounded-4 mb-4">
                 <div class="card-body p-4">
                     <h5 class="fw-bold text-secondary mb-4">
-                        <i class="bi bi-mortarboard-fill text-primary me-2"></i> Academic Achievements
+                        <i class="bi bi-mortarboard text-primary me-2"></i> Academic Achievements
                     </h5>
                     <div class="row g-4">
                         <div class="col-md-6">
@@ -169,7 +166,7 @@
             <div class="card shadow-sm border-0 rounded-4 mb-4">
                 <div class="card-body p-4">
                     <h5 class="fw-bold text-secondary mb-4">
-                        <i class="bi bi-compass-fill text-primary me-2"></i> Career Ambition & Preferences
+                        <i class="bi bi-compass text-primary me-2"></i> Career Ambition & Preferences
                     </h5>
                     <div class="row g-4">
                         <div class="col-md-6">
@@ -204,7 +201,7 @@
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-body p-4">
                     <h5 class="fw-bold text-secondary mb-3">
-                        <i class="bi bi-cpu-fill text-primary me-2"></i> Core Skill Set
+                        <i class="bi bi-cpu text-primary me-2"></i> Core Skill Set
                     </h5>
                     <div class="d-flex flex-wrap gap-2">
                         {% for skill in profile.get_skills_list %}
