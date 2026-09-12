@@ -27,22 +27,150 @@
                             at <span class="fw-semibold text-secondary">{{ profile.college }}</span>
                         {% endif %}
                     </p>
+                </div>
+            </div>
 
-                    <!-- Next Recommended Action Prompt -->
-                    <div class="d-flex flex-wrap align-items-center justify-content-between p-3 rounded-3 bg-white border gap-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; flex-shrink: 0;">
-                                <i class="bi bi-compass"></i>
+            <!-- ADAPTIVE CAREER LAUNCH PLAN -->
+            <div id="careerLaunchPlanCard" class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
+                <div class="card-body p-4">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <h5 class="fw-bold text-secondary mb-0">Your Career Launch Plan</h5>
+                                {% if launch_plan.all_completed %}
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small fw-semibold">Ready</span>
+                                {% endif %}
                             </div>
-                            <div>
-                                <span class="fw-bold text-secondary small d-block">Recommended Next Step</span>
-                                <span class="text-muted small">Analyze your career readiness and follow your target learning roadmap.</span>
+                            <p class="text-muted small mb-0 mt-1">Complete these steps to get the most from CareerCatalyst</p>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 fw-semibold small">
+                                {{ launch_plan.completed_count }} of {{ launch_plan.total_count }}
+                            </span>
+                            <button type="button" class="btn btn-link text-muted p-0 ms-2 text-decoration-none" onclick="dismissLaunchPlan()" title="Dismiss" aria-label="Dismiss launch plan" style="font-size: 1rem;">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="progress mb-4" style="height: 6px; background-color: rgba(0,0,0,0.05); border-radius: 50px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {% widthratio launch_plan.completed_count launch_plan.total_count 100 %}%; border-radius: 50px;" aria-valuenow="{{ launch_plan.completed_count }}" aria-valuemin="0" aria-valuemax="{{ launch_plan.total_count }}"></div>
+                    </div>
+
+                    <!-- Steps List -->
+                    <div class="d-flex flex-column gap-3">
+                        <!-- Step 1: Target Career -->
+                        <div class="d-flex align-items-center justify-content-between p-3 rounded-3 {% if launch_plan.step_1.completed %}bg-light bg-opacity-50 border border-success border-opacity-25{% else %}bg-white border{% endif %}">
+                            <div class="d-flex align-items-start gap-3">
+                                {% if launch_plan.step_1.completed %}
+                                    <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" style="width: 22px; height: 22px; font-size: 0.8rem;">
+                                        <i class="bi bi-check-lg fw-bold"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="rounded-circle border border-2 border-secondary border-opacity-25 d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" style="width: 22px; height: 22px;"></div>
+                                {% endif %}
+                                <div>
+                                    <div class="fw-semibold text-secondary small">
+                                        {{ launch_plan.step_1.title }}
+                                    </div>
+                                    <div class="text-muted small mt-0.5">{{ launch_plan.step_1.value }}</div>
+                                </div>
+                            </div>
+                            <div class="ms-3 flex-shrink-0">
+                                {% if launch_plan.step_1.completed %}
+                                    <span class="text-success small fw-semibold d-inline-flex align-items-center gap-1">
+                                        <i class="bi bi-check2"></i> Completed
+                                    </span>
+                                {% else %}
+                                    <a href="{% url 'profile_edit' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1" style="font-size: 0.8rem;">
+                                        Set Goal &rarr;
+                                    </a>
+                                {% endif %}
                             </div>
                         </div>
-                        <a href="{% url 'recommendation:dashboard' %}" class="btn btn-primary-custom btn-sm rounded-pill px-3">
-                            Start Guidance <i class="bi bi-arrow-right ms-1"></i>
-                        </a>
+
+                        <!-- Step 2: Career Roadmap -->
+                        <div class="d-flex align-items-center justify-content-between p-3 rounded-3 {% if launch_plan.step_2.completed %}bg-light bg-opacity-50 border border-success border-opacity-25{% else %}bg-white border{% endif %}">
+                            <div class="d-flex align-items-start gap-3">
+                                {% if launch_plan.step_2.completed %}
+                                    <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" style="width: 22px; height: 22px; font-size: 0.8rem;">
+                                        <i class="bi bi-check-lg fw-bold"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="rounded-circle border border-2 border-secondary border-opacity-25 d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" style="width: 22px; height: 22px;"></div>
+                                {% endif %}
+                                <div>
+                                    <div class="fw-semibold text-secondary small">
+                                        {{ launch_plan.step_2.title }}
+                                    </div>
+                                    <div class="text-muted small mt-0.5">{{ launch_plan.step_2.value }}</div>
+                                </div>
+                            </div>
+                            <div class="ms-3 flex-shrink-0">
+                                {% if launch_plan.step_2.completed %}
+                                    <span class="text-success small fw-semibold d-inline-flex align-items-center gap-1">
+                                        <i class="bi bi-check2"></i> Completed
+                                    </span>
+                                {% else %}
+                                    <a href="{% url 'roadmaps:path_list' %}" class="btn btn-primary-custom btn-sm rounded-pill px-3 py-1" style="font-size: 0.8rem;">
+                                        Start &rarr;
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Benchmark Resume -->
+                        <div class="d-flex align-items-center justify-content-between p-3 rounded-3 {% if launch_plan.step_3.completed %}bg-light bg-opacity-50 border border-success border-opacity-25{% else %}bg-white border{% endif %}">
+                            <div class="d-flex align-items-start gap-3">
+                                {% if launch_plan.step_3.completed %}
+                                    <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" style="width: 22px; height: 22px; font-size: 0.8rem;">
+                                        <i class="bi bi-check-lg fw-bold"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="rounded-circle border border-2 border-secondary border-opacity-25 d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" style="width: 22px; height: 22px;"></div>
+                                {% endif %}
+                                <div>
+                                    <div class="fw-semibold text-secondary small">
+                                        {{ launch_plan.step_3.title }}
+                                    </div>
+                                    <div class="text-muted small mt-0.5">{{ launch_plan.step_3.value }}</div>
+                                </div>
+                            </div>
+                            <div class="ms-3 flex-shrink-0">
+                                {% if launch_plan.step_3.completed %}
+                                    <span class="text-success small fw-semibold d-inline-flex align-items-center gap-1">
+                                        <i class="bi bi-check2"></i> Completed
+                                    </span>
+                                {% else %}
+                                    <a href="{% url 'ai_resume:analyze' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1" style="font-size: 0.8rem;">
+                                        Scan CV
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
+
+                    {% if launch_plan.all_completed %}
+                    <!-- Completion Celebration Banner -->
+                    <div class="mt-3 p-3 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25 d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-5">🎉</span>
+                            <span class="small fw-semibold text-success">You're ready to start your journey. All foundational steps are complete!</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-link text-success text-decoration-none fw-semibold p-0" onclick="dismissLaunchPlan()">
+                            Dismiss
+                        </button>
+                    </div>
+                    {% else %}
+                    <!-- Dismiss Link -->
+                    <div class="text-end mt-3">
+                        <button type="button" class="btn btn-link text-muted small p-0 text-decoration-none" onclick="dismissLaunchPlan()">
+                            Dismiss
+                        </button>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -288,4 +416,33 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function dismissLaunchPlan() {
+        const card = document.getElementById('careerLaunchPlanCard');
+        if (card) {
+            card.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(-10px)';
+            setTimeout(() => {
+                card.style.display = 'none';
+                try {
+                    localStorage.setItem('career_launch_plan_dismissed_{{ user.id }}', 'true');
+                } catch(e) {}
+            }, 250);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        try {
+            const isDismissed = localStorage.getItem('career_launch_plan_dismissed_{{ user.id }}');
+            if (isDismissed === 'true') {
+                const card = document.getElementById('careerLaunchPlanCard');
+                if (card) card.style.display = 'none';
+            }
+        } catch(e) {}
+    });
+</script>
 {% endblock %}
