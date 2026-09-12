@@ -967,6 +967,26 @@ html[data-theme="dark"] .badge-outline-warning {
     color: #ef4444 !important;
 }
 
+.notifications-dropdown .dropdown-toggle::after {
+    display: none;
+}
+
+.notifications-dropdown .dropdown-menu {
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    background: var(--card-bg, #ffffff);
+    animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notifications-dropdown .dropdown-item {
+    transition: all 0.15s ease;
+}
+
+.notifications-dropdown .dropdown-item:hover {
+    background-color: var(--hover-bg, rgba(37, 99, 235, 0.06));
+}
+
 @keyframes dropdownFade {
     from {
         opacity: 0;

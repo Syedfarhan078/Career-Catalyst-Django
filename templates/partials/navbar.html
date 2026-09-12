@@ -12,25 +12,66 @@
         </button>
         
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav mx-auto"> <!-- Centered links for Stripe-style aesthetic -->
-                {% if request.resolver_match.url_name == 'home' %}
-                <li class="nav-item">
-                    <a class="nav-link" href="#features">Features</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#how-it-works">How It Works</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#testimonials">Testimonials</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#faq">FAQ</a>
-                </li>
+            <ul class="navbar-nav mx-auto">
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'roadmaps' in request.path %}active{% endif %}" href="{% url 'roadmaps:path_list' %}">Roadmaps</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'recommendation' in request.path %}active{% endif %}" href="{% url 'recommendation:dashboard' %}">Career Guidance</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'resume' in request.path or 'ai-resume' in request.path %}active{% endif %}" href="{% url 'resume:list' %}">Resume Hub</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'community' in request.path %}active{% endif %}" href="{% url 'community:hub' %}">Community</a>
+                    </li>
+                {% elif request.resolver_match.url_name == 'home' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#how-it-works">How It Works</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#testimonials">Testimonials</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#faq">FAQ</a>
+                    </li>
                 {% endif %}
             </ul>
             
             <ul class="navbar-nav ms-auto align-items-center gap-3">
                 {% if user.is_authenticated %}
+                    <!-- Notifications Dropdown -->
+                    <li class="nav-item dropdown notifications-dropdown">
+                        <a class="nav-link p-0 position-relative d-flex align-items-center justify-content-center text-secondary border-0" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 36px; height: 36px; font-size: 1.15rem;">
+                            <i class="bi bi-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle" style="transform: translate(-30%, 30%) !important;">
+                                <span class="visually-hidden">New alerts</span>
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg p-2" aria-labelledby="notificationDropdown" style="min-width: 280px; border-radius: 14px;">
+                            <li class="px-3 py-2 d-flex align-items-center justify-content-between">
+                                <span class="fw-bold small text-secondary">Notifications</span>
+                                <span class="badge bg-primary bg-opacity-10 text-primary small">1 New</span>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item rounded-3 p-2 small d-flex align-items-start gap-2" href="{% url 'recommendation:dashboard' %}">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px;">
+                                        <i class="bi bi-compass" style="font-size: 0.85rem;"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold text-secondary" style="font-size: 0.8rem;">Ready for Next Roadmap?</div>
+                                        <div class="text-muted" style="font-size: 0.72rem;">Review your target learning track progress.</div>
+                                    </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
                     <!-- User Avatar Dropdown (SF ▾) -->
                     <li class="nav-item dropdown user-profile-dropdown">
                         <a class="nav-link dropdown-toggle p-0 d-flex align-items-center gap-1 border-0" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
