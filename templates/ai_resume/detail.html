@@ -42,12 +42,16 @@
 {% endblock %}
 
 {% block content %}
-<div class="container py-5 mt-5">
+<div class="container py-4 mt-4">
+    <!-- Back Navigation -->
+    <div class="mb-4">
+        <a href="{% url 'ai_resume:history' %}" class="btn-back">
+            <i class="bi bi-arrow-left"></i> Back to Resume Analysis
+        </a>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
-            <a href="{% url 'ai_resume:history' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
-                <i class="bi bi-arrow-left"></i> History
-            </a>
             <h1 class="fw-bold mb-1">Analysis Report</h1>
             <p class="text-muted">Targeting: <span class="badge bg-secondary px-3 py-2 fs-6 rounded-pill">{{ analysis.target_role }}</span></p>
         </div>

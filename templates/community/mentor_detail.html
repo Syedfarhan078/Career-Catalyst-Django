@@ -3,11 +3,13 @@
 {% block title %}{{ mentor.full_name }} - Profile Details{% endblock %}
 
 {% block content %}
-<div class="container py-5 mt-5">
-    <!-- Back to marketplace -->
-    <a href="{% url 'community:mentor_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-4">
-        <i class="bi bi-arrow-left"></i> Back to Marketplace
-    </a>
+<div class="container py-4 mt-4">
+    <!-- Back Navigation -->
+    <div class="mb-4">
+        <a href="{% url 'community:mentor_list' %}" class="btn-back">
+            <i class="bi bi-arrow-left"></i> Back to Mentors
+        </a>
+    </div>
 
     <div class="row g-4">
         <!-- Mentor Info Details (Left Column) -->

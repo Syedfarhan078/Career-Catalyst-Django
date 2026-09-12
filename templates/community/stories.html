@@ -3,11 +3,15 @@
 {% block title %}Career Success Stories - Career Catalyst{% endblock %}
 
 {% block content %}
-<div class="container py-5 mt-5">
-    <div class="mb-5">
-        <a href="{% url 'community:hub' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
-            <i class="bi bi-arrow-left"></i> Hub Home
+<div class="container py-4 mt-4">
+    <!-- Back Navigation -->
+    <div class="mb-4">
+        <a href="{% url 'community:hub' %}" class="btn-back">
+            <i class="bi bi-arrow-left"></i> Back to Community Hub
         </a>
+    </div>
+
+    <div class="mb-5">
         <h1 class="fw-bold mb-1">Career Success Stories</h1>
         <p class="text-muted">Read how past students landed placements at top tech organizations. Get tips, resume feedback advice, and interview structures.</p>
     </div>

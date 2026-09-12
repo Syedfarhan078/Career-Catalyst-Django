@@ -16,9 +16,11 @@
 
     <div class="row align-items-center mb-4">
         <div class="col-8">
-            <a href="{% url 'interviews:behavioral_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
-                <i class="bi bi-arrow-left"></i> Questions List
-            </a>
+            <div class="mb-2">
+                <a href="{% url 'interviews:behavioral_list' %}" class="btn-back">
+                    <i class="bi bi-arrow-left"></i> Back to Questions
+                </a>
+            </div>
             <h2 class="fw-bold mb-0">{{ question.title }}</h2>
         </div>
         <div class="col-4 text-end">

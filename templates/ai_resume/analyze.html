@@ -4,7 +4,14 @@
 {% block title %}Analyze Resume - Career Catalyst{% endblock %}
 
 {% block content %}
-<div class="container py-5 mt-5">
+<div class="container py-4 mt-4">
+    <!-- Back Navigation -->
+    <div class="mb-4">
+        <a href="{% url 'ai_resume:history' %}" class="btn-back">
+            <i class="bi bi-arrow-left"></i> Back to Resume Analysis
+        </a>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow-sm border-0 rounded-4 p-4 p-md-5">

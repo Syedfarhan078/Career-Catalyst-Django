@@ -3,12 +3,16 @@
 {% block title %}Shared Student Projects - Career Catalyst{% endblock %}
 
 {% block content %}
-<div class="container py-5 mt-5">
+<div class="container py-4 mt-4">
+    <!-- Back Navigation -->
+    <div class="mb-4">
+        <a href="{% url 'community:hub' %}" class="btn-back">
+            <i class="bi bi-arrow-left"></i> Back to Community Hub
+        </a>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
-            <a href="{% url 'community:hub' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
-                <i class="bi bi-arrow-left"></i> Hub Home
-            </a>
             <h1 class="fw-bold mb-0">Shared Student Projects</h1>
             <p class="text-muted">Showcase your programming projects, get peer reviews, and inspect other students' codebases.</p>
         </div>

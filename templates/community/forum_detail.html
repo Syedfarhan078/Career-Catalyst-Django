@@ -3,13 +3,15 @@
 {% block title %}{{ thread.title }} - Discussion Forum{% endblock %}
 
 {% block content %}
-<div class="container py-5 mt-5">
+<div class="container py-4 mt-4">
     <div class="row justify-content-center">
         <div class="col-lg-9">
             <!-- Back to forum list -->
-            <a href="{% url 'community:forum_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-4">
-                <i class="bi bi-arrow-left"></i> Discussions List
-            </a>
+            <div class="mb-4">
+                <a href="{% url 'community:forum_list' %}" class="btn-back">
+                    <i class="bi bi-arrow-left"></i> Back to Discussions
+                </a>
+            </div>
 
             <!-- Main Thread Card -->
             <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4">

@@ -100,7 +100,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="container py-5 mt-5">
+<div class="container py-4 mt-4">
+    <!-- Back Navigation -->
+    <div class="mb-4">
+        <a href="{% url 'dashboard' %}" class="btn-back">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
     
     {% if not analysis %}
     <!-- LANDING INTRO STATE -->

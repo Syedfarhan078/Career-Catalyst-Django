@@ -17,9 +17,11 @@
     {% csrf_token %}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <a href="{% url 'interviews:coding_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
-                <i class="bi bi-arrow-left"></i> Challenges List
-            </a>
+            <div class="mb-2">
+                <a href="{% url 'interviews:coding_list' %}" class="btn-back">
+                    <i class="bi bi-arrow-left"></i> Back to Challenges
+                </a>
+            </div>
             <h2 class="fw-bold mb-0">{{ challenge.title }}</h2>
         </div>
         <div class="text-end">

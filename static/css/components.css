@@ -54,6 +54,51 @@
     box-shadow: 0 4px 15px rgba(37, 99, 235, 0.15) !important;
 }
 
+.btn-back {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.45rem 1rem !important;
+    border-radius: 50px !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: var(--text-muted) !important;
+    background: var(--card-bg, #ffffff) !important;
+    border: 1px solid var(--border) !important;
+    text-decoration: none !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    cursor: pointer !important;
+}
+
+.btn-back:hover {
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    background: rgba(37, 99, 235, 0.06) !important;
+    transform: translateX(-3px) !important;
+}
+
+.btn-back i {
+    font-size: 0.95rem !important;
+    transition: transform 0.2s ease !important;
+}
+
+.btn-back:hover i {
+    transform: translateX(-2px) !important;
+}
+
+html[data-theme="dark"] .btn-back {
+    background: var(--card-bg) !important;
+    border-color: var(--border) !important;
+    color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] .btn-back:hover {
+    color: var(--secondary) !important;
+    border-color: var(--primary) !important;
+    background: rgba(37, 99, 235, 0.15) !important;
+}
+
 /* ------------------------------------------------------------
    2. FEATURE CARDS
    ------------------------------------------------------------ */
