@@ -15,19 +15,33 @@
 
             <!-- Main Thread Card -->
             <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1">{{ thread.category.name }}</span>
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1">{{ thread.category.name }}</span>
+                        {% if replies.exists %}
+                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small"><i class="bi bi-check-circle-fill me-1"></i> Solved</span>
+                        {% else %}
+                            <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-2.5 py-1 small"><i class="bi bi-question-circle me-1"></i> Open</span>
+                        {% endif %}
+                    </div>
                     <span class="text-muted small"><i class="bi bi-clock"></i> {{ thread.created_at|date:"M d, Y - h:i A" }}</span>
                 </div>
                 <h2 class="fw-bold mb-3">{{ thread.title }}</h2>
                 
                 <div class="d-flex align-items-center mb-4 bg-light p-3 rounded-4">
-                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
                         <i class="bi bi-person fs-5"></i>
                     </div>
                     <div>
-                        <h6 class="fw-bold mb-0 text-secondary">{{ thread.author.username }}</h6>
-                        <small class="text-muted">Author / Student</small>
+                        <div class="d-flex align-items-center flex-wrap gap-1">
+                            <h6 class="fw-bold mb-0 text-secondary">{{ thread.author.username }}</h6>
+                            {% if thread.author.mentor_profile and thread.author.mentor_profile.verified %}
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-0.5 ms-1" style="font-size: 0.72rem;">
+                                    <i class="bi bi-patch-check-fill text-primary me-1"></i> Expert Mentor
+                                </span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">{% if thread.author.mentor_profile and thread.author.mentor_profile.verified %}Verified Mentor{% else %}Author / Student{% endif %}</small>
                     </div>
                 </div>
 
@@ -39,13 +53,18 @@
             <div class="d-flex flex-column gap-3 mb-4">
                 {% for reply in replies %}
                 <div class="card border-0 shadow-sm rounded-4 p-4">
-                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2 flex-wrap gap-2">
                         <div class="d-flex align-items-center">
-                            <div class="rounded-circle bg-secondary bg-opacity-10 text-secondary p-2 me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <div class="rounded-circle bg-secondary bg-opacity-10 text-secondary p-2 me-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
                                 <i class="bi bi-person fs-6"></i>
                             </div>
-                            <div>
+                            <div class="d-flex align-items-center flex-wrap gap-1">
                                 <h6 class="fw-bold mb-0 text-secondary small">{{ reply.author.username }}</h6>
+                                {% if reply.author.mentor_profile and reply.author.mentor_profile.verified %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-0.5 ms-1" style="font-size: 0.7rem;">
+                                        <i class="bi bi-patch-check-fill text-primary me-1"></i> Expert Mentor
+                                    </span>
+                                {% endif %}
                             </div>
                         </div>
                         <span class="text-muted small">{{ reply.created_at|date:"M d, Y - h:i A" }}</span>

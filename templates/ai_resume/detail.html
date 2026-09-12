@@ -38,6 +38,28 @@
         font-weight: 600;
         margin-top: 5px;
     }
+    .keyword-chip {
+        border-color: #cbd5e1;
+        background-color: var(--card-bg, #ffffff);
+        color: var(--secondary, #0f172a);
+        font-size: 0.825rem;
+        font-weight: 600;
+        padding: 0.35rem 0.75rem;
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+    }
+    .keyword-chip:hover {
+        background-color: var(--primary, #2563eb);
+        color: #ffffff !important;
+        border-color: var(--primary, #2563eb);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+    }
+    .keyword-chip.copied {
+        background-color: #22c55e !important;
+        border-color: #22c55e !important;
+        color: #ffffff !important;
+    }
 </style>
 {% endblock %}
 
@@ -189,37 +211,94 @@
 
         <!-- Missing Skills & Gap Analysis -->
         <div class="col-lg-5">
-            <div class="card shadow-sm border-0 rounded-4 p-4 h-100">
-                <h4 class="fw-bold text-secondary mb-4"><i class="bi bi-patch-question text-primary"></i> Skills Gap Analysis</h4>
-                
-                {% if analysis.missing_skills.exists %}
-                    <p class="text-muted small"> hThese skills are typical for <b>{{ analysis.target_role }}</b> but were not detected in your resume:</p>
-                    <div class="list-group list-group-flush">
-                        {% for m_skill in analysis.missing_skills.all %}
-                        <div class="list-group-item bg-transparent px-0 border-light py-3">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="fw-bold text-secondary">{{ m_skill.skill_name }}</span>
-                                {% if m_skill.importance == 'High' %}
-                                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2">High Importance</span>
-                                {% else %}
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2">Medium</span>
-                                {% endif %}
+            <div class="card shadow-sm border-0 rounded-4 p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="fw-bold text-secondary mb-0"><i class="bi bi-patch-question text-primary"></i> Skills Gap Analysis</h4>
+                    </div>
+                    
+                    {% if analysis.missing_skills.exists %}
+                        <p class="text-muted small mb-3">These skills are typical for <b>{{ analysis.target_role }}</b> but were not detected in your resume. Click any chip to copy it into your clipboard:</p>
+
+                        <!-- Clickable Keyword Chips -->
+                        <div class="d-flex flex-wrap gap-2 mb-4">
+                            {% for m_skill in analysis.missing_skills.all %}
+                            <button type="button" 
+                                    class="btn keyword-chip rounded-pill border d-inline-flex align-items-center gap-1"
+                                    onclick="copyKeyword(this, '{{ m_skill.skill_name|escapejs }}')"
+                                    title="Click to copy '{{ m_skill.skill_name }}'">
+                                <i class="bi bi-plus-lg text-primary"></i>
+                                <span>{{ m_skill.skill_name }}</span>
+                                <i class="bi bi-copy ms-1 text-muted" style="font-size: 0.75rem;"></i>
+                            </button>
+                            {% endfor %}
+                        </div>
+
+                        <h6 class="text-secondary fw-semibold small text-uppercase mb-2">Detailed Breakdown</h6>
+                        <div class="list-group list-group-flush mb-3">
+                            {% for m_skill in analysis.missing_skills.all %}
+                            <div class="list-group-item bg-transparent px-0 border-light py-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold text-secondary small">{{ m_skill.skill_name }}</span>
+                                    {% if m_skill.importance == 'High' %}
+                                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2">High Importance</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2">Medium</span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted d-block" style="font-size: 0.8rem;">{{ m_skill.recommendation }}</small>
                             </div>
-                            <small class="text-muted d-block">{{ m_skill.recommendation }}</small>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-5">
-                        <div class="display-3 text-success mb-3">
-                            <i class="bi bi-award-fill"></i>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="display-3 text-success mb-3">
+                                <i class="bi bi-award-fill"></i>
+                            </div>
+                            <h5 class="fw-bold text-success">Perfect Match!</h5>
+                            <p class="text-muted small">We found all key technical skills matching this target role in your resume.</p>
                         </div>
-                        <h5 class="fw-bold text-success">Perfect Match!</h5>
-                        <p class="text-muted small">We found all key technical skills matching this target role in your resume.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Open in Resume Builder Quick-Link Action -->
+                <div class="pt-3 mt-3 border-top">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div>
+                            <span class="fw-semibold text-secondary small d-block">Ready to update your CV?</span>
+                            <span class="text-muted" style="font-size: 0.75rem;">Insert recommendations into your live draft</span>
+                        </div>
+                        {% if user_resume %}
+                        <a href="{% url 'resume:builder' user_resume.pk %}" class="btn btn-primary-custom btn-sm rounded-pill px-3">
+                            <i class="bi bi-pencil-square"></i> Open in Resume Builder
+                        </a>
+                        {% else %}
+                        <a href="{% url 'resume:create' %}" class="btn btn-primary-custom btn-sm rounded-pill px-3">
+                            <i class="bi bi-plus-lg"></i> Create Resume
+                        </a>
+                        {% endif %}
                     </div>
-                {% endif %}
+                </div>
+
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function copyKeyword(btn, keyword) {
+    navigator.clipboard.writeText(keyword).then(function() {
+        const originalHTML = btn.innerHTML;
+        btn.classList.add('copied');
+        btn.innerHTML = `<i class="bi bi-check-lg me-1"></i> Copied!`;
+        
+        setTimeout(function() {
+            btn.classList.remove('copied');
+            btn.innerHTML = originalHTML;
+        }, 1600);
+    }).catch(function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+</script>
 {% endblock %}

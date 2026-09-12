@@ -114,6 +114,8 @@ class AnalyzeResumeView(CreateView):
             messages.error(self.request, f"Error analyzing resume: {str(e)}")
             return self.form_invalid(form)
 
+from apps.resume.models import Resume
+
 @method_decorator(login_required, name='dispatch')
 class AnalysisDetailView(DetailView):
     model = ResumeAnalysis
@@ -130,4 +132,5 @@ class AnalysisDetailView(DetailView):
         context['high_suggestions'] = self.object.suggestions.filter(priority='High')
         context['medium_suggestions'] = self.object.suggestions.filter(priority='Medium')
         context['low_suggestions'] = self.object.suggestions.filter(priority='Low')
+        context['user_resume'] = self.object.resume or Resume.objects.filter(user=self.request.user).first()
         return context

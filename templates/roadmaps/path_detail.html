@@ -76,7 +76,7 @@
 
     <!-- Progress Bar (if enrolled) -->
     {% if user_roadmap %}
-    <div class="card border-0 shadow-sm rounded-4 p-4 mb-5">
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h5 class="fw-bold mb-0">Your Progress</h5>
             <span class="fw-bold text-primary" id="progressText">{{ completed_count }}/{{ total_topics }} topics ({{ progress }}%)</span>
@@ -88,19 +88,55 @@
             </div>
         </div>
     </div>
+
+    <!-- Milestone Unlocked Celebration Banner -->
+    <div id="milestoneUnlockedBanner" class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-success bg-opacity-10 border border-success border-opacity-25 {% if progress < 100 %}d-none{% endif %}">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.3rem;">
+                    <i class="bi bi-trophy-fill"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold text-success mb-1">🎉 Milestone Unlocked: Track Completed!</h5>
+                    <p class="text-muted small mb-0">You've mastered all learning topics in this path. Test your skills with related interview challenges.</p>
+                </div>
+            </div>
+            <div class="d-flex gap-2 flex-shrink-0">
+                <a href="{% url 'interviews:hub' %}" class="btn btn-primary-custom btn-sm rounded-pill px-3">
+                    Practice Interview Quiz <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
     {% endif %}
 
-    <!-- Info badges -->
-    <div class="d-flex gap-3 mb-5">
-        <span class="badge bg-light text-secondary px-3 py-2 rounded-pill">
-            <i class="bi bi-calendar3"></i> {{ path.estimated_weeks }} Weeks
-        </span>
-        <span class="badge {% if path.difficulty == 'Beginner' %}bg-success{% elif path.difficulty == 'Intermediate' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-10 {% if path.difficulty == 'Beginner' %}text-success{% elif path.difficulty == 'Intermediate' %}text-warning{% else %}text-danger{% endif %} px-3 py-2 rounded-pill">
-            {{ path.difficulty }}
-        </span>
-        <span class="badge bg-light text-secondary px-3 py-2 rounded-pill">
-            <i class="bi bi-book"></i> {{ total_topics }} Topics
-        </span>
+    <!-- Pacing & Commitment Header Bar -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 px-4 mb-4 bg-light" style="border: 1px solid var(--border) !important;">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="d-flex flex-wrap align-items-center gap-4 text-muted small">
+                <span class="d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history text-primary"></i>
+                    <span><strong>Pacing:</strong> ~4-6 hrs/week</span>
+                </span>
+                <span class="d-flex align-items-center gap-2">
+                    <i class="bi bi-calendar-check text-success"></i>
+                    <span><strong>Est. Completion:</strong> {{ path.estimated_weeks }} Weeks</span>
+                </span>
+                <span class="d-flex align-items-center gap-2">
+                    <i class="bi bi-mortarboard text-warning"></i>
+                    <span><strong>Difficulty:</strong> {{ path.difficulty }}</span>
+                </span>
+                <span class="d-flex align-items-center gap-2">
+                    <i class="bi bi-journal-code text-info"></i>
+                    <span><strong>Topics:</strong> {{ total_topics }} Lessons</span>
+                </span>
+            </div>
+            <div>
+                <a href="{% url 'interviews:hub' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    <i class="bi bi-patch-question me-1"></i> Practice Related Quiz
+                </a>
+            </div>
+        </div>
     </div>
 
     <!-- Milestones Timeline -->
@@ -198,9 +234,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         topicRow.classList.remove('completed');
                     }
                     // Update progress bar
-                    document.getElementById('progressBar').style.width = data.progress_percentage + '%';
-                    document.getElementById('progressText').textContent = 
-                        `${data.completed_count}/${data.total_topics} topics (${data.progress_percentage}%)`;
+                    const progressBar = document.getElementById('progressBar');
+                    if (progressBar) progressBar.style.width = data.progress_percentage + '%';
+                    const progressText = document.getElementById('progressText');
+                    if (progressText) {
+                        progressText.textContent = `${data.completed_count}/${data.total_topics} topics (${data.progress_percentage}%)`;
+                    }
+
+                    // Milestone Unlocked Banner toggle
+                    const banner = document.getElementById('milestoneUnlockedBanner');
+                    if (banner) {
+                        if (data.progress_percentage === 100) {
+                            banner.classList.remove('d-none');
+                        } else {
+                            banner.classList.add('d-none');
+                        }
+                    }
                 }
             })
             .catch(error => console.error('Error:', error));
