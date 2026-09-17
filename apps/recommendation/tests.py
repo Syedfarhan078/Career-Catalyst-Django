@@ -5,7 +5,7 @@ from apps.profiles.models import StudentProfile
 from apps.resume.models import Resume, Education, Project, Skill
 from apps.roadmaps.models import CareerPath, Milestone, Topic
 from .models import CareerAnalysis
-from .services import calculate_initial_readiness_score, build_fallback_analysis, generate_career_recommendation
+from .services import evaluate_student_against_path, generate_career_recommendation
 
 User = get_user_model()
 
@@ -59,29 +59,61 @@ class RecommendationTests(TestCase):
             resource_type="Course"
         )
 
-    def test_calculate_initial_readiness_score(self):
-        # CGPA 9.2 (15) + 4 skills (8) = 23
-        score = calculate_initial_readiness_score(self.user, self.profile)
-        self.assertEqual(score, 23)
+    def test_evaluate_readiness_score_with_resume_projects(self):
+        # 1. Base test: CGPA 9.2 (15) + 50% skill match (20) = 35%
+        data = evaluate_student_against_path(self.user, self.profile, self.path, False, None, None)
+        self.assertEqual(data["career_readiness_score"], 35)
         
-        # Create a resume and add project/certification/experience to increase score
+        # 2. Add resume with a project (1 project = +10 pts) -> 45%
         resume = Resume.objects.create(user=self.user, title='My Resume', is_default=True)
         Project.objects.create(resume=resume, title='AI Project', description='AI description')
         Skill.objects.create(resume=resume, name='Python')
         
-        # CGPA 9.2 (15) + 4 skills (8) + 1 project (5) = 28
-        score = calculate_initial_readiness_score(self.user, self.profile)
-        self.assertEqual(score, 28)
+        data_with_resume = evaluate_student_against_path(self.user, self.profile, self.path, True, None, resume)
+        self.assertEqual(data_with_resume["career_readiness_score"], 45)
 
-    def test_build_fallback_analysis_without_resume(self):
-        # Run local fallback parser without resume
-        data = build_fallback_analysis(self.user, self.profile, 28, "Software Engineer", has_resume=False)
+    def test_evaluate_student_against_path_matching_role(self):
+        # Student has Python, so Python matches (1/2 topics = 50% match)
+        data = evaluate_student_against_path(
+            user=self.user,
+            profile=self.profile,
+            career_path=self.path,
+            has_resume=False,
+            latest_resume_analysis=None,
+            default_resume=None
+        )
         
         self.assertEqual(data["recommended_career"], "Software Engineer")
         self.assertIn("Docker", data["missing_skills"])
-        self.assertNotIn("Python", data["missing_skills"])
         self.assertFalse(data["has_resume"])
         self.assertIsNone(data["ats_resume_score"])
+        # CGPA 9.2 (15) + 50% skill match (20) = 35%
+        self.assertEqual(data["career_readiness_score"], 35)
+
+    def test_evaluate_student_against_unmatched_role(self):
+        # Create a Product Manager path with PM topics
+        pm_path = CareerPath.objects.create(name="Product Manager", slug="product-manager", description="PM path")
+        pm_ms = Milestone.objects.create(career_path=pm_path, week_number=1, title="User Research", level="Beginner")
+        Topic.objects.create(milestone=pm_ms, title="User Interviews", resource_type="Article")
+        Topic.objects.create(milestone=pm_ms, title="Wireframing (Figma)", resource_type="Article")
+        
+        # Student has Python/Django, 0 PM skills
+        data = evaluate_student_against_path(
+            user=self.user,
+            profile=self.profile,
+            career_path=pm_path,
+            has_resume=False,
+            latest_resume_analysis=None,
+            default_resume=None
+        )
+        
+        self.assertEqual(data["recommended_career"], "Product Manager")
+        self.assertIn("User Interviews", data["missing_skills"])
+        self.assertIn("Wireframing (Figma)", data["missing_skills"])
+        # 0 PM skills matched -> Skill score is 0. Only academic score 15.
+        self.assertEqual(data["career_readiness_score"], 15)
+        self.assertEqual(data["internship_readiness"], "Need Preparation")
+        self.assertEqual(data["placement_readiness"], "Need Preparation")
 
     def test_generate_career_recommendation(self):
         # Run recommendation generation without resume (saves to database)
@@ -107,7 +139,7 @@ class RecommendationTests(TestCase):
         # Access dashboard again (should render recommendations data and No Resume Uploaded card)
         response = self.client.get(reverse('recommendation:dashboard'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "My Career Recommendations")
+        self.assertContains(response, "Target Career Pathway")
         self.assertContains(response, "Software Engineer")
         self.assertContains(response, "Docker")
         self.assertContains(response, "No Resume Uploaded")

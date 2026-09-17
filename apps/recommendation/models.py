@@ -25,6 +25,7 @@ class CareerAnalysis(models.Model):
     # JSON structures
     roadmap_json = models.JSONField(default=list, blank=True, help_text="Weekly roadmap details")
     learning_resources_json = models.JSONField(default=list, blank=True, help_text="List of learning resources")
+    radar_chart_json = models.JSONField(default=list, blank=True, help_text="Dynamic radar chart categories and topic coverage")
     
     # Resume & Placement metrics
     has_resume = models.BooleanField(default=False)
@@ -52,3 +53,32 @@ class CareerAnalysis(models.Model):
     @property
     def is_resume_uploaded(self):
         return bool(self.has_resume and self.ats_resume_score is not None and self.ats_resume_score > 0)
+
+    def get_radar_labels(self):
+        if self.radar_chart_json:
+            return [item.get('name', '') for item in self.radar_chart_json]
+        if self.roadmap_json:
+            return [step.get('title', f"Milestone {step.get('week', '')}") for step in self.roadmap_json[:6]]
+        return ['Milestone 1', 'Milestone 2', 'Milestone 3', 'Milestone 4', 'Milestone 5']
+
+    def get_radar_user_scores(self):
+        if self.radar_chart_json:
+            return [item.get('user_score', 0) for item in self.radar_chart_json]
+        if self.roadmap_json:
+            scores = []
+            for step in self.roadmap_json[:6]:
+                topics = step.get('topics', [])
+                matched = step.get('matched_topics', [])
+                if topics:
+                    scores.append(round((len(matched) / len(topics)) * 10, 1))
+                else:
+                    scores.append(0)
+            return scores
+        return [0, 0, 0, 0, 0]
+
+    def get_radar_target_scores(self):
+        if self.radar_chart_json:
+            return [item.get('target_score', 10) for item in self.radar_chart_json]
+        if self.roadmap_json:
+            return [10 for _ in self.roadmap_json[:6]]
+        return [10, 10, 10, 10, 10]

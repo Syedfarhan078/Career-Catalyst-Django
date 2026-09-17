@@ -223,20 +223,32 @@
         <div class="col-md-4 col-xl-3">
             <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white h-100 d-flex flex-column justify-content-between">
                 <div>
-                    <h6 class="fw-bold text-secondary mb-3">Recommended Career</h6>
+                    <h6 class="fw-bold text-secondary mb-3">Target Career Pathway</h6>
                     <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
                         <i class="bi bi-briefcase display-6"></i>
                     </div>
                     <h5 class="fw-bold text-secondary mb-1">{{ analysis.recommended_career }}</h5>
-                    <span class="badge bg-success rounded-pill px-3 py-1 mt-2">Best Match</span>
+                    {% if analysis.confidence_score >= 70 %}
+                        <span class="badge bg-success rounded-pill px-3 py-1 mt-2">Strong Alignment</span>
+                    {% elif analysis.confidence_score >= 40 %}
+                        <span class="badge bg-primary rounded-pill px-3 py-1 mt-2">Moderate Match</span>
+                    {% else %}
+                        <span class="badge bg-secondary bg-opacity-75 text-white rounded-pill px-3 py-1 mt-2">Target Pathway</span>
+                    {% endif %}
                 </div>
                 <div class="w-100 mt-3 text-start">
                     <div class="d-flex justify-content-between mb-1 small text-muted">
-                        <span>Confidence Level</span>
+                        <span>Role Skill Alignment</span>
                         <span>{{ analysis.confidence_score }}%</span>
                     </div>
                     <div class="progress" style="height: 6px; border-radius: 50px;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ analysis.confidence_score }}%;" aria-valuenow="{{ analysis.confidence_score }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        {% if analysis.confidence_score >= 70 %}
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ analysis.confidence_score }}%;"></div>
+                        {% elif analysis.confidence_score >= 40 %}
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ analysis.confidence_score }}%;"></div>
+                        {% else %}
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ analysis.confidence_score }}%;"></div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -286,20 +298,24 @@
                 <div class="p-3 bg-light rounded-4 border">
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="fw-bold text-secondary small">Internship Readiness</span>
-                        {% if "Almost" in analysis.internship_readiness or "Need" in analysis.internship_readiness %}
-                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-bold">{{ analysis.internship_readiness }}</span>
+                        {% if "Almost" in analysis.internship_readiness %}
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-bold">Almost Ready</span>
+                        {% elif "Ready" in analysis.internship_readiness %}
+                        <span class="badge bg-success text-white rounded-pill px-3 py-2 fw-bold">Ready</span>
                         {% else %}
-                        <span class="badge bg-success text-white rounded-pill px-3 py-2 fw-bold">{{ analysis.internship_readiness }}</span>
+                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2 fw-bold">Need Preparation</span>
                         {% endif %}
                     </div>
                 </div>
                 <div class="p-3 bg-light rounded-4 border">
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="fw-bold text-secondary small">Placement Readiness</span>
-                        {% if "Almost" in analysis.placement_readiness or "Need" in analysis.placement_readiness %}
-                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-bold">{{ analysis.placement_readiness }}</span>
+                        {% if "Almost" in analysis.placement_readiness %}
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-bold">Almost Ready</span>
+                        {% elif "Ready" in analysis.placement_readiness %}
+                        <span class="badge bg-success text-white rounded-pill px-3 py-2 fw-bold">Ready</span>
                         {% else %}
-                        <span class="badge bg-success text-white rounded-pill px-3 py-2 fw-bold">{{ analysis.placement_readiness }}</span>
+                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2 fw-bold">Need Preparation</span>
                         {% endif %}
                     </div>
                 </div>
@@ -561,43 +577,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('skillRadarChart');
     if (!ctx) return;
 
-    // Load data from template context
-    const studentSkills = [{% for skill in profile.get_skills_list %}"{{ skill }}",{% endfor %}];
-
-    // Define 5 Core Dimensions
-    const categories = ['Languages', 'Frameworks', 'Databases', 'Cloud/DevOps', 'Architecture'];
-    
-    // Keyword filters to score student skills
-    const langKeywords = ['python', 'javascript', 'java', 'c++', 'c#', 'ruby', 'go', 'php', 'typescript', 'sql', 'html', 'css'];
-    const fwKeywords = ['django', 'flask', 'react', 'angular', 'vue', 'spring', 'express', 'laravel', 'bootstrap', 'tailwind', 'nest'];
-    const dbKeywords = ['postgres', 'mysql', 'sqlite', 'mongodb', 'redis', 'oracle', 'mariadb', 'nosql', 'dynamodb'];
-    const devopsKeywords = ['docker', 'kubernetes', 'aws', 'gcp', 'azure', 'git', 'github', 'jenkins', 'ci/cd', 'linux', 'nginx'];
-    const archKeywords = ['api', 'rest', 'oop', 'system design', 'microservices', 'graphql', 'data structures', 'algorithms'];
-
-    const countMatches = (list, keywords) => {
-        return list.filter(s => keywords.some(k => s.toLowerCase().includes(k))).length;
-    };
-
-    // Calculate score (out of 10) dynamically
-    const studentScores = [
-        Math.min(countMatches(studentSkills, langKeywords) * 3 + 3, 10),
-        Math.min(countMatches(studentSkills, fwKeywords) * 3 + 2, 10),
-        Math.min(countMatches(studentSkills, dbKeywords) * 4 + 2, 10),
-        Math.min(countMatches(studentSkills, devopsKeywords) * 3 + 2, 10),
-        Math.min(countMatches(studentSkills, archKeywords) * 4 + 2, 10),
-    ];
-
-    // Target/Milestone score expectations
-    const targetScores = [9, 8, 9, 8, 9];
+    // Load dynamic milestone dimensions from CareerAnalysis
+    const categories = [{% for lbl in analysis.get_radar_labels %}"{{ lbl|escapejs }}",{% endfor %}];
+    const studentScores = [{% for sc in analysis.get_radar_user_scores %}{{ sc }},{% endfor %}];
+    const targetScores = [{% for sc in analysis.get_radar_target_scores %}{{ sc }},{% endfor %}];
 
     new Chart(ctx, {
         type: 'radar',
         data: {
-            labels: categories,
+            labels: categories.length > 0 ? categories : ['Fundamentals', 'Core Principles', 'Tooling', 'Projects', 'Mastery'],
             datasets: [
                 {
-                    label: 'Your Score',
-                    data: studentScores,
+                    label: 'Your Verified Match',
+                    data: studentScores.length > 0 ? studentScores : [0, 0, 0, 0, 0],
                     fill: true,
                     backgroundColor: 'rgba(37, 99, 235, 0.2)',
                     borderColor: 'rgb(37, 99, 235)',
@@ -607,10 +599,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     pointHoverBorderColor: 'rgb(37, 99, 235)'
                 },
                 {
-                    label: 'Target Syllabus',
-                    data: targetScores,
+                    label: 'Required Milestone Syllabus',
+                    data: targetScores.length > 0 ? targetScores : [10, 10, 10, 10, 10],
                     fill: true,
-                    backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                    backgroundColor: 'rgba(20, 184, 166, 0.08)',
                     borderColor: 'rgb(20, 184, 166)',
                     pointBackgroundColor: 'rgb(20, 184, 166)',
                     pointBorderColor: '#fff',
