@@ -124,7 +124,8 @@ def delete_account_view(request):
 
 class CustomPasswordResetView(SuccessMessageMixin, auth_views.PasswordResetView):
     template_name = 'accounts/forgot_password.html'
-    email_template_name = 'accounts/password_reset_email.html'
+    email_template_name = 'accounts/password_reset_email.txt'
+    html_email_template_name = 'accounts/password_reset_email.html'
     subject_template_name = 'accounts/password_reset_subject.txt'
     success_url = reverse_lazy('login')
     success_message = "We have emailed you instructions for resetting your password. If an account exists with this email, you will receive it shortly."

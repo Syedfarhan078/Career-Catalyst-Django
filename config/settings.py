@@ -90,7 +90,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-import dj_database_url
+try:
+    import dj_database_url
+except ImportError:
+    dj_database_url = None
 
 DATABASES = {
     'default': {
@@ -99,7 +102,7 @@ DATABASES = {
     }
 }
 
-if os.getenv("DATABASE_URL"):
+if os.getenv("DATABASE_URL") and dj_database_url:
     DATABASES['default'] = dj_database_url.config(
         conn_max_age=600,
         conn_health_checks=True,
