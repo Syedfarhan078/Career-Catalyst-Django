@@ -15,11 +15,6 @@ class Migration(migrations.Migration):
             name='has_resume',
             field=models.BooleanField(default=False),
         ),
-        migrations.AddField(
-            model_name='careeranalysis',
-            name='radar_chart_json',
-            field=models.JSONField(blank=True, default=list, help_text='Dynamic radar chart categories and topic coverage'),
-        ),
         migrations.AlterField(
             model_name='careeranalysis',
             name='ats_resume_score',

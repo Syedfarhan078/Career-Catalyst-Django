@@ -27,12 +27,23 @@ def career_dashboard(request):
         messages.warning(request, "Your profile is missing details (e.g. skills, college info). Please update it to get accurate recommendations.")
         return redirect('profile_edit')
 
-    # 2. Get the latest analysis
-    analysis = CareerAnalysis.objects.filter(user=request.user).first()
+    # 2. Get the latest analysis with safe fallback
+    try:
+        analysis = CareerAnalysis.objects.filter(user=request.user).first()
+    except Exception as e:
+        analysis = None
     
-    # Check if user has uploaded or created a resume
-    latest_resume_analysis = ResumeAnalysis.objects.filter(user=request.user).order_by('-created_at').first()
-    has_builder_resume = Resume.objects.filter(user=request.user).exists()
+    # Check if user has uploaded or created a resume safely
+    try:
+        latest_resume_analysis = ResumeAnalysis.objects.filter(user=request.user).order_by('-created_at').first()
+    except Exception:
+        latest_resume_analysis = None
+
+    try:
+        has_builder_resume = Resume.objects.filter(user=request.user).exists()
+    except Exception:
+        has_builder_resume = False
+
     user_has_resume = (latest_resume_analysis is not None) or has_builder_resume
     
     context = {

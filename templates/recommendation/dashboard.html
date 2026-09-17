@@ -577,6 +577,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('skillRadarChart');
     if (!ctx) return;
 
+    {% if analysis %}
     // Load dynamic milestone dimensions from CareerAnalysis
     const categories = [{% for lbl in analysis.get_radar_labels %}"{{ lbl|escapejs }}",{% endfor %}];
     const studentScores = [{% for sc in analysis.get_radar_user_scores %}{{ sc }},{% endfor %}];
@@ -630,6 +631,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    {% endif %}
 
     // --- Interactive Milestone Progress Tracker ---
     window.saveProgress = function(checkbox) {
