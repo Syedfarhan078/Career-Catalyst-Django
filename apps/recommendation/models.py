@@ -27,7 +27,8 @@ class CareerAnalysis(models.Model):
     learning_resources_json = models.JSONField(default=list, blank=True, help_text="List of learning resources")
     
     # Resume & Placement metrics
-    ats_resume_score = models.IntegerField(default=0)
+    has_resume = models.BooleanField(default=False)
+    ats_resume_score = models.IntegerField(null=True, blank=True, default=None)
     resume_suggestions = models.JSONField(default=list, blank=True)
     internship_readiness = models.CharField(max_length=100, default="Not Ready")
     placement_readiness = models.CharField(max_length=100, default="Not Ready")
@@ -47,3 +48,7 @@ class CareerAnalysis(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.recommended_career} ({self.career_readiness_score}%)"
+
+    @property
+    def is_resume_uploaded(self):
+        return bool(self.has_resume and self.ats_resume_score is not None and self.ats_resume_score > 0)

@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+from apps.resume.models import Resume
+from apps.ai_resume.models import ResumeAnalysis
 from apps.profiles.models import StudentProfile
 from .models import CareerAnalysis
 from .forms import CareerTargetForm
@@ -28,10 +30,17 @@ def career_dashboard(request):
     # 2. Get the latest analysis
     analysis = CareerAnalysis.objects.filter(user=request.user).first()
     
+    # Check if user has uploaded or created a resume
+    latest_resume_analysis = ResumeAnalysis.objects.filter(user=request.user).order_by('-created_at').first()
+    has_builder_resume = Resume.objects.filter(user=request.user).exists()
+    user_has_resume = (latest_resume_analysis is not None) or has_builder_resume
+    
     context = {
         'analysis': analysis,
         'profile': profile,
-        'form': CareerTargetForm()
+        'form': CareerTargetForm(),
+        'latest_resume_analysis': latest_resume_analysis,
+        'user_has_resume': user_has_resume,
     }
     return render(request, 'recommendation/dashboard.html', context)
 

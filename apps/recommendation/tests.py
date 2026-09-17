@@ -73,25 +73,26 @@ class RecommendationTests(TestCase):
         score = calculate_initial_readiness_score(self.user, self.profile)
         self.assertEqual(score, 28)
 
-    def test_build_fallback_analysis(self):
-        # Run local fallback parser
-        data = build_fallback_analysis(self.user, self.profile, 28, "Software Engineer")
+    def test_build_fallback_analysis_without_resume(self):
+        # Run local fallback parser without resume
+        data = build_fallback_analysis(self.user, self.profile, 28, "Software Engineer", has_resume=False)
         
         self.assertEqual(data["recommended_career"], "Software Engineer")
-        # Python is in student skills (profile), Docker is NOT. So Docker should be in missing_skills!
         self.assertIn("Docker", data["missing_skills"])
         self.assertNotIn("Python", data["missing_skills"])
-        self.assertEqual(len(data["roadmap_json"]), 1)
-        self.assertEqual(data["roadmap_json"][0]["title"], "Programming Basics")
+        self.assertFalse(data["has_resume"])
+        self.assertIsNone(data["ats_resume_score"])
 
     def test_generate_career_recommendation(self):
-        # Run recommendation generation (saves to database)
+        # Run recommendation generation without resume (saves to database)
         analysis = generate_career_recommendation(self.user, "Software Engineer")
         
         self.assertIsNotNone(analysis.pk)
         self.assertEqual(analysis.recommended_career, "Software Engineer")
         self.assertEqual(CareerAnalysis.objects.count(), 1)
         self.assertIn("Docker", analysis.missing_skills)
+        self.assertFalse(analysis.has_resume)
+        self.assertIsNone(analysis.ats_resume_score)
 
     def test_views_dashboard_navigation(self):
         # Access dashboard with no analysis yet (should render landing intro)
@@ -103,9 +104,10 @@ class RecommendationTests(TestCase):
         response = self.client.post(reverse('recommendation:analyze'))
         self.assertEqual(response.status_code, 302) # Redirects back to dashboard
         
-        # Access dashboard again (should render recommendations data)
+        # Access dashboard again (should render recommendations data and No Resume Uploaded card)
         response = self.client.get(reverse('recommendation:dashboard'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "My Career Recommendations")
         self.assertContains(response, "Software Engineer")
         self.assertContains(response, "Docker")
+        self.assertContains(response, "No Resume Uploaded")

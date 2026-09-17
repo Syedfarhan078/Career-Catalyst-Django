@@ -4,8 +4,25 @@ import requests
 from django.conf import settings
 from apps.profiles.models import StudentProfile
 from apps.resume.models import Resume
+from apps.ai_resume.models import ResumeAnalysis
 from apps.roadmaps.models import CareerPath, UserRoadmap
 from .models import CareerAnalysis
+
+def check_user_resume_status(user):
+    """
+    Checks whether the user has uploaded an ATS resume or created one in the resume builder.
+    Returns (has_resume: bool, latest_resume_analysis: ResumeAnalysis or None, default_resume: Resume or None)
+    """
+    latest_resume_analysis = ResumeAnalysis.objects.filter(user=user).order_by('-created_at').first()
+    default_resume = Resume.objects.filter(user=user, is_default=True).first() or Resume.objects.filter(user=user).first()
+    
+    has_builder_content = default_resume is not None and (
+        default_resume.experiences.exists() or 
+        default_resume.projects.exists() or 
+        default_resume.educations.exists()
+    )
+    has_resume = (latest_resume_analysis is not None) or has_builder_content
+    return has_resume, latest_resume_analysis, default_resume
 
 def calculate_initial_readiness_score(user, profile):
     """
@@ -58,7 +75,7 @@ def calculate_initial_readiness_score(user, profile):
     return min(score, 100)
 
 
-def build_fallback_analysis(user, profile, initial_score, target_role_name=None):
+def build_fallback_analysis(user, profile, initial_score, target_role_name=None, has_resume=False, latest_resume_analysis=None):
     """
     Fallback rule-based hybrid builder if the LLM connection fails or is unavailable.
     """
@@ -123,13 +140,30 @@ def build_fallback_analysis(user, profile, initial_score, target_role_name=None)
     if not missing_skills:
         missing_skills = ["Advanced Backend Architectures", "Docker & Kubernetes Deployment"]
         
-    # 4. Generate ATS resume suggestions
-    ats_score = int(initial_score * 0.9) if initial_score > 0 else 60
-    resume_suggestions = [
-        "Include metrics and quantities in your experience descriptions.",
-        "Add missing technical skills directly to your skills section.",
-        "Ensure your layout matches standard one-page single-column formats."
-    ]
+    # 4. Handle ATS resume score & suggestions
+    if has_resume and latest_resume_analysis:
+        ats_score = latest_resume_analysis.ats_score or latest_resume_analysis.overall_score
+        resume_suggestions = [s.description for s in latest_resume_analysis.suggestions.all()[:3]]
+        if not resume_suggestions:
+            resume_suggestions = [
+                "Include metrics and quantities in your experience descriptions.",
+                "Add missing technical skills directly to your skills section.",
+                "Ensure your layout matches standard one-page single-column formats."
+            ]
+    elif has_resume:
+        ats_score = int(initial_score * 0.9) if initial_score > 0 else 60
+        resume_suggestions = [
+            "Include metrics and quantities in your experience descriptions.",
+            "Add missing technical skills directly to your skills section.",
+            "Ensure your layout matches standard one-page single-column formats."
+        ]
+    else:
+        ats_score = None
+        resume_suggestions = [
+            "Upload your resume to the ATS Resume Analyzer to get deep keyword matching.",
+            "Ensure your resume format uses standard single-column sections (Education, Projects, Skills).",
+            "Add quantifiable results and metrics to your key project descriptions."
+        ]
     
     confidence = 80 if profile_skills_lower else 50
     strengths = ["Strong core language fundamentals", "Good academic standing and CGPA"]
@@ -181,6 +215,7 @@ def build_fallback_analysis(user, profile, initial_score, target_role_name=None)
         "interview_topics": interview_topics,
         "roadmap_json": roadmap_steps,
         "learning_resources_json": learning_resources[:6],
+        "has_resume": has_resume,
         "ats_resume_score": ats_score,
         "resume_suggestions": resume_suggestions,
         "internship_readiness": internship,
@@ -202,6 +237,7 @@ def generate_career_recommendation(user, target_role_name=None):
         raise ValueError("Profile incomplete. Please fill out your profile details first.")
         
     initial_score = calculate_initial_readiness_score(user, profile)
+    has_resume, latest_resume_analysis, default_resume = check_user_resume_status(user)
     
     # 1. Fetch available career paths and database data
     paths = CareerPath.objects.filter(is_active=True)
@@ -229,7 +265,9 @@ def generate_career_recommendation(user, target_role_name=None):
         "cgpa": str(profile.cgpa) if profile.cgpa else "N/A",
         "current_skills": profile.skills,
         "target_goal": target_role_name or profile.career_goal,
-        "calculated_readiness_score": initial_score
+        "calculated_readiness_score": initial_score,
+        "has_uploaded_resume": has_resume,
+        "resume_status": f"ATS Analysis Score: {latest_resume_analysis.ats_score}%" if (latest_resume_analysis and latest_resume_analysis.ats_score) else ("Resume created in builder" if has_resume else "NO RESUME UPLOADED OR SCANNED YET")
     }
     
     # Check if a custom Groq API Key is available
@@ -246,7 +284,8 @@ def generate_career_recommendation(user, target_role_name=None):
                 f"1. Choose the best matching career path from the available system roles.\n"
                 f"2. Compare student skills with role milestones to identify missing skills.\n"
                 f"3. Refine the readiness score based on their projects/skills.\n"
-                f"4. Output STRICT JSON ONLY matching the following schema:\n"
+                f"4. IMPORTANT: If 'has_uploaded_resume' is false in the student profile, you MUST set 'ats_resume_score' to null and suggest generic best-practice resume tips.\n"
+                f"5. Output STRICT JSON ONLY matching the following schema:\n"
                 f"{{\n"
                 f"  \"career_readiness_score\": int,\n"
                 f"  \"recommended_career\": \"string (MUST match one of our available role names!)\",\n"
@@ -260,7 +299,7 @@ def generate_career_recommendation(user, target_role_name=None):
                 f"  \"interview_topics\": [\"string\"],\n"
                 f"  \"roadmap_json\": [weekly steps matching milestones],\n"
                 f"  \"learning_resources_json\": [list of dicts with title, type, url],\n"
-                f"  \"ats_resume_score\": int,\n"
+                f"  \"ats_resume_score\": null or integer (0-100),\n"
                 f"  \"resume_suggestions\": [\"string\"],\n"
                 f"  \"internship_readiness\": \"string\",\n"
                 f"  \"placement_readiness\": \"string\",\n"
@@ -302,8 +341,16 @@ def generate_career_recommendation(user, target_role_name=None):
             
     if not analysis_data:
         # Fallback to smart rule-based local parser
-        analysis_data = build_fallback_analysis(user, profile, initial_score, target_role_name)
+        analysis_data = build_fallback_analysis(user, profile, initial_score, target_role_name, has_resume, latest_resume_analysis)
         
+    # Strictly sanitize ats_resume_score based on whether user actually has a resume
+    if not has_resume:
+        final_ats_score = None
+    elif latest_resume_analysis and latest_resume_analysis.ats_score:
+        final_ats_score = latest_resume_analysis.ats_score
+    else:
+        final_ats_score = analysis_data.get("ats_resume_score") or 60
+
     # Save the analysis data to the database
     analysis = CareerAnalysis.objects.create(
         user=user,
@@ -319,7 +366,8 @@ def generate_career_recommendation(user, target_role_name=None):
         interview_topics=analysis_data.get("interview_topics", []),
         roadmap_json=analysis_data.get("roadmap_json", []),
         learning_resources_json=analysis_data.get("learning_resources_json", []),
-        ats_resume_score=analysis_data.get("ats_resume_score", 70),
+        has_resume=has_resume,
+        ats_resume_score=final_ats_score,
         resume_suggestions=analysis_data.get("resume_suggestions", []),
         internship_readiness=analysis_data.get("internship_readiness", "Almost Ready"),
         placement_readiness=analysis_data.get("placement_readiness", "Need Preparation"),
@@ -329,3 +377,4 @@ def generate_career_recommendation(user, target_role_name=None):
     )
     
     return analysis
+

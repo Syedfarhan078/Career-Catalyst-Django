@@ -244,12 +244,39 @@
 
         <!-- 3. ATS Resume Score -->
         <div class="col-md-4 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white h-100">
-                <h6 class="fw-bold text-secondary mb-3">ATS Resume Match</h6>
-                <div class="score-circle-ats" style="--score-val: {{ analysis.ats_resume_score }};">
-                    <div class="score-circle-ats-inner">{{ analysis.ats_resume_score }}%</div>
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h6 class="fw-bold text-secondary mb-3">ATS Resume Match</h6>
+                    {% if user_has_resume and analysis.ats_resume_score %}
+                        <div class="score-circle-ats" style="--score-val: {{ analysis.ats_resume_score }};">
+                            <div class="score-circle-ats-inner">{{ analysis.ats_resume_score }}%</div>
+                        </div>
+                        <p class="text-muted small mt-3 mb-0">Compliance grade comparing keywords with selected role profiles.</p>
+                    {% else %}
+                        <div class="d-flex flex-column align-items-center justify-content-center py-2">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 72px; height: 72px; background: rgba(37,99,235,0.08); border: 2px dashed rgba(37,99,235,0.3);">
+                                <i class="bi bi-file-earmark-arrow-up text-primary fs-2"></i>
+                            </div>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1 mb-2 fw-semibold">No Resume Uploaded</span>
+                            <p class="text-muted small mb-0" style="font-size: 0.8rem; line-height: 1.4;">
+                                Upload or build your resume to get an ATS compliance match.
+                            </p>
+                        </div>
+                    {% endif %}
                 </div>
-                <p class="text-muted small mt-3 mb-0">Compliance grade comparing keywords with selected role profiles.</p>
+                {% if user_has_resume and analysis.ats_resume_score %}
+                    <div class="mt-3">
+                        <a href="{% url 'ai_resume:history' %}" class="btn btn-sm btn-outline-primary rounded-pill w-100 py-1" style="font-size: 0.85rem;">
+                            <i class="bi bi-file-earmark-text me-1"></i> View ATS Report
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="mt-3">
+                        <a href="{% url 'ai_resume:analyze' %}" class="btn btn-sm btn-primary-custom rounded-pill w-100 py-2">
+                            <i class="bi bi-upload me-1"></i> Scan Resume
+                        </a>
+                    </div>
+                {% endif %}
             </div>
         </div>
 
@@ -450,9 +477,26 @@
         </div>
     </div>
 
-    <!-- Resume Suggestions -->
+    <!-- Resume Guidance -->
     <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-5">
-        <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-file-earmark-text-fill text-danger"></i> Resume Suggestions</h5>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-file-earmark-text-fill text-danger me-2"></i> Resume Guidance</h5>
+            {% if not user_has_resume %}
+            <a href="{% url 'ai_resume:analyze' %}" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                <i class="bi bi-upload me-1"></i> Upload Resume for ATS Scan
+            </a>
+            {% endif %}
+        </div>
+        
+        {% if not user_has_resume %}
+        <div class="alert alert-warning border-0 rounded-4 p-3 d-flex align-items-center gap-3 mb-3" style="background: rgba(245, 158, 11, 0.08);">
+            <i class="bi bi-info-circle-fill text-warning fs-3 flex-shrink-0"></i>
+            <div class="small">
+                <strong>No resume uploaded yet.</strong> Uploading your resume in the <a href="{% url 'ai_resume:analyze' %}" class="fw-bold text-decoration-underline text-warning">ATS Resume Analyzer</a> or creating one in our <a href="{% url 'resume:list' %}" class="fw-bold text-decoration-underline text-warning">Resume Builder</a> will generate keyword density metrics, missing skill chips, and formatting improvements.
+            </div>
+        </div>
+        {% endif %}
+
         <div class="row g-3">
             {% for suggestion in analysis.resume_suggestions %}
             <div class="col-md-4">
