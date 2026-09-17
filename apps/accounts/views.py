@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 
 from django.core.exceptions import ValidationError
-from .forms import UserRegistrationForm, UserLoginForm, UserProfileForm, OTPVerificationForm
+from .forms import UserRegistrationForm, UserLoginForm, UserProfileForm, OTPVerificationForm, CustomPasswordResetForm
 from .services import create_user_with_otp, verify_user_otp, resend_user_otp
 
 def register_view(request):
@@ -123,6 +123,7 @@ def delete_account_view(request):
     return render(request, 'accounts/delete_account.html')
 
 class CustomPasswordResetView(SuccessMessageMixin, auth_views.PasswordResetView):
+    form_class = CustomPasswordResetForm
     template_name = 'accounts/forgot_password.html'
     email_template_name = 'accounts/password_reset_email.txt'
     html_email_template_name = 'accounts/password_reset_email.html'
