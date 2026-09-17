@@ -33,6 +33,24 @@ ALLOWED_HOSTS = ["127.0.0.1", "localhost", '172.20.10.2']
 if os.getenv("RENDER_EXTERNAL_HOSTNAME"):
     ALLOWED_HOSTS.append(os.getenv("RENDER_EXTERNAL_HOSTNAME"))
 
+# CSRF Trusted Origins for HTTPS deployments & Render
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1",
+    "http://localhost",
+    "https://*.onrender.com",
+]
+
+render_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if render_hostname:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{render_hostname}")
+
+env_csrf = os.getenv("CSRF_TRUSTED_ORIGINS")
+if env_csrf:
+    CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in env_csrf.split(",") if origin.strip()])
+
+# Reverse proxy SSL header (Essential for Render to properly validate CSRF tokens over HTTPS)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 # Application definition
 
