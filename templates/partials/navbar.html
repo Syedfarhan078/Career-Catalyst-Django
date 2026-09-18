@@ -26,6 +26,11 @@
                     <li class="nav-item">
                         <a class="nav-link {% if 'community' in request.path %}active{% endif %}" href="{% url 'community:hub' %}">Community</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'tracker' in request.path %}active{% endif %}" href="{% url 'tracker:kanban' %}">
+                            <i class="bi bi-kanban me-1"></i> Job Tracker
+                        </a>
+                    </li>
                 {% elif request.resolver_match.url_name == 'home' %}
                     <li class="nav-item">
                         <a class="nav-link" href="#features">Features</a>
@@ -34,7 +39,7 @@
                         <a class="nav-link" href="#how-it-works">How It Works</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#testimonials">Testimonials</a>
+                        <a class="nav-link" href="#inspiration">Inspiration</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#faq">FAQ</a>
@@ -129,6 +134,11 @@
                                 <a class="dropdown-item" href="{% url 'ai_resume:history' %}">
                                     <i class="bi bi-clock-history me-2 text-primary"></i> Resume History
                                 </a>
+                            </li>
+                            <li>
+                                 <a class="dropdown-item" href="{% url 'tracker:kanban' %}">
+                                     <i class="bi bi-kanban me-2 text-primary"></i> Job CRM & Tracker
+                                 </a>
                             </li>
                             <li><hr class="dropdown-divider my-2"></li>
 

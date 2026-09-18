@@ -137,6 +137,11 @@
     color: var(--warning);
 }
 
+.hero-float-card .float-icon.blue {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary);
+}
+
 .hero-float-card .float-text {
     font-weight: var(--font-semibold);
     font-size: var(--text-sm);
@@ -152,6 +157,12 @@
     bottom: 15%;
     right: -8%;
     animation-delay: 1.5s;
+}
+
+.hero-float-card.card-3 {
+    top: 50%;
+    left: -6%;
+    animation-delay: 0.8s;
 }
 
 @media (max-width: 992px) {

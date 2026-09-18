@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const launcher = document.getElementById('chatbot-launcher');
     const windowEl = document.getElementById('chatbot-window');
     const closeBtn = document.getElementById('chatbot-close');
+    const resetBtn = document.getElementById('chatbot-reset');
     const chatForm = document.getElementById('chatbot-form');
     const chatInput = document.getElementById('chatbot-input');
     const msgContainer = document.getElementById('chatbot-messages');
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Retrieve URLs dynamically from template data-attributes
     const urls = {
         career: windowEl.dataset.urlCareer || '#',
+        tracker: windowEl.dataset.urlTracker || '#',
         resume: windowEl.dataset.urlResume || '#',
         ats: windowEl.dataset.urlAts || '#',
         community: windowEl.dataset.urlCommunity || '#',
@@ -36,15 +38,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            sessionStorage.removeItem('cc_chat_history');
+            msgContainer.innerHTML = '';
+            loadConversation();
+        });
+    }
+
     // Load conversation history from sessionStorage
     const loadConversation = () => {
         const history = sessionStorage.getItem('cc_chat_history');
-        if (history) {
+        if (history && history.includes('Job Application CRM')) {
             msgContainer.innerHTML = history;
         } else {
             // Initial Welcome Message
+            msgContainer.innerHTML = '';
             appendMessage('bot', `Hello! I am your Career Catalyst assistant. How can I help you today? You can ask me about:<br>
             • 🧭 <strong>Career Guidance & Roadmaps</strong><br>
+            • 📊 <strong>Job Application CRM & Tracker</strong><br>
             • 📄 <strong>Resumes & ATS Analysis</strong><br>
             • 👥 <strong>Mentorship Booking</strong><br>
             • 📝 <strong>Interview Practice</strong>`);
@@ -94,8 +106,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Client-Side Keyword Routing Logic
     const generateBotReply = (query) => {
+        // Job tracker, CRM, applications, kanban, follow-up, ghosting, offers
+        if (matchKeywords(query, ['job', 'apply', 'applied', 'application', 'tracker', 'tracking', 'kanban', 'crm', 'follow up', 'followup', 'ghost', 'ghosted', 'offer', 'deadline'])) {
+            return `Organize your applications, avoid recruiter ghosting with 5-day alerts, and generate 1-click tailored follow-up emails on our <strong>Job Application Tracker CRM</strong>:<br>
+            <a href="${urls.tracker}" class="chatbot-link">Open Job Tracker CRM <i class="bi bi-arrow-right-short"></i></a>`;
+        }
+
         // Career, paths, guidance, roadmaps
-        if (matchKeywords(query, ['career', 'path', 'guidance', 'roadmap', 'recommendation', 'recommend', 'goal'])) {
+        if (matchKeywords(query, ['career', 'path', 'guidance', 'roadmap', 'recommendation', 'recommend', 'goal', 'readiness'])) {
             return `To explore career paths, assess your skill gaps, and get dynamic 30/90-day action plans, try our <strong>AI Career Guidance</strong> dashboard:<br>
             <a href="${urls.career}" class="chatbot-link">Explore Career Guidance <i class="bi bi-arrow-right-short"></i></a>`;
         }
@@ -123,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (matchKeywords(query, ['hi', 'hello', 'hey', 'start', 'welcome', 'help'])) {
             return `Hello! How can I support your career preparation today? Feel free to ask about:<br>
             • 🧭 <strong>Career Guidance & Roadmaps</strong><br>
+            • 📊 <strong>Job Application CRM & Tracker</strong><br>
             • 📄 <strong>Resumes & ATS Analysis</strong><br>
             • 👥 <strong>Mentorship Booking</strong><br>
             • 📝 <strong>Interview Practice</strong>`;
@@ -131,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fallback default
         return `I'm not sure I understand that query. Could you please specify if you are looking for assistance with:<br>
         • 🧭 <strong>Career Guidance & Roadmaps</strong><br>
+        • 📊 <strong>Job Application CRM & Tracker</strong><br>
         • 📄 <strong>Resumes & ATS Analysis</strong><br>
         • 👥 <strong>Mentorship Booking</strong><br>
         • 📝 <strong>Interview Practice</strong>`;

@@ -4,7 +4,7 @@
         <!-- Section Header -->
         <div class="text-center mb-5">
             <h2 class="section-title animate-on-scroll">A Unified Platform for Your <span class="text-gradient">Career Trajectory</span></h2>
-            <p class="section-subtitle mx-auto animate-on-scroll animate-delay-1">Built around intelligent career guidance and step-by-step roadmaps, supported by a complete suite of resume, interview, and mentorship tools.</p>
+            <p class="section-subtitle mx-auto animate-on-scroll animate-delay-1">Built around intelligent career guidance and step-by-step roadmaps, supported by a complete suite of resume, interview, tracking, and mentorship tools.</p>
         </div>
         
         <!-- Features Grid -->
@@ -42,10 +42,27 @@
                     </a>
                 </div>
             </div>
-            
-            <!-- Feature 3: Supporting Feature -->
+
+            <!-- Feature 3: Job Application Tracker CRM -->
             <div class="col-md-6 col-lg-4">
-                <div class="feature-card animate-on-scroll animate-delay-3 d-flex flex-column h-100">
+                <div class="feature-card animate-on-scroll animate-delay-3 d-flex flex-column h-100 position-relative">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="icon-wrapper mb-0" style="background: rgba(37,99,235,0.1); color: var(--primary);">
+                            <i class="bi bi-kanban"></i>
+                        </div>
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 fw-semibold small">New</span>
+                    </div>
+                    <h3>Job Tracker & CRM</h3>
+                    <p>Track applications on a drag-and-drop Kanban board, auto-fill from job URLs, get 5-day follow-up alerts, and generate recruiter emails.</p>
+                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
+                        Track Applications <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Feature 4: Supporting Feature -->
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card animate-on-scroll animate-delay-4 d-flex flex-column h-100">
                     <div class="icon-wrapper">
                         <i class="bi bi-shield-check"></i>
                     </div>
@@ -56,24 +73,11 @@
                     </a>
                 </div>
             </div>
+
             
-            <!-- Feature 4: Supporting Feature -->
+            <!-- Feature 6: Supporting Feature -->
             <div class="col-md-6 col-lg-4">
-                <div class="feature-card animate-on-scroll animate-delay-4 d-flex flex-column h-100">
-                    <div class="icon-wrapper">
-                        <i class="bi bi-file-earmark-person"></i>
-                    </div>
-                    <h3>Resume Builder</h3>
-                    <p>Generate clean, ATS-compliant resumes directly from your profile data with one-click export and formatting.</p>
-                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Build Resume <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Feature 5: Supporting Feature -->
-            <div class="col-md-6 col-lg-4">
-                <div class="feature-card animate-on-scroll animate-delay-5 d-flex flex-column h-100">
+                <div class="feature-card animate-on-scroll animate-delay-6 d-flex flex-column h-100">
                     <div class="icon-wrapper">
                         <i class="bi bi-mortarboard"></i>
                     </div>
@@ -85,9 +89,9 @@
                 </div>
             </div>
             
-            <!-- Feature 6: Supporting Feature -->
+            <!-- Feature 7: Supporting Feature -->
             <div class="col-md-6 col-lg-4">
-                <div class="feature-card animate-on-scroll animate-delay-6 d-flex flex-column h-100">
+                <div class="feature-card animate-on-scroll animate-delay-1 d-flex flex-column h-100">
                     <div class="icon-wrapper">
                         <i class="bi bi-people"></i>
                     </div>
@@ -101,3 +105,4 @@
         </div>
     </div>
 </section>
+

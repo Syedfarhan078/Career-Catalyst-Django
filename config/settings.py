@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'apps.interviews',
     'apps.community',
     'apps.recommendation',
+    'apps.tracker',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

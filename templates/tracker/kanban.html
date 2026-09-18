@@ -1,0 +1,705 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Application CRM & Ghosting Tracker | Career Catalyst{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Kanban Board Layout & Card Styling */
+    .kanban-board {
+        display: flex;
+        gap: 1.25rem;
+        overflow-x: auto;
+        padding-bottom: 1.5rem;
+        min-height: 70vh;
+    }
+
+    .kanban-column {
+        flex: 0 0 320px;
+        background: var(--kanban-col-bg, rgba(241, 245, 249, 0.6));
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 260px);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    [data-bs-theme="dark"] .kanban-column {
+        background: rgba(30, 41, 59, 0.6);
+    }
+
+    .kanban-column.drag-over {
+        background: rgba(37, 99, 235, 0.08);
+        border: 2px dashed var(--primary);
+    }
+
+    .kanban-column-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .kanban-column-body {
+        padding: 1rem;
+        overflow-y: auto;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+    }
+
+    .kanban-card {
+        background: var(--card-bg, #ffffff);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+        cursor: grab;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        position: relative;
+    }
+
+    .kanban-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+        border-color: var(--primary);
+    }
+
+    .kanban-card.dragging {
+        opacity: 0.4;
+        cursor: grabbing;
+        transform: scale(0.98);
+    }
+
+    .metric-funnel-card {
+        background: var(--card-bg, #ffffff);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.25rem;
+        transition: all 0.2s ease;
+    }
+
+    .metric-funnel-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .quick-url-input-box {
+        background: var(--card-bg, #ffffff);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 0.75rem 1rem;
+    }
+</style>
+<!-- Confetti Library for Offer Celebration -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-4 mt-3">
+    <!-- Header Section -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill fw-semibold small">
+                    <i class="bi bi-kanban me-1"></i> Freshers Job CRM
+                </span>
+                <span class="badge bg-success bg-opacity-10 text-success px-3 py-1 rounded-pill fw-semibold small">
+                    <i class="bi bi-lightning-charge-fill me-1"></i> Ghosting Eliminator
+                </span>
+            </div>
+            <h2 class="fw-bold text-secondary mb-1">Job Application Tracker</h2>
+            <p class="text-muted small mb-0">Organize your applications, prevent ghosting fatigue, and stay on top of interview follow-ups.</p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-primary-custom rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addApplicationModal">
+                <i class="bi bi-plus-lg me-1"></i> Add Application
+            </button>
+        </div>
+    </div>
+
+    <!-- Metrics Funnel Bar -->
+    <div class="row g-3 mb-4">
+        <!-- Metric 1: Total Tracked -->
+        <div class="col-6 col-md-3">
+            <div class="metric-funnel-card d-flex align-items-center gap-3">
+                <div class="rounded-3 bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.4rem;">
+                    <i class="bi bi-briefcase"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold text-secondary lh-1 mb-1">{{ total_apps }}</div>
+                    <div class="text-muted small">Total Applications</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric 2: Response Rate -->
+        <div class="col-6 col-md-3">
+            <div class="metric-funnel-card d-flex align-items-center gap-3">
+                <div class="rounded-3 bg-info bg-opacity-10 text-info d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.4rem;">
+                    <i class="bi bi-pie-chart"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold text-secondary lh-1 mb-1">{{ response_rate }}%</div>
+                    <div class="text-muted small">Response Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric 3: Active Interviews / Offers -->
+        <div class="col-6 col-md-3">
+            <div class="metric-funnel-card d-flex align-items-center gap-3">
+                <div class="rounded-3 bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.4rem;">
+                    <i class="bi bi-trophy"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold text-secondary lh-1 mb-1">{{ interviews_count }} <span class="fs-6 text-muted fw-normal">/ {{ offers_count }} Offers</span></div>
+                    <div class="text-muted small">Active Interviews</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric 4: Follow-up Alerts -->
+        <div class="col-6 col-md-3">
+            <div class="metric-funnel-card d-flex align-items-center gap-3">
+                <div class="rounded-3 {% if follow_up_needed_count > 0 %}bg-warning bg-opacity-15 text-warning{% else %}bg-secondary bg-opacity-10 text-muted{% endif %} d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.4rem;">
+                    <i class="bi bi-bell{% if follow_up_needed_count > 0 %}-fill{% endif %}"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold {% if follow_up_needed_count > 0 %}text-warning{% else %}text-secondary{% endif %} lh-1 mb-1">{{ follow_up_needed_count }}</div>
+                    <div class="text-muted small">Follow-ups Due (5d+)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions & Search Filter Bar -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
+        <form method="GET" class="row g-2 align-items-center">
+            <!-- Search Query Input -->
+            <div class="col-12 col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control border-start-0 ps-0 rounded-end-3" placeholder="Search company, role, or city...">
+                </div>
+            </div>
+
+            <!-- Job Type Filter -->
+            <div class="col-6 col-md-3">
+                <select name="job_type" class="form-select rounded-3" onchange="this.form.submit()">
+                    <option value="">All Job Types</option>
+                    {% for val, label in job_type_choices %}
+                        <option value="{{ val }}" {% if job_type_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Smart URL Quick-Paste Input (Direct 10-Second Add Trigger) -->
+            <div class="col-12 col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-primary bg-opacity-10 text-primary border-primary border-opacity-25"><i class="bi bi-magic"></i></span>
+                    <input type="url" id="quickUrlAutoFill" class="form-control border-primary border-opacity-25" placeholder="Paste job URL (LinkedIn, Lever, Greenhouse) for 10-sec add...">
+                    <button class="btn btn-outline-primary" type="button" onclick="triggerQuickAddFromUrl()">Auto-Fill &rarr;</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Drag & Drop Kanban Columns -->
+    <div class="kanban-board">
+        {% for col in columns %}
+        <div class="kanban-column" data-status="{{ col.id }}">
+            <!-- Column Header -->
+            <div class="kanban-column-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi {{ col.icon }} text-{{ col.badge }}"></i>
+                    <span class="fw-bold text-secondary small">{{ col.title }}</span>
+                </div>
+                <span class="badge bg-{{ col.badge }} bg-opacity-10 text-{{ col.badge }} rounded-pill px-2 py-1 small column-count" id="count-{{ col.id }}">
+                    {{ col.count }}
+                </span>
+            </div>
+
+            <!-- Column Card Drop Zone -->
+            <div class="kanban-column-body" id="col-body-{{ col.id }}" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '{{ col.id }}')">
+                {% for app in col.applications %}
+                <div class="kanban-card" id="app-card-{{ app.id }}" draggable="true" ondragstart="handleDragStart(event, {{ app.id }})" ondragend="handleDragEnd(event)">
+                    <!-- Card Top Row: Company & Menu -->
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="fw-bold text-secondary mb-0 text-truncate" style="max-width: 200px;">{{ app.company_name }}</h6>
+                            <div class="text-primary small fw-semibold text-truncate" style="max-width: 200px;">{{ app.role_title }}</div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-link text-muted p-0 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
+                                <li>
+                                    <button class="dropdown-item" type="button" onclick="openEditModal({{ app.id }})">
+                                        <i class="bi bi-pencil me-2 text-primary"></i> Edit
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item" type="button" onclick="openFollowUpModal({{ app.id }})">
+                                        <i class="bi bi-envelope-paper me-2 text-warning"></i> Generate Follow-up
+                                    </button>
+                                </li>
+                                {% if app.job_url %}
+                                <li>
+                                    <a class="dropdown-item" href="{{ app.job_url }}" target="_blank" rel="noopener">
+                                        <i class="bi bi-box-arrow-up-right me-2 text-muted"></i> View Job Post
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="POST" action="{% url 'tracker:delete' app.id %}" onsubmit="return confirm('Are you sure you want to remove this application?');">
+                                        {% csrf_token %}
+                                        <button class="dropdown-item text-danger" type="submit">
+                                            <i class="bi bi-trash3 me-2"></i> Delete
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Meta Tags (Job Type, Location, Salary) -->
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                        <span class="badge bg-light text-secondary border px-2 py-1 small" style="font-size: 0.72rem;">
+                            {{ app.job_type }}
+                        </span>
+                        {% if app.location %}
+                        <span class="badge bg-light text-secondary border px-2 py-1 small" style="font-size: 0.72rem;">
+                            <i class="bi bi-geo-alt me-1"></i>{{ app.location }}
+                        </span>
+                        {% endif %}
+                        {% if app.salary_or_stipend %}
+                        <span class="badge bg-light text-success border px-2 py-1 small" style="font-size: 0.72rem;">
+                            {{ app.salary_or_stipend }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Follow-up Alert / Ghosting Badges -->
+                    {% if app.needs_follow_up %}
+                    <div class="alert alert-warning p-1 px-2 mb-2 d-flex align-items-center justify-content-between rounded-3 border-0" style="font-size: 0.75rem;">
+                        <span class="d-flex align-items-center gap-1 fw-semibold text-warning">
+                            <i class="bi bi-alarm-fill"></i> Follow-up Due ({{ app.days_since_applied }}d)
+                        </span>
+                        <button type="button" class="btn btn-warning btn-xs py-0 px-2 rounded-pill fw-semibold" onclick="openFollowUpModal({{ app.id }})" style="font-size: 0.7rem;">
+                            Email &rarr;
+                        </button>
+                    </div>
+                    {% elif app.is_ghosted %}
+                    <div class="text-muted small mb-2 d-flex align-items-center gap-1" style="font-size: 0.72rem;">
+                        <span>👻 No response in {{ app.days_since_applied }} days</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Card Footer: Time Elapsed & Interview Schedule -->
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top text-muted" style="font-size: 0.75rem;">
+                        <span><i class="bi bi-calendar3 me-1"></i> Applied {{ app.applied_time_display }}</span>
+                        {% if app.interview_date %}
+                        <span class="text-primary fw-semibold"><i class="bi bi-camera-video me-1"></i> {{ app.interview_date|date:"M d, H:i" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-4 text-muted empty-placeholder" style="font-size: 0.85rem;">
+                    <i class="bi bi-inbox d-block mb-1" style="font-size: 1.5rem; opacity: 0.4;"></i>
+                    No applications here
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ==========================================
+     MODAL 1: ADD APPLICATION (WITH SMART AUTO-FILL)
+     ========================================== -->
+<div class="modal fade" id="addApplicationModal" tabindex="-1" aria-labelledby="addApplicationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom p-4">
+                <div>
+                    <h5 class="modal-title fw-bold text-secondary" id="addApplicationModalLabel">
+                        <i class="bi bi-plus-circle text-primary me-2"></i> Add Job Application
+                    </h5>
+                    <p class="text-muted small mb-0">Track a new company role or paste a URL for 10-second instant fill.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form method="POST" action="{% url 'tracker:add' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <!-- Smart Auto-Fill Quick Box -->
+                    <div class="p-3 mb-4 rounded-3 border bg-light bg-opacity-50">
+                        <label class="form-label fw-semibold text-secondary small mb-1">
+                            <i class="bi bi-magic text-primary me-1"></i> Smart URL Auto-Fill (Optional)
+                        </label>
+                        <div class="input-group">
+                            <input type="url" id="modalUrlInput" class="form-control rounded-start-3" placeholder="https://jobs.lever.co/company/..." oninput="autoFillFromModalUrl(this.value)">
+                            <button class="btn btn-outline-primary" type="button" onclick="autoFillFromModalUrl(document.getElementById('modalUrlInput').value)">Extract</button>
+                        </div>
+                        <div class="form-text small" id="urlDetectFeedback">Paste a job posting URL and we will automatically detect the company name and platform.</div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Company Name *</label>
+                            {{ form.company_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Role Title *</label>
+                            {{ form.role_title }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Job Type</label>
+                            {{ form.job_type }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Status Column</label>
+                            {{ form.status }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Job Posting URL</label>
+                            {{ form.job_url }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Location</label>
+                            {{ form.location }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Salary / Stipend</label>
+                            {{ form.salary_or_stipend }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Applied Date</label>
+                            {{ form.applied_date }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Interview Date & Time (Optional)</label>
+                            {{ form.interview_date }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Recruiter / Referral Contact</label>
+                            {{ form.contact_person }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-secondary small">Prep Notes / Key Takeaways</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top p-3 px-4">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom rounded-pill px-4 shadow-sm">Save Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+     MODAL 2: EDIT APPLICATION
+     ========================================== -->
+<div class="modal fade" id="editApplicationModal" tabindex="-1" aria-labelledby="editApplicationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom p-4">
+                <h5 class="modal-title fw-bold text-secondary" id="editApplicationModalLabel">
+                    <i class="bi bi-pencil-square text-primary me-2"></i> Edit Application
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form id="editApplicationForm" method="POST" action="">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Company Name *</label>
+                            <input type="text" name="company_name" id="edit_company_name" class="form-control rounded-3" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Role Title *</label>
+                            <input type="text" name="role_title" id="edit_role_title" class="form-control rounded-3" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Job Type</label>
+                            <select name="job_type" id="edit_job_type" class="form-select rounded-3">
+                                {% for val, label in job_type_choices %}
+                                    <option value="{{ val }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Status Column</label>
+                            <select name="status" id="edit_status" class="form-select rounded-3">
+                                {% for val, label in status_choices %}
+                                    <option value="{{ val }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Job Posting URL</label>
+                            <input type="url" name="job_url" id="edit_job_url" class="form-control rounded-3">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Location</label>
+                            <input type="text" name="location" id="edit_location" class="form-control rounded-3">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Salary / Stipend</label>
+                            <input type="text" name="salary_or_stipend" id="edit_salary_or_stipend" class="form-control rounded-3">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Applied Date</label>
+                            <input type="date" name="applied_date" id="edit_applied_date" class="form-control rounded-3">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Interview Date & Time</label>
+                            <input type="datetime-local" name="interview_date" id="edit_interview_date" class="form-control rounded-3">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-secondary small">Recruiter / Referral Contact</label>
+                            <input type="text" name="contact_person" id="edit_contact_person" class="form-control rounded-3">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-secondary small">Notes / Questions</label>
+                            <textarea name="notes" id="edit_notes" class="form-control rounded-3" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top p-3 px-4">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom rounded-pill px-4 shadow-sm">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+     MODAL 3: 1-CLICK TAILORED FOLLOW-UP GENERATOR
+     ========================================== -->
+<div class="modal fade" id="followUpModal" tabindex="-1" aria-labelledby="followUpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom p-4">
+                <div>
+                    <h5 class="modal-title fw-bold text-secondary" id="followUpModalLabel">
+                        <i class="bi bi-send-check text-primary me-2"></i> 1-Click Recruiter Follow-Up
+                    </h5>
+                    <p class="text-muted small mb-0">Polite, high-converting follow-up email draft tailored to your profile.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Subject Line</label>
+                    <div class="input-group">
+                        <input type="text" id="followUpSubject" class="form-control rounded-start-3" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyTextToClipboard('followUpSubject')">
+                            <i class="bi bi-copy"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Email Body</label>
+                    <textarea id="followUpBody" class="form-control rounded-3 font-monospace" rows="9" style="font-size: 0.88rem;"></textarea>
+                </div>
+
+                <div class="alert alert-info py-2 px-3 rounded-3 d-flex align-items-center gap-2 mb-0" style="font-size: 0.8rem;">
+                    <i class="bi bi-lightbulb-fill text-info flex-shrink-0"></i>
+                    <span><strong>Pro-Tip:</strong> Following up within 5-7 days boosts recruiter response rates by up to <strong>35%</strong> for engineering internships & entry-level roles!</span>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top p-3 px-4 d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-primary rounded-pill px-3" onclick="copyTextToClipboard('followUpBody')">
+                    <i class="bi bi-clipboard me-1"></i> Copy Email Draft
+                </button>
+                <a id="followUpMailtoBtn" href="#" class="btn btn-primary-custom rounded-pill px-4 shadow-sm" target="_blank">
+                    <i class="bi bi-envelope-at me-1"></i> Open in Email Client
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let draggedAppId = null;
+
+    // Drag & Drop Handlers
+    function handleDragStart(e, appId) {
+        draggedAppId = appId;
+        e.dataTransfer.setData('text/plain', appId);
+        e.currentTarget.classList.add('dragging');
+    }
+
+    function handleDragEnd(e) {
+        e.currentTarget.classList.remove('dragging');
+        document.querySelectorAll('.kanban-column').forEach(col => col.classList.remove('drag-over'));
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        const col = e.currentTarget.closest('.kanban-column');
+        if (col) col.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+        const col = e.currentTarget.closest('.kanban-column');
+        if (col) col.classList.remove('drag-over');
+    }
+
+    function handleDrop(e, newStatus) {
+        e.preventDefault();
+        const col = e.currentTarget.closest('.kanban-column');
+        if (col) col.classList.remove('drag-over');
+
+        if (!draggedAppId) return;
+
+        const card = document.getElementById(`app-card-${draggedAppId}`);
+        const targetBody = document.getElementById(`col-body-${newStatus}`);
+
+        if (card && targetBody) {
+            // Optimistic DOM update
+            const placeholder = targetBody.querySelector('.empty-placeholder');
+            if (placeholder) placeholder.remove();
+            targetBody.appendChild(card);
+
+            // AJAX Status Update
+            fetch(`/tracker/api/update-status/${draggedAppId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.is_offer) {
+                    // Trigger Confetti Celebration!
+                    confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                    });
+                }
+            })
+            .catch(err => console.error('Drag error:', err));
+        }
+    }
+
+    // CSRF Helper
+    function getCsrfToken() {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='))
+            ?.split('=')[1];
+        return cookieValue || '{{ csrf_token }}';
+    }
+
+    // Smart URL Extraction
+    function triggerQuickAddFromUrl() {
+        const url = document.getElementById('quickUrlAutoFill').value.trim();
+        if (!url) return;
+        
+        const modal = new bootstrap.Modal(document.getElementById('addApplicationModal'));
+        document.getElementById('modalUrlInput').value = url;
+        modal.show();
+        autoFillFromModalUrl(url);
+    }
+
+    function autoFillFromModalUrl(url) {
+        if (!url) return;
+        const feedback = document.getElementById('urlDetectFeedback');
+        feedback.innerText = 'Detecting company and platform details...';
+
+        fetch(`/tracker/api/parse-url/?url=${encodeURIComponent(url)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.company_name) {
+                    const compInput = document.querySelector('#addApplicationModal input[name="company_name"]');
+                    if (compInput) compInput.value = data.company_name;
+                }
+                const urlInput = document.querySelector('#addApplicationModal input[name="job_url"]');
+                if (urlInput) urlInput.value = url;
+
+                feedback.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Detected <strong>${data.company_name || 'Job URL'}</strong> via ${data.platform || 'Job Board'}</span>`;
+            })
+            .catch(() => {
+                feedback.innerText = 'Paste a job URL for auto-detection.';
+            });
+    }
+
+    // Edit Application Modal Loader
+    function openEditModal(appId) {
+        fetch(`/tracker/${appId}/edit/`)
+            .then(res => res.json())
+            .then(data => {
+                const form = document.getElementById('editApplicationForm');
+                form.action = `/tracker/${appId}/edit/`;
+
+                document.getElementById('edit_company_name').value = data.company_name || '';
+                document.getElementById('edit_role_title').value = data.role_title || '';
+                document.getElementById('edit_job_type').value = data.job_type || 'Full-Time';
+                document.getElementById('edit_status').value = data.status || 'applied';
+                document.getElementById('edit_job_url').value = data.job_url || '';
+                document.getElementById('edit_location').value = data.location || '';
+                document.getElementById('edit_salary_or_stipend').value = data.salary_or_stipend || '';
+                document.getElementById('edit_applied_date').value = data.applied_date || '';
+                document.getElementById('edit_interview_date').value = data.interview_date || '';
+                document.getElementById('edit_contact_person').value = data.contact_person || '';
+                document.getElementById('edit_notes').value = data.notes || '';
+
+                const modal = new bootstrap.Modal(document.getElementById('editApplicationModal'));
+                modal.show();
+            })
+            .catch(err => console.error('Error fetching edit details:', err));
+    }
+
+    // Follow-up Modal Loader
+    function openFollowUpModal(appId) {
+        fetch(`/tracker/api/followup/${appId}/`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('followUpSubject').value = data.subject;
+                document.getElementById('followUpBody').value = data.body;
+                document.getElementById('followUpMailtoBtn').href = data.mailto_url;
+
+                const modal = new bootstrap.Modal(document.getElementById('followUpModal'));
+                modal.show();
+            })
+            .catch(err => console.error('Error generating follow-up:', err));
+    }
+
+    // Copy to Clipboard Utility
+    function copyTextToClipboard(elementId) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        const text = el.value || el.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Copied to clipboard!');
+        });
+    }
+</script>
+{% endblock %}

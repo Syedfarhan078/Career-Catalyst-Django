@@ -29,6 +29,7 @@ urlpatterns = [
     path("interviews/", include("apps.interviews.urls")),
     path("community/", include("apps.community.urls")),
     path("recommendation/", include("apps.recommendation.urls")),
+    path("tracker/", include("apps.tracker.urls")),
     path("", include("apps.core.urls")),
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ]
