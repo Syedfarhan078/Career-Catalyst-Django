@@ -16,7 +16,7 @@
 
     .kanban-column {
         flex: 0 0 320px;
-        background: var(--kanban-col-bg, rgba(241, 245, 249, 0.6));
+        background: rgba(241, 245, 249, 0.7);
         border: 1px solid var(--border);
         border-radius: 16px;
         display: flex;
@@ -25,13 +25,21 @@
         transition: background-color 0.2s ease, border-color 0.2s ease;
     }
 
+    html[data-theme="dark"] .kanban-column,
     [data-bs-theme="dark"] .kanban-column {
-        background: rgba(30, 41, 59, 0.6);
+        background: rgba(15, 23, 42, 0.55) !important;
+        border-color: rgba(51, 65, 85, 0.7) !important;
     }
 
     .kanban-column.drag-over {
         background: rgba(37, 99, 235, 0.08);
         border: 2px dashed var(--primary);
+    }
+
+    html[data-theme="dark"] .kanban-column.drag-over,
+    [data-bs-theme="dark"] .kanban-column.drag-over {
+        background: rgba(59, 130, 246, 0.15) !important;
+        border-color: var(--primary) !important;
     }
 
     .kanban-column-header {
@@ -40,6 +48,11 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+    }
+
+    html[data-theme="dark"] .kanban-column-header,
+    [data-bs-theme="dark"] .kanban-column-header {
+        border-bottom-color: rgba(51, 65, 85, 0.5) !important;
     }
 
     .kanban-column-body {
@@ -68,6 +81,19 @@
         border-color: var(--primary);
     }
 
+    html[data-theme="dark"] .kanban-card,
+    [data-bs-theme="dark"] .kanban-card {
+        background: #1e293b !important;
+        border-color: rgba(51, 65, 85, 0.8) !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    html[data-theme="dark"] .kanban-card:hover,
+    [data-bs-theme="dark"] .kanban-card:hover {
+        border-color: var(--primary) !important;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4) !important;
+    }
+
     .kanban-card.dragging {
         opacity: 0.4;
         cursor: grabbing;
@@ -86,11 +112,60 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
+    html[data-theme="dark"] .metric-funnel-card,
+    [data-bs-theme="dark"] .metric-funnel-card {
+        background: #1e293b !important;
+        border-color: rgba(51, 65, 85, 0.8) !important;
+    }
+
     .quick-url-input-box {
         background: var(--card-bg, #ffffff);
         border: 1px solid var(--border);
         border-radius: 14px;
         padding: 0.75rem 1rem;
+    }
+
+    /* Dark Mode Badges & Placeholders */
+    html[data-theme="dark"] .kanban-card .badge.bg-light,
+    [data-bs-theme="dark"] .kanban-card .badge.bg-light {
+        background: rgba(255, 255, 255, 0.06) !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        color: #cbd5e1 !important;
+    }
+
+    html[data-theme="dark"] .empty-placeholder,
+    [data-bs-theme="dark"] .empty-placeholder {
+        color: #64748b !important;
+    }
+
+    html[data-theme="dark"] .empty-placeholder i,
+    [data-bs-theme="dark"] .empty-placeholder i {
+        color: #475569 !important;
+    }
+
+    /* Modals in Dark Mode */
+    html[data-theme="dark"] .modal-content,
+    [data-bs-theme="dark"] .modal-content {
+        background-color: #1e293b !important;
+        color: #e2e8f0 !important;
+        border: 1px solid #334155 !important;
+    }
+
+    html[data-theme="dark"] .modal-header,
+    html[data-theme="dark"] .modal-footer,
+    [data-bs-theme="dark"] .modal-header,
+    [data-bs-theme="dark"] .modal-footer {
+        border-color: #334155 !important;
+    }
+
+    html[data-theme="dark"] .btn-close,
+    [data-bs-theme="dark"] .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+    html[data-theme="dark"] .smart-autofill-box {
+        background: rgba(255, 255, 255, 0.03) !important;
+        border-color: #334155 !important;
     }
 </style>
 <!-- Confetti Library for Offer Celebration -->
@@ -99,6 +174,13 @@
 
 {% block content %}
 <div class="container-fluid px-lg-5 py-4 mt-3">
+    <!-- Back Navigation -->
+    <div class="mb-3">
+        <a href="{% url 'dashboard' %}" class="btn-back">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
     <!-- Header Section -->
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
@@ -341,7 +423,7 @@
                 {% csrf_token %}
                 <div class="modal-body p-4">
                     <!-- Smart Auto-Fill Quick Box -->
-                    <div class="p-3 mb-4 rounded-3 border bg-light bg-opacity-50">
+                    <div class="p-3 mb-4 rounded-3 border bg-light bg-opacity-50 smart-autofill-box">
                         <label class="form-label fw-semibold text-secondary small mb-1">
                             <i class="bi bi-magic text-primary me-1"></i> Smart URL Auto-Fill (Optional)
                         </label>

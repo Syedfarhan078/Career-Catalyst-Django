@@ -446,6 +446,21 @@ html[data-theme="dark"] .list-group-item {
     border-color: var(--border) !important;
 }
 
+html[data-theme="dark"] .modal-content {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme="dark"] .modal-header,
+html[data-theme="dark"] .modal-footer {
+    border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
 html[data-theme="dark"] .dropdown-menu {
     background-color: var(--card-bg) !important;
     border-color: var(--border) !important;

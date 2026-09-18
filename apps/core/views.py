@@ -1,15 +1,18 @@
-# apps/core/views.py
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-
-def home_view(request): # Ensure this function name is 'home'
-    if request.user.is_authenticated:
-        return redirect('dashboard')
-    return render(request, 'core/home.html')
+from django.utils import timezone
 
 from apps.roadmaps.models import UserRoadmap
 from apps.resume.models import Resume
 from apps.ai_resume.models import ResumeAnalysis
+from apps.tracker.models import JobApplication
+
+
+def home_view(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return render(request, 'core/home.html')
+
 
 @login_required
 def dashboard_view(request):
@@ -57,11 +60,44 @@ def dashboard_view(request):
         'total_count': 3,
         'all_completed': all_steps_completed,
     }
+
+    # Job Tracker Metrics & Pipeline
+    applications = list(JobApplication.objects.filter(user=request.user))
+    total_apps_count = len(applications)
+    interview_apps_count = sum(1 for a in applications if a.status == 'interview')
+    offer_apps_count = sum(1 for a in applications if a.status == 'offer')
+    applied_apps_count = sum(1 for a in applications if a.status == 'applied')
+    assessment_apps_count = sum(1 for a in applications if a.status == 'assessment')
+    
+    followup_due_apps = [a for a in applications if a.needs_follow_up]
+    followup_due_count = len(followup_due_apps)
+    
+    now = timezone.now()
+    upcoming_interviews = [a for a in applications if a.interview_date and a.interview_date >= now]
+    upcoming_interviews.sort(key=lambda x: x.interview_date)
+    
+    # Latest Resume Analysis
+    latest_analysis = ResumeAnalysis.objects.filter(user=request.user).order_by('-created_at').first()
+    
+    # Skills List
+    skills_list = [s.strip() for s in (profile.skills or '').replace('\n', ',').split(',') if s.strip()]
     
     context = {
         'profile': profile,
         'completion_percentage': completion_percentage,
         'launch_plan': launch_plan,
         'active_enrollment': active_enrollment,
+        'target_career': target_career,
+        'skills_list': skills_list,
+        'total_apps_count': total_apps_count,
+        'interview_apps_count': interview_apps_count,
+        'offer_apps_count': offer_apps_count,
+        'applied_apps_count': applied_apps_count,
+        'assessment_apps_count': assessment_apps_count,
+        'followup_due_apps': followup_due_apps,
+        'followup_due_count': followup_due_count,
+        'upcoming_interviews': upcoming_interviews,
+        'latest_analysis': latest_analysis,
+        'has_resume': has_resume,
     }
     return render(request, 'core/dashboard.html', context)
