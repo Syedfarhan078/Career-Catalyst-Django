@@ -1,0 +1,142 @@
+{
+  "categories": {
+    "languages": [
+      "python", "javascript", "typescript", "java", "c++", "c#", "c", "go", "golang", "rust", "ruby", "php", "swift", "kotlin", "scala", "r", "dart", "shell", "bash", "powershell", "sql", "html", "css", "sass", "scss", "lua", "perl", "haskell", "elixir", "clojure", "solidity"
+    ],
+    "frameworks_backend": [
+      "django", "flask", "fastapi", "spring", "spring boot", "node.js", "nodejs", "express", "express.js", "nest.js", "nestjs", "asp.net", "asp.net core", "ruby on rails", "rails", "laravel", "symfony", "gin", "echo", "fiber", "actix", "rocket", "ktor", "micronaut", "quarkus"
+    ],
+    "frameworks_frontend": [
+      "react", "react.js", "reactjs", "next.js", "nextjs", "vue", "vue.js", "vuejs", "nuxt", "nuxtjs", "angular", "angularjs", "svelte", "sveltekit", "remix", "astro", "tailwind", "tailwind css", "bootstrap", "material ui", "mui", "chakra ui", "shadcn", "jquery", "redux", "redux toolkit", "zustand", "mobx", "webpack", "vite", "babel"
+    ],
+    "databases": [
+      "postgresql", "postgres", "mysql", "sqlite", "mongodb", "redis", "cassandra", "dynamodb", "elasticsearch", "neo4j", "oracle", "microsoft sql server", "mssql", "mariadb", "couchdb", "supabase", "firebase firestore", "prisma", "sqlalchemy", "hibernate", "mongoose", "dbt", "snowflake", "bigquery", "clickhouse"
+    ],
+    "cloud_devops": [
+      "aws", "amazon web services", "azure", "google cloud", "gcp", "docker", "kubernetes", "k8s", "terraform", "ansible", "jenkins", "github actions", "gitlab ci", "ci/cd", "helm", "argo cd", "prometheus", "grafana", "nginx", "apache", "linux", "ubuntu", "serverless", "aws lambda", "ec2", "s3", "ecs", "eks", "cloudformation"
+    ],
+    "ai_ml_data": [
+      "machine learning", "deep learning", "artificial intelligence", "nlp", "natural language processing", "computer vision", "tensorflow", "pytorch", "keras", "scikit-learn", "pandas", "numpy", "scipy", "huggingface", "transformers", "llm", "large language models", "langchain", "llamaindex", "rag", "opencv", "spacy", "nltk", "matplotlib", "seaborn", "tableau", "power bi", "powerbi", "spark", "apache spark", "hadoop", "kafka", "airflow"
+    ],
+    "qa_testing": [
+      "manual testing", "test cases", "test scenarios", "test execution", "regression testing", "smoke testing", "sanity testing", "black box testing", "exploratory testing", "bug tracking", "defect lifecycle", "sdlc", "stlc", "jira", "postman", "api testing", "selenium", "pytest", "jmeter", "cypress", "playwright", "unit testing", "test automation", "tdd", "bdd"
+    ],
+    "mobile": [
+      "react native", "flutter", "ios development", "android development", "swiftui", "jetpack compose", "xamarin", "ionic", "expo"
+    ],
+    "security_networking": [
+      "rest api", "graphql", "grpc", "websockets", "oauth", "jwt", "https", "ssl/tls", "owasp", "penetration testing", "cryptography", "tcp/ip", "dns", "microservices", "soa", "system design"
+    ],
+    "tools_methods": [
+      "git", "github", "gitlab", "bitbucket", "jira", "confluence", "agile", "scrum", "kanban", "vscode", "docker compose", "postman", "swagger", "openapi", "linux cli", "code review"
+    ],
+    "soft_skills": [
+      "communication", "teamwork", "problem solving", "critical thinking", "leadership", "time management", "mentorship", "adaptability", "cross-functional collaboration", "analytical skills", "stakeholder management"
+    ]
+  },
+  "aliases": {
+    "qa tester": "manual testing",
+    "qa": "manual testing",
+    "quality assurance": "manual testing",
+    "test cases": "test cases",
+    "test suites": "test cases",
+    "reactjs": "react",
+    "react.js": "react",
+    "nextjs": "next.js",
+    "vuejs": "vue",
+    "vue.js": "vue",
+    "nuxtjs": "nuxt",
+    "nodejs": "node.js",
+    "node": "node.js",
+    "golang": "go",
+    "postgres": "postgresql",
+    "postgres sql": "postgresql",
+    "k8s": "kubernetes",
+    "kube": "kubernetes",
+    "tf": "terraform",
+    "gcp": "google cloud",
+    "amazon web services": "aws",
+    "sklearn": "scikit-learn",
+    "powerbi": "power bi",
+    "power-bi": "power bi",
+    "tailwind": "tailwind css",
+    "mui": "material ui",
+    "ci / cd": "ci/cd",
+    "cicd": "ci/cd",
+    "continuous integration": "ci/cd",
+    "rest": "rest api",
+    "restful apis": "rest api",
+    "restful api": "rest api",
+    "micro-services": "microservices",
+    "llms": "llm",
+    "large language model": "llm",
+    "spring-boot": "spring boot"
+  },
+  "roles": {
+    "software engineer": {
+      "required_skills": ["python", "java", "javascript", "c++", "git", "data structures", "algorithms", "sql", "rest api", "system design"],
+      "recommended_skills": ["docker", "ci/cd", "react", "django", "aws", "unit testing", "agile"],
+      "keywords": ["software development", "debugging", "apis", "full lifecycle", "optimization", "clean code", "microservices", "version control"]
+    },
+    "qa manual tester": {
+      "required_skills": ["manual testing", "test cases", "jira", "regression testing", "bug tracking", "api testing", "postman", "sdlc", "stlc", "sql"],
+      "recommended_skills": ["selenium", "test automation", "jmeter", "pytest", "git", "agile", "bdd"],
+      "keywords": ["test execution", "defect lifecycle", "test scenarios", "test plans", "smoke testing", "black box testing", "qa", "quality assurance"]
+    },
+    "qa tester": {
+      "required_skills": ["manual testing", "test cases", "jira", "regression testing", "bug tracking", "api testing", "postman", "sql"],
+      "recommended_skills": ["selenium", "test automation", "jmeter", "git", "agile"],
+      "keywords": ["test execution", "defect lifecycle", "test scenarios", "test plans", "qa"]
+    },
+    "qa engineer": {
+      "required_skills": ["manual testing", "test cases", "test automation", "selenium", "jira", "postman", "api testing", "python", "sql"],
+      "recommended_skills": ["pytest", "cypress", "playwright", "jmeter", "ci/cd", "git"],
+      "keywords": ["automation framework", "defect tracking", "regression testing", "test coverage", "end to end testing", "qa"]
+    },
+    "backend developer": {
+      "required_skills": ["python", "java", "node.js", "sql", "postgresql", "rest api", "django", "fastapi", "spring boot", "redis"],
+      "recommended_skills": ["docker", "kubernetes", "aws", "microservices", "ci/cd", "graphql", "rabbitmq", "kafka"],
+      "keywords": ["backend", "database schema", "api endpoints", "authentication", "server-side", "caching", "throughput", "concurrency"]
+    },
+    "frontend developer": {
+      "required_skills": ["javascript", "typescript", "react", "html", "css", "next.js", "tailwind css", "redux", "git"],
+      "recommended_skills": ["vue", "angular", "vite", "jest", "cypress", "responsive design", "graphql", "rest api"],
+      "keywords": ["user interface", "frontend", "ui components", "state management", "accessibility", "web performance", "dom", "cross-browser"]
+    },
+    "full stack developer": {
+      "required_skills": ["javascript", "typescript", "react", "node.js", "python", "django", "sql", "postgresql", "html", "css", "git"],
+      "recommended_skills": ["docker", "aws", "next.js", "tailwind css", "redis", "ci/cd", "rest api"],
+      "keywords": ["full stack", "end-to-end", "database design", "frontend architecture", "backend services", "deployment", "integration"]
+    },
+    "data scientist": {
+      "required_skills": ["python", "sql", "pandas", "numpy", "scikit-learn", "machine learning", "statistics", "data visualization", "matplotlib"],
+      "recommended_skills": ["deep learning", "tensorflow", "pytorch", "tableau", "power bi", "jupyter", "spark", "nlp", "big data"],
+      "keywords": ["data analysis", "predictive modeling", "statistical analysis", "feature engineering", "exploratory data analysis", "hypothesis testing", "insights"]
+    },
+    "ml engineer": {
+      "required_skills": ["python", "pytorch", "tensorflow", "scikit-learn", "machine learning", "deep learning", "docker", "sql", "git"],
+      "recommended_skills": ["mlops", "kubernetes", "aws", "huggingface", "transformers", "langchain", "llm", "fastapi", "cuda"],
+      "keywords": ["model training", "inference", "model deployment", "hyperparameter tuning", "loss function", "embeddings", "neural networks", "pipeline"]
+    },
+    "devops engineer": {
+      "required_skills": ["linux", "docker", "kubernetes", "aws", "terraform", "ci/cd", "github actions", "bash", "git"],
+      "recommended_skills": ["ansible", "prometheus", "grafana", "helm", "python", "azure", "gcp", "argo cd", "nginx"],
+      "keywords": ["infrastructure as code", "automation", "containerization", "monitoring", "site reliability", "scalability", "cloud architecture", "alerting"]
+    },
+    "data engineer": {
+      "required_skills": ["python", "sql", "postgresql", "spark", "apache spark", "kafka", "airflow", "data pipeline", "git"],
+      "recommended_skills": ["aws", "snowflake", "bigquery", "dbt", "docker", "hadoop", "pandas", "scala"],
+      "keywords": ["etl", "elt", "data warehousing", "data lake", "batch processing", "stream processing", "schema design", "data modeling"]
+    },
+    "product manager": {
+      "required_skills": ["product roadmap", "agile", "scrum", "jira", "user stories", "stakeholder management", "market research", "analytics"],
+      "recommended_skills": ["sql", "ab testing", "product strategy", "figma", "wireframing", "kpis", "customer journey"],
+      "keywords": ["product lifecycle", "feature prioritization", "user research", "metrics", "go-to-market", "user personas", "business requirements"]
+    },
+    "default": {
+      "required_skills": ["problem solving", "communication", "git", "teamwork", "analytical skills"],
+      "recommended_skills": ["time management", "leadership", "project management", "documentation", "critical thinking"],
+      "keywords": ["collaboration", "deliverables", "optimization", "efficiency", "projects", "troubleshooting"]
+    }
+  }
+}

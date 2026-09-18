@@ -1,75 +1,134 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block title %}Analyze Resume - Career Catalyst{% endblock %}
+{% block title %}Hybrid ATS Resume Analyzer | Career Catalyst{% endblock %}
 
 {% block content %}
-<div class="container py-4 mt-4">
+<div class="container py-4 mt-3">
     <!-- Back Navigation -->
     <div class="mb-4">
         <a href="{% url 'ai_resume:history' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Resume Analysis
+            <i class="bi bi-arrow-left"></i> Back to History
         </a>
     </div>
 
     <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0 rounded-4 p-4 p-md-5">
-                <div class="text-center mb-5">
-                    <div class="display-4 text-primary mb-3">
-                        <i class="bi bi-shield-shaded"></i>
+        <div class="col-lg-9">
+            <div class="card shadow-sm border-0 rounded-4 p-4 p-md-5" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 64px; height: 64px; font-size: 1.8rem;">
+                        <i class="bi bi-file-earmark-medical"></i>
                     </div>
-                    <h2 class="fw-bold">Local ATS Resume Analyzer</h2>
-                    <p class="text-muted">Compare your resume structure, keyword densities, and formatting against target job roles locally on our server.</p>
+                    <h2 class="fw-bold text-secondary mb-2">ATS Resume Analyzer</h2>
+                    <p class="text-muted mx-auto" style="max-width: 620px;">
+                        Evaluate your resume against real technical skill taxonomies, TF-IDF Job Description matching, and Google's XYZ achievement formula — with 100% privacy and zero data leaks.
+                    </p>
+                    
+                    <!-- Privacy Guarantee Banner -->
+                    <div class="d-inline-flex flex-wrap align-items-center justify-content-center gap-2 bg-success bg-opacity-10 text-success px-3 py-1 rounded-pill small fw-semibold">
+                        <i class="bi bi-shield-check"></i> 100% Local & Privacy Guaranteed &bull; Deterministic ATS Evaluation &bull; Zero PII Leakage
+                    </div>
                 </div>
 
                 <form method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
                     
-                    <div class="row mb-4">
-                        <div class="col-md-12">
-                            {{ form.target_role|as_crispy_field }}
-                            <div class="form-text text-muted mb-3">
-                                Tip: Enter standard roles like <b>Software Engineer</b>, <b>Data Scientist</b>, <b>Product Manager</b>, or <b>ML Engineer</b> for targeted keyword evaluation.
-                            </div>
+                    <!-- Target Role Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary">
+                            Target Job Role <span class="text-danger">*</span>
+                        </label>
+                        {{ form.target_role }}
+                        <div class="form-text text-muted mt-2">
+                            Quick picks:
+                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 me-1 mb-1" onclick="document.getElementById('id_target_role').value='Software Engineer'">Software Engineer</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 me-1 mb-1" onclick="document.getElementById('id_target_role').value='Backend Developer'">Backend Developer</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 me-1 mb-1" onclick="document.getElementById('id_target_role').value='Frontend Developer'">Frontend Developer</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 me-1 mb-1" onclick="document.getElementById('id_target_role').value='Full Stack Developer'">Full Stack</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 me-1 mb-1" onclick="document.getElementById('id_target_role').value='Data Scientist'">Data Scientist</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 me-1 mb-1" onclick="document.getElementById('id_target_role').value='ML Engineer'">ML Engineer</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 me-1 mb-1" onclick="document.getElementById('id_target_role').value='DevOps Engineer'">DevOps</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 me-1 mb-1" onclick="document.getElementById('id_target_role').value='QA Manual Tester'">QA Tester</button>
                         </div>
                     </div>
 
-                    <div class="card bg-light border-0 rounded-3 p-4 mb-4">
-                        <h5 class="fw-bold mb-3">Resume Source</h5>
+                    <!-- Optional Target Job Description Accordion -->
+                    <div class="card border mb-4 rounded-3" style="background: rgba(241, 245, 249, 0.4); border-color: var(--border) !important;">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label fw-bold text-secondary mb-0">
+                                    <i class="bi bi-file-text text-primary me-1"></i> Paste Job Description (Optional)
+                                </label>
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill small">Exact TF-IDF Matching</span>
+                            </div>
+                            <p class="text-muted small mb-2">
+                                Paste the job posting requirements from LinkedIn or Indeed to compute an exact cosine similarity match and custom skill gaps.
+                            </p>
+                            {{ form.job_description }}
+                        </div>
+                    </div>
+
+                    <!-- Resume Source Selector (3 Flexible Options) -->
+                    <div class="card border mb-4 rounded-3 p-3 p-md-4" style="background: rgba(241, 245, 249, 0.4); border-color: var(--border) !important;">
+                        <h6 class="fw-bold text-secondary mb-3">
+                            <i class="bi bi-upload text-primary me-1"></i> Provide Your Resume
+                        </h6>
                         
-                        <div class="mb-4">
-                            {{ form.resume|as_crispy_field }}
+                        <!-- Option 1: File Upload -->
+                        <div class="mb-3">
+                            <label class="form-label small text-secondary fw-semibold">
+                                <i class="bi bi-file-earmark-arrow-up text-primary me-1"></i> Option 1: Upload Resume File (PDF / DOCX)
+                            </label>
+                            {{ form.uploaded_file }}
+                            <div class="form-text text-muted">
+                                Multi-strategy parser extracts text from standard, Canva, LaTeX, and table-based resumes.
+                            </div>
                         </div>
                         
-                        <div class="text-center text-muted fw-bold mb-3">&mdash; OR &mdash;</div>
+                        <div class="text-center text-muted fw-bold small my-3">&mdash; OR &mdash;</div>
                         
-                        <div class="mb-2">
-                            {{ form.uploaded_file|as_crispy_field }}
+                        <!-- Option 2: Direct Text Paste -->
+                        <div class="mb-3">
+                            <label class="form-label small text-secondary fw-semibold">
+                                <i class="bi bi-clipboard-data text-primary me-1"></i> Option 2: Paste Resume Text Directly
+                            </label>
+                            {{ form.raw_text_input }}
                             <div class="form-text text-muted">
-                                Supported formats: <b>PDF, DOCX</b> (Max 5MB)
+                                If your PDF is an image scan or has custom fonts, paste the raw text or bullet points here directly.
                             </div>
+                        </div>
+
+                        <div class="text-center text-muted fw-bold small my-3">&mdash; OR &mdash;</div>
+
+                        <!-- Option 3: Built Resume -->
+                        <div>
+                            <label class="form-label small text-secondary fw-semibold">
+                                <i class="bi bi-person-badge text-primary me-1"></i> Option 3: Select Saved Resume Built in Career Catalyst
+                            </label>
+                            {{ form.resume }}
                         </div>
                     </div>
 
                     {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
+                        <div class="alert alert-danger rounded-3">
                             {% for error in form.non_field_errors %}
-                                {{ error }}
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ error }}
                             {% endfor %}
                         </div>
                     {% endif %}
 
+                    <!-- Submit Button -->
                     <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary-custom btn-lg">
-                            <i class="bi bi-cpu me-2"></i> Start Analysis
+                        <button type="submit" class="btn btn-primary-custom btn-lg rounded-pill shadow-sm">
+                            <i class="bi bi-cpu me-2"></i> Run ATS Analysis &rarr;
                         </button>
                     </div>
                 </form>
 
                 <div class="text-center mt-4">
-                    <a href="{% url 'ai_resume:history' %}" class="text-decoration-none text-muted">
-                        <i class="bi bi-arrow-left"></i> Back to History
+                    <a href="{% url 'ai_resume:history' %}" class="text-decoration-none text-muted small">
+                        <i class="bi bi-clock-history me-1"></i> View Past Analyses
                     </a>
                 </div>
             </div>

@@ -2,13 +2,17 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, CreateView
-from django.urls import reverse_lazy
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from django.contrib import messages
 
 from .models import ResumeAnalysis, MissingSkill, ImprovementSuggestion
 from .forms import ResumeAnalysisForm
 from .parser import parse_resume_file
 from .services import analyze_resume_data
+from .ai_service import enhance_with_ai
+from .pii_sanitizer import sanitize_resume_text
+from apps.resume.models import Resume
 
 def resume_to_text(resume):
     """
@@ -17,7 +21,6 @@ def resume_to_text(resume):
     text = f"{resume.user.first_name} {resume.user.last_name}\n"
     text += f"Email: {resume.user.email}\n"
     
-    # Try to grab additional details from student profile if available
     try:
         profile = resume.user.profile
         if profile.phone_number:
@@ -76,45 +79,46 @@ class AnalyzeResumeView(CreateView):
         return kwargs
 
     def form_valid(self, form):
-        analysis_form = form.save(commit=False)
-        analysis_form.user = self.request.user
-        
         resume = form.cleaned_data.get('resume')
         uploaded_file = form.cleaned_data.get('uploaded_file')
+        raw_text_input = form.cleaned_data.get('raw_text_input', '')
         target_role = form.cleaned_data.get('target_role')
+        job_description = form.cleaned_data.get('job_description', '')
+        trigger_ai = bool(self.request.POST.get('trigger_ai'))
         
         raw_text = ""
-        
         try:
-            if resume:
-                raw_text = resume_to_text(resume)
+            if raw_text_input and len(raw_text_input.strip()) > 10:
+                raw_text = raw_text_input.strip()
             elif uploaded_file:
                 raw_text = parse_resume_file(uploaded_file)
+            elif resume:
+                raw_text = resume_to_text(resume)
             else:
-                messages.error(self.request, "Invalid input. Please provide a resume.")
+                messages.error(self.request, "Please provide a resume by uploading a file, selecting a saved resume, or pasting text.")
                 return self.form_invalid(form)
                 
-            if not raw_text.strip():
-                messages.error(self.request, "The parsed resume text is empty. Ensure the file is not empty or image-based.")
+            if not raw_text or len(raw_text.strip()) < 15:
+                messages.error(self.request, "The parsed resume text is empty or contains only unreadable image data. If your PDF is a flat image or scanned document, please paste your resume text directly into the 'Paste Resume Text' box below.")
                 return self.form_invalid(form)
             
-            # Analyze using our local rule-based service
+            # Run the 5-layer Hybrid ATS Analysis
             analysis = analyze_resume_data(
                 text=raw_text,
                 target_role=target_role,
                 user=self.request.user,
                 resume=resume,
-                uploaded_file=uploaded_file
+                uploaded_file=uploaded_file,
+                job_description=job_description,
+                trigger_ai=trigger_ai
             )
             
-            messages.success(self.request, "Resume analyzed successfully!")
+            messages.success(self.request, "Resume analyzed successfully with transparent ATS metrics!")
             return redirect('ai_resume:detail', pk=analysis.pk)
             
         except Exception as e:
             messages.error(self.request, f"Error analyzing resume: {str(e)}")
             return self.form_invalid(form)
-
-from apps.resume.models import Resume
 
 @method_decorator(login_required, name='dispatch')
 class AnalysisDetailView(DetailView):
@@ -123,14 +127,62 @@ class AnalysisDetailView(DetailView):
     context_object_name = 'analysis'
 
     def get_queryset(self):
-        # Enforce security: users can only view their own analyses
         return ResumeAnalysis.objects.filter(user=self.request.user)
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Stagger improvement recommendations by priority
-        context['high_suggestions'] = self.object.suggestions.filter(priority='High')
-        context['medium_suggestions'] = self.object.suggestions.filter(priority='Medium')
-        context['low_suggestions'] = self.object.suggestions.filter(priority='Low')
-        context['user_resume'] = self.object.resume or Resume.objects.filter(user=self.request.user).first()
+        analysis = self.object
+        
+        context['high_suggestions'] = analysis.suggestions.filter(priority='High')
+        context['medium_suggestions'] = analysis.suggestions.filter(priority='Medium')
+        context['low_suggestions'] = analysis.suggestions.filter(priority='Low')
+        context['user_resume'] = analysis.resume or Resume.objects.filter(user=self.request.user).first()
+        
+        data = analysis.structured_data or {}
+        context['bullet_reviews'] = data.get('bullet_reviews', [])
+        context['found_skills'] = data.get('found_skills', [])
+        context['matched_skills'] = data.get('matched_required_skills', [])
+        context['missing_skills'] = data.get('missing_required_skills', [])
+        context['recommended_skills'] = data.get('recommended_skills', [])
+        context['matching_keywords'] = data.get('matching_keywords', [])
+        context['contact_info'] = data.get('contact_info', {})
+        context['presence'] = data.get('presence', {})
+        context['ai_feedback'] = analysis.ai_feedback or {}
+        context['pii_summary'] = analysis.pii_summary or {}
+        
         return context
+
+@login_required
+@require_POST
+def api_enhance_ai(request, pk):
+    """
+    AJAX endpoint: Enhances an existing analysis with the PII-Sanitized AI layer on-demand.
+    """
+    analysis = get_object_or_404(ResumeAnalysis, pk=pk, user=request.user)
+    
+    data = analysis.structured_data or {}
+    bullet_reviews = data.get('bullet_reviews', [])
+    weak_bullets = [b["bullet"] for b in bullet_reviews if b.get("score", 100) < 60]
+    missing_skills = data.get('missing_required_skills', [])
+    
+    pii_data = sanitize_resume_text(analysis.raw_text)
+    sanitized_text = pii_data["sanitized_text"]
+    
+    ai_resp = enhance_with_ai(
+        sanitized_text=sanitized_text,
+        target_role=analysis.target_role,
+        job_description=analysis.job_description,
+        weak_bullets=weak_bullets,
+        missing_skills=missing_skills
+    )
+    
+    if ai_resp.get("ai_available", False):
+        analysis.ai_enhanced = True
+        analysis.ai_feedback = ai_resp
+        analysis.save(update_fields=['ai_enhanced', 'ai_feedback'])
+        return JsonResponse({"status": "success", "ai_feedback": ai_resp})
+    else:
+        return JsonResponse({
+            "status": "offline",
+            "message": ai_resp.get("message", "AI provider is not configured. Local deterministic ATS report is active.")
+        })

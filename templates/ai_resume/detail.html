@@ -1,304 +1,518 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Resume Analysis Report - Career Catalyst{% endblock %}
+{% block title %}ATS Resume Report: {{ analysis.target_role }} | Career Catalyst{% endblock %}
 
 {% block extra_css %}
 <style>
-    .score-circle {
-        width: 150px;
-        height: 150px;
+    /* Overall Score Hero Card */
+    .hero-score-card {
+        background: var(--card-bg, #ffffff);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 2.25rem;
+        transition: box-shadow 0.2s ease;
+    }
+    
+    .score-badge-circle {
+        width: 140px;
+        height: 140px;
         border-radius: 50%;
         display: flex;
         flex-direction: column;
-        justify-content: center;
         align-items: center;
+        justify-content: center;
+        background: rgba(37, 99, 235, 0.05);
+        border: 6px solid var(--primary);
         margin: 0 auto;
-        border: 10px solid #f1f5f9;
-        position: relative;
     }
-    .score-circle.success {
-        border-color: #22c55e;
-    }
-    .score-circle.warning {
-        border-color: #f59e0b;
-    }
-    .score-circle.danger {
-        border-color: #ef4444;
-    }
-    .score-number {
+    
+    .score-badge-circle .score-val {
         font-size: 2.75rem;
-        font-weight: 700;
-        color: #0f172a;
+        font-weight: 800;
+        color: var(--secondary);
         line-height: 1;
     }
-    .score-label {
-        font-size: 0.8rem;
-        color: #64748b;
+    
+    .score-badge-circle .score-sub {
+        font-size: 0.72rem;
+        color: var(--text-muted);
         text-transform: uppercase;
         font-weight: 600;
-        margin-top: 5px;
+        letter-spacing: 0.5px;
+        margin-top: 4px;
     }
-    .keyword-chip {
-        border-color: #cbd5e1;
-        background-color: var(--card-bg, #ffffff);
-        color: var(--secondary, #0f172a);
-        font-size: 0.825rem;
-        font-weight: 600;
-        padding: 0.35rem 0.75rem;
-        transition: all 0.2s ease-in-out;
+
+    /* Minimalist Breakdown Meters */
+    .clean-meter-bar {
+        height: 7px;
+        border-radius: 10px;
+        background: rgba(148, 163, 184, 0.2);
+    }
+
+    /* AI Rewrite Card */
+    .rewrite-bento-card {
+        background: var(--card-bg, #ffffff);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.25rem;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .rewrite-bento-card:hover {
+        border-color: var(--primary);
+    }
+
+    /* Skill Chips */
+    .skill-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.85rem;
+        border-radius: 50px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        border: 1px solid var(--border);
+        background: var(--card-bg, #ffffff);
+        color: var(--secondary);
         cursor: pointer;
+        transition: all 0.2s ease;
     }
-    .keyword-chip:hover {
-        background-color: var(--primary, #2563eb);
-        color: #ffffff !important;
-        border-color: var(--primary, #2563eb);
+    .skill-chip:hover {
+        border-color: var(--primary);
+        color: var(--primary);
         transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
     }
-    .keyword-chip.copied {
-        background-color: #22c55e !important;
+    .skill-chip.copied {
+        background: #22c55e !important;
         border-color: #22c55e !important;
         color: #ffffff !important;
+    }
+
+    /* Bullet Review Line */
+    .bullet-review-item {
+        background: var(--card-bg, #ffffff);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        border-left: 4px solid var(--primary) !important;
+    }
+
+    /* Dark Mode Polish */
+    html[data-theme="dark"] .hero-score-card,
+    [data-bs-theme="dark"] .hero-score-card,
+    html[data-theme="dark"] .rewrite-bento-card,
+    [data-bs-theme="dark"] .rewrite-bento-card,
+    html[data-theme="dark"] .bullet-review-item,
+    [data-bs-theme="dark"] .bullet-review-item {
+        background: #1e293b !important;
+        border-color: rgba(51, 65, 85, 0.8) !important;
+    }
+    html[data-theme="dark"] .score-badge-circle {
+        background: rgba(30, 41, 59, 0.8);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
+<div class="container py-4 mt-2">
+    <!-- Top Navigation Bar -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <a href="{% url 'ai_resume:history' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Resume Analysis
+            <i class="bi bi-arrow-left"></i> Back to History
         </a>
-    </div>
-
-    <div class="d-flex justify-content-between align-items-center mb-5">
-        <div>
-            <h1 class="fw-bold mb-1">Analysis Report</h1>
-            <p class="text-muted">Targeting: <span class="badge bg-secondary px-3 py-2 fs-6 rounded-pill">{{ analysis.target_role }}</span></p>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'ai_resume:analyze' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-repeat me-1"></i> Analyze Another
+            </a>
+            {% if not analysis.ai_enhanced %}
+            <button type="button" id="btnEnhanceAi" class="btn btn-primary-custom btn-sm rounded-pill px-3 shadow-sm" onclick="triggerAiEnhancement()">
+                <i class="bi bi-stars me-1"></i> ⚡ Enhance with AI
+            </button>
+            {% endif %}
         </div>
-        <a href="{% url 'ai_resume:analyze' %}" class="btn btn-primary-custom">
-            <i class="bi bi-arrow-repeat"></i> Analyze Another
-        </a>
     </div>
 
-    <div class="row g-4 mb-5">
-        <!-- Overall Score Card -->
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 rounded-4 p-4 text-center">
-                <h5 class="fw-bold text-secondary mb-4">Overall Score</h5>
-                <div class="score-circle {% if analysis.overall_score >= 80 %}success{% elif analysis.overall_score >= 50 %}warning{% else %}danger{% endif %} mb-3">
-                    <span class="score-number">{{ analysis.overall_score }}</span>
-                    <span class="score-label">out of 100</span>
+    <!-- ==========================================
+         HERO SECTION: OVERALL ATS SCORECARD
+         ========================================== -->
+    <div class="hero-score-card shadow-sm mb-4">
+        <div class="row align-items-center g-4">
+            <!-- Left: Prominent Overall Score -->
+            <div class="col-lg-4 text-center border-lg-end">
+                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill fw-semibold small mb-3">
+                    <i class="bi bi-briefcase me-1"></i> {{ analysis.target_role }}
+                </span>
+                
+                <div class="score-badge-circle mb-3">
+                    <span class="score-val">{{ analysis.overall_score }}</span>
+                    <span class="score-sub">ATS Score</span>
                 </div>
-                <p class="text-muted small mt-2">
+
+                <div class="fw-bold text-secondary fs-6 mb-1">
                     {% if analysis.overall_score >= 80 %}
-                        Great job! Your resume aligns highly with ATS standards and role requirements.
+                        <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Strong ATS Alignment</span>
                     {% elif analysis.overall_score >= 50 %}
-                        Good start! Try incorporating missing skills and fixing contact layout options.
+                        <span class="text-primary"><i class="bi bi-lightning-charge-fill me-1"></i> Solid Baseline &bull; Minor Gaps</span>
                     {% else %}
-                        Your resume needs improvements to pass basic parsing checks.
+                        <span class="text-warning"><i class="bi bi-exclamation-triangle-fill me-1"></i> Optimization Recommended</span>
                     {% endif %}
+                </div>
+                <small class="text-muted d-block" style="font-size: 0.78rem;">
+                    Evaluated against technical skills, domain terms, and XYZ impact.
+                </small>
+            </div>
+
+            <!-- Right: Clean Sub-Metric Progress Deck -->
+            <div class="col-lg-8 ps-lg-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-secondary mb-0">Core Evaluation Pillars</h6>
+                    {% if analysis.ai_enhanced %}
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small">
+                        <i class="bi bi-stars me-1"></i> AI Optimized
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="row g-3">
+                    <!-- Pillar 1: Technical Skill Match -->
+                    <div class="col-sm-6">
+                        <div class="d-flex justify-content-between small fw-semibold text-secondary mb-1">
+                            <span><i class="bi bi-cpu text-primary me-1"></i> Skill Taxonomy Match</span>
+                            <span>{{ analysis.skill_coverage_score }}%</span>
+                        </div>
+                        <div class="progress clean-meter-bar mb-1">
+                            <div class="progress-bar bg-primary" style="width: {{ analysis.skill_coverage_score }}%"></div>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.73rem;">{{ matched_skills|length }} core skills matched in resume</small>
+                    </div>
+
+                    <!-- Pillar 2: Domain Keywords -->
+                    <div class="col-sm-6">
+                        <div class="d-flex justify-content-between small fw-semibold text-secondary mb-1">
+                            <span><i class="bi bi-tags text-primary me-1"></i> Domain Vocabulary</span>
+                            <span>{{ analysis.keyword_coverage_score }}%</span>
+                        </div>
+                        <div class="progress clean-meter-bar mb-1">
+                            <div class="progress-bar bg-primary" style="width: {{ analysis.keyword_coverage_score }}%"></div>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.73rem;">Key terminology and engineering phrases</small>
+                    </div>
+
+                    <!-- Pillar 3: Achievement & Impact Strength -->
+                    <div class="col-sm-6">
+                        <div class="d-flex justify-content-between small fw-semibold text-secondary mb-1">
+                            <span><i class="bi bi-graph-up-arrow text-primary me-1"></i> Impact & Metrics (XYZ)</span>
+                            <span>{{ analysis.achievement_score }}%</span>
+                        </div>
+                        <div class="progress clean-meter-bar mb-1">
+                            <div class="progress-bar bg-primary" style="width: {{ analysis.achievement_score }}%"></div>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.73rem;">Action verbs and measurable results</small>
+                    </div>
+
+                    <!-- Pillar 4: Resume Completeness -->
+                    <div class="col-sm-6">
+                        <div class="d-flex justify-content-between small fw-semibold text-secondary mb-1">
+                            <span><i class="bi bi-layout-text-sidebar text-primary me-1"></i> Structure & Formatting</span>
+                            <span>{{ analysis.completeness_score }}%</span>
+                        </div>
+                        <div class="progress clean-meter-bar mb-1">
+                            <div class="progress-bar bg-primary" style="width: {{ analysis.completeness_score }}%"></div>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.73rem;">Key sections & contact profile layout</small>
+                    </div>
+
+                    <!-- Optional Pillar 5: Custom JD (Only shown if JD was pasted) -->
+                    {% if analysis.job_description %}
+                    <div class="col-12 mt-2">
+                        <div class="p-2 rounded-3 border bg-light bg-opacity-50 small">
+                            <div class="d-flex justify-content-between fw-semibold text-secondary mb-1">
+                                <span><i class="bi bi-file-earmark-check text-info me-1"></i> Custom Job Description Overlap</span>
+                                <span>{{ analysis.jd_match_score }}%</span>
+                            </div>
+                            <div class="progress clean-meter-bar">
+                                <div class="progress-bar bg-info" style="width: {{ analysis.jd_match_score }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         AI SEMANTIC OPTIMIZATION DECK (IF GENERATED)
+         ========================================== -->
+    <div id="aiInsightsContainer" class="{% if not analysis.ai_enhanced %}d-none{% endif %} mb-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary text-white rounded-pill px-3 py-1 small">
+                        <i class="bi bi-stars me-1"></i> AI High-Impact Rewrites
+                    </span>
+                    <span class="text-muted small">Targeted for {{ analysis.target_role }}</span>
+                </div>
+            </div>
+
+            <!-- Role Insight -->
+            <div class="p-3 rounded-3 mb-3 border bg-light bg-opacity-25" style="border-color: var(--border) !important;">
+                <p class="text-secondary small mb-0 fw-medium" id="aiRoleInsight">
+                    {{ ai_feedback.role_alignment_insight }}
                 </p>
             </div>
-        </div>
 
-        <!-- Breakdown Score Card -->
-        <div class="col-md-8">
-            <div class="card h-100 shadow-sm border-0 rounded-4 p-4">
-                <h5 class="fw-bold text-secondary mb-4">ATS Checklist Subscores</h5>
-                
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="fw-semibold small">Formatting & Contacts</span>
-                        <span class="fw-bold small">{{ analysis.ats_score }}%</span>
-                    </div>
-                    <div class="progress" style="height: 10px;">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ analysis.ats_score }}%;"></div>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="fw-semibold small">Readability & Word Count</span>
-                        <span class="fw-bold small">{{ analysis.grammar_score }}%</span>
-                    </div>
-                    <div class="progress" style="height: 10px;">
-                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ analysis.grammar_score }}%;"></div>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="fw-semibold small">Keyword Relevance</span>
-                        <span class="fw-bold small">{{ analysis.keyword_score }}%</span>
-                    </div>
-                    <div class="progress" style="height: 10px;">
-                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ analysis.keyword_score }}%;"></div>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="fw-semibold small">Skills Completeness</span>
-                        <span class="fw-bold small">{{ analysis.skill_score }}%</span>
-                    </div>
-                    <div class="progress" style="height: 10px;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ analysis.skill_score }}%;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recommendations & Missing Skills -->
-    <div class="row g-4">
-        <!-- Priority Suggestions -->
-        <div class="col-lg-7">
-            <div class="card shadow-sm border-0 rounded-4 p-4">
-                <h4 class="fw-bold text-secondary mb-4"><i class="bi bi-lightning-charge text-warning"></i> Improvement Checklist</h4>
-                
-                {% if not high_suggestions and not medium_suggestions and not low_suggestions %}
-                    <div class="alert alert-success d-flex align-items-center" role="alert">
-                        <i class="bi bi-patch-check-fill fs-4 me-2"></i>
-                        <div>No major layout or completeness issues detected!</div>
-                    </div>
-                {% endif %}
-
-                {% if high_suggestions %}
-                    <h6 class="text-danger fw-bold text-uppercase mb-3"><i class="bi bi-exclamation-triangle"></i> High Priority</h6>
-                    <ul class="list-group list-group-flush mb-4">
-                        {% for suggestion in high_suggestions %}
-                        <li class="list-group-item bg-transparent px-0 border-light d-flex align-items-start">
-                            <span class="badge bg-danger me-3 mt-1">High</span>
-                            <div>
-                                <strong class="text-secondary">{{ suggestion.category }}:</strong> {{ suggestion.description }}
+            <!-- Before & After Comparison Cards -->
+            <div id="aiRewritesList" class="row g-3">
+                {% for rewrite in ai_feedback.bullet_rewrites %}
+                <div class="col-12">
+                    <div class="rewrite-bento-card">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-5 border-end-md">
+                                <div class="text-muted small fw-semibold text-uppercase mb-1">Original Draft:</div>
+                                <div class="text-secondary small font-monospace">{{ rewrite.original }}</div>
                             </div>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-
-                {% if medium_suggestions %}
-                    <h6 class="text-warning fw-bold text-uppercase mb-3"><i class="bi bi-info-circle"></i> Medium Priority</h6>
-                    <ul class="list-group list-group-flush mb-4">
-                        {% for suggestion in medium_suggestions %}
-                        <li class="list-group-item bg-transparent px-0 border-light d-flex align-items-start">
-                            <span class="badge bg-warning text-dark me-3 mt-1">Med</span>
-                            <div>
-                                <strong class="text-secondary">{{ suggestion.category }}:</strong> {{ suggestion.description }}
-                            </div>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-
-                {% if low_suggestions %}
-                    <h6 class="text-info fw-bold text-uppercase mb-3"><i class="bi bi-lightbulb"></i> Low Priority</h6>
-                    <ul class="list-group list-group-flush">
-                        {% for suggestion in low_suggestions %}
-                        <li class="list-group-item bg-transparent px-0 border-light d-flex align-items-start">
-                            <span class="badge bg-info text-dark me-3 mt-1">Low</span>
-                            <div>
-                                <strong class="text-secondary">{{ suggestion.category }}:</strong> {{ suggestion.description }}
-                            </div>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Missing Skills & Gap Analysis -->
-        <div class="col-lg-5">
-            <div class="card shadow-sm border-0 rounded-4 p-4 h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="fw-bold text-secondary mb-0"><i class="bi bi-patch-question text-primary"></i> Skills Gap Analysis</h4>
-                    </div>
-                    
-                    {% if analysis.missing_skills.exists %}
-                        <p class="text-muted small mb-3">These skills are typical for <b>{{ analysis.target_role }}</b> but were not detected in your resume. Click any chip to copy it into your clipboard:</p>
-
-                        <!-- Clickable Keyword Chips -->
-                        <div class="d-flex flex-wrap gap-2 mb-4">
-                            {% for m_skill in analysis.missing_skills.all %}
-                            <button type="button" 
-                                    class="btn keyword-chip rounded-pill border d-inline-flex align-items-center gap-1"
-                                    onclick="copyKeyword(this, '{{ m_skill.skill_name|escapejs }}')"
-                                    title="Click to copy '{{ m_skill.skill_name }}'">
-                                <i class="bi bi-plus-lg text-primary"></i>
-                                <span>{{ m_skill.skill_name }}</span>
-                                <i class="bi bi-copy ms-1 text-muted" style="font-size: 0.75rem;"></i>
-                            </button>
-                            {% endfor %}
-                        </div>
-
-                        <h6 class="text-secondary fw-semibold small text-uppercase mb-2">Detailed Breakdown</h6>
-                        <div class="list-group list-group-flush mb-3">
-                            {% for m_skill in analysis.missing_skills.all %}
-                            <div class="list-group-item bg-transparent px-0 border-light py-2">
+                            <div class="col-md-7">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="fw-bold text-secondary small">{{ m_skill.skill_name }}</span>
-                                    {% if m_skill.importance == 'High' %}
-                                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2">High Importance</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2">Medium</span>
-                                    {% endif %}
+                                    <div class="text-primary small fw-bold"><i class="bi bi-check-circle-fill text-success me-1"></i> High-Impact Rewrite:</div>
+                                    <button class="btn btn-xs btn-outline-primary py-0 px-2 rounded-pill small" onclick="copyRewrite(this, '{{ rewrite.improved|escapejs }}')">
+                                        <i class="bi bi-clipboard me-1"></i> Copy
+                                    </button>
                                 </div>
-                                <small class="text-muted d-block" style="font-size: 0.8rem;">{{ m_skill.recommendation }}</small>
+                                <div class="text-secondary small fw-semibold">{{ rewrite.improved }}</div>
+                                {% if rewrite.rationale %}
+                                <small class="text-muted d-block mt-1" style="font-size: 0.74rem;"><strong>Why:</strong> {{ rewrite.rationale }}</small>
+                                {% endif %}
                             </div>
-                            {% endfor %}
                         </div>
-                    {% else %}
-                        <div class="text-center py-5">
-                            <div class="display-3 text-success mb-3">
-                                <i class="bi bi-award-fill"></i>
-                            </div>
-                            <h5 class="fw-bold text-success">Perfect Match!</h5>
-                            <p class="text-muted small">We found all key technical skills matching this target role in your resume.</p>
-                        </div>
-                    {% endif %}
-                </div>
-
-                <!-- Open in Resume Builder Quick-Link Action -->
-                <div class="pt-3 mt-3 border-top">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        <div>
-                            <span class="fw-semibold text-secondary small d-block">Ready to update your CV?</span>
-                            <span class="text-muted" style="font-size: 0.75rem;">Insert recommendations into your live draft</span>
-                        </div>
-                        {% if user_resume %}
-                        <a href="{% url 'resume:builder' user_resume.pk %}" class="btn btn-primary-custom btn-sm rounded-pill px-3">
-                            <i class="bi bi-pencil-square"></i> Open in Resume Builder
-                        </a>
-                        {% else %}
-                        <a href="{% url 'resume:create' %}" class="btn btn-primary-custom btn-sm rounded-pill px-3">
-                            <i class="bi bi-plus-lg"></i> Create Resume
-                        </a>
-                        {% endif %}
                     </div>
                 </div>
-
+                {% endfor %}
             </div>
         </div>
     </div>
-</div>
 
+    <!-- ==========================================
+         SKILL GAP & KEYWORD MATRIX
+         ========================================== -->
+    <div class="row g-4 mb-4">
+        <!-- Matched vs Missing Skills -->
+        <div class="col-lg-7">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
+                <h6 class="fw-bold text-secondary mb-3">
+                    <i class="bi bi-diagram-3 text-primary me-2"></i> Technical Skills Matrix
+                </h6>
+
+                <!-- Matched Skills -->
+                <div class="mb-3">
+                    <div class="text-success small fw-bold text-uppercase mb-2">
+                        <i class="bi bi-check2 me-1"></i> Matched in Your Resume ({{ matched_skills|length }})
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for skill in matched_skills %}
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill small">
+                            <i class="bi bi-check-circle-fill me-1"></i> {{ skill|title }}
+                        </span>
+                        {% empty %}
+                        <span class="text-muted small">No direct role skills matched yet.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Missing Recommended Skills -->
+                <div>
+                    <div class="text-muted small fw-bold text-uppercase mb-2">
+                        <i class="bi bi-plus-circle me-1"></i> Recommended Skills to Add ({{ missing_skills|length }})
+                    </div>
+                    <p class="text-muted small mb-2">Click to copy into your resume draft:</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for skill in missing_skills %}
+                        <button type="button" class="skill-chip" onclick="copyKeyword(this, '{{ skill }}')">
+                            <i class="bi bi-plus text-primary"></i> {{ skill|title }}
+                        </button>
+                        {% empty %}
+                        <span class="text-success small fw-semibold"><i class="bi bi-check-circle me-1"></i> All core skills for this role are covered!</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Layout & Formatting Checks -->
+        <div class="col-lg-5">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
+                <h6 class="fw-bold text-secondary mb-3">
+                    <i class="bi bi-layout-text-window-reverse text-primary me-2"></i> Section Structure Check
+                </h6>
+
+                <ul class="list-group list-group-flush small mb-3">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                        <span>Education</span>
+                        {% if presence.education %}<span class="badge bg-success bg-opacity-10 text-success rounded-pill">Present</span>{% else %}<span class="badge bg-secondary bg-opacity-10 text-muted rounded-pill">Missing</span>{% endif %}
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                        <span>Experience / Internships</span>
+                        {% if presence.experience %}<span class="badge bg-success bg-opacity-10 text-success rounded-pill">Present</span>{% else %}<span class="badge bg-secondary bg-opacity-10 text-muted rounded-pill">Missing</span>{% endif %}
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                        <span>Technical Projects</span>
+                        {% if presence.projects %}<span class="badge bg-success bg-opacity-10 text-success rounded-pill">Present</span>{% else %}<span class="badge bg-secondary bg-opacity-10 text-muted rounded-pill">Missing</span>{% endif %}
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                        <span>Dedicated Skills Section</span>
+                        {% if presence.skills %}<span class="badge bg-success bg-opacity-10 text-success rounded-pill">Present</span>{% else %}<span class="badge bg-secondary bg-opacity-10 text-muted rounded-pill">Missing</span>{% endif %}
+                    </li>
+                </ul>
+
+                <div class="pt-2 border-top">
+                    <div class="text-muted small fw-semibold mb-2">Contact & Links:</div>
+                    <div class="d-flex flex-wrap gap-1">
+                        <span class="badge {% if contact_info.email %}bg-success bg-opacity-10 text-success{% else %}bg-danger bg-opacity-10 text-danger{% endif %} rounded-pill px-2 py-1 small">
+                            Email {% if contact_info.email %}✓{% else %}✗{% endif %}
+                        </span>
+                        <span class="badge {% if contact_info.phone %}bg-success bg-opacity-10 text-success{% else %}bg-danger bg-opacity-10 text-danger{% endif %} rounded-pill px-2 py-1 small">
+                            Phone {% if contact_info.phone %}✓{% else %}✗{% endif %}
+                        </span>
+                        <span class="badge {% if contact_info.links %}bg-success bg-opacity-10 text-success{% else %}bg-secondary bg-opacity-10 text-muted{% endif %} rounded-pill px-2 py-1 small">
+                            LinkedIn / GitHub {% if contact_info.links %}✓{% else %}✗{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         ACTIONABLE IMPROVEMENT PLAN
+         ========================================== -->
+    {% if analysis.suggestions.all %}
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
+        <h6 class="fw-bold text-secondary mb-3">
+            <i class="bi bi-check2-square text-primary me-2"></i> Actionable Improvement Plan
+        </h6>
+
+        <div class="row g-3">
+            {% for suggestion in analysis.suggestions.all %}
+            <div class="col-md-6">
+                <div class="p-3 rounded-3 border h-100" style="background: rgba(241, 245, 249, 0.3); border-color: var(--border) !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-semibold text-secondary small">{{ suggestion.category }}</span>
+                        <span class="badge {% if suggestion.priority == 'High' %}bg-warning text-dark{% else %}bg-secondary{% endif %} rounded-pill small" style="font-size: 0.7rem;">
+                            {{ suggestion.priority }} Priority
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-0">{{ suggestion.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-function copyKeyword(btn, keyword) {
-    navigator.clipboard.writeText(keyword).then(function() {
-        const originalHTML = btn.innerHTML;
-        btn.classList.add('copied');
-        btn.innerHTML = `<i class="bi bi-check-lg me-1"></i> Copied!`;
+    function copyKeyword(btn, word) {
+        navigator.clipboard.writeText(word).then(() => {
+            const originalHtml = btn.innerHTML;
+            btn.classList.add('copied');
+            btn.innerHTML = '<i class="bi bi-check-lg"></i> Copied!';
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.innerHTML = originalHtml;
+            }, 1800);
+        });
+    }
+
+    function copyRewrite(btn, text) {
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btn.innerHTML;
+            btn.classList.replace('btn-outline-primary', 'btn-success');
+            btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+            setTimeout(() => {
+                btn.classList.replace('btn-success', 'btn-outline-primary');
+                btn.innerHTML = originalText;
+            }, 2000);
+        });
+    }
+
+    function triggerAiEnhancement() {
+        const btn = document.getElementById('btnEnhanceAi');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Enhancing...';
         
-        setTimeout(function() {
-            btn.classList.remove('copied');
-            btn.innerHTML = originalHTML;
-        }, 1600);
-    }).catch(function(err) {
-        console.error('Could not copy text: ', err);
-    });
-}
+        fetch("{% url 'ai_resume:api_enhance_ai' analysis.pk %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Enhanced!';
+                btn.classList.replace('btn-primary-custom', 'btn-success');
+                
+                const feedback = data.ai_feedback;
+                document.getElementById('aiRoleInsight').innerText = feedback.role_alignment_insight || '';
+                
+                const rewritesList = document.getElementById('aiRewritesList');
+                rewritesList.innerHTML = '';
+                
+                if (feedback.bullet_rewrites && feedback.bullet_rewrites.length > 0) {
+                    feedback.bullet_rewrites.forEach(r => {
+                        const col = document.createElement('div');
+                        col.className = 'col-12';
+                        col.innerHTML = `
+                            <div class="rewrite-bento-card">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-5 border-end-md">
+                                        <div class="text-muted small fw-semibold text-uppercase mb-1">Original Draft:</div>
+                                        <div class="text-secondary small font-monospace">${escapeHtml(r.original)}</div>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <div class="text-primary small fw-bold"><i class="bi bi-check-circle-fill text-success me-1"></i> High-Impact Rewrite:</div>
+                                            <button class="btn btn-xs btn-outline-primary py-0 px-2 rounded-pill small" onclick="copyRewrite(this, '${escapeQuotes(r.improved)}')">
+                                                <i class="bi bi-clipboard me-1"></i> Copy
+                                            </button>
+                                        </div>
+                                        <div class="text-secondary small fw-semibold">${escapeHtml(r.improved)}</div>
+                                        ${r.rationale ? `<small class="text-muted d-block mt-1" style="font-size: 0.74rem;"><strong>Why:</strong> ${escapeHtml(r.rationale)}</small>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        rewritesList.appendChild(col);
+                    });
+                }
+                
+                document.getElementById('aiInsightsContainer').classList.remove('d-none');
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-stars me-1"></i> ⚡ Enhance with AI';
+                alert(data.message || 'AI service running in offline mode.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-stars me-1"></i> ⚡ Enhance with AI';
+            alert('Failed to contact AI service.');
+        });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    function escapeQuotes(text) {
+        if (!text) return '';
+        return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
 </script>
 {% endblock %}

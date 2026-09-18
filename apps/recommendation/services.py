@@ -454,22 +454,28 @@ def generate_career_recommendation(user, target_role_name=None):
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json"
             }
-            payload = {
-                "model": "llama-3.3-70b-versatile",
-                "messages": [
-                    {"role": "system", "content": "You are a professional career coach. You always respond in raw JSON format matching the requested schema without changing ground-truth metrics."},
-                    {"role": "user", "content": prompt}
-                ],
-                "response_format": {"type": "json_object"},
-                "temperature": 0.2
-            }
             
-            response = requests.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers=headers,
-                json=payload,
-                timeout=10
-            )
+            groq_models = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+            for model_name in groq_models:
+                payload = {
+                    "model": model_name,
+                    "messages": [
+                        {"role": "system", "content": "You are a professional career coach. You always respond in raw JSON format matching the requested schema without changing ground-truth metrics."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0.2
+                }
+                
+                response = requests.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    break
             
             if response.status_code == 200:
                 result_json = response.json()

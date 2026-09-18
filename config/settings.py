@@ -210,3 +210,8 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_TIMEOUT = 10
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'verification@careercatalyst.com')
+
+# AI Semantic Layer Configuration (Optional Free Tier API keys for ATS Resume Analyzer)
+GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+

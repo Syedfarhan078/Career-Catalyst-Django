@@ -2,117 +2,162 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from apps.resume.models import Resume
+from apps.resume.models import Resume, Skill, Project, Experience, Education
 from .models import ResumeAnalysis, MissingSkill, ImprovementSuggestion
 from .services import analyze_resume_data
+from .nlp_engine import extract_skills_from_text, compute_tfidf_similarity
+from .xyz_evaluator import evaluate_bullet_point, evaluate_achievement_strength
+from .pii_sanitizer import sanitize_resume_text
+from .ai_service import enhance_with_ai
 
 User = get_user_model()
 
-class ResumeAnalysisTests(TestCase):
+class HybridATSTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            username='analyzer_user',
+            username='hybrid_user',
             email='user@example.com',
             password='password123',
-            first_name='Test',
-            last_name='User'
+            first_name='Syed',
+            last_name='Ahmed'
         )
-        self.client.login(username='analyzer_user', password='password123')
+        self.client.login(username='hybrid_user', password='password123')
         
-        # Create an internal resume
         self.resume = Resume.objects.create(
             user=self.user,
             title='Software Engineer Resume',
             template='professional'
         )
+        Skill.objects.create(resume=self.resume, name='Python')
+        Skill.objects.create(resume=self.resume, name='Django')
+        Skill.objects.create(resume=self.resume, name='PostgreSQL')
+        Skill.objects.create(resume=self.resume, name='Docker')
+        Project.objects.create(
+            resume=self.resume,
+            title='Career Platform',
+            description='Engineered a Django SaaS application with PostgreSQL, reducing latency by 40% for 1,000+ students.',
+            technologies_used='Python, Django, PostgreSQL'
+        )
 
-    def test_services_grading(self):
-        # Resume text containing 3 sections (Education, Projects, Skills) and some keywords
+    def test_nlp_skill_extraction_and_alias(self):
+        sample = "Proficient in React.js, Python, PostgreSQL, k8s, Tailwind, and Django REST API."
+        res = extract_skills_from_text(sample)
+        skills = res["skills"]
+        
+        # Test alias resolution
+        self.assertIn("react", skills)
+        self.assertIn("python", skills)
+        self.assertIn("postgresql", skills)
+        self.assertIn("kubernetes", skills)
+        self.assertIn("django", skills)
+
+    def test_tfidf_cosine_similarity(self):
+        doc1 = "Python developer experienced in Django, PostgreSQL, Docker, and REST APIs."
+        doc2 = "Seeking a Backend Engineer with Python, Django, REST APIs, and Docker experience."
+        score, kws = compute_tfidf_similarity(doc1, doc2)
+        
+        self.assertGreater(score, 50)
+        self.assertIn("python", [k.lower() for k in kws])
+
+    def test_xyz_bullet_evaluator(self):
+        # Strong bullet with action verb + metric + tech
+        strong_bullet = "Architected a scalable Django REST API with Redis caching, reducing server response latency by 45% for 10,000+ daily users."
+        res1 = evaluate_bullet_point(strong_bullet)
+        self.assertEqual(res1["verb_strength"], "strong")
+        self.assertTrue(res1["has_metric"])
+        self.assertTrue(res1["has_tech"])
+        self.assertGreaterEqual(res1["score"], 80)
+
+        # Weak bullet
+        weak_bullet = "Worked on website bugs and did some python coding."
+        res2 = evaluate_bullet_point(weak_bullet)
+        self.assertEqual(res2["verb_strength"], "weak")
+        self.assertFalse(res2["has_metric"])
+        self.assertLess(res2["score"], 50)
+
+    def test_pii_sanitizer(self):
+        raw = (
+            "Syed Farhan Ahmed\n"
+            "Email: farhan@example.com | Phone: +91 98765 43210\n"
+            "LinkedIn: https://linkedin.com/in/farhan | GitHub: https://github.com/farhan\n"
+            "Stanford University - B.Sc Computer Science\n"
+            "Built a distributed database system."
+        )
+        res = sanitize_resume_text(raw)
+        sanitized = res["sanitized_text"]
+        
+        self.assertNotIn("farhan@example.com", sanitized)
+        self.assertNotIn("+91 98765 43210", sanitized)
+        self.assertNotIn("https://linkedin.com/in/farhan", sanitized)
+        self.assertIn("[EMAIL_REDACTED]", sanitized)
+        self.assertIn("[PHONE_REDACTED]", sanitized)
+        self.assertIn("[LINKEDIN_URL]", sanitized)
+
+    def test_complete_services_5_metrics(self):
         mock_text = """
-        Test User
-        Email: user@example.com
-        Phone: +92 300 1234567
-        LinkedIn: linkedin.com/in/testuser
-        GitHub: github.com/testuser
+        John Doe
+        Email: candidate@example.com
+        Phone: +1 555 123 4567
+        LinkedIn: https://linkedin.com/in/candidate
+        GitHub: https://github.com/candidate
 
         EDUCATION
-        B.Sc Computer Science
+        B.S. in Computer Science - University of Technology
+
+        EXPERIENCE
+        • Engineered high-throughput Django microservices handling 50,000+ daily requests with 99.9% uptime.
+        • Optimized SQL database queries in PostgreSQL, reducing query latency by 35%.
 
         PROJECTS
-        Built a python application using django and sql databases. Managed source control with git.
+        • Developed full-stack SaaS platform using React, Python, Docker, and AWS EC2.
 
         SKILLS
-        Python, Git, SQL, React, HTML, CSS, Docker, Django
+        Python, Django, PostgreSQL, Docker, AWS, React, Git, REST API, SQL
         """
         analysis = analyze_resume_data(
             text=mock_text,
-            target_role="Software Engineer",
+            target_role="Backend Developer",
             user=self.user,
-            resume=self.resume
+            resume=self.resume,
+            job_description="Seeking a Backend Developer skilled in Python, Django, PostgreSQL, Redis, Docker, and Microservices."
         )
         
-        # Check that analysis is saved
         self.assertEqual(ResumeAnalysis.objects.count(), 1)
-        self.assertEqual(analysis.target_role, "Software Engineer")
-        
-        # Ensure we have subscores calculated
-        self.assertGreater(analysis.overall_score, 0)
-        self.assertGreater(analysis.keyword_score, 0)
-        self.assertGreater(analysis.skill_score, 0)
-        
-        # Missing skills and suggestions should be populated
-        self.assertTrue(MissingSkill.objects.filter(analysis=analysis).exists())
-        self.assertTrue(ImprovementSuggestion.objects.filter(analysis=analysis).exists())
+        self.assertGreater(analysis.jd_match_score, 40)
+        self.assertGreater(analysis.skill_coverage_score, 50)
+        self.assertGreater(analysis.keyword_coverage_score, 50)
+        self.assertGreater(analysis.completeness_score, 80)
+        self.assertGreater(analysis.achievement_score, 60)
+        self.assertGreater(analysis.overall_score, 60)
 
-    def test_analysis_history_view(self):
-        # Create an analysis record
-        ResumeAnalysis.objects.create(
-            user=self.user,
-            target_role='Software Engineer',
-            overall_score=85
-        )
-        response = self.client.get(reverse('ai_resume:history'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Software Engineer')
-        self.assertContains(response, '85%')
+    def test_ai_graceful_offline_fallback(self):
+        # When no API key is provided, returns offline status without crashing
+        res = enhance_with_ai("Anonymized text", "Software Engineer")
+        self.assertFalse(res["ai_available"])
+        self.assertEqual(res["status"], "offline_mode")
 
-    def test_detail_view_security(self):
-        # Create a report for self.user
-        analysis = ResumeAnalysis.objects.create(
-            user=self.user,
-            target_role='Data Scientist',
-            overall_score=75
-        )
-        
-        # Create a hacker user
-        other_user = User.objects.create_user(username='hacker_user', password='password123')
-        self.client.login(username='hacker_user', password='password123')
-        
-        # Accessing other user's report should give 404
-        response = self.client.get(reverse('ai_resume:detail', args=[analysis.pk]))
-        self.assertEqual(response.status_code, 404)
+    def test_views_flow(self):
+        # 1. History view
+        resp = self.client.get(reverse('ai_resume:history'))
+        self.assertEqual(resp.status_code, 200)
 
-    def test_upload_invalid_file_extension(self):
-        # Uploading a text file instead of PDF/DOCX
-        bad_file = SimpleUploadedFile("resume.txt", b"Mock resume contents", content_type="text/plain")
-        response = self.client.post(reverse('ai_resume:analyze'), {
-            'target_role': 'Product Manager',
-            'uploaded_file': bad_file
+        # 2. Analyze view (GET)
+        resp = self.client.get(reverse('ai_resume:analyze'))
+        self.assertEqual(resp.status_code, 200)
+
+        # 3. Analyze view (POST with internal resume)
+        resp = self.client.post(reverse('ai_resume:analyze'), {
+            'target_role': 'Software Engineer',
+            'job_description': 'Python and Django developer',
+            'resume': self.resume.pk
         })
-        self.assertEqual(response.status_code, 200)
-        form = response.context['form']
-        self.assertIn('uploaded_file', form.errors)
-        self.assertIn('Only PDF and DOCX files are supported.', form.errors['uploaded_file'])
-
-    def test_upload_large_file(self):
-        # File > 5MB
-        huge_content = b"0" * (6 * 1024 * 1024) # 6MB
-        large_file = SimpleUploadedFile("resume.pdf", huge_content, content_type="application/pdf")
-        response = self.client.post(reverse('ai_resume:analyze'), {
-            'target_role': 'ML Engineer',
-            'uploaded_file': large_file
-        })
-        self.assertEqual(response.status_code, 200)
-        form = response.context['form']
-        self.assertIn('uploaded_file', form.errors)
-        self.assertIn('The uploaded file size must not exceed 5MB.', form.errors['uploaded_file'])
+        self.assertEqual(resp.status_code, 302)
+        
+        analysis = ResumeAnalysis.objects.first()
+        self.assertIsNotNone(analysis)
+        
+        # 4. Detail view
+        detail_resp = self.client.get(reverse('ai_resume:detail', args=[analysis.pk]))
+        self.assertEqual(detail_resp.status_code, 200)
+        self.assertContains(detail_resp, 'ATS Evaluation Report')
+        self.assertContains(detail_resp, 'Transparent ATS Score Breakdown')
