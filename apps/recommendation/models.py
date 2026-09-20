@@ -2,6 +2,12 @@ from django.db import models
 from django.conf import settings
 
 class CareerAnalysis(models.Model):
+    COMPANY_TIER_CHOICES = [
+        ('product', 'Product-Based / High-Growth Tech (e.g. Google, Amazon, Startups)'),
+        ('service', 'Enterprise & IT Services (e.g. TCS, Infosys, Wipro, Accenture)'),
+        ('general', 'General / Balanced Industry Standard'),
+    ]
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
@@ -11,6 +17,12 @@ class CareerAnalysis(models.Model):
     # Career metrics
     career_readiness_score = models.IntegerField(default=0)
     recommended_career = models.CharField(max_length=255)
+    target_company_tier = models.CharField(
+        max_length=50,
+        choices=COMPANY_TIER_CHOICES,
+        default='general',
+        help_text="Calibrated hiring benchmark: Product vs Service vs General"
+    )
     confidence_score = models.IntegerField(default=0)
     overall_feedback = models.TextField()
     

@@ -106,10 +106,10 @@ def topic_matches_skills(topic_title, student_tokens, raw_skills):
     return False
 
 
-def evaluate_student_against_path(user, profile, career_path, has_resume, latest_resume_analysis, default_resume):
+def evaluate_student_against_path(user, profile, career_path, has_resume, latest_resume_analysis, default_resume, company_tier='general'):
     """
-    Performs deterministic, ground-truth evaluation of a student profile against a CareerPath.
-    Guarantees no hallucinated numbers or fake satisfaction.
+    Performs deterministic, ground-truth evaluation of a student profile against a CareerPath,
+    calibrated by the target company hiring tier (Product vs Service vs General).
     """
     raw_skills, student_tokens = extract_student_skills_set(user, profile, default_resume, latest_resume_analysis)
     
@@ -170,15 +170,12 @@ def evaluate_student_against_path(user, profile, career_path, has_resume, latest
             "target_score": 10
         })
 
-    # Limit radar dimensions to at most 6 key milestones for clean visual presentation
     if len(radar_dimensions) > 6:
-        # Group or select every nth milestone
         step_interval = len(radar_dimensions) // 6
         selected_radar = [radar_dimensions[i] for i in range(0, len(radar_dimensions), max(1, step_interval))][:6]
     else:
         selected_radar = radar_dimensions
 
-    # Fallback if path has no milestones in database
     if not selected_radar:
         selected_radar = [
             {"name": "Fundamentals", "user_score": 0.0, "target_score": 10},
@@ -188,117 +185,231 @@ def evaluate_student_against_path(user, profile, career_path, has_resume, latest
             {"name": "Advanced Mastery", "user_score": 0.0, "target_score": 10}
         ]
 
-    # --- 4-PILLAR TRUTH-BASED CAREER READINESS SCORE (0-100) ---
-    # Pillar 1: Role-Specific Skill Overlap (Max 40 pts)
+    # --- TIER-CALIBRATED SCORING ENGINE ---
     skill_match_ratio = (total_matched_topics / total_path_topics) if total_path_topics > 0 else 0.0
-    pillar_skills = round(skill_match_ratio * 40)
-    
-    # Pillar 2: Practical Projects in Resume (Max 25 pts)
     projects_count = default_resume.projects.count() if default_resume else 0
-    if projects_count >= 3:
-        pillar_projects = 25
-    elif projects_count == 2:
-        pillar_projects = 18
-    elif projects_count == 1:
-        pillar_projects = 10
-    else:
-        pillar_projects = 0
-        
-    # Pillar 3: Academic Record / CGPA (Max 15 pts)
-    if profile and profile.cgpa:
-        try:
-            cgpa = float(profile.cgpa)
-            if cgpa >= 8.5:
-                pillar_academic = 15
-            elif cgpa >= 7.5:
-                pillar_academic = 12
-            elif cgpa >= 6.5:
-                pillar_academic = 9
-            else:
-                pillar_academic = 5
-        except (ValueError, TypeError):
-            pillar_academic = 5
-    else:
-        pillar_academic = 5
-        
-    # Pillar 4: Experience & Certifications (Max 20 pts)
     experiences_count = default_resume.experiences.count() if default_resume else 0
     certifications_count = default_resume.certifications.count() if default_resume else 0
     is_enrolled = UserRoadmap.objects.filter(user=user, career_path=career_path).exists()
     
-    pillar_exp = min(experiences_count * 8, 10)
-    pillar_certs = min(certifications_count * 4, 6)
-    pillar_enrollment = 4 if is_enrolled else 0
-    pillar_experience_total = min(pillar_exp + pillar_certs + pillar_enrollment, 20)
+    cgpa_val = 0.0
+    if profile and profile.cgpa:
+        try:
+            cgpa_val = float(profile.cgpa)
+        except (ValueError, TypeError):
+            cgpa_val = 6.0
+
+    if company_tier == 'product':
+        # PRODUCT-BASED / STARTUP CALIBRATION (Heavy on skills & projects, low on GPA cutoffs)
+        pillar_skills = round(skill_match_ratio * 45)  # Max 45 pts
+        
+        if projects_count >= 3:
+            pillar_projects = 30
+        elif projects_count == 2:
+            pillar_projects = 22
+        elif projects_count == 1:
+            pillar_projects = 12
+        else:
+            pillar_projects = 0
+            
+        if cgpa_val >= 8.5:
+            pillar_academic = 10
+        elif cgpa_val >= 7.5:
+            pillar_academic = 8
+        elif cgpa_val >= 6.5:
+            pillar_academic = 6
+        else:
+            pillar_academic = 4
+            
+        pillar_exp = min(experiences_count * 6, 8)
+        pillar_certs = min(certifications_count * 3, 4)
+        pillar_enrollment = 3 if is_enrolled else 0
+        pillar_experience_total = min(pillar_exp + pillar_certs + pillar_enrollment, 15)
+        
+    elif company_tier == 'service':
+        # ENTERPRISE & IT SERVICES CALIBRATION (High emphasis on CGPA cutoffs & Core CS fundamentals)
+        pillar_skills = round(skill_match_ratio * 35)  # Max 35 pts
+        
+        if projects_count >= 2:
+            pillar_projects = 20
+        elif projects_count == 1:
+            pillar_projects = 14
+        else:
+            pillar_projects = 0
+            
+        # Heavy CGPA weighting (critical for eligibility filtering)
+        if cgpa_val >= 8.5:
+            pillar_academic = 25
+        elif cgpa_val >= 7.5:
+            pillar_academic = 20
+        elif cgpa_val >= 6.5:
+            pillar_academic = 15
+        else:
+            pillar_academic = 6
+            
+        pillar_exp = min(experiences_count * 8, 10)
+        pillar_certs = min(certifications_count * 6, 8)
+        pillar_enrollment = 2 if is_enrolled else 0
+        pillar_experience_total = min(pillar_exp + pillar_certs + pillar_enrollment, 20)
+        
+    else:
+        # GENERAL / BALANCED CALIBRATION
+        pillar_skills = round(skill_match_ratio * 40)
+        if projects_count >= 3:
+            pillar_projects = 25
+        elif projects_count == 2:
+            pillar_projects = 18
+        elif projects_count == 1:
+            pillar_projects = 10
+        else:
+            pillar_projects = 0
+            
+        if cgpa_val >= 8.5:
+            pillar_academic = 15
+        elif cgpa_val >= 7.5:
+            pillar_academic = 12
+        elif cgpa_val >= 6.5:
+            pillar_academic = 9
+        else:
+            pillar_academic = 5
+            
+        pillar_exp = min(experiences_count * 8, 10)
+        pillar_certs = min(certifications_count * 4, 6)
+        pillar_enrollment = 4 if is_enrolled else 0
+        pillar_experience_total = min(pillar_exp + pillar_certs + pillar_enrollment, 20)
 
     # Calculate Total Readiness Score
     career_readiness_score = min(pillar_skills + pillar_projects + pillar_academic + pillar_experience_total, 100)
     
-    # --- CONFIDENCE LEVEL (0-100) ---
-    # Truthfully reflects alignment with THIS specific career path
+    # Calculate Role Alignment Confidence
     confidence_score = round((skill_match_ratio * 70) + ((career_readiness_score / 100) * 30))
-    confidence_score = max(min(confidence_score, 100), 5) # minimum 5% floor if starting out
+    confidence_score = max(min(confidence_score, 100), 5)
 
-    # --- INTERNSHIP & PLACEMENT READINESS ---
-    if career_readiness_score >= 65:
+    # Readiness Category
+    if career_readiness_score >= 68:
         internship_readiness = "Ready"
-    elif career_readiness_score >= 40:
+    elif career_readiness_score >= 42:
         internship_readiness = "Almost Ready"
     else:
         internship_readiness = "Need Preparation"
 
-    if career_readiness_score >= 75:
+    if career_readiness_score >= 76:
         placement_readiness = "Ready"
-    elif career_readiness_score >= 55:
+    elif career_readiness_score >= 54:
         placement_readiness = "Almost Ready"
     else:
         placement_readiness = "Need Preparation"
 
-    # --- DYNAMIC, ROLE-SPECIFIC STRENGTHS ---
+    # --- TIER-SPECIFIC STRENGTHS & GROWTH AREAS ---
     strengths = []
-    if matched_skills:
-        strengths.append(f"Demonstrated proficiency in {len(matched_skills)} {career_path.name} topics: {', '.join(matched_skills[:3])}")
-    if profile and profile.cgpa and float(profile.cgpa) >= 7.5:
-        strengths.append(f"Strong academic foundation with a {profile.cgpa} CGPA in {profile.branch or 'studies'}")
-    if projects_count > 0:
-        strengths.append(f"{projects_count} portfolio project(s) documented in profile")
-    if experiences_count > 0:
-        strengths.append(f"{experiences_count} practical experience/internship role(s) logged")
-    if raw_skills and not matched_skills:
-        strengths.append(f"Foundational technical background in {', '.join(raw_skills[:3])}")
-    if not strengths:
-        strengths.append(f"Clear goal orientation actively targeting the {career_path.name} roadmap")
-        strengths.append("Enrolled in academic curriculum with verified student profile")
-
-    # --- DYNAMIC, ROLE-SPECIFIC GROWTH AREAS ---
     weaknesses = []
-    if missing_skills:
-        weaknesses.append(f"Core Syllabus Gap: Missing {len(missing_skills)} key {career_path.name} topics (e.g., {', '.join(missing_skills[:3])})")
-    if projects_count == 0:
-        weaknesses.append(f"Portfolio Gap: No practical projects built specifically for {career_path.name} yet")
-    if experiences_count == 0:
-        weaknesses.append("Industry Experience: No prior internships or practical industry experience recorded")
-    if certifications_count == 0:
-        weaknesses.append(f"Credential Gap: Consider pursuing recognized foundational credentials in {career_path.name}")
-    if not weaknesses:
-        weaknesses.append("Continue building advanced projects and refining technical interview readiness")
+    
+    if company_tier == 'product':
+        if projects_count >= 2:
+            strengths.append(f"Strong practical portfolio with {projects_count} documented technical projects")
+        if matched_skills:
+            strengths.append(f"Demonstrated proficiency in {len(matched_skills)} core {career_path.name} tools & technologies")
+        if not strengths:
+            strengths.append(f"Clear goal orientation targeting high-impact {career_path.name} engineering")
+            
+        if projects_count < 2:
+            weaknesses.append("Product Tier Gap: Need at least 2 full-stack/capstone deployed projects with live URLs")
+        if missing_skills:
+            weaknesses.append(f"Advanced Stack Gap: Missing {len(missing_skills)} target concepts (e.g. {', '.join(missing_skills[:3])})")
+        weaknesses.append("System Design & Problem Solving: Practice scalable architecture and timed coding challenges")
+        
+        interview_topics = [
+            "Data Structures, Algorithms & LeetCode Coding Patterns",
+            "Low-Level & High-Level System Design (Scalability, Caching, DB Sharding)",
+            "Live Technical Problem Solving & Behavioral STAR Framework"
+        ]
+        thirty_day_plan = [
+            f"Build and deploy an end-to-end {career_path.name} capstone project with Docker & CI/CD.",
+            "Solve 30+ medium-level Data Structures & Algorithm challenges.",
+            "Master system design principles: caching, database indexing, and REST APIs."
+        ]
+        ninety_day_plan = [
+            "Contribute to an open-source project or publish a production-grade live web app.",
+            "Complete 3 full-length proctored mock technical interviews in the Sandbox.",
+            "Target early-stage tech startups and top product company job postings."
+        ]
+        
+    elif company_tier == 'service':
+        if cgpa_val >= 7.0:
+            strengths.append(f"Strong academic eligibility with a {cgpa_val} CGPA (comfortably above campus cutoffs)")
+        if matched_skills:
+            strengths.append(f"Foundational understanding of {', '.join(matched_skills[:3])}")
+        if not strengths:
+            strengths.append("Verified student profile enrolled in university degree")
+            
+        if cgpa_val < 6.5:
+            weaknesses.append(f"Academic Filter: {cgpa_val} CGPA is below some enterprise 65% campus cutoff filters")
+        if missing_skills:
+            weaknesses.append(f"Core CS Syllabus: Ensure mastery of {', '.join(missing_skills[:3])}")
+        weaknesses.append("Aptitude & Communication: Prepare for quantitative aptitude and logical reasoning rounds")
+        
+        interview_topics = [
+            "Core CS Fundamentals (OOPs 4 Pillars, DBMS SQL Normalization, OS)",
+            "Quantitative, Verbal & Logical Aptitude Assessments",
+            "Technical HR, Group Discussion & Professional Communication"
+        ]
+        thirty_day_plan = [
+            f"Master core OOPs, DBMS SQL queries, and basic {career_path.name} fundamentals.",
+            "Practice 50+ quantitative and logical aptitude practice tests.",
+            "Ensure standard single-column ATS resume formatting."
+        ]
+        ninety_day_plan = [
+            "Complete a recognized industry certification in your core programming language.",
+            "Practice mock HR communication rounds and technical interview questions.",
+            "Apply to mass-hiring enterprise drives (TCS NQT, Infosys InfyTQ, Accenture, Wipro)."
+        ]
+        
+    else:
+        if matched_skills:
+            strengths.append(f"Demonstrated proficiency in {len(matched_skills)} {career_path.name} topics: {', '.join(matched_skills[:3])}")
+        if cgpa_val >= 7.5:
+            strengths.append(f"Solid academic track record ({cgpa_val} CGPA)")
+        if projects_count > 0:
+            strengths.append(f"{projects_count} portfolio project(s) documented")
+        if not strengths:
+            strengths.append(f"Goal-oriented progress targeting {career_path.name}")
+            
+        if missing_skills:
+            weaknesses.append(f"Syllabus Gap: Missing {len(missing_skills)} key {career_path.name} topics ({', '.join(missing_skills[:3])})")
+        if projects_count == 0:
+            weaknesses.append("Portfolio Gap: Build practical role-specific projects")
+        if not weaknesses:
+            weaknesses.append("Refine technical interview readiness and portfolio polish")
+            
+        interview_topics = [
+            f"{career_path.name} Core Methodologies & Best Practices",
+            "Problem Solving & Architecture Fundamentals",
+            "Behavioral & Practical Execution Scenarios"
+        ]
+        thirty_day_plan = [
+            f"Enroll in the {career_path.name} roadmap and complete Weeks 1 to 4.",
+            f"Master core topics: {', '.join(missing_skills[:3]) if missing_skills else 'Fundamentals'}.",
+            "Set up a dedicated GitHub repository for role projects."
+        ]
+        ninety_day_plan = [
+            f"Build a comprehensive portfolio project applying {career_path.name} best practices.",
+            "Achieve an 80%+ ATS resume score and begin active applications.",
+            "Participate in proctored coding assessments on the platform."
+        ]
 
-    # --- ATS RESUME SCORE ---
+    # ATS Resume Score
     if has_resume and latest_resume_analysis and latest_resume_analysis.ats_score:
         ats_score = latest_resume_analysis.ats_score
     elif has_resume and default_resume:
-        # Score based on completeness of built resume
-        resume_pts = min((projects_count * 15) + (experiences_count * 20) + (certifications_count * 10) + 40, 95)
-        ats_score = resume_pts
+        ats_score = min((projects_count * 15) + (experiences_count * 20) + (certifications_count * 10) + 40, 95)
     else:
         ats_score = None
 
-    # --- RESUME SUGGESTIONS ---
     if has_resume and latest_resume_analysis:
         resume_suggestions = [s.description for s in latest_resume_analysis.suggestions.all()[:3]]
     elif has_resume:
         resume_suggestions = [
-            f"Tailor your project descriptions to highlight {career_path.name} tools and outcomes.",
+            f"Tailor project descriptions to highlight {career_path.name} tools and outcomes.",
             "Include quantifiable metrics (e.g. percentage improvements, user counts, latency drops).",
             "Ensure standard single-column formatting for optimal ATS scanner parsing."
         ]
@@ -309,48 +420,23 @@ def evaluate_student_against_path(user, profile, career_path, has_resume, latest
             f"Include relevant keywords from the {career_path.name} roadmap in your skills section."
         ]
 
-    # --- 30-DAY & 90-DAY ACTION PLANS ---
-    top_missing = missing_skills[:3] if missing_skills else ["Advanced System Architecture", "Production Deployment"]
-    thirty_day_plan = [
-        f"Enroll in the {career_path.name} roadmap and complete Weeks 1 to 4.",
-        f"Master the core fundamental concepts: {', '.join(top_missing)}.",
-        "Set up a dedicated GitHub repository for your capstone role projects."
-    ]
-    
-    ninety_day_plan = [
-        f"Build a comprehensive portfolio project applying {career_path.name} best practices.",
-        "Upload your updated resume to the ATS Resume Analyzer and reach an 80%+ compliance score.",
-        f"Begin applying to junior {career_path.name} roles and internships on the platform."
-    ]
+    tier_label = "Product & Startup" if company_tier == 'product' else ("Enterprise Services" if company_tier == 'service' else "General Industry")
+    feedback = f"Calibrated for {tier_label} hiring standards: You currently show a {career_readiness_score}% readiness score for {career_path.name}."
+    motivational_message = f"Stay focused! Tailoring your preparation to {tier_label} requirements maximizes your conversion rate."
 
-    # --- OVERALL FEEDBACK ---
-    if skill_match_ratio >= 0.7:
-        feedback = f"You possess strong alignment ({round(skill_match_ratio * 100)}% topic match) with the {career_path.name} roadmap. Focus on advanced interview prep and portfolio refinement."
-    elif skill_match_ratio >= 0.3:
-        feedback = f"You have foundational familiarity with {career_path.name}, but still have notable topic gaps. Work through the weekly milestone roadmap to close your skill gaps."
-    else:
-        feedback = f"You are currently at the beginning of the {career_path.name} trajectory ({round(skill_match_ratio * 100)}% direct skill match). Follow the step-by-step curriculum to build verified competence."
-
-    motivational_message = f"Stay consistent! Every milestone you complete in {career_path.name} brings you closer to placement readiness."
-
-    # Recommended certifications and projects for this role
     recommended_certifications = [
-        f"Industry-Certified {career_path.name} Specialist",
-        f"Cloud & Infrastructure Practitioner ({career_path.name})"
+        f"Certified {career_path.name} Practitioner",
+        f"Cloud & Systems Specialist ({career_path.name})"
     ]
     recommended_projects = [
         f"Full-lifecycle capstone project demonstrating {career_path.name} core competencies",
-        f"Real-world data or service implementation using {', '.join(missing_skills[:2]) if missing_skills else 'target stack'}"
-    ]
-    interview_topics = [
-        f"{career_path.name} Fundamentals & Methodologies",
-        "Problem Solving, System Design & Architecture",
-        "Behavioral STAR Scenarios & Practical Execution"
+        f"Production implementation using {', '.join(missing_skills[:2]) if missing_skills else 'target stack'}"
     ]
 
     return {
         "career_readiness_score": career_readiness_score,
         "recommended_career": career_path.name,
+        "target_company_tier": company_tier,
         "confidence_score": confidence_score,
         "overall_feedback": feedback,
         "strengths": strengths,
@@ -373,7 +459,7 @@ def evaluate_student_against_path(user, profile, career_path, has_resume, latest
     }
 
 
-def generate_career_recommendation(user, target_role_name=None):
+def generate_career_recommendation(user, target_role_name=None, company_tier='general'):
     """
     Collects profile details and database roadmaps, runs truth-grounded AI synthesis,
     and returns a saved CareerAnalysis database object.
@@ -404,14 +490,15 @@ def generate_career_recommendation(user, target_role_name=None):
             description="Software Engineering Path"
         )
 
-    # 2. Evaluate mathematically against the matched path (Truth Grounding)
+    # 2. Evaluate mathematically against the matched path (Truth Grounding with Tier Calibration)
     evaluated = evaluate_student_against_path(
         user=user,
         profile=profile,
         career_path=matched_path,
         has_resume=has_resume,
         latest_resume_analysis=latest_resume_analysis,
-        default_resume=default_resume
+        default_resume=default_resume,
+        company_tier=company_tier
     )
     
     # 3. Optional AI Synthesis via Groq LLM (Ground truth scores are locked)
@@ -421,6 +508,7 @@ def generate_career_recommendation(user, target_role_name=None):
             prompt_context = {
                 "student_name": f"{user.first_name} {user.last_name}",
                 "target_role": matched_path.name,
+                "target_company_tier": company_tier,
                 "cgpa": str(profile.cgpa) if profile.cgpa else "N/A",
                 "calculated_readiness_score": evaluated["career_readiness_score"],
                 "calculated_confidence_score": evaluated["confidence_score"],
@@ -432,10 +520,11 @@ def generate_career_recommendation(user, target_role_name=None):
             }
             
             prompt = (
-                f"You are an expert AI Career Coach. Review the following verified student assessment data for the role of {matched_path.name}:\n"
+                f"You are an expert AI Career Coach. Review the following verified student assessment data for {matched_path.name}, "
+                f"specifically calibrated for the hiring tier: {company_tier.upper()} COMPANIES.\n"
                 f"{json.dumps(prompt_context, indent=2)}\n\n"
                 f"Instructions:\n"
-                f"1. Generate personalized, actionable advice tailored strictly to {matched_path.name}.\n"
+                f"1. Generate personalized, actionable advice tailored strictly to {matched_path.name} and {company_tier} company requirements.\n"
                 f"2. DO NOT invent or change any numerical scores. The scores above are mathematical ground truth.\n"
                 f"3. Output STRICT JSON ONLY matching this schema:\n"
                 f"{{\n"
@@ -505,6 +594,7 @@ def generate_career_recommendation(user, target_role_name=None):
         user=user,
         career_readiness_score=evaluated["career_readiness_score"],
         recommended_career=evaluated["recommended_career"],
+        target_company_tier=evaluated.get("target_company_tier", company_tier),
         confidence_score=evaluated["confidence_score"],
         overall_feedback=evaluated["overall_feedback"],
         strengths=evaluated["strengths"],
@@ -527,3 +617,112 @@ def generate_career_recommendation(user, target_role_name=None):
     )
     
     return analysis
+
+
+
+def enroll_and_sync_roadmap(user, career_path_identifier, matched_topics_list=None):
+    """
+    Enrolls the user in a CareerPath and automatically pre-completes
+    any topics that match their verified skills from their profile/resume.
+    """
+    from django.utils import timezone
+    from apps.roadmaps.models import CareerPath, Topic, UserRoadmap, TopicProgress
+    
+    if isinstance(career_path_identifier, CareerPath):
+        career_path = career_path_identifier
+    elif isinstance(career_path_identifier, int):
+        career_path = CareerPath.objects.get(id=career_path_identifier)
+    else:
+        identifier_str = str(career_path_identifier).strip()
+        career_path = (
+            CareerPath.objects.filter(slug__iexact=identifier_str).first() or
+            CareerPath.objects.filter(name__iexact=identifier_str).first() or
+            CareerPath.objects.filter(name__icontains=identifier_str).first() or
+            CareerPath.objects.filter(is_active=True).first()
+        )
+    
+    if not career_path:
+        raise ValueError("Target career pathway not found.")
+
+    # 1. Get or create UserRoadmap enrollment
+    user_roadmap, created = UserRoadmap.objects.get_or_create(
+        user=user,
+        career_path=career_path,
+        defaults={"is_active": True}
+    )
+    if not user_roadmap.is_active:
+        user_roadmap.is_active = True
+        user_roadmap.save()
+
+    # 2. Gather student skill tokens
+    try:
+        profile = user.studentprofile
+    except Exception:
+        profile = None
+        
+    has_resume, latest_resume_analysis, default_resume = check_user_resume_status(user)
+    raw_skills, student_tokens = extract_student_skills_set(user, profile, default_resume, latest_resume_analysis)
+    
+    if matched_topics_list:
+        raw_skills.extend(list(matched_topics_list))
+        for t in matched_topics_list:
+            norm_t = normalize_token(t)
+            if norm_t:
+                student_tokens.add(norm_t)
+
+    # 3. Process all topics for this roadmap
+    all_topics = Topic.objects.filter(milestone__career_path=career_path).select_related('milestone')
+    synced_topics_count = 0
+
+    for topic in all_topics:
+        is_matched = False
+        if matched_topics_list and topic.title in matched_topics_list:
+            is_matched = True
+        elif topic_matches_skills(topic.title, student_tokens, raw_skills):
+            is_matched = True
+
+        progress_obj, prog_created = TopicProgress.objects.get_or_create(
+            user_roadmap=user_roadmap,
+            topic=topic,
+            defaults={
+                "is_completed": is_matched,
+                "completed_at": timezone.now() if is_matched else None
+            }
+        )
+
+        if not prog_created and is_matched and not progress_obj.is_completed:
+            progress_obj.is_completed = True
+            progress_obj.completed_at = timezone.now()
+            progress_obj.save()
+            synced_topics_count += 1
+        elif prog_created and is_matched:
+            synced_topics_count += 1
+
+    # 4. Find first incomplete milestone week
+    milestones = career_path.milestones.prefetch_related('topics').order_by('week_number')
+    first_incomplete_week = 1
+    first_incomplete_title = ""
+
+    for ms in milestones:
+        ms_topic_ids = list(ms.topics.values_list('id', flat=True))
+        completed_in_ms = TopicProgress.objects.filter(
+            user_roadmap=user_roadmap,
+            topic_id__in=ms_topic_ids,
+            is_completed=True
+        ).count()
+        if completed_in_ms < len(ms_topic_ids):
+            first_incomplete_week = ms.week_number
+            first_incomplete_title = ms.title
+            break
+
+    return {
+        "user_roadmap": user_roadmap,
+        "career_path": career_path,
+        "synced_topics_count": synced_topics_count,
+        "progress_percentage": user_roadmap.progress_percentage(),
+        "completed_count": user_roadmap.completed_count(),
+        "total_topics": career_path.total_topics(),
+        "first_incomplete_week": first_incomplete_week,
+        "first_incomplete_title": first_incomplete_title
+    }
+

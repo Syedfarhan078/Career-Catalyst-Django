@@ -132,14 +132,38 @@ class RecommendationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Run Career Analysis")
         
-        # Trigger analyze POST
-        response = self.client.post(reverse('recommendation:analyze'))
+        # Trigger analyze POST with company_tier
+        response = self.client.post(reverse('recommendation:analyze'), {
+            'target_career': str(self.path.pk),
+            'company_tier': 'product'
+        })
         self.assertEqual(response.status_code, 302) # Redirects back to dashboard
         
-        # Access dashboard again (should render recommendations data and No Resume Uploaded card)
+        # Access dashboard again (should render recommendations data, tier badge and No Resume Uploaded card)
         response = self.client.get(reverse('recommendation:dashboard'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Target Career Pathway")
         self.assertContains(response, "Software Engineer")
         self.assertContains(response, "Docker")
+        self.assertContains(response, "Product & Startup Calibrated")
         self.assertContains(response, "No Resume Uploaded")
+
+    def test_company_tier_calibration_scoring(self):
+        # Evaluate product vs service vs general
+        data_prod = evaluate_student_against_path(self.user, self.profile, self.path, False, None, None, company_tier='product')
+        data_serv = evaluate_student_against_path(self.user, self.profile, self.path, False, None, None, company_tier='service')
+        
+        # Both calculate custom weights based on their criteria
+        self.assertEqual(data_prod["target_company_tier"], "product")
+        self.assertEqual(data_serv["target_company_tier"], "service")
+        self.assertTrue(any("Product Tier" in w or "Stack" in w for w in data_prod["weaknesses"]))
+        self.assertTrue(any("Core CS" in w or "Academic" in w for w in data_serv["weaknesses"]))
+
+    def test_one_click_roadmap_enroll_and_sync(self):
+        from .services import enroll_and_sync_roadmap
+        analysis = generate_career_recommendation(self.user, "Software Engineer", company_tier='general')
+        result = enroll_and_sync_roadmap(self.user, analysis)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["career_path"], self.path)
+        self.assertIsNotNone(result["user_roadmap"])
+        self.assertGreaterEqual(result["progress_percentage"], 0)

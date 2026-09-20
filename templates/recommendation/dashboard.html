@@ -157,10 +157,18 @@
             <!-- Start Form -->
             <form action="{% url 'recommendation:analyze' %}" method="POST" class="d-flex flex-column align-items-center gap-3">
                 {% csrf_token %}
-                <div class="w-100" style="max-width: 400px;">
+                <div class="w-100 text-start" style="max-width: 480px;">
+                    <label class="form-label fw-bold text-secondary small mb-1"><i class="bi bi-briefcase-fill text-primary me-1"></i> Target Career Track</label>
                     {{ form.target_career }}
                 </div>
-                <button type="submit" class="btn btn-primary-custom px-5 py-3 fs-5 rounded-pill shadow-lg">
+                <div class="w-100 text-start" style="max-width: 480px;">
+                    <label class="form-label fw-bold text-secondary small mb-1"><i class="bi bi-buildings-fill text-primary me-1"></i> Target Company Tier</label>
+                    {{ form.company_tier }}
+                    <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                        <i class="bi bi-info-circle me-1"></i>Calibrates scoring weights between DSA/System Design (Product) vs. Core CS/Aptitude/CGPA cutoffs (Service).
+                    </small>
+                </div>
+                <button type="submit" class="btn btn-primary-custom px-5 py-3 fs-5 rounded-pill shadow-lg mt-2">
                     <i class="bi bi-play-circle-fill"></i> Run Career Analysis
                 </button>
             </form>
@@ -172,34 +180,54 @@
     <div class="dashboard-header-bg p-5 mb-5 shadow-sm text-start">
         <div class="row align-items-center g-4">
             <div class="col-md-8">
-                <span class="badge bg-white bg-opacity-25 text-white px-3 py-2 rounded-pill fw-bold mb-3">
-                    <i class="bi bi-shield-fill-check"></i> Analysis Complete
-                </span>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="badge bg-white bg-opacity-25 text-white px-3 py-2 rounded-pill fw-bold">
+                        <i class="bi bi-shield-fill-check"></i> Analysis Complete
+                    </span>
+                    {% if analysis.target_company_tier == 'product' %}
+                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold shadow-sm">
+                            <i class="bi bi-rocket-takeoff-fill"></i> Product & Startup Calibrated
+                        </span>
+                    {% elif analysis.target_company_tier == 'service' %}
+                        <span class="badge bg-info text-dark px-3 py-2 rounded-pill fw-bold shadow-sm">
+                            <i class="bi bi-buildings-fill"></i> Enterprise & IT Services Calibrated
+                        </span>
+                    {% else %}
+                        <span class="badge bg-light text-dark px-3 py-2 rounded-pill fw-bold shadow-sm">
+                            <i class="bi bi-sliders"></i> General Industry Calibrated
+                        </span>
+                    {% endif %}
+                </div>
                 <h1 class="fw-bold text-white mb-2">My Career Recommendations</h1>
                 <p class="mb-0 text-white text-opacity-75">
-                    Analyzed on {{ analysis.created_at|date:"F d, Y - H:i" }}. Matches against active syllabus, project models, and learning parameters.
+                    Analyzed on {{ analysis.created_at|date:"F d, Y - H:i" }}. Matches against active syllabus, project models, and hiring calibration parameters.
                 </p>
             </div>
             
             <div class="col-md-4 text-md-end">
                 <!-- Trigger Regenerate Modal/Dropdown -->
                 <button class="btn btn-light rounded-pill px-4 py-2 fw-bold text-primary shadow-sm" data-bs-toggle="collapse" data-bs-target="#regeneratePanel">
-                    <i class="bi bi-arrow-repeat"></i> Analyze Again
+                    <i class="bi bi-arrow-repeat"></i> Calibrate / Re-analyze
                 </button>
             </div>
         </div>
 
         <!-- Hidden Collapse Panel to selection target and re-analyze -->
         <div class="collapse mt-4 p-4 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-4" id="regeneratePanel">
-            <h5 class="fw-bold text-white mb-3">Choose Target Career Pathway</h5>
-            <form action="{% url 'recommendation:analyze' %}" method="POST" class="row g-3 align-items-center">
+            <h5 class="fw-bold text-white mb-3"><i class="bi bi-sliders2 me-2"></i>Recalibrate Target Career Pathway & Company Tier</h5>
+            <form action="{% url 'recommendation:analyze' %}" method="POST" class="row g-3 align-items-end">
                 {% csrf_token %}
-                <div class="col-md-8">
+                <div class="col-md-5">
+                    <label class="form-label text-white small fw-bold mb-1">Target Career Pathway</label>
                     {{ form.target_career }}
                 </div>
                 <div class="col-md-4">
-                    <button type="submit" class="btn btn-success w-100 rounded-pill py-2 fw-bold">
-                        Regenerate Report
+                    <label class="form-label text-white small fw-bold mb-1">Target Company Tier</label>
+                    {{ form.company_tier }}
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-success w-100 rounded-pill py-2 fw-bold shadow-sm">
+                        <i class="bi bi-arrow-clockwise"></i> Recalibrate Report
                     </button>
                 </div>
             </form>
@@ -210,12 +238,22 @@
     <div class="row g-4 mb-5">
         <!-- 1. Readiness Score -->
         <div class="col-md-4 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white h-100">
-                <h6 class="fw-bold text-secondary mb-3">Career Readiness Score</h6>
-                <div class="score-circle" style="--score-val: {{ analysis.career_readiness_score }};">
-                    <div class="score-circle-inner">{{ analysis.career_readiness_score }}%</div>
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h6 class="fw-bold text-secondary mb-3">Career Readiness Score</h6>
+                    <div class="score-circle" style="--score-val: {{ analysis.career_readiness_score }};">
+                        <div class="score-circle-inner">{{ analysis.career_readiness_score }}%</div>
+                    </div>
                 </div>
-                <p class="text-muted small mt-3 mb-0">Weighted by CGPA, skills checklist, projects, and certifications.</p>
+                <p class="text-muted small mt-3 mb-0">
+                    {% if analysis.target_company_tier == 'product' %}
+                        <i class="bi bi-rocket-takeoff text-warning me-1"></i>Calibrated for <strong>Product & Startup</strong> hiring standards (DSA, System Design & Projects).
+                    {% elif analysis.target_company_tier == 'service' %}
+                        <i class="bi bi-building text-info me-1"></i>Calibrated for <strong>Enterprise & IT Services</strong> cutoffs (Core CS, CGPA & Aptitude).
+                    {% else %}
+                        <i class="bi bi-sliders text-secondary me-1"></i>Calibrated for <strong>General Industry</strong> balanced baseline.
+                    {% endif %}
+                </p>
             </div>
         </div>
 
@@ -241,7 +279,7 @@
                         <span>Role Skill Alignment</span>
                         <span>{{ analysis.confidence_score }}%</span>
                     </div>
-                    <div class="progress" style="height: 6px; border-radius: 50px;">
+                    <div class="progress mb-3" style="height: 6px; border-radius: 50px;">
                         {% if analysis.confidence_score >= 70 %}
                             <div class="progress-bar bg-success" role="progressbar" style="width: {{ analysis.confidence_score }}%;"></div>
                         {% elif analysis.confidence_score >= 40 %}
@@ -250,6 +288,18 @@
                             <div class="progress-bar bg-warning" role="progressbar" style="width: {{ analysis.confidence_score }}%;"></div>
                         {% endif %}
                     </div>
+                    {% if is_enrolled_in_path %}
+                        <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-sm btn-outline-success rounded-pill w-100 py-1 fw-semibold" style="font-size: 0.85rem;">
+                            <i class="bi bi-check-circle me-1"></i> Enrolled ({{ user_roadmap.progress_percentage }}%)
+                        </a>
+                    {% else %}
+                        <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-primary-custom rounded-pill w-100 py-1" style="font-size: 0.85rem;">
+                                <i class="bi bi-lightning-charge-fill me-1"></i> Auto-Sync Roadmap
+                            </button>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -384,12 +434,81 @@
         </div>
     </div>
 
+    <!-- 1-Click Live Roadmap Activation & Sync Hero Card -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" style="{% if is_enrolled_in_path %}background: linear-gradient(135deg, rgba(34,197,94,0.06) 0%, rgba(20,184,166,0.06) 100%); border: 1px solid rgba(34,197,94,0.25) !important;{% else %}background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(20,184,166,0.08) 100%); border: 2px dashed rgba(37,99,235,0.35) !important;{% endif %}">
+        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            <div class="d-flex align-items-start gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; {% if is_enrolled_in_path %}background: rgba(34,197,94,0.15); color: #15803d;{% else %}background: rgba(37,99,235,0.15); color: var(--primary);{% endif %} font-size: 1.5rem;">
+                    {% if is_enrolled_in_path %}
+                    <i class="bi bi-check-circle-fill"></i>
+                    {% else %}
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if is_enrolled_in_path %}
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-success text-white rounded-pill px-3 py-1 fw-bold">Active Track Enrolled</span>
+                        <span class="text-muted small"><i class="bi bi-clock-history"></i> {{ user_roadmap.completed_count }}/{{ matched_career_path.total_topics }} Lessons Done</span>
+                    </div>
+                    <h5 class="fw-bold text-secondary mb-1">Your {{ analysis.recommended_career }} Track is Active ({{ user_roadmap.progress_percentage }}% Progress)</h5>
+                    <p class="text-muted small mb-0">
+                        Jump right into <strong>Week {{ next_active_week }}</strong> to continue closing your missing technical skill gaps.
+                    </p>
+                    {% else %}
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-primary text-white rounded-pill px-3 py-1 fw-bold">⚡ 1-Click Auto-Sync Ready</span>
+                        <span class="text-success small fw-semibold"><i class="bi bi-check2-all"></i> {{ auto_synced_count }} Topics Pre-Verified</span>
+                    </div>
+                    <h5 class="fw-bold text-secondary mb-1">Activate Your Personalized {{ analysis.recommended_career }} Roadmap</h5>
+                    <p class="text-muted small mb-0">
+                        Based on your profile skills, we can auto-complete <strong>{{ auto_synced_count }} topics</strong> so you don't start from scratch. Start directly at <strong>{{ auto_starting_pct }}% progress</strong> on Week {{ next_active_week }}!
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="d-flex flex-wrap gap-2 flex-shrink-0">
+                {% if is_enrolled_in_path %}
+                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-primary-custom px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2">
+                    <i class="bi bi-play-circle-fill"></i> Continue Roadmap (Week {{ next_active_week }})
+                </a>
+                <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3 py-2 fw-semibold" title="Re-sync newly added profile skills with roadmap milestones">
+                        <i class="bi bi-arrow-repeat"></i> Re-Sync
+                    </button>
+                </form>
+                {% else %}
+                <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary-custom px-4 py-2 fs-6 rounded-pill shadow-sm d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-lightning-charge-fill"></i> Activate & Auto-Sync Roadmap
+                    </button>
+                </form>
+                {% if matched_career_path %}
+                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-2">
+                    <i class="bi bi-eye"></i> Preview Path
+                </a>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
     <!-- Career Roadmap Timeline & Learning Resources -->
     <div class="row g-4 mb-5">
         <!-- Roadmap Timeline -->
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <h5 class="fw-bold text-secondary mb-4"><i class="bi bi-compass-fill text-primary"></i> Curriculum Milestone Roadmap</h5>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-compass-fill text-primary me-2"></i> Curriculum Milestone Roadmap</h5>
+                    {% if matched_career_path %}
+                    <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1" style="font-size: 0.8rem;">
+                        <i class="bi bi-box-arrow-up-right me-1"></i> Full Interactive View
+                    </a>
+                    {% endif %}
+                </div>
                 <div class="timeline-steps overflow-auto" style="max-height: 480px;">
                     {% for step in analysis.roadmap_json %}
                     <div class="timeline-step-item {% if step.level == 'Advanced' %}advanced{% endif %} cursor-pointer p-2 rounded-3 hover-bg" onclick="toggleMilestone(this)" style="transition: all 0.2s ease;">
@@ -397,15 +516,33 @@
                             <div class="fw-bold text-secondary">Week {{ step.week }}: {{ step.title }}</div>
                             <i class="bi bi-chevron-down text-muted small collapse-icon"></i>
                         </div>
-                        <span class="badge bg-light text-muted border small py-1 px-2 mt-1 mb-2">{{ step.level }}</span>
+                        <div class="d-flex align-items-center gap-2 mt-1 mb-2">
+                            <span class="badge bg-light text-muted border small py-1 px-2">{{ step.level }}</span>
+                            {% if step.coverage_pct >= 100 %}
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 small py-1 px-2">
+                                <i class="bi bi-check2-all"></i> 100% Mastered
+                            </span>
+                            {% elif step.coverage_pct > 0 %}
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 small py-1 px-2">
+                                {{ step.coverage_pct }}% Covered
+                            </span>
+                            {% endif %}
+                        </div>
                         <div class="topics-wrapper mt-1 d-none">
                             <p class="small text-muted mb-2"><i class="bi bi-list-task text-primary"></i> Checklist Tasks:</p>
                             <div class="d-flex flex-column gap-2 ms-2">
                                 {% for topic in step.topics %}
-                                <label class="d-flex align-items-center gap-2 small text-secondary cursor-pointer">
-                                    <input type="checkbox" class="milestone-check" data-week="{{ step.week }}" data-topic="{{ topic }}" onclick="event.stopPropagation(); saveProgress(this)">
-                                    <span class="topic-name">{{ topic }}</span>
-                                </label>
+                                <div class="d-flex align-items-center justify-content-between small text-secondary py-1">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="checkbox" class="milestone-check" data-week="{{ step.week }}" data-topic="{{ topic }}" onclick="event.stopPropagation(); saveProgress(this)">
+                                        <span class="topic-name">{{ topic }}</span>
+                                    </div>
+                                    {% if topic in step.matched_topics %}
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-0" style="font-size: 0.72rem;">
+                                        <i class="bi bi-check2"></i> Mastered
+                                    </span>
+                                    {% endif %}
+                                </div>
                                 {% endfor %}
                             </div>
                         </div>
@@ -444,6 +581,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- Recommendations: Certs, Projects, Interview topics & Resume suggestions -->
     <div class="row g-4 mb-5">
