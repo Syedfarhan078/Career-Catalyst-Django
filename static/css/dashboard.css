@@ -1,0 +1,1100 @@
+/* ==========================================================================
+   CareerCatalyst Dashboard Redesign — static/css/dashboard.css
+   Clean · Professional · Educational · Industry-Grade
+   Information Architecture: Sidebar Shell + Guided Career Journey
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. DESIGN TOKENS (Light-first default, scoped to dashboard)
+   -------------------------------------------------------------------------- */
+:root {
+    --dash-bg:             #F7F8FA;
+    --dash-surface:        #FFFFFF;
+    --dash-surface-muted:  #F9FAFB;
+    --dash-surface-hover:  #F3F4F6;
+    --dash-border:         #E5E7EB;
+    --dash-border-strong:  #D1D5DB;
+    --dash-text:           #111827;
+    --dash-text-muted:     #6B7280;
+    --dash-text-subtle:    #9CA3AF;
+    
+    --dash-primary:        #2563EB;
+    --dash-primary-hover:  #1D4ED8;
+    --dash-primary-subtle: rgba(37, 99, 235, 0.08);
+    --dash-primary-border: rgba(37, 99, 235, 0.20);
+    
+    --dash-success:        #16A34A;
+    --dash-success-subtle: rgba(22, 163, 74, 0.08);
+    --dash-success-border: rgba(22, 163, 74, 0.20);
+    
+    --dash-warning:        #D97706;
+    --dash-warning-subtle: rgba(217, 119, 6, 0.08);
+    --dash-warning-border: rgba(217, 119, 6, 0.20);
+    
+    --dash-sidebar-width:  242px;
+    --dash-radius-sm:      6px;
+    --dash-radius:         10px;
+    --dash-radius-lg:      14px;
+    --dash-shadow-sm:      0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    --dash-shadow-card:    0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+}
+
+/* Dark Mode Tokens */
+html[data-theme='dark'],
+[data-bs-theme='dark'] {
+    --dash-bg:             #09090B;
+    --dash-surface:        #111115;
+    --dash-surface-muted:  #18181C;
+    --dash-surface-hover:  #222228;
+    --dash-border:         #27272A;
+    --dash-border-strong:  #3F3F46;
+    --dash-text:           #FAFAFA;
+    --dash-text-muted:     #A1A1AA;
+    --dash-text-subtle:    #71717A;
+    
+    --dash-primary:        #6366F1;
+    --dash-primary-hover:  #4F46E5;
+    --dash-primary-subtle: rgba(99, 102, 241, 0.12);
+    --dash-primary-border: rgba(99, 102, 241, 0.28);
+    
+    --dash-success:        #22C55E;
+    --dash-success-subtle: rgba(34, 197, 94, 0.12);
+    --dash-success-border: rgba(34, 197, 94, 0.25);
+    
+    --dash-warning:        #F59E0B;
+    --dash-warning-subtle: rgba(245, 158, 11, 0.12);
+    --dash-warning-border: rgba(245, 158, 11, 0.25);
+    
+    --dash-shadow-sm:      0 1px 2px 0 rgba(0, 0, 0, 0.35);
+    --dash-shadow-card:    0 2px 4px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   2. APPLICATION SHELL & LAYOUT
+   -------------------------------------------------------------------------- */
+.dash-shell {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--dash-bg);
+    color: var(--dash-text);
+    font-family: inherit;
+}
+
+/* Main Area Container with sensible max-width */
+.dash-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--dash-bg);
+    align-items: center;
+}
+
+.dash-content {
+    width: 100%;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 2rem 2rem 4.5rem 2rem;
+}
+
+/* --------------------------------------------------------------------------
+   3. LEFT SIDEBAR NAVIGATION
+   -------------------------------------------------------------------------- */
+.dash-sidebar {
+    width: var(--dash-sidebar-width);
+    flex-shrink: 0;
+    background-color: var(--dash-surface);
+    border-right: 1px solid var(--dash-border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 1020;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Brand Header */
+.dash-sidebar-header {
+    padding: 1.15rem 1.15rem 0.95rem 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.dash-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    text-decoration: none;
+    color: var(--dash-text);
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: -0.02em;
+}
+
+.dash-brand img {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+}
+
+.dash-brand-accent {
+    color: var(--dash-primary);
+}
+
+.dash-sidebar-close {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--dash-text-muted);
+    font-size: 1.2rem;
+    padding: 0.25rem;
+    cursor: pointer;
+}
+
+/* Sidebar Nav Groups */
+.dash-sidebar-nav {
+    flex: 1;
+    padding: 0.85rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+}
+
+.dash-nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+}
+
+.dash-nav-label {
+    font-size: 0.675rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--dash-text-subtle);
+    padding: 0.35rem 0.65rem 0.25rem 0.65rem;
+}
+
+/* Navigation Links */
+.dash-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--dash-radius-sm);
+    color: var(--dash-text-muted);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background 0.15s ease, color 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.dash-nav-link i {
+    font-size: 0.95rem;
+    width: 18px;
+    text-align: center;
+    color: var(--dash-text-subtle);
+    transition: color 0.15s ease;
+}
+
+.dash-nav-link:hover {
+    background-color: var(--dash-surface-hover);
+    color: var(--dash-text);
+}
+
+.dash-nav-link:hover i {
+    color: var(--dash-text);
+}
+
+/* Active Page Indicator: Clear, professional accent */
+.dash-nav-link.active {
+    background-color: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+    font-weight: 600;
+    border-left: 3px solid var(--dash-primary);
+    border-radius: 0 var(--dash-radius-sm) var(--dash-radius-sm) 0;
+}
+
+.dash-nav-link.active i {
+    color: var(--dash-primary);
+}
+
+/* Sidebar Bottom Footer / Identity */
+.dash-sidebar-footer {
+    padding: 0.75rem 0.75rem;
+    border-top: 1px solid var(--dash-border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.dash-user-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: var(--dash-radius-sm);
+    text-decoration: none;
+    color: var(--dash-text);
+    transition: background 0.15s ease;
+}
+
+.dash-user-badge:hover {
+    background-color: var(--dash-surface-hover);
+    color: var(--dash-text);
+}
+
+.dash-user-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.dash-user-name {
+    font-size: 0.835rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+.dash-user-sub {
+    font-size: 0.735rem;
+    color: var(--dash-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+/* Theme Toggle Button in Sidebar */
+.dash-theme-btn {
+    background: transparent;
+    border: none;
+    color: var(--dash-text-muted);
+    font-size: 0.95rem;
+    padding: 0.35rem;
+    border-radius: var(--dash-radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.dash-theme-btn:hover {
+    background-color: var(--dash-surface-hover);
+    color: var(--dash-text);
+}
+
+/* Mobile Header Bar */
+.dash-mobile-header {
+    display: none;
+    height: 56px;
+    width: 100%;
+    background-color: var(--dash-surface);
+    border-bottom: 1px solid var(--dash-border);
+    padding: 0 1.25rem;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1010;
+}
+
+.dash-mobile-toggle {
+    background: transparent;
+    border: none;
+    color: var(--dash-text);
+    font-size: 1.4rem;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.dash-sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 1015;
+}
+
+/* --------------------------------------------------------------------------
+   4. HEADER / GREETING
+   -------------------------------------------------------------------------- */
+.dash-header-section {
+    margin-bottom: 1.65rem;
+}
+
+.dash-greeting {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--dash-text);
+    margin-bottom: 0.2rem;
+    line-height: 1.2;
+}
+
+.dash-subgreeting {
+    font-size: 0.925rem;
+    color: var(--dash-text-muted);
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.dash-subgreeting-track {
+    color: var(--dash-text);
+    font-weight: 600;
+}
+
+.dash-subgreeting-link {
+    color: var(--dash-primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.885rem;
+}
+
+.dash-subgreeting-link:hover {
+    text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   5. PRIMARY HERO FEATURE: "YOUR NEXT STEP" (Height Reduced by ~25-30%)
+   -------------------------------------------------------------------------- */
+.dash-next-step-card {
+    background-color: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.65rem;
+    box-shadow: var(--dash-shadow-card);
+    position: relative;
+    overflow: hidden;
+}
+
+.dash-next-step-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: var(--dash-primary);
+}
+
+.dash-step-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.45rem;
+}
+
+.dash-step-pretitle {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.725rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--dash-primary);
+}
+
+.dash-step-progress-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.775rem;
+    font-weight: 600;
+    color: var(--dash-text-muted);
+}
+
+.dash-step-progress-mini {
+    width: 80px;
+    height: 5px;
+    background-color: var(--dash-border);
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.dash-step-progress-fill {
+    height: 100%;
+    background-color: var(--dash-primary);
+    border-radius: 9999px;
+    transition: width 0.4s ease;
+}
+
+.dash-step-body {
+    margin-bottom: 0.75rem;
+}
+
+.dash-step-title {
+    font-size: 1.225rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--dash-text);
+    margin-bottom: 0.2rem;
+    line-height: 1.25;
+}
+
+.dash-step-context {
+    font-size: 0.885rem;
+    color: var(--dash-text-muted);
+    line-height: 1.35;
+}
+
+.dash-step-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.dash-step-why {
+    flex: 1;
+    min-width: 250px;
+    background-color: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-sm);
+    padding: 0.45rem 0.85rem;
+    font-size: 0.825rem;
+    color: var(--dash-text-muted);
+    line-height: 1.45;
+}
+
+.dash-step-why strong {
+    color: var(--dash-text);
+    font-weight: 600;
+}
+
+.dash-step-btn {
+    flex-shrink: 0;
+    padding: 0.5rem 1.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   6. "YOUR CAREER JOURNEY" STEPPER
+   -------------------------------------------------------------------------- */
+.dash-journey-section {
+    margin-bottom: 1.85rem;
+}
+
+.dash-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.85rem;
+}
+
+.dash-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--dash-text);
+    margin-bottom: 0;
+}
+
+/* Stepper Track */
+.dash-journey-track {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.75rem;
+    background-color: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg);
+    padding: 1.15rem;
+    box-shadow: var(--dash-shadow-card);
+}
+
+.dash-journey-node {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    padding: 0.5rem;
+    border-radius: var(--dash-radius-sm);
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s ease;
+}
+
+.dash-journey-node:hover {
+    background-color: var(--dash-surface-hover);
+}
+
+.dash-node-indicator {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+    flex-shrink: 0;
+    border: 2px solid transparent;
+}
+
+/* State: Complete */
+.dash-journey-node.complete .dash-node-indicator {
+    background-color: var(--dash-success-subtle);
+    color: var(--dash-success);
+    border-color: var(--dash-success-border);
+}
+.dash-journey-node.complete .dash-node-status {
+    color: var(--dash-success);
+}
+
+/* State: In Progress */
+.dash-journey-node.in-progress .dash-node-indicator {
+    background-color: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+    border-color: var(--dash-primary-border);
+}
+.dash-journey-node.in-progress .dash-node-status {
+    color: var(--dash-primary);
+}
+
+/* State: Current */
+.dash-journey-node.current .dash-node-indicator {
+    background-color: var(--dash-primary);
+    color: #FFFFFF;
+    box-shadow: 0 0 0 3px var(--dash-primary-subtle);
+    border-color: transparent;
+}
+.dash-journey-node.current .dash-node-status {
+    color: var(--dash-primary);
+    font-weight: 700;
+}
+
+/* State: Not Started */
+.dash-journey-node.not-started .dash-node-indicator {
+    background-color: var(--dash-surface-muted);
+    color: var(--dash-text-subtle);
+    border-color: var(--dash-border);
+}
+.dash-journey-node.not-started .dash-node-status {
+    color: var(--dash-text-subtle);
+}
+
+.dash-node-title {
+    font-size: 0.825rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin-bottom: 0.15rem;
+    line-height: 1.2;
+}
+
+.dash-journey-node.not-started .dash-node-title {
+    color: var(--dash-text-muted);
+}
+
+.dash-node-detail {
+    font-size: 0.725rem;
+    color: var(--dash-text-muted);
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+.dash-node-status {
+    font-size: 0.675rem;
+    font-weight: 600;
+    margin-top: 0.35rem;
+    display: inline-block;
+}
+
+/* --------------------------------------------------------------------------
+   7. TWO-COLUMN GRID: CURRENT ROADMAP & CAREER READINESS
+   -------------------------------------------------------------------------- */
+.dash-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.35rem;
+    margin-bottom: 1.85rem;
+}
+
+.dash-panel-card {
+    background-color: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg);
+    padding: 1.35rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--dash-shadow-card);
+}
+
+.dash-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.15rem;
+}
+
+.dash-panel-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Roadmap Details Inside Panel */
+.dash-roadmap-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    margin-bottom: 0.25rem;
+}
+
+.dash-roadmap-meta {
+    font-size: 0.85rem;
+    color: var(--dash-text-muted);
+    margin-bottom: 0.85rem;
+}
+
+.dash-roadmap-milestone-box {
+    background-color: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-sm);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.15rem;
+}
+
+.dash-milestone-label {
+    font-size: 0.725rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--dash-text-muted);
+    margin-bottom: 0.2rem;
+}
+
+.dash-milestone-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin-bottom: 0.15rem;
+}
+
+.dash-milestone-count {
+    font-size: 0.775rem;
+    color: var(--dash-text-muted);
+}
+
+/* Career Readiness Panel */
+.dash-readiness-desc {
+    font-size: 0.8rem;
+    color: var(--dash-text-muted);
+    line-height: 1.45;
+    margin-bottom: 1.15rem;
+}
+
+.dash-readiness-score-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 1.15rem;
+}
+
+.dash-readiness-big-score {
+    font-size: 2.35rem;
+    font-weight: 800;
+    color: var(--dash-text);
+    line-height: 1;
+    letter-spacing: -0.03em;
+}
+
+.dash-readiness-score-unit {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--dash-text-muted);
+}
+
+.dash-breakdown-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.dash-breakdown-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.825rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.dash-breakdown-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.dash-breakdown-label {
+    color: var(--dash-text-muted);
+}
+
+.dash-breakdown-val {
+    font-weight: 600;
+    color: var(--dash-text);
+}
+
+/* --------------------------------------------------------------------------
+   8. "RECOMMENDED FOR YOU"
+   -------------------------------------------------------------------------- */
+.dash-recommendations-section {
+    margin-bottom: 1.85rem;
+}
+
+.dash-rec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+.dash-rec-card {
+    background-color: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius);
+    padding: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--dash-shadow-card);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dash-rec-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--dash-border-strong);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    color: inherit;
+}
+
+.dash-rec-badge {
+    font-size: 0.675rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--dash-radius-sm);
+    display: inline-block;
+    align-self: flex-start;
+    margin-bottom: 0.65rem;
+    background-color: var(--dash-surface-muted);
+    color: var(--dash-text-muted);
+    border: 1px solid var(--dash-border);
+}
+
+.dash-rec-title {
+    font-size: 0.925rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin-bottom: 0.3rem;
+    line-height: 1.3;
+}
+
+.dash-rec-subtitle {
+    font-size: 0.8rem;
+    color: var(--dash-text-muted);
+    line-height: 1.4;
+    margin-bottom: 0.85rem;
+    flex-grow: 1;
+}
+
+.dash-rec-action {
+    font-size: 0.825rem;
+    font-weight: 600;
+    color: var(--dash-primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: auto;
+}
+
+/* --------------------------------------------------------------------------
+   9. COMPACT JOB TRACKER SUMMARY
+   -------------------------------------------------------------------------- */
+.dash-tracker-card {
+    background-color: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg);
+    padding: 1.15rem 1.4rem;
+    box-shadow: var(--dash-shadow-card);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.dash-tracker-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.dash-tracker-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--dash-radius-sm);
+    background-color: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.dash-tracker-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    margin-bottom: 0.15rem;
+}
+
+.dash-tracker-metrics {
+    font-size: 0.825rem;
+    color: var(--dash-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.dash-tracker-badge-warning {
+    font-size: 0.725rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: var(--dash-radius-sm);
+    background-color: var(--dash-warning-subtle);
+    color: var(--dash-warning);
+    border: 1px solid var(--dash-warning-border);
+    font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   10. BUTTONS & CONTROLS
+   -------------------------------------------------------------------------- */
+.dash-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    background-color: var(--dash-primary);
+    color: #FFFFFF !important;
+    border: 1px solid transparent;
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--dash-radius-sm);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.dash-btn-primary:hover {
+    background-color: var(--dash-primary-hover);
+    transform: translateY(-1px);
+    color: #FFFFFF !important;
+    text-decoration: none;
+}
+
+.dash-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    background-color: var(--dash-surface);
+    color: var(--dash-text) !important;
+    border: 1px solid var(--dash-border);
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--dash-radius-sm);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.dash-btn-secondary:hover {
+    background-color: var(--dash-surface-hover);
+    border-color: var(--dash-border-strong);
+    color: var(--dash-text) !important;
+    text-decoration: none;
+}
+
+.dash-btn-sm {
+    padding: 0.38rem 0.95rem;
+    font-size: 0.8rem;
+}
+
+/* --------------------------------------------------------------------------
+   11. AVATAR / IMAGE FALLBACK COMPONENT
+   -------------------------------------------------------------------------- */
+.dash-avatar-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background-color: var(--dash-primary-subtle);
+    border: 1px solid var(--dash-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dash-avatar-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dash-avatar-initials {
+    font-size: 0.775rem;
+    font-weight: 700;
+    color: var(--dash-primary);
+    text-transform: uppercase;
+    user-select: none;
+    line-height: 1;
+}
+
+/* --------------------------------------------------------------------------
+   12. EMPTY STATES
+   -------------------------------------------------------------------------- */
+.dash-empty-state {
+    padding: 1.5rem 1rem;
+    text-align: center;
+    color: var(--dash-text-muted);
+}
+
+.dash-empty-icon {
+    font-size: 1.65rem;
+    color: var(--dash-text-subtle);
+    margin-bottom: 0.4rem;
+}
+
+.dash-empty-text {
+    font-size: 0.85rem;
+    margin-bottom: 0.9rem;
+}
+
+/* --------------------------------------------------------------------------
+   13. RESPONSIVE BREAKPOINTS
+   -------------------------------------------------------------------------- */
+@media (max-width: 991.98px) {
+    .dash-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        height: 100vh;
+        transform: translateX(-100%);
+        z-index: 1050;
+        box-shadow: none;
+    }
+    
+    .dash-sidebar.open {
+        transform: translateX(0);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.35);
+    }
+    
+    .dash-sidebar-close {
+        display: block;
+    }
+    
+    .dash-sidebar-overlay.active {
+        display: block;
+    }
+    
+    .dash-mobile-header {
+        display: flex;
+    }
+    
+    .dash-content {
+        padding: 1.5rem 1.25rem 4rem 1.25rem;
+    }
+    
+    .dash-journey-track {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.85rem;
+    }
+    
+    .dash-grid-2col {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .dash-content {
+        padding: 1.25rem 1rem 3rem 1rem;
+    }
+    
+    .dash-greeting {
+        font-size: 1.45rem;
+    }
+    
+    .dash-journey-track {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.65rem;
+    }
+    
+    .dash-rec-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .dash-tracker-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .dash-step-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .dash-step-btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   14. ACCESSIBILITY & REDUCED MOTION
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+:focus-visible {
+    outline: 2px solid var(--dash-primary);
+    outline-offset: 2px;
+}

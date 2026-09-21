@@ -1,0 +1,95 @@
+{% load static %}
+<!-- CareerCatalyst Left Application Sidebar -->
+<aside class="dash-sidebar" id="dashboardSidebar" aria-label="Main Application Sidebar">
+    <!-- Sidebar Header / Brand -->
+    <div class="dash-sidebar-header">
+        <a href="{% url 'dashboard' %}" class="dash-brand">
+            <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="28" height="28">
+            <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+        </a>
+        <button type="button" class="dash-sidebar-close" id="sidebarCloseBtn" aria-label="Close navigation sidebar">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <!-- Navigation Groups -->
+    <nav class="dash-sidebar-nav">
+        <!-- WORKSPACE -->
+        <div class="dash-nav-group">
+            <span class="dash-nav-label">Workspace</span>
+            <a href="{% url 'dashboard' %}" class="dash-nav-link active">
+                <i class="bi bi-grid-fill"></i>
+                <span>Overview</span>
+            </a>
+            <a href="{% url 'roadmaps:path_list' %}" class="dash-nav-link">
+                <i class="bi bi-map"></i>
+                <span>My Roadmap</span>
+            </a>
+            <a href="{% url 'recommendation:dashboard' %}" class="dash-nav-link">
+                <i class="bi bi-compass"></i>
+                <span>Career Guidance</span>
+            </a>
+        </div>
+
+        <!-- TOOLS -->
+        <div class="dash-nav-group">
+            <span class="dash-nav-label">Tools</span>
+            <a href="{% url 'resume:list' %}" class="dash-nav-link">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Resume</span>
+            </a>
+            <a href="{% url 'interviews:hub' %}" class="dash-nav-link">
+                <i class="bi bi-mortarboard"></i>
+                <span>Interview Prep</span>
+            </a>
+            <a href="{% url 'tracker:kanban' %}" class="dash-nav-link">
+                <i class="bi bi-kanban"></i>
+                <span>Job Tracker</span>
+            </a>
+        </div>
+
+        <!-- COMMUNITY -->
+        <div class="dash-nav-group">
+            <span class="dash-nav-label">Community</span>
+            <a href="{% url 'community:hub' %}" class="dash-nav-link">
+                <i class="bi bi-people"></i>
+                <span>Community</span>
+            </a>
+            <a href="{% url 'community:mentor_list' %}" class="dash-nav-link">
+                <i class="bi bi-person-workspace"></i>
+                <span>Mentors</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Sidebar Bottom: Settings, Theme & User Card -->
+    <div class="dash-sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between px-2 py-1">
+            <a href="{% url 'profile_edit' %}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-2 hover-text-dark">
+                <i class="bi bi-gear"></i>
+                <span>Settings</span>
+            </a>
+            <button type="button" class="dash-theme-btn" onclick="window.toggleAppTheme(event)" title="Toggle light/dark theme" aria-label="Toggle theme">
+                <i class="bi bi-circle-half"></i>
+            </button>
+        </div>
+
+        <div class="dash-user-badge">
+            <div class="dash-avatar-circle">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none;">{{ user_initials }}</span>
+                {% else %}
+                    <span class="dash-avatar-initials">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+            <div class="dash-user-info">
+                <div class="dash-user-name">{{ user.first_name|default:user.username }} {{ user.last_name }}</div>
+                <div class="dash-user-sub">{{ target_career|default:"Engineering Student" }}</div>
+            </div>
+            <a href="{% url 'logout' %}" class="text-muted p-1" title="Sign out" aria-label="Sign out">
+                <i class="bi bi-box-arrow-right" style="font-size: 0.95rem;"></i>
+            </a>
+        </div>
+    </div>
+</aside>

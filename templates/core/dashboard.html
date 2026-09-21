@@ -1,615 +1,345 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Dashboard | Career Catalyst{% endblock %}
+{% block title %}CareerCatalyst — Dashboard{% endblock %}
 
 {% block extra_css %}
-<style>
-    .dashboard-pulse-card {
-        background: var(--card-bg, #ffffff);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 1.25rem 1.5rem;
-        transition: all 0.25s ease;
-    }
-    .dashboard-pulse-card:hover {
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
-        border-color: var(--primary);
-    }
-
-    .bento-card {
-        background: var(--card-bg, #ffffff);
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 1.75rem;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .bento-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        border-color: var(--primary);
-    }
-
-    .bento-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, var(--primary), var(--accent, #14b8a6));
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-
-    .bento-card:hover::before {
-        opacity: 1;
-    }
-
-    .icon-badge-box {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-        flex-shrink: 0;
-    }
-
-    .pipeline-chip {
-        background: var(--bg, #f8fafc);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.8rem;
-    }
-
-    [data-bs-theme="dark"] .pipeline-chip {
-        background: rgba(30, 41, 59, 0.6);
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
 {% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-3">
-    
-    <!-- Top Greeting & Header Bar -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-        <div>
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill fw-semibold small">
-                    <i class="bi bi-grid-fill me-1"></i> Command Center
-                </span>
-                <span class="text-muted small">
-                    <i class="bi bi-calendar3 me-1"></i> {{ user.first_name }}'s Workspace
-                </span>
-            </div>
-            <h2 class="fw-bold text-secondary mb-0">
-                Welcome back, {{ user.first_name }}!
-            </h2>
-            <p class="text-muted small mb-0 mt-1">
-                {% if profile.career_goal %}
-                    Target: <strong class="text-secondary">{{ profile.career_goal }}</strong>
-                {% elif profile.preferred_domain %}
-                    Target: <strong class="text-secondary">{{ profile.preferred_domain }}</strong>
+{# Override navbar, footer, and floating chatbot for a calm, professional application shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none; font-size: 0.7rem;">{{ user_initials }}</span>
                 {% else %}
-                    Set your target career goal below to get tailored recommendations
+                    <span class="dash-avatar-initials" style="font-size: 0.7rem;">{{ user_initials }}</span>
                 {% endif %}
-                {% if profile.college %} &bull; {{ profile.college }}{% endif %}
-            </p>
-        </div>
+            </div>
+        </header>
 
-        <!-- Quick Launch Actions -->
-        <div class="d-flex align-items-center gap-2">
-            <a href="{% url 'tracker:kanban' %}" class="btn btn-outline-primary rounded-pill px-3 shadow-sm btn-sm">
-                <i class="bi bi-plus-lg me-1"></i> Track Job
-            </a>
-            <a href="{% url 'recommendation:dashboard' %}" class="btn btn-primary-custom rounded-pill px-4 shadow-sm btn-sm">
-                <i class="bi bi-robot me-1"></i> Check Readiness
-            </a>
-        </div>
-    </div>
+        <!-- Dashboard Content Container (Max width 1240px, centered) -->
+        <main class="dash-content">
+            <!-- 1. Header / Greeting Section -->
+            <section class="dash-header-section" aria-label="Greeting">
+                <h1 class="dash-greeting">{{ greeting_time }}, {{ user.first_name|default:user.username }}.</h1>
+                <p class="dash-subgreeting">
+                    {% if target_career %}
+                        <span class="dash-subgreeting-track">{{ target_career }}</span>
+                        {% if profile.college %}
+                            <span class="text-muted">&bull;</span>
+                            <span>{{ profile.college }}</span>
+                        {% endif %}
+                    {% else %}
+                        <span>Choose a target career to start building your career journey.</span>
+                        <a href="{% url 'profile_edit' %}" class="dash-subgreeting-link">Set career goal &rarr;</a>
+                    {% endif %}
+                </p>
+            </section>
 
-    <!-- Daily Pulse Stats Row -->
-    <div class="row g-3 mb-4">
-        <!-- Pulse 1: Target Goal -->
-        <div class="col-6 col-lg-3">
-            <div class="dashboard-pulse-card">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <span class="text-muted small fw-medium">Target Track</span>
-                    <div class="icon-badge-box bg-primary bg-opacity-10 text-primary" style="width: 32px; height: 32px; font-size: 0.95rem;">
-                        <i class="bi bi-bullseye"></i>
+            <!-- 2. Primary Hero Feature: "Your Next Step" (Compact Height) -->
+            <section class="dash-next-step-card" aria-label="Your Next Step">
+                <div class="dash-step-top">
+                    <div class="dash-step-pretitle">
+                        <i class="bi {{ next_step.icon }}"></i>
+                        <span>Your Next Step &bull; {{ next_step.category }}</span>
+                    </div>
+                    <div class="dash-step-progress-pill" title="Current progress: {{ next_step.progress }}%">
+                        <div class="dash-step-progress-mini" role="progressbar" aria-valuenow="{{ next_step.progress }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="dash-step-progress-fill" style="width: {{ next_step.progress }}%;"></div>
+                        </div>
+                        <span>{{ next_step.progress }}%</span>
                     </div>
                 </div>
-                <div class="fw-bold text-secondary text-truncate" style="font-size: 1.05rem;">
-                    {{ target_career|default:"Tech & Engineering" }}
-                </div>
-                <span class="text-muted" style="font-size: 0.75rem;">
-                    {{ skills_list|length }} verified skill{{ skills_list|length|pluralize }}
-                </span>
-            </div>
-        </div>
 
-        <!-- Pulse 2: Active Roadmap -->
-        <div class="col-6 col-lg-3">
-            <div class="dashboard-pulse-card">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <span class="text-muted small fw-medium">Active Roadmap</span>
-                    <div class="icon-badge-box bg-success bg-opacity-10 text-success" style="width: 32px; height: 32px; font-size: 0.95rem;">
-                        <i class="bi bi-map"></i>
+                <div class="dash-step-body">
+                    <h2 class="dash-step-title">{{ next_step.title }}</h2>
+                    <div class="dash-step-context">{{ next_step.subtitle }}</div>
+                </div>
+
+                <div class="dash-step-footer">
+                    <div class="dash-step-why">
+                        <strong>Why this matters:</strong> {{ next_step.why }}
                     </div>
+                    <a href="{{ next_step.cta_url }}" class="dash-btn-primary dash-step-btn">
+                        <span>{{ next_step.cta_text }}</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
                 </div>
-                <div class="fw-bold text-secondary text-truncate" style="font-size: 1.05rem;">
-                    {% if active_enrollment %}
-                        {{ active_enrollment.career_path.name }}
-                    {% else %}
-                        Not Enrolled
-                    {% endif %}
-                </div>
-                <span class="text-muted" style="font-size: 0.75rem;">
-                    {% if active_enrollment %}
-                        12-Week Track Enrolled
-                    {% else %}
-                        15+ tracks available
-                    {% endif %}
-                </span>
-            </div>
-        </div>
+            </section>
 
-        <!-- Pulse 3: Applications Pipeline -->
-        <div class="col-6 col-lg-3">
-            <div class="dashboard-pulse-card">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <span class="text-muted small fw-medium">Job Pipeline</span>
-                    <div class="icon-badge-box bg-info bg-opacity-10 text-info" style="width: 32px; height: 32px; font-size: 0.95rem;">
+            <!-- 3. "Your Career Journey" - Educational Progress Path -->
+            <section class="dash-journey-section" aria-label="Career Journey">
+                <div class="dash-section-header">
+                    <h3 class="dash-section-title">Your Career Journey</h3>
+                </div>
+
+                <div class="dash-journey-track">
+                    {% for step in career_journey %}
+                    <a href="{{ step.url }}" class="dash-journey-node {{ step.status }}">
+                        <div class="dash-node-indicator">
+                            {% if step.status == 'complete' %}
+                                <i class="bi bi-check-lg"></i>
+                            {% elif step.status == 'current' %}
+                                <i class="bi bi-circle-fill" style="font-size: 0.55rem;"></i>
+                            {% else %}
+                                <span>{{ forloop.counter }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="dash-node-title">{{ step.title }}</div>
+                        <div class="dash-node-detail text-truncate" title="{{ step.detail }}">{{ step.detail }}</div>
+                        <span class="dash-node-status">{{ step.status_text }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- 4. Two-Column Row: Current Roadmap + Career Readiness -->
+            <div class="dash-grid-2col">
+                <!-- Column 1: Current Roadmap -->
+                <section class="dash-panel-card" aria-label="Current Roadmap">
+                    <div class="dash-panel-header">
+                        <h3 class="dash-panel-title">
+                            <i class="bi bi-map text-primary"></i>
+                            <span>Current Roadmap</span>
+                        </h3>
+                        {% if active_enrollment %}
+                            {% if different_from_target %}
+                                <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-2.5 py-1 small fw-semibold" title="Enrolled track differs from Target Goal">
+                                    Active Track (Target: {{ target_career }})
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small fw-semibold">
+                                    Enrolled Track
+                                </span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+
+                    {% if active_enrollment %}
+                        <div class="dash-roadmap-name">{{ active_enrollment.career_path.name }}</div>
+                        <div class="dash-roadmap-meta">
+                            {{ roadmap_completed_count }} of {{ roadmap_total_topics }} topics completed ({{ roadmap_progress }}%)
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="dash-step-progress-row mb-3">
+                            <div class="dash-step-progress-bar" role="progressbar" aria-valuenow="{{ roadmap_progress }}" aria-valuemin="0" aria-valuemax="100">
+                                <div class="dash-step-progress-fill" style="width: {{ roadmap_progress }}%;"></div>
+                            </div>
+                            <span class="dash-step-progress-label">{{ roadmap_progress }}%</span>
+                        </div>
+
+                        <!-- Milestone Box -->
+                        <div class="dash-roadmap-milestone-box">
+                            {% if current_milestone %}
+                                <div class="dash-milestone-label">Current Milestone &bull; Week {{ current_milestone.week_number }}</div>
+                                <div class="dash-milestone-title">{{ current_milestone.title }}</div>
+                                <div class="dash-milestone-count">
+                                    Next topic: <strong>{{ current_topic.title }}</strong> ({{ milestone_completed_topics }} of {{ milestone_total_topics }} in milestone)
+                                </div>
+                            {% else %}
+                                <div class="dash-milestone-label">Milestone Status</div>
+                                <div class="dash-milestone-title">All milestones completed!</div>
+                                <div class="dash-milestone-count">You have finished all topics in this track.</div>
+                            {% endif %}
+                        </div>
+
+                        {% if different_from_target %}
+                        <div class="mb-3 small text-muted">
+                            Looking for your target role? <a href="{% url 'roadmaps:path_list' %}" class="fw-semibold text-primary text-decoration-none">Explore {{ target_career }} roadmaps &rarr;</a>
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-auto pt-2">
+                            <a href="{% url 'roadmaps:path_detail' active_enrollment.career_path.slug %}" class="dash-btn-primary w-100">
+                                <span>Continue roadmap</span>
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="dash-empty-state">
+                            <div class="dash-empty-icon"><i class="bi bi-compass"></i></div>
+                            <h4 class="h6 fw-bold text-secondary mb-1">No active roadmap yet</h4>
+                            <p class="dash-empty-text">Choose a structured 12-week roadmap aligned with your target career.</p>
+                            <a href="{% url 'roadmaps:path_list' %}" class="dash-btn-primary">
+                                <span>Explore roadmaps</span>
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    {% endif %}
+                </section>
+
+                <!-- Column 2: Career Readiness -->
+                <section class="dash-panel-card" aria-label="Career Readiness">
+                    <div class="dash-panel-header">
+                        <h3 class="dash-panel-title">
+                            <i class="bi bi-speedometer2 text-primary"></i>
+                            <span>CareerCatalyst Readiness</span>
+                        </h3>
+                        {% if readiness_data.has_analysis %}
+                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold">
+                                Calibrated
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="dash-readiness-desc">
+                        An internal progress indicator based on your current profile, skills, roadmap progress, resume, and preparation.
+                    </p>
+
+                    {% if readiness_data.has_analysis %}
+                        <div class="dash-readiness-score-row">
+                            <span class="dash-readiness-big-score">{{ readiness_data.score }}%</span>
+                            <span class="dash-readiness-score-unit">readiness score</span>
+                        </div>
+                    {% else %}
+                        <div class="dash-readiness-score-row">
+                            <span class="dash-readiness-big-score" style="font-size: 1.85rem;">Ready</span>
+                            <span class="dash-readiness-score-unit">to benchmark</span>
+                        </div>
+                    {% endif %}
+
+                    <!-- Metric Breakdown List -->
+                    <div class="dash-breakdown-list">
+                        <div class="dash-breakdown-row">
+                            <span class="dash-breakdown-label">Profile setup</span>
+                            <span class="dash-breakdown-val">{{ readiness_data.profile_metric }}</span>
+                        </div>
+                        <div class="dash-breakdown-row">
+                            <span class="dash-breakdown-label">Technical skills</span>
+                            <span class="dash-breakdown-val">{{ readiness_data.skills_metric }}</span>
+                        </div>
+                        <div class="dash-breakdown-row">
+                            <span class="dash-breakdown-label">Roadmap completion</span>
+                            <span class="dash-breakdown-val">{{ readiness_data.roadmap_metric }}</span>
+                        </div>
+                        <div class="dash-breakdown-row">
+                            <span class="dash-breakdown-label">ATS resume benchmark</span>
+                            <span class="dash-breakdown-val">{{ readiness_data.resume_metric }}</span>
+                        </div>
+                        <div class="dash-breakdown-row">
+                            <span class="dash-breakdown-label">Interview practice</span>
+                            <span class="dash-breakdown-val">{{ readiness_data.interview_metric }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto pt-2">
+                        <a href="{% url 'recommendation:dashboard' %}" class="dash-btn-secondary w-100">
+                            <span>{% if readiness_data.has_analysis %}View readiness report{% else %}Check readiness{% endif %}</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 5. "Recommended for You" - 2 to 4 Meaningful Actions -->
+            <section class="dash-recommendations-section" aria-label="Recommended For You">
+                <div class="dash-section-header">
+                    <h3 class="dash-section-title">Recommended for You</h3>
+                </div>
+
+                <div class="dash-rec-grid">
+                    {% for rec in recommendations %}
+                    <a href="{{ rec.action_url }}" class="dash-rec-card">
+                        <span class="dash-rec-badge">{{ rec.badge }}</span>
+                        <div class="dash-rec-title">{{ rec.title }}</div>
+                        <div class="dash-rec-subtitle">{{ rec.subtitle }}</div>
+                        <div class="dash-rec-action">
+                            <span>{{ rec.action_text }}</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- 6. Compact Job Tracker Summary -->
+            <section class="dash-tracker-card" aria-label="Job Applications Summary">
+                <div class="dash-tracker-left">
+                    <div class="dash-tracker-icon">
                         <i class="bi bi-kanban"></i>
                     </div>
-                </div>
-                <div class="fw-bold text-secondary" style="font-size: 1.05rem;">
-                    {{ total_apps_count }} Active
-                    {% if offer_apps_count > 0 %}
-                        <span class="badge bg-success text-white small" style="font-size: 0.7rem;">{{ offer_apps_count }} Offer</span>
-                    {% endif %}
-                </div>
-                <span class="{% if followup_due_count > 0 %}text-warning fw-semibold{% else %}text-muted{% endif %}" style="font-size: 0.75rem;">
-                    {% if followup_due_count > 0 %}
-                        <i class="bi bi-alarm-fill me-1"></i>{{ followup_due_count }} follow-up{{ followup_due_count|pluralize }} due
-                    {% else %}
-                        All follow-ups current
-                    {% endif %}
-                </span>
-            </div>
-        </div>
-
-        <!-- Pulse 4: Profile Strength -->
-        <div class="col-6 col-lg-3">
-            <div class="dashboard-pulse-card">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <span class="text-muted small fw-medium">Profile Strength</span>
-                    <div class="icon-badge-box bg-primary bg-opacity-10 text-primary" style="width: 32px; height: 32px; font-size: 0.95rem;">
-                        <i class="bi bi-shield-check"></i>
+                    <div>
+                        <div class="dash-tracker-title">Job Applications</div>
+                        <div class="dash-tracker-metrics">
+                            {% if total_apps_count > 0 %}
+                                <span><strong>{{ total_apps_count }}</strong> application{{ total_apps_count|pluralize }}</span>
+                                <span class="text-muted">&bull;</span>
+                                <span><strong>{{ interview_apps_count }}</strong> interview{{ interview_apps_count|pluralize }}</span>
+                                {% if offer_apps_count > 0 %}
+                                    <span class="text-muted">&bull;</span>
+                                    <span class="text-success fw-semibold">{{ offer_apps_count }} offer{{ offer_apps_count|pluralize }}</span>
+                                {% endif %}
+                                {% if followup_due_count > 0 %}
+                                    <span class="dash-tracker-badge-warning ms-1">
+                                        <i class="bi bi-alarm me-1"></i>{{ followup_due_count }} follow-up{{ followup_due_count|pluralize }} due
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span>No active applications tracked yet. Keep your pipeline organized.</span>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-                <div class="fw-bold text-secondary" style="font-size: 1.05rem;">
-                    {{ completion_percentage }}% Complete
-                </div>
-                <div class="progress mt-1" style="height: 4px; border-radius: 4px;">
-                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ completion_percentage }}%;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- ADAPTIVE CAREER LAUNCH PLAN (Onboarding Checklist) -->
-    <div id="careerLaunchPlanCard" class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
-                    <div class="d-flex align-items-center gap-2">
-                        <h6 class="fw-bold text-secondary mb-0">Foundational Career Launch Plan</h6>
-                        {% if launch_plan.all_completed %}
-                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-0.5 small fw-semibold">All Done</span>
-                        {% endif %}
-                    </div>
-                    <p class="text-muted small mb-0 mt-1">Complete these 3 steps to unlock personalized AI guidance and tailored roadmaps.</p>
+                    <a href="{% url 'tracker:kanban' %}" class="dash-btn-secondary dash-btn-sm">
+                        <span>{% if total_apps_count > 0 %}Open Job Tracker{% else %}Start tracking{% endif %}</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 fw-semibold small">
-                        {{ launch_plan.completed_count }} of {{ launch_plan.total_count }} Done
-                    </span>
-                    <button type="button" class="btn btn-link text-muted p-0 ms-2 text-decoration-none" onclick="dismissLaunchPlan()" title="Dismiss" aria-label="Dismiss launch plan">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Progress bar -->
-            <div class="progress mb-3" style="height: 5px; background-color: rgba(0,0,0,0.05); border-radius: 50px;">
-                <div class="progress-bar bg-primary" role="progressbar" style="width: {% widthratio launch_plan.completed_count launch_plan.total_count 100 %}%; border-radius: 50px;"></div>
-            </div>
-
-            <!-- Steps Row -->
-            <div class="row g-3">
-                <!-- Step 1 -->
-                <div class="col-md-4">
-                    <div class="p-3 rounded-3 border d-flex align-items-center justify-content-between h-100 {% if launch_plan.step_1.completed %}bg-light bg-opacity-50 border-success border-opacity-25{% else %}bg-white{% endif %}">
-                        <div class="d-flex align-items-center gap-2">
-                            {% if launch_plan.step_1.completed %}
-                                <i class="bi bi-check-circle-fill text-success"></i>
-                            {% else %}
-                                <i class="bi bi-circle text-muted"></i>
-                            {% endif %}
-                            <div>
-                                <div class="fw-semibold text-secondary small">Target Career Goal</div>
-                                <div class="text-muted small text-truncate" style="max-width: 140px; font-size: 0.72rem;">{{ launch_plan.step_1.value }}</div>
-                            </div>
-                        </div>
-                        {% if not launch_plan.step_1.completed %}
-                            <a href="{% url 'profile_edit' %}" class="btn btn-outline-primary btn-xs py-1 px-2 rounded-pill small" style="font-size: 0.75rem;">Set Goal</a>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="col-md-4">
-                    <div class="p-3 rounded-3 border d-flex align-items-center justify-content-between h-100 {% if launch_plan.step_2.completed %}bg-light bg-opacity-50 border-success border-opacity-25{% else %}bg-white{% endif %}">
-                        <div class="d-flex align-items-center gap-2">
-                            {% if launch_plan.step_2.completed %}
-                                <i class="bi bi-check-circle-fill text-success"></i>
-                            {% else %}
-                                <i class="bi bi-circle text-muted"></i>
-                            {% endif %}
-                            <div>
-                                <div class="fw-semibold text-secondary small">Career Roadmap</div>
-                                <div class="text-muted small text-truncate" style="max-width: 140px; font-size: 0.72rem;">{{ launch_plan.step_2.value }}</div>
-                            </div>
-                        </div>
-                        {% if not launch_plan.step_2.completed %}
-                            <a href="{% url 'roadmaps:path_list' %}" class="btn btn-primary-custom btn-xs py-1 px-2 rounded-pill small" style="font-size: 0.75rem;">Enroll</a>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="col-md-4">
-                    <div class="p-3 rounded-3 border d-flex align-items-center justify-content-between h-100 {% if launch_plan.step_3.completed %}bg-light bg-opacity-50 border-success border-opacity-25{% else %}bg-white{% endif %}">
-                        <div class="d-flex align-items-center gap-2">
-                            {% if launch_plan.step_3.completed %}
-                                <i class="bi bi-check-circle-fill text-success"></i>
-                            {% else %}
-                                <i class="bi bi-circle text-muted"></i>
-                            {% endif %}
-                            <div>
-                                <div class="fw-semibold text-secondary small">Benchmark Resume</div>
-                                <div class="text-muted small text-truncate" style="max-width: 140px; font-size: 0.72rem;">{{ launch_plan.step_3.value }}</div>
-                            </div>
-                        </div>
-                        {% if not launch_plan.step_3.completed %}
-                            <a href="{% url 'ai_resume:analyze' %}" class="btn btn-outline-primary btn-xs py-1 px-2 rounded-pill small" style="font-size: 0.75rem;">Scan CV</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content Layout (2-Column Bento Hub + Right Flight Deck) -->
-    <div class="row g-4">
-        <!-- Left: Bento Grid Workspaces (8 Cols) -->
-        <div class="col-lg-8">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <h5 class="fw-bold text-secondary mb-0">
-                    <i class="bi bi-speedometer2 text-primary me-2"></i> Workspaces & Preparation Hub
-                </h5>
-                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1 small">Unified Suite</span>
-            </div>
-
-            <div class="row g-3 mb-4">
-                <!-- Bento 1: AI Career Guidance -->
-                <div class="col-md-6">
-                    <div class="bento-card">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="icon-badge-box bg-primary bg-opacity-10 text-primary">
-                                <i class="bi bi-robot"></i>
-                            </div>
-                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold">
-                                AI Engine
-                            </span>
-                        </div>
-                        
-                        <h5 class="fw-bold text-secondary mb-1">AI Career Guidance</h5>
-                        <p class="text-muted small mb-3 flex-grow-1" style="line-height: 1.55;">
-                            Detect missing skill gaps, get compliance ratings for your target role, and follow personalized action plans.
-                        </p>
-
-                        <div class="p-2 px-3 rounded-3 bg-light border mb-3 small text-muted d-flex align-items-center justify-content-between">
-                            <span><i class="bi bi-bullseye text-primary me-1"></i> Domain:</span>
-                            <strong class="text-secondary">{{ target_career|default:"Tech & Engineering" }}</strong>
-                        </div>
-
-                        <a href="{% url 'recommendation:dashboard' %}" class="btn btn-primary-custom btn-sm rounded-pill px-4 align-self-start shadow-sm mt-auto">
-                            Analyze Readiness <i class="bi bi-arrow-right ms-1"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Bento 2: Career Roadmaps -->
-                <div class="col-md-6">
-                    <div class="bento-card">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="icon-badge-box" style="background: rgba(20,184,166,0.1); color: var(--accent, #14b8a6);">
-                                <i class="bi bi-map"></i>
-                            </div>
-                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small fw-semibold">
-                                Learning Track
-                            </span>
-                        </div>
-                        
-                        <h5 class="fw-bold text-secondary mb-1">Career Roadmaps</h5>
-                        <p class="text-muted small mb-3 flex-grow-1" style="line-height: 1.55;">
-                            Structured 12-week milestones with curated documentation, weekly project goals, and verified industry skills.
-                        </p>
-
-                        <div class="p-2 px-3 rounded-3 bg-light border mb-3 small text-muted d-flex align-items-center justify-content-between">
-                            <span><i class="bi bi-check2-circle text-success me-1"></i> Active:</span>
-                            <strong class="text-secondary text-truncate" style="max-width: 160px;">
-                                {{ active_enrollment.career_path.name|default:"Explore 15+ Tracks" }}
-                            </strong>
-                        </div>
-
-                        <a href="{% url 'roadmaps:path_list' %}" class="btn btn-secondary-custom btn-sm rounded-pill px-4 align-self-start mt-auto">
-                            Explore Roadmaps <i class="bi bi-arrow-right ms-1"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Bento 3: Job Application CRM (Live Pipeline) -->
-                <div class="col-12">
-                    <div class="bento-card" style="background: linear-gradient(135deg, rgba(37,99,235,0.02) 0%, rgba(20,184,166,0.04) 100%);">
-                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="icon-badge-box bg-primary bg-opacity-10 text-primary">
-                                    <i class="bi bi-kanban"></i>
-                                </div>
-                                <div>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <h5 class="fw-bold text-secondary mb-0">Job Application CRM & Follow-Up Tracker</h5>
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-0.5 small fw-semibold">Active Pipeline</span>
-                                    </div>
-                                    <span class="text-muted small">Kanban pipeline with 10-second URL auto-add and recruiter follow-up alerts</span>
-                                </div>
-                            </div>
-                            <a href="{% url 'tracker:kanban' %}" class="btn btn-primary-custom btn-sm rounded-pill px-4 shadow-sm">
-                                Open Board <i class="bi bi-arrow-right ms-1"></i>
-                            </a>
-                        </div>
-
-                        <!-- Live Pipeline Status Chips -->
-                        <div class="row g-2 mb-2">
-                            <div class="col-3">
-                                <div class="pipeline-chip text-center">
-                                    <div class="fw-bold text-secondary">{{ applied_apps_count }}</div>
-                                    <div class="text-muted" style="font-size: 0.7rem;">Applied</div>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="pipeline-chip text-center">
-                                    <div class="fw-bold text-secondary">{{ assessment_apps_count }}</div>
-                                    <div class="text-muted" style="font-size: 0.7rem;">Assessment / OA</div>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="pipeline-chip text-center">
-                                    <div class="fw-bold text-primary">{{ interview_apps_count }}</div>
-                                    <div class="text-muted" style="font-size: 0.7rem;">Interviews</div>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="pipeline-chip text-center">
-                                    <div class="fw-bold text-success">{{ offer_apps_count }}</div>
-                                    <div class="text-muted" style="font-size: 0.7rem;">Offers 🎉</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {% if followup_due_count > 0 %}
-                        <div class="alert alert-warning p-2 px-3 mt-2 mb-0 rounded-3 d-flex align-items-center justify-content-between" style="font-size: 0.8rem;">
-                            <span class="d-flex align-items-center gap-2 fw-semibold text-warning">
-                                <i class="bi bi-alarm-fill"></i> {{ followup_due_count }} application(s) have passed 5 days without response.
-                            </span>
-                            <a href="{% url 'tracker:kanban' %}" class="btn btn-warning btn-xs py-0.5 px-3 rounded-pill fw-semibold" style="font-size: 0.75rem;">
-                                Send Follow-up &rarr;
-                            </a>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Bento 4: ATS Resume & Interview Hub -->
-                <div class="col-md-6">
-                    <div class="bento-card">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div class="icon-badge-box" style="background: rgba(37,99,235,0.08); color: var(--primary);">
-                                <i class="bi bi-file-earmark-person"></i>
-                            </div>
-                            <span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small">Resume Suite</span>
-                        </div>
-                        <h6 class="fw-bold text-secondary mb-1">Resume Tools & ATS Scanner</h6>
-                        <p class="text-muted small mb-3 flex-grow-1" style="line-height: 1.5;">
-                            Create clean, ATS-compliant resumes or benchmark your CV against real job postings for missing keywords.
-                        </p>
-                        <div class="d-flex gap-2 mt-auto">
-                            <a href="{% url 'resume:list' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 flex-grow-1">Builder</a>
-                            <a href="{% url 'ai_resume:history' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 flex-grow-1">Scan CV</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Bento 5: Interview Prep Hub -->
-                <div class="col-md-6">
-                    <div class="bento-card">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div class="icon-badge-box" style="background: rgba(37,99,235,0.08); color: var(--primary);">
-                                <i class="bi bi-mortarboard"></i>
-                            </div>
-                            <span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small">Practice Arena</span>
-                        </div>
-                        <h6 class="fw-bold text-secondary mb-1">Interview Prep Hub</h6>
-                        <p class="text-muted small mb-3 flex-grow-1" style="line-height: 1.5;">
-                            Practice technical coding challenges, domain MCQs, and proctored AI mock interview sessions.
-                        </p>
-                        <div class="d-flex gap-2 mt-auto">
-                            <a href="{% url 'interviews:hub' %}" class="btn btn-outline-primary btn-sm rounded-pill px-4 flex-grow-1">Start Practice &rarr;</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right: Student Flight Deck (4 Cols) -->
-        <div class="col-lg-4">
-            
-            <!-- Profile Overview Card -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    {% if profile.profile_picture %}
-                        <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle border border-2 border-primary object-fit-cover flex-shrink-0" style="width: 54px; height: 54px;">
-                    {% else %}
-                        <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center flex-shrink-0" style="width: 54px; height: 54px; font-size: 1.15rem;">
-                            {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
-                        </div>
-                    {% endif %}
-                    <div class="text-truncate">
-                        <h6 class="fw-bold text-secondary mb-0 text-truncate">{{ user.first_name }} {{ user.last_name }}</h6>
-                        <span class="text-muted small text-truncate d-block">{{ user.email }}</span>
-                    </div>
-                </div>
-
-                <div class="p-3 rounded-3 bg-light border mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="fw-semibold text-secondary small">Profile Completeness</span>
-                        <span class="fw-bold text-primary small">{{ completion_percentage }}%</span>
-                    </div>
-                    <div class="progress" style="height: 6px; border-radius: 4px;">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ completion_percentage }}%;"></div>
-                    </div>
-                </div>
-
-                <!-- Verified Checklist -->
-                <div class="d-flex flex-column gap-2 mb-3 small">
-                    <div class="d-flex align-items-center justify-content-between text-secondary">
-                        <span><i class="bi bi-check-circle-fill text-success me-2"></i> Academic Details</span>
-                        <span class="badge bg-light text-secondary border">{% if profile.degree %}Added{% else %}Missing{% endif %}</span>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between text-secondary">
-                        <span><i class="bi bi-check-circle-fill text-success me-2"></i> Technical Skills</span>
-                        <span class="badge bg-light text-secondary border">{{ skills_list|length }} Skills</span>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between text-secondary">
-                        <span><i class="bi bi-check-circle-fill text-success me-2"></i> Target Career Goal</span>
-                        <span class="badge bg-light text-secondary border">{% if profile.career_goal or profile.preferred_domain %}Set{% else %}Missing{% endif %}</span>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between text-secondary">
-                        <span><i class="bi bi-check-circle-fill text-success me-2"></i> Social / GitHub Links</span>
-                        <span class="badge bg-light text-secondary border">{% if profile.github_url or profile.linkedin_url %}Linked{% else %}Optional{% endif %}</span>
-                    </div>
-                </div>
-
-                <div class="d-flex gap-2">
-                    <a href="{% url 'profile_detail' %}" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">View Profile</a>
-                    <a href="{% url 'profile_edit' %}" class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1">Edit Profile</a>
-                </div>
-            </div>
-
-            <!-- Upcoming Events & Follow-Up Reminders Card -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h6 class="fw-bold text-secondary mb-0">
-                        <i class="bi bi-calendar-check text-primary me-2"></i> Action Items & Reminders
-                    </h6>
-                    <span class="badge bg-primary bg-opacity-10 text-primary small">Live</span>
-                </div>
-
-                {% if upcoming_interviews %}
-                    <div class="d-flex flex-column gap-2 mb-3">
-                        {% for interview in upcoming_interviews|slice:":2" %}
-                        <div class="p-2 px-3 rounded-3 border bg-light d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="fw-semibold text-secondary small">{{ interview.company_name }}</div>
-                                <div class="text-muted" style="font-size: 0.72rem;">{{ interview.role_title }} &bull; {{ interview.interview_date|date:"M d, H:i" }}</div>
-                            </div>
-                            <span class="badge bg-primary text-white small">Interview</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% elif followup_due_apps %}
-                    <div class="d-flex flex-column gap-2 mb-3">
-                        {% for due_app in followup_due_apps|slice:":2" %}
-                        <div class="p-2 px-3 rounded-3 border bg-warning bg-opacity-10 d-flex align-items-center justify-content-between">
-                            <div>
-                                <div class="fw-semibold text-secondary small">{{ due_app.company_name }}</div>
-                                <div class="text-muted" style="font-size: 0.72rem;">Applied {{ due_app.days_since_applied }} days ago</div>
-                            </div>
-                            <a href="{% url 'tracker:kanban' %}" class="btn btn-warning btn-xs py-0.5 px-2 rounded-pill small fw-semibold" style="font-size: 0.72rem;">Email</a>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-3 text-muted" style="font-size: 0.85rem;">
-                        <i class="bi bi-check2-all text-success d-block mb-1" style="font-size: 1.5rem;"></i>
-                        No urgent deadlines or follow-ups today! Keep sharpening your skills.
-                    </div>
-                {% endif %}
-
-                <a href="{% url 'tracker:kanban' %}" class="btn btn-outline-secondary btn-sm rounded-pill w-100 mt-2">
-                    Open Applications CRM &rarr;
-                </a>
-            </div>
-
-            <!-- Community & Mentors Connect -->
-            <div class="card border-0 shadow-sm rounded-4 p-4" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <i class="bi bi-people-fill text-primary"></i>
-                    <h6 class="fw-bold text-secondary mb-0">Community & Mentors</h6>
-                </div>
-                <p class="text-muted small mb-3" style="line-height: 1.5;">
-                    Connect with fellow engineering students, share interview questions, and schedule 1-on-1 sessions with industry mentors.
-                </p>
-                <a href="{% url 'community:hub' %}" class="btn btn-outline-primary btn-sm rounded-pill w-100">
-                    Visit Community Hub &rarr;
-                </a>
-            </div>
-
-        </div>
+            </section>
+        </main>
     </div>
 </div>
 
+<!-- Clean Vanilla JS for Mobile Sidebar Toggle -->
 <script>
-    function dismissLaunchPlan() {
-        const card = document.getElementById('careerLaunchPlanCard');
-        if (card) {
-            card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(-10px)';
-            setTimeout(() => card.remove(), 300);
-        }
-    }
+    (function() {
+        const toggleBtn = document.getElementById('sidebarToggleBtn');
+        const closeBtn = document.getElementById('sidebarCloseBtn');
+        const sidebar = document.getElementById('dashboardSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
 
-    document.addEventListener('DOMContentLoaded', () => {
-        try {
-            const isDismissed = localStorage.getItem('career_launch_plan_dismissed_{{ user.id }}');
-            if (isDismissed === 'true') {
-                const card = document.getElementById('careerLaunchPlanCard');
-                if (card) card.style.display = 'none';
-            }
-        } catch(e) {}
-    });
+        function openSidebar() {
+            if (sidebar) sidebar.classList.add('open');
+            if (overlay) overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            if (sidebar) sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+        if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
+    })();
 </script>
 {% endblock %}
