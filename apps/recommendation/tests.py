@@ -223,3 +223,89 @@ class RecommendationTests(TestCase):
             if '...' in name:
                 self.assertTrue(name.endswith('...'))
 
+    def test_sidebar_active_state_mutually_exclusive(self):
+        # 1. On /recommendation/
+        res_rec = self.client.get(reverse('recommendation:dashboard'))
+        self.assertEqual(res_rec.status_code, 200)
+        self.assertContains(res_rec, 'href="/recommendation/" class="dash-nav-link active"')
+        self.assertNotContains(res_rec, 'href="/dashboard/" class="dash-nav-link active"')
+        self.assertNotContains(res_rec, 'href="/roadmaps/" class="dash-nav-link active"')
+
+        # 2. On /dashboard/
+        res_dash = self.client.get(reverse('dashboard'))
+        self.assertEqual(res_dash.status_code, 200)
+        self.assertContains(res_dash, 'href="/dashboard/" class="dash-nav-link active"')
+        self.assertNotContains(res_dash, 'href="/recommendation/" class="dash-nav-link active"')
+        self.assertNotContains(res_dash, 'href="/roadmaps/" class="dash-nav-link active"')
+
+        # 3. On /roadmaps/
+        res_road = self.client.get(reverse('roadmaps:path_list'))
+        self.assertEqual(res_road.status_code, 200)
+        self.assertContains(res_road, 'href="/roadmaps/" class="dash-nav-link active"')
+        self.assertNotContains(res_road, 'href="/dashboard/" class="dash-nav-link active"')
+        self.assertNotContains(res_road, 'href="/recommendation/" class="dash-nav-link active"')
+
+    def test_completed_roadmap_state_renders_review_cta(self):
+        from apps.roadmaps.models import UserRoadmap, TopicProgress
+        analysis = generate_career_recommendation(self.user, "Software Engineer", company_tier='general')
+        user_roadmap = UserRoadmap.objects.create(user=self.user, career_path=self.path, is_active=True)
+        # Mark all topics in path as completed
+        TopicProgress.objects.create(user_roadmap=user_roadmap, topic=self.topic1, is_completed=True)
+        TopicProgress.objects.create(user_roadmap=user_roadmap, topic=self.topic2, is_completed=True)
+        self.assertEqual(user_roadmap.progress_percentage(), 100)
+
+        response = self.client.get(reverse('recommendation:dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context.get('is_path_completed'))
+        self.assertIsNone(response.context.get('next_active_week'))
+
+        # Must contain completed CTAs
+        self.assertContains(response, "Review Roadmap")
+        self.assertContains(response, "Open Interview Prep")
+        self.assertContains(response, "Curriculum Completed")
+        self.assertContains(response, "Track is 100% Complete")
+
+        # Must NOT contain contradictory in-progress text or Week 1
+        self.assertNotContains(response, "Continue Learning")
+        self.assertNotContains(response, "Resume at Week 1")
+
+    def test_incomplete_roadmap_advances_to_first_incomplete_week(self):
+        from apps.roadmaps.models import UserRoadmap, TopicProgress
+        # Create Week 2 milestone and topics
+        ms2 = Milestone.objects.create(
+            career_path=self.path,
+            week_number=2,
+            title="Backend Frameworks",
+            level="Intermediate",
+            order=1
+        )
+        Topic.objects.create(milestone=ms2, title="Django", resource_type="Documentation")
+        
+        generate_career_recommendation(self.user, "Software Engineer", company_tier='general')
+        user_roadmap = UserRoadmap.objects.create(user=self.user, career_path=self.path, is_active=True)
+        
+        # Complete all topics in Week 1 (topic1 and topic2)
+        TopicProgress.objects.create(user_roadmap=user_roadmap, topic=self.topic1, is_completed=True)
+        TopicProgress.objects.create(user_roadmap=user_roadmap, topic=self.topic2, is_completed=True)
+        
+        response = self.client.get(reverse('recommendation:dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context.get('is_path_completed'))
+        self.assertEqual(response.context.get('next_active_week'), 2)
+        
+        # Should show Week 2, not default to Week 1
+        self.assertContains(response, "Continue Learning (Week 2)")
+        self.assertContains(response, "Resume at <strong>Week 2</strong>")
+        self.assertNotContains(response, "Continue Learning (Week 1)")
+
+    def test_role_skill_match_and_alignment_labels(self):
+        generate_career_recommendation(self.user, "Software Engineer", company_tier='general')
+        response = self.client.get(reverse('recommendation:dashboard'))
+        self.assertEqual(response.status_code, 200)
+        
+        # Context must contain role_skill_match_pct
+        self.assertIn('role_skill_match_pct', response.context)
+        self.assertContains(response, "Role Skill Match:")
+        self.assertContains(response, "Role Alignment:")
+
+

@@ -1,40 +1,114 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}Create Resume - Career Catalyst{% endblock %}
+{% block title %}Create Resume — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'resume:list' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Resumes
-        </a>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/resume.css' %}?v=1.0">
+{% endblock %}
 
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm border-0 rounded-4 p-4">
-                <div class="text-center mb-4">
-                    <div class="display-4 text-primary mb-3">
-                        <i class="bi bi-file-earmark-plus"></i>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Canvas -->
+        <div class="dash-content">
+            <!-- Breadcrumbs & Header -->
+            <div class="resume-page-header mb-4">
+                <nav class="resume-breadcrumb" aria-label="Breadcrumb">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <span>/</span>
+                    <a href="{% url 'resume:list' %}">Resume Hub</a>
+                    <span>/</span>
+                    <span class="text-secondary fw-semibold">Create Resume</span>
+                </nav>
+                <h1 class="resume-page-title">Create New Resume</h1>
+                <p class="resume-page-subtitle">Choose a title and aesthetic template to launch your split-pane builder.</p>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+                    <div class="card border-0 rounded-4 p-4 shadow-sm" style="border: 1px solid var(--dash-border) !important; background: var(--dash-surface);">
+                        <div class="text-center mb-4">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 56px; height: 56px; background: rgba(37, 99, 235, 0.08); color: var(--dash-primary); font-size: 1.5rem;">
+                                <i class="bi bi-file-earmark-plus"></i>
+                            </div>
+                            <h3 class="h5 fw-bold text-secondary mb-1">New Resume Setup</h3>
+                            <p class="text-muted small mb-0">Select your preferred styling layout. You can switch templates anytime in the builder.</p>
+                        </div>
+                        
+                        <form method="POST">
+                            {% csrf_token %}
+                            {{ form|crispy }}
+                            
+                            <div class="d-flex gap-2 mt-4">
+                                <a href="{% url 'resume:list' %}" class="btn btn-outline-secondary rounded-pill w-50 py-2 fw-semibold" style="font-size: 0.8125rem;">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary-custom rounded-pill w-50 py-2 fw-semibold shadow-sm" style="font-size: 0.8125rem;">
+                                    Launch Builder <i class="bi bi-arrow-right ms-1"></i>
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    <h2 class="fw-bold">Create New Resume</h2>
-                    <p class="text-muted">Start by giving your resume a title and choosing a layout template.</p>
                 </div>
-                
-                <form method="POST">
-                    {% csrf_token %}
-                    {{ form|crispy }}
-                    
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary-custom btn-lg">
-                            Continue to Builder <i class="bi bi-arrow-right ms-2"></i>
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const toggleBtn = document.getElementById("sidebarToggleBtn");
+    const sidebar = document.getElementById("dashboardSidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+    const closeBtn = document.getElementById("sidebarCloseBtn");
+
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener("click", function() {
+            sidebar.classList.add("active");
+            overlay.classList.add("active");
+        });
+        const closeSidebar = function() {
+            sidebar.classList.remove("active");
+            overlay.classList.remove("active");
+        };
+        overlay.addEventListener("click", closeSidebar);
+        if (closeBtn) closeBtn.addEventListener("click", closeSidebar);
+    }
+});
+</script>
 {% endblock %}

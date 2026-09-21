@@ -1,73 +1,328 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}My Resumes - Career Catalyst{% endblock %}
+{% block title %}Resume Hub — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'dashboard' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Dashboard
-        </a>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/resume.css' %}?v=1.0">
+{% endblock %}
 
-    <div class="d-flex justify-content-between align-items-center mb-5">
-        <div>
-            <h1 class="fw-bold mb-1">My Resumes</h1>
-            <p class="text-muted">Manage and export your professional resumes.</p>
-        </div>
-        <a href="{% url 'resume:create' %}" class="btn btn-primary-custom">
-            <i class="bi bi-plus-lg"></i> Create Resume
-        </a>
-    </div>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-    {% if resumes %}
-        <div class="row g-4">
-            {% for resume in resumes %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 rounded-4">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h4 class="fw-bold mb-0 text-truncate" style="max-width: 85%;">{{ resume.title }}</h4>
-                            {% if resume.is_default %}
-                                <span class="badge bg-success rounded-pill px-2 py-1"><i class="bi bi-check-circle me-1"></i>Default</span>
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Canvas -->
+        <div class="dash-content">
+            <!-- Toast Notifications -->
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Resume Hub Header -->
+            <div class="resume-page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <nav class="resume-breadcrumb" aria-label="Breadcrumb">
+                        <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                        <span>/</span>
+                        <span class="text-secondary fw-semibold">Resume Hub</span>
+                    </nav>
+                    <h1 class="resume-page-title">Resume Hub</h1>
+                    <p class="resume-page-subtitle">
+                        Build recruiter-ready curriculum vitae and evaluate them against deterministic ATS benchmarks.
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <a href="{% url 'ai_resume:analyze' %}" class="btn btn-outline-primary px-3 py-2 rounded-pill d-inline-flex align-items-center gap-1.5 fw-semibold" style="font-size: 0.8125rem;">
+                        <i class="bi bi-shield-check"></i> Run ATS Scan
+                    </a>
+                    <a href="{% url 'resume:create' %}" class="btn btn-primary-custom px-3.5 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-1.5 fw-semibold" style="font-size: 0.8125rem;">
+                        <i class="bi bi-plus-lg"></i> Create Resume
+                    </a>
+                </div>
+            </div>
+
+            <!-- Primary 2-Column Hub Deck -->
+            <div class="hub-deck-grid">
+                <!-- ==========================================================
+                     COLUMN 1: BUILT RESUMES OVERVIEW
+                     ========================================================== -->
+                <div class="hub-card">
+                    <div class="hub-card-header">
+                        <h2 class="hub-card-title">
+                            <i class="bi bi-file-earmark-person"></i> Built Resumes
+                        </h2>
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold">
+                            {{ resumes|length }} Version{{ resumes|length|pluralize }}
+                        </span>
+                    </div>
+
+                    {% if default_resume %}
+                        <!-- Featured Default Resume -->
+                        <div class="default-resume-banner">
+                            <div class="default-resume-header">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <h3 class="default-resume-name">{{ default_resume.title }}</h3>
+                                        {% if default_resume.is_default %}
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
+                                                <i class="bi bi-star-fill me-1"></i> Primary Default
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="default-resume-meta">
+                                        <span><i class="bi bi-layout-sidebar-inset me-1 text-primary"></i> Template: <strong class="text-capitalize">{{ default_resume.template }}</strong></span>
+                                        <span>&bull;</span>
+                                        <span><i class="bi bi-clock-history me-1 text-muted"></i> Updated {{ default_resume.updated_at|date:"M d, Y" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="default-resume-actions">
+                                <a href="{% url 'resume:builder' default_resume.pk %}" class="btn btn-sm btn-primary-custom px-3 py-1.5 rounded-pill fw-semibold" style="font-size: 0.8125rem;">
+                                    <i class="bi bi-pencil-square me-1"></i> Edit in Builder
+                                </a>
+                                <a href="{% url 'resume:download' default_resume.pk %}" class="btn btn-sm btn-outline-success px-3 py-1.5 rounded-pill fw-semibold" style="font-size: 0.8125rem;">
+                                    <i class="bi bi-download me-1"></i> Download PDF
+                                </a>
+                                <a href="{% url 'resume:preview' default_resume.pk %}" target="_blank" class="btn btn-sm btn-outline-secondary px-3 py-1.5 rounded-pill" style="font-size: 0.8125rem;">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i> Preview
+                                </a>
+                                <a href="{% url 'ai_resume:analyze' %}?resume={{ default_resume.pk }}" class="btn btn-sm btn-outline-primary px-3 py-1.5 rounded-pill" style="font-size: 0.8125rem;" title="Scan this resume with ATS Analyzer">
+                                    <i class="bi bi-shield-check me-1"></i> Scan ATS
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Other Resumes Grid -->
+                        {% if other_resumes %}
+                            <h6 class="text-muted small fw-bold text-uppercase mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                Other Resume Versions ({{ other_resumes|length }})
+                            </h6>
+                            <div class="other-resumes-grid">
+                                {% for r in other_resumes %}
+                                <div class="resume-mini-card">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <h4 class="resume-mini-title" title="{{ r.title }}">{{ r.title }}</h4>
+                                        <form action="{% url 'resume:delete' r.pk %}" method="POST" onsubmit="return confirm('Delete this resume version?');" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-link text-danger p-0 border-0" title="Delete" style="font-size: 0.85rem;">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <div class="resume-mini-meta">
+                                        <span class="text-capitalize">{{ r.template }} template</span> &bull; {{ r.updated_at|date:"M d" }}
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1.5">
+                                        <a href="{% url 'resume:builder' r.pk %}" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-1" style="font-size: 0.75rem;">
+                                            <i class="bi bi-pencil me-1"></i> Edit
+                                        </a>
+                                        <a href="{% url 'resume:download' r.pk %}" class="btn btn-xs btn-outline-success rounded-pill px-2.5 py-1" style="font-size: 0.75rem;">
+                                            <i class="bi bi-download me-1"></i> PDF
+                                        </a>
+                                        <a href="{% url 'resume:preview' r.pk %}" target="_blank" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <!-- Empty State: No Resumes Yet -->
+                        <div class="hub-empty-state">
+                            <div class="hub-empty-icon">
+                                <i class="bi bi-file-earmark-plus"></i>
+                            </div>
+                            <h3 class="hub-empty-title">No Resumes Created Yet</h3>
+                            <p class="hub-empty-desc">
+                                Create your first tailored resume using our live split-pane builder, or automatically import your verified academic details and technical skills from your Student Profile.
+                            </p>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a href="{% url 'resume:create' %}" class="btn btn-primary-custom px-4 py-2 rounded-pill fw-semibold shadow-sm" style="font-size: 0.8125rem;">
+                                    <i class="bi bi-plus-lg me-1"></i> Create Resume
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- ==========================================================
+                     COLUMN 2: ATS SCANNER & DIAGNOSTICS OVERVIEW
+                     ========================================================== -->
+                <div class="d-flex flex-column gap-3">
+                    <!-- Latest ATS Analysis Card -->
+                    <div class="hub-card">
+                        <div class="hub-card-header">
+                            <h2 class="hub-card-title">
+                                <i class="bi bi-shield-check"></i> ATS Diagnostics
+                            </h2>
+                            {% if latest_analysis %}
+                                <a href="{% url 'ai_resume:analyze' %}" class="small text-decoration-none fw-semibold">
+                                    New Scan <i class="bi bi-arrow-right"></i>
+                                </a>
                             {% endif %}
                         </div>
-                        <p class="text-muted small mb-4">
-                            Template: <span class="text-capitalize">{{ resume.template }}</span><br>
-                            Updated: {{ resume.updated_at|date:"M d, Y" }}
-                        </p>
-                        
-                        <div class="d-flex flex-wrap gap-2">
-                            <a href="{% url 'resume:builder' resume.pk %}" class="btn btn-sm btn-outline-primary rounded-pill">
-                                <i class="bi bi-pencil me-1"></i> Edit
-                            </a>
-                            <a href="{% url 'resume:download' resume.pk %}" class="btn btn-sm btn-outline-success rounded-pill">
-                                <i class="bi bi-download me-1"></i> PDF
-                            </a>
-                            <form action="{% url 'resume:delete' resume.pk %}" method="POST" class="d-inline" onsubmit="return confirm('Delete this resume?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
+
+                        {% if latest_analysis %}
+                            <div class="ats-hero-stat">
+                                <div class="ats-stat-score-circle">
+                                    <span class="ats-stat-score-num">{{ latest_analysis.overall_score }}</span>
+                                    <span class="ats-stat-score-lbl">Score</span>
+                                </div>
+                                <div class="ats-stat-info">
+                                    <h3 class="ats-stat-role">{{ latest_analysis.target_role }}</h3>
+                                    <p class="ats-stat-meta">
+                                        ATS Score: <strong>{{ latest_analysis.ats_score }}/100</strong> &bull; Scanned {{ latest_analysis.created_at|date:"M d, Y" }}
+                                    </p>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <a href="{% url 'ai_resume:detail' latest_analysis.pk %}" class="btn btn-sm btn-primary-custom px-3 py-1.5 rounded-pill fw-semibold" style="font-size: 0.8125rem;">
+                                            <i class="bi bi-clipboard2-data me-1"></i> View Diagnostic Report
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-2.5 rounded-3 bg-light bg-opacity-50 small border" style="font-size: 0.75rem; color: var(--dash-text-muted);">
+                                <i class="bi bi-info-circle text-primary me-1"></i> Evaluated across 5 deterministic pillars: skill taxonomy match, domain keywords, XYZ impact, structure, and JD overlap.
+                            </div>
+                        {% else %}
+                            <div class="hub-empty-state">
+                                <div class="hub-empty-icon" style="background: rgba(20, 184, 166, 0.08); color: #0d9488;">
+                                    <i class="bi bi-shield-check"></i>
+                                </div>
+                                <h3 class="hub-empty-title">Deterministic ATS Scanner</h3>
+                                <p class="hub-empty-desc">
+                                    Scan your resume with real technical skill taxonomies and Google's XYZ achievement formula. Get transparent keyword gap analysis without PII leakage.
+                                </p>
+                                <a href="{% url 'ai_resume:analyze' %}" class="btn btn-primary-custom px-4 py-2 rounded-pill fw-semibold shadow-sm" style="font-size: 0.8125rem;">
+                                    <i class="bi bi-play-circle-fill me-1"></i> Scan Your First Resume
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Recent ATS Scan History Card -->
+                    <div class="hub-card">
+                        <div class="hub-card-header">
+                            <h2 class="hub-card-title">
+                                <i class="bi bi-clock-history"></i> Recent Scans
+                            </h2>
+                            {% if total_analyses_count > 0 %}
+                                <a href="{% url 'ai_resume:history' %}" class="small text-decoration-none fw-semibold">
+                                    View All ({{ total_analyses_count }}) &rarr;
+                                </a>
+                            {% endif %}
                         </div>
+
+                        {% if recent_analyses %}
+                            <div class="table-responsive">
+                                <table class="hub-history-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Target Role</th>
+                                            <th>Overall</th>
+                                            <th>Date</th>
+                                            <th class="text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in recent_analyses %}
+                                        <tr>
+                                            <td>
+                                                <span class="fw-semibold text-secondary">{{ item.target_role }}</span>
+                                                {% if item.resume %}
+                                                    <span class="badge bg-primary bg-opacity-10 text-primary ms-1" style="font-size: 0.65rem;">CC Builder</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge {% if item.overall_score >= 80 %}bg-success{% elif item.overall_score >= 50 %}bg-primary{% else %}bg-warning text-dark{% endif %} rounded-pill px-2 py-0.5" style="font-size: 0.72rem;">
+                                                    {{ item.overall_score }}%
+                                                </span>
+                                            </td>
+                                            <td class="text-muted" style="font-size: 0.75rem;">
+                                                {{ item.created_at|date:"M d" }}
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{% url 'ai_resume:detail' item.pk %}" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-0.5" style="font-size: 0.72rem;">
+                                                    Report
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-3 text-muted small">
+                                <i class="bi bi-inbox d-block fs-4 mb-1 text-muted"></i>
+                                No scan history recorded yet.
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
-            {% endfor %}
         </div>
-    {% else %}
-        <div class="text-center py-5">
-            <div class="display-1 text-muted mb-4">
-                <i class="bi bi-file-earmark-person"></i>
-            </div>
-            <h3>No resumes found</h3>
-            <p class="text-muted mb-4">You haven't created any resumes yet.</p>
-            <a href="{% url 'resume:create' %}" class="btn btn-primary-custom px-4">
-                Build Your First Resume
-            </a>
-        </div>
-    {% endif %}
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Mobile sidebar toggle handling
+    const toggleBtn = document.getElementById("sidebarToggleBtn");
+    const sidebar = document.getElementById("dashboardSidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+    const closeBtn = document.getElementById("sidebarCloseBtn");
+
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener("click", function() {
+            sidebar.classList.add("active");
+            overlay.classList.add("active");
+        });
+        const closeSidebar = function() {
+            sidebar.classList.remove("active");
+            overlay.classList.remove("active");
+        };
+        overlay.addEventListener("click", closeSidebar);
+        if (closeBtn) closeBtn.addEventListener("click", closeSidebar);
+    }
+});
+</script>
 {% endblock %}

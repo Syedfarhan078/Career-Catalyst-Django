@@ -1,0 +1,715 @@
+/* ==========================================================================
+   CareerCatalyst — static/css/resume.css
+   Resume Hub · Resume Builder · ATS Analyzer & Diagnostic Reports
+   Built on Dashboard Design Tokens: --dash-bg, --dash-surface, --dash-primary
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. PAGE HEADER & BREADCRUMBS
+   -------------------------------------------------------------------------- */
+.resume-page-header {
+    margin-bottom: 1.5rem;
+}
+
+.resume-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.resume-breadcrumb a {
+    color: var(--dash-text-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.resume-breadcrumb a:hover {
+    color: var(--dash-primary);
+}
+
+.resume-page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    letter-spacing: -0.02em;
+    margin: 0 0 0.25rem 0;
+}
+
+.resume-page-subtitle {
+    font-size: 0.875rem;
+    color: var(--dash-text-muted);
+    margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   2. RESUME HUB CARDS & OVERVIEW DECK
+   -------------------------------------------------------------------------- */
+.hub-deck-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 992px) {
+    .hub-deck-grid {
+        grid-template-columns: 1.4fr 1fr;
+    }
+}
+
+.hub-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 12px);
+    box-shadow: var(--dash-shadow-card);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.hub-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.hub-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.hub-card-title i {
+    color: var(--dash-primary);
+    font-size: 1.15rem;
+}
+
+/* Featured / Default Resume Banner */
+.default-resume-banner {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(20, 184, 166, 0.04) 100%);
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.default-resume-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.default-resume-name {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    margin: 0 0 0.25rem 0;
+}
+
+.default-resume-meta {
+    font-size: 0.78rem;
+    color: var(--dash-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.default-resume-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+}
+
+/* Secondary Resumes List */
+.other-resumes-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+@media (min-width: 576px) {
+    .other-resumes-grid {
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    }
+}
+
+.resume-mini-card {
+    background: var(--dash-bg);
+    border: 1px solid var(--dash-border);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.15s ease;
+}
+
+.resume-mini-card:hover {
+    border-color: var(--dash-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.resume-mini-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin: 0 0 0.25rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.resume-mini-meta {
+    font-size: 0.75rem;
+    color: var(--dash-text-muted);
+    margin-bottom: 0.75rem;
+}
+
+/* ATS Scanner Hub Preview */
+.ats-hero-stat {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%);
+    border: 1px solid rgba(37, 99, 235, 0.15);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.ats-stat-score-circle {
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    border-radius: 50%;
+    border: 4px solid var(--dash-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--dash-surface);
+}
+
+.ats-stat-score-num {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--dash-text);
+    line-height: 1;
+}
+
+.ats-stat-score-lbl {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--dash-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ats-stat-info {
+    flex: 1;
+}
+
+.ats-stat-role {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    margin: 0 0 0.25rem 0;
+}
+
+.ats-stat-meta {
+    font-size: 0.78rem;
+    color: var(--dash-text-muted);
+    margin: 0 0 0.75rem 0;
+}
+
+/* Hub History Table */
+.hub-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.hub-history-table th {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--dash-text-muted);
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid var(--dash-border);
+    background: var(--dash-bg);
+}
+
+.hub-history-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--dash-border);
+    color: var(--dash-text);
+    vertical-align: middle;
+}
+
+.hub-history-table tr:hover td {
+    background: rgba(37, 99, 235, 0.02);
+}
+
+/* Empty States */
+.hub-empty-state {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+}
+
+.hub-empty-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--dash-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.hub-empty-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    margin-bottom: 0.25rem;
+}
+
+.hub-empty-desc {
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+    max-width: 380px;
+    margin: 0 auto 1.25rem auto;
+    line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   3. RESUME BUILDER WORKSPACE
+   -------------------------------------------------------------------------- */
+.builder-workspace {
+    display: flex;
+    flex-direction: column;
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 12px);
+    box-shadow: var(--dash-shadow-card);
+    overflow: hidden;
+    height: calc(100vh - 120px);
+    min-height: 600px;
+}
+
+.builder-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    background: var(--dash-surface);
+    border-bottom: 1px solid var(--dash-border);
+    gap: 1rem;
+}
+
+.builder-split-pane {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.builder-editor-pane {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    max-width: 100%;
+}
+
+@media (min-width: 992px) {
+    .builder-editor-pane {
+        flex: 0 0 460px;
+        max-width: 460px;
+        border-right: 1px solid var(--dash-border);
+    }
+}
+
+@media (min-width: 1200px) {
+    .builder-editor-pane {
+        flex: 0 0 520px;
+        max-width: 520px;
+    }
+}
+
+.builder-preview-pane {
+    flex: 1;
+    display: none;
+    background: #0f172a;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+@media (min-width: 992px) {
+    .builder-preview-pane {
+        display: flex;
+    }
+}
+
+.builder-preview-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.builder-preview-frame {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+}
+
+/* Builder Accordions */
+.builder-accordion .accordion-item {
+    border: 1px solid var(--dash-border);
+    border-radius: 8px !important;
+    margin-bottom: 0.75rem;
+    background: var(--dash-surface);
+    overflow: hidden;
+}
+
+.builder-accordion .accordion-button {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    background: var(--dash-surface);
+    padding: 0.75rem 1rem;
+    box-shadow: none !important;
+}
+
+.builder-accordion .accordion-button:not(.collapsed) {
+    background: rgba(37, 99, 235, 0.04);
+    color: var(--dash-primary);
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.builder-accordion .accordion-body {
+    padding: 1rem;
+    background: var(--dash-bg);
+}
+
+.builder-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
+}
+
+.builder-item-title {
+    font-weight: 600;
+    color: var(--dash-text);
+}
+
+.builder-item-sub {
+    font-size: 0.72rem;
+    color: var(--dash-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   4. ATS ANALYZER INGESTION CARDS
+   -------------------------------------------------------------------------- */
+.ats-ingest-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--dash-border);
+    margin-bottom: 1.5rem;
+    gap: 0.5rem;
+}
+
+.ats-ingest-tab {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--dash-text-muted);
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ats-ingest-tab.active {
+    color: var(--dash-primary);
+    background: var(--dash-surface);
+    border-color: var(--dash-border);
+    border-bottom: 1px solid var(--dash-surface);
+    margin-bottom: -1px;
+}
+
+.role-quick-pill {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.625rem;
+    border-radius: 50px;
+    border: 1px solid var(--dash-border);
+    background: var(--dash-surface);
+    color: var(--dash-text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.role-quick-pill:hover {
+    border-color: var(--dash-primary);
+    color: var(--dash-primary);
+    background: rgba(37, 99, 235, 0.04);
+}
+
+/* --------------------------------------------------------------------------
+   5. ATS DIAGNOSTIC REPORT (DETAIL VIEW)
+   -------------------------------------------------------------------------- */
+.ats-report-hero {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 12px);
+    box-shadow: var(--dash-shadow-card);
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.ats-dial-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.ats-score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 6px solid var(--dash-primary);
+    background: rgba(37, 99, 235, 0.04);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+.ats-score-val {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--dash-text);
+    line-height: 1;
+}
+
+.ats-score-lbl {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--dash-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+/* 5 Evaluation Pillars Deck */
+.ats-pillars-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+    .ats-pillars-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.ats-pillar-box {
+    background: var(--dash-bg);
+    border: 1px solid var(--dash-border);
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+}
+
+.ats-pillar-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dash-text);
+}
+
+.ats-pillar-bar {
+    height: 6px;
+    border-radius: 10px;
+    background: rgba(148, 163, 184, 0.2);
+    overflow: hidden;
+    margin-bottom: 0.375rem;
+}
+
+.ats-pillar-fill {
+    height: 100%;
+    background: var(--dash-primary);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+
+.ats-pillar-desc {
+    font-size: 0.72rem;
+    color: var(--dash-text-muted);
+    margin: 0;
+}
+
+/* Skills Matrix */
+.skill-matrix-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (min-width: 992px) {
+    .skill-matrix-grid {
+        grid-template-columns: 1.4fr 1fr;
+    }
+}
+
+.skill-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    border: 1px solid var(--dash-border);
+    background: var(--dash-surface);
+    color: var(--dash-text);
+    transition: all 0.15s ease;
+}
+
+.skill-tag.matched {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.25);
+    color: #15803d;
+}
+
+.skill-tag.missing {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.25);
+    color: #b45309;
+    cursor: pointer;
+}
+
+.skill-tag.missing:hover {
+    border-color: var(--dash-primary);
+    color: var(--dash-primary);
+    transform: translateY(-1px);
+}
+
+.skill-tag.copied {
+    background: #22c55e !important;
+    border-color: #22c55e !important;
+    color: #ffffff !important;
+}
+
+/* AI Rewrites Cards */
+.ai-rewrite-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 10px;
+    padding: 1.125rem;
+    margin-bottom: 0.75rem;
+}
+
+.ai-rewrite-original {
+    background: var(--dash-bg);
+    border: 1px solid var(--dash-border);
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-family: monospace;
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+}
+
+.ai-rewrite-improved {
+    background: rgba(37, 99, 235, 0.03);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dash-text);
+}
+
+/* --------------------------------------------------------------------------
+   6. DARK MODE OVERRIDES
+   -------------------------------------------------------------------------- */
+html[data-theme="dark"] .default-resume-banner {
+    background: rgba(37, 99, 235, 0.08);
+    border-color: rgba(37, 99, 235, 0.3);
+}
+
+html[data-theme="dark"] .ats-hero-stat {
+    background: rgba(37, 99, 235, 0.08);
+    border-color: rgba(37, 99, 235, 0.25);
+}
+
+html[data-theme="dark"] .skill-tag.matched {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+}
+
+html[data-theme="dark"] .skill-tag.missing {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+html[data-theme="dark"] .ai-rewrite-improved {
+    background: rgba(37, 99, 235, 0.1);
+    border-color: rgba(37, 99, 235, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   7. ACCESSIBILITY & MOTION
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .hub-card,
+    .resume-mini-card,
+    .skill-tag,
+    .ats-pillar-fill {
+        transition: none !important;
+    }
+}

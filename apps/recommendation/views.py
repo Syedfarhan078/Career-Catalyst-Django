@@ -201,9 +201,11 @@ def career_dashboard(request):
     matched_career_path = None
     user_roadmap = None
     is_enrolled_in_path = False
+    is_path_completed = False
     auto_synced_count = 0
     auto_starting_pct = 0
     next_active_week = 1
+    role_skill_match_pct = 0
     
     if analysis:
         identifier = analysis.recommended_career.strip()
@@ -214,6 +216,14 @@ def career_dashboard(request):
             CareerPath.objects.filter(is_active=True).first()
         )
         
+        # Calculate matched topics count and role skill match percentage
+        total_path_topics = matched_career_path.total_topics() if matched_career_path else 0
+        all_matched = []
+        for step in (analysis.roadmap_json or []):
+            all_matched.extend(step.get('matched_topics', []))
+        auto_synced_count = len(set(all_matched))
+        role_skill_match_pct = round((auto_synced_count / total_path_topics) * 100) if total_path_topics > 0 else 0
+
         if matched_career_path:
             user_roadmap = UserRoadmap.objects.filter(
                 user=request.user, 
@@ -222,6 +232,8 @@ def career_dashboard(request):
             
             if user_roadmap and user_roadmap.is_active:
                 is_enrolled_in_path = True
+                progress_pct = user_roadmap.progress_percentage()
+
                 # Find the next incomplete week with a single query (avoid N+1)
                 completed_topic_ids = set(
                     TopicProgress.objects.filter(
@@ -230,24 +242,27 @@ def career_dashboard(request):
                     ).values_list('topic_id', flat=True)
                 )
                 milestones = matched_career_path.milestones.prefetch_related('topics').order_by('week_number')
+                first_incomplete_week = None
                 for ms in milestones:
                     ms_topics = ms.topics.all()
                     if not ms_topics:
                         continue
                     completed_count = sum(1 for t in ms_topics if t.id in completed_topic_ids)
                     if completed_count < len(ms_topics):
-                        next_active_week = ms.week_number
+                        first_incomplete_week = ms.week_number
                         break
+
+                if progress_pct >= 100 or (milestones.exists() and first_incomplete_week is None):
+                    is_path_completed = True
+                    next_active_week = None
+                else:
+                    is_path_completed = False
+                    next_active_week = first_incomplete_week or 1
             else:
-                # Count how many topics from analysis matched the student profile
-                all_matched = []
-                for step in (analysis.roadmap_json or []):
-                    all_matched.extend(step.get('matched_topics', []))
-                auto_synced_count = len(set(all_matched))
-                total_topics = matched_career_path.total_topics()
-                auto_starting_pct = round((auto_synced_count / total_topics) * 100) if total_topics > 0 else 0
+                auto_starting_pct = round((auto_synced_count / total_path_topics) * 100) if total_path_topics > 0 else 0
                 
                 # Check which week they would jump to
+                next_active_week = 1
                 for step in (analysis.roadmap_json or []):
                     if step.get('coverage_pct', 0) < 100:
                         next_active_week = step.get('week', 1)
@@ -264,9 +279,11 @@ def career_dashboard(request):
         'matched_career_path': matched_career_path,
         'user_roadmap': user_roadmap,
         'is_enrolled_in_path': is_enrolled_in_path,
+        'is_path_completed': is_path_completed,
         'auto_synced_count': auto_synced_count,
         'auto_starting_pct': auto_starting_pct,
         'next_active_week': next_active_week,
+        'role_skill_match_pct': role_skill_match_pct,
         'user_initials': user_initials,
         'target_career': target_career,
         'pillars': pillars,

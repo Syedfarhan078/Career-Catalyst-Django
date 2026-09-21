@@ -8,17 +8,54 @@ from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from .models import Resume, Education, Experience, Project, Skill, Certification
 from .forms import ResumeForm, EducationForm, ExperienceForm, ProjectForm, SkillForm, CertificationForm
+from apps.ai_resume.models import ResumeAnalysis
 
 import io
 from xhtml2pdf import pisa
 
 @login_required
 def resume_list(request):
-    resumes = Resume.objects.filter(user=request.user).order_by('-updated_at')
-    return render(request, 'resume/resume_list.html', {'resumes': resumes})
+    resumes = Resume.objects.filter(user=request.user).order_by('-is_default', '-updated_at')
+    default_resume = resumes.filter(is_default=True).first() or resumes.first()
+    other_resumes = [r for r in resumes if r.pk != (default_resume.pk if default_resume else None)]
+    
+    # ATS Scanner overview & recent history
+    try:
+        latest_analysis = ResumeAnalysis.objects.filter(user=request.user).select_related('resume').order_by('-created_at').first()
+        recent_analyses = ResumeAnalysis.objects.filter(user=request.user).select_related('resume').order_by('-created_at')[:5]
+        total_analyses_count = ResumeAnalysis.objects.filter(user=request.user).count()
+    except Exception:
+        latest_analysis = None
+        recent_analyses = []
+        total_analyses_count = 0
+        
+    profile = getattr(request.user, 'studentprofile', None)
+    first_initial = (request.user.first_name[:1] if request.user.first_name else request.user.username[:1]).upper()
+    last_initial = (request.user.last_name[:1] if request.user.last_name else "").upper()
+    user_initials = f"{first_initial}{last_initial}" if last_initial else (request.user.username[:2].upper())
+    target_career = profile.career_goal.strip() if (profile and profile.career_goal) else ""
+
+    context = {
+        'resumes': resumes,
+        'default_resume': default_resume,
+        'other_resumes': other_resumes,
+        'latest_analysis': latest_analysis,
+        'recent_analyses': recent_analyses,
+        'total_analyses_count': total_analyses_count,
+        'profile': profile,
+        'user_initials': user_initials,
+        'target_career': target_career,
+    }
+    return render(request, 'resume/resume_list.html', context)
 
 @login_required
 def resume_create(request):
+    profile = getattr(request.user, 'studentprofile', None)
+    first_initial = (request.user.first_name[:1] if request.user.first_name else request.user.username[:1]).upper()
+    last_initial = (request.user.last_name[:1] if request.user.last_name else "").upper()
+    user_initials = f"{first_initial}{last_initial}" if last_initial else (request.user.username[:2].upper())
+    target_career = profile.career_goal.strip() if (profile and profile.career_goal) else ""
+
     if request.method == 'POST':
         form = ResumeForm(request.POST)
         if form.is_valid():
@@ -28,12 +65,22 @@ def resume_create(request):
             return redirect('resume:builder', pk=resume.pk)
     else:
         form = ResumeForm()
-    return render(request, 'resume/resume_create.html', {'form': form})
+    return render(request, 'resume/resume_create.html', {
+        'form': form,
+        'profile': profile,
+        'user_initials': user_initials,
+        'target_career': target_career,
+    })
 
 @login_required
 def resume_builder(request, pk):
     resume = get_object_or_404(Resume, pk=pk, user=request.user)
-    
+    profile = getattr(request.user, 'studentprofile', None)
+    first_initial = (request.user.first_name[:1] if request.user.first_name else request.user.username[:1]).upper()
+    last_initial = (request.user.last_name[:1] if request.user.last_name else "").upper()
+    user_initials = f"{first_initial}{last_initial}" if last_initial else (request.user.username[:2].upper())
+    target_career = profile.career_goal.strip() if (profile and profile.career_goal) else ""
+
     # Pass forms to context so user can add items
     context = {
         'resume': resume,
@@ -43,6 +90,9 @@ def resume_builder(request, pk):
         'proj_form': ProjectForm(),
         'skill_form': SkillForm(),
         'cert_form': CertificationForm(),
+        'profile': profile,
+        'user_initials': user_initials,
+        'target_career': target_career,
     }
     return render(request, 'resume/builder.html', context)
 

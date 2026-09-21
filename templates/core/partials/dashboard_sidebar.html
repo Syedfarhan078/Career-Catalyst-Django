@@ -17,7 +17,7 @@
         <!-- WORKSPACE -->
         <div class="dash-nav-group">
             <span class="dash-nav-label">Workspace</span>
-            <a href="{% url 'dashboard' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <a href="{% url 'dashboard' %}" class="dash-nav-link {% if request.path == '/dashboard/' or request.resolver_match.url_name == 'dashboard' and not request.resolver_match.namespace and not request.resolver_match.app_name %}active{% endif %}">
                 <i class="bi bi-grid-fill"></i>
                 <span>Overview</span>
             </a>
@@ -25,7 +25,7 @@
                 <i class="bi bi-map"></i>
                 <span>My Roadmap</span>
             </a>
-            <a href="{% url 'recommendation:dashboard' %}" class="dash-nav-link {% if 'recommendation' in request.path %}active{% endif %}">
+            <a href="{% url 'recommendation:dashboard' %}" class="dash-nav-link {% if 'recommendation' in request.path or request.resolver_match.app_name == 'recommendation' %}active{% endif %}">
                 <i class="bi bi-compass"></i>
                 <span>Career Guidance</span>
             </a>
@@ -34,7 +34,7 @@
         <!-- TOOLS -->
         <div class="dash-nav-group">
             <span class="dash-nav-label">Tools</span>
-            <a href="{% url 'resume:list' %}" class="dash-nav-link {% if 'resume' in request.path and 'ai-resume' not in request.path %}active{% endif %}">
+            <a href="{% url 'resume:list' %}" class="dash-nav-link {% if 'resume' in request.path or 'ai-resume' in request.path or request.resolver_match.app_name == 'resume' or request.resolver_match.app_name == 'ai_resume' %}active{% endif %}">
                 <i class="bi bi-file-earmark-text"></i>
                 <span>Resume</span>
             </a>

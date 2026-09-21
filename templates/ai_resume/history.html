@@ -1,93 +1,176 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Resume Analysis History - Career Catalyst{% endblock %}
+{% block title %}Resume Analysis History — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'dashboard' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Dashboard
-        </a>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/resume.css' %}?v=1.0">
+{% endblock %}
 
-    <div class="d-flex justify-content-between align-items-center mb-5">
-        <div>
-            <h1 class="fw-bold mb-1">Resume Analysis</h1>
-            <p class="text-muted">Review scores and keyword gap analysis for your target roles.</p>
-        </div>
-        <a href="{% url 'ai_resume:analyze' %}" class="btn-primary-custom">
-            <i class="bi bi-shield-check"></i> Analyze Resume
-        </a>
-    </div>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-    {% if analyses %}
-        <div class="table-responsive bg-white rounded-4 shadow-sm p-4">
-            <table class="table align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="border-0 rounded-start">Target Role</th>
-                        <th class="border-0">Source</th>
-                        <th class="border-0">Overall Score</th>
-                        <th class="border-0">ATS Score</th>
-                        <th class="border-0">Date</th>
-                        <th class="border-0 rounded-end text-end">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for analysis in analyses %}
-                    <tr>
-                        <td>
-                            <span class="fw-bold text-secondary">{{ analysis.target_role }}</span>
-                        </td>
-                        <td>
-                            {% if analysis.resume %}
-                                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
-                                    <i class="bi bi-file-earmark-person"></i> CC Builder
-                                </span>
-                            {% else %}
-                                <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill">
-                                    <i class="bi bi-upload"></i> External Upload
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <span class="fw-bold me-2">{{ analysis.overall_score }}%</span>
-                                <div class="progress w-50" style="height: 6px;">
-                                    <div class="progress-bar {% if analysis.overall_score >= 80 %}bg-success{% elif analysis.overall_score >= 50 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ analysis.overall_score }}%;"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge {% if analysis.ats_score >= 80 %}bg-success{% else %}bg-warning{% endif %} rounded-pill px-3 py-1">
-                                {{ analysis.ats_score }}/100
-                            </span>
-                        </td>
-                        <td class="text-muted small">
-                            {{ analysis.created_at|date:"M d, Y H:i" }}
-                        </td>
-                        <td class="text-end">
-                            <a href="{% url 'ai_resume:detail' analysis.pk %}" class="btn btn-sm btn-outline-primary rounded-pill">
-                                <i class="bi bi-eye"></i> View Report
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <div class="text-center py-5">
-            <div class="display-1 text-muted mb-4">
-                <i class="bi bi-search-heart"></i>
-            </div>
-            <h3>No analyses found</h3>
-            <p class="text-muted mb-4">You haven't run any resume analyses yet.</p>
-            <a href="{% url 'ai_resume:analyze' %}" class="btn btn-primary-custom px-4">
-                Analyze Your First Resume
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
             </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Canvas -->
+        <div class="dash-content">
+            <!-- Breadcrumbs & Header -->
+            <div class="resume-page-header d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+                <div>
+                    <nav class="resume-breadcrumb" aria-label="Breadcrumb">
+                        <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                        <span>/</span>
+                        <a href="{% url 'resume:list' %}">Resume Hub</a>
+                        <span>/</span>
+                        <span class="text-secondary fw-semibold">Scan History</span>
+                    </nav>
+                    <h1 class="resume-page-title">ATS Analysis History</h1>
+                    <p class="resume-page-subtitle">
+                        Review historical scores, keyword gaps, and achievement strength across your target roles.
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{% url 'resume:list' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1.5 fw-semibold" style="font-size: 0.8125rem;">
+                        <i class="bi bi-file-earmark-person me-1"></i> Resume Hub
+                    </a>
+                    <a href="{% url 'ai_resume:analyze' %}" class="btn btn-primary-custom btn-sm rounded-pill px-3 py-1.5 fw-semibold shadow-sm" style="font-size: 0.8125rem;">
+                        <i class="bi bi-shield-check me-1"></i> Run New Scan
+                    </a>
+                </div>
+            </div>
+
+            <!-- Analyses History Card & Table -->
+            <div class="card border-0 rounded-4 shadow-sm p-4" style="border: 1px solid var(--dash-border) !important; background: var(--dash-surface);">
+                {% if analyses %}
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0" style="font-size: 0.8125rem;">
+                            <thead class="table-light" style="background: var(--dash-bg);">
+                                <tr>
+                                    <th class="border-0 rounded-start">Target Role</th>
+                                    <th class="border-0">Resume Source</th>
+                                    <th class="border-0">Overall Score</th>
+                                    <th class="border-0">ATS Score</th>
+                                    <th class="border-0">Date Scanned</th>
+                                    <th class="border-0 rounded-end text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in analyses %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-secondary">{{ item.target_role }}</div>
+                                    </td>
+                                    <td>
+                                        {% if item.resume %}
+                                            <a href="{% url 'resume:builder' item.resume.pk %}" class="badge bg-primary bg-opacity-10 text-primary text-decoration-none px-2.5 py-1.5 rounded-pill" title="View in Builder">
+                                                <i class="bi bi-file-earmark-person me-1"></i> {{ item.resume.title }}
+                                            </a>
+                                        {% elif item.uploaded_file %}
+                                            <span class="badge bg-info bg-opacity-10 text-info px-2.5 py-1.5 rounded-pill">
+                                                <i class="bi bi-upload me-1"></i> File Upload
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary px-2.5 py-1.5 rounded-pill">
+                                                <i class="bi bi-clipboard-data me-1"></i> Pasted Text
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2" style="min-width: 140px;">
+                                            <span class="fw-bold text-secondary" style="font-size: 0.875rem;">{{ item.overall_score }}%</span>
+                                            <div class="progress flex-grow-1" style="height: 6px; background: rgba(148, 163, 184, 0.2);">
+                                                <div class="progress-bar {% if item.overall_score >= 80 %}bg-success{% elif item.overall_score >= 50 %}bg-primary{% else %}bg-warning{% endif %}" role="progressbar" style="width: {{ item.overall_score }}%;"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if item.ats_score >= 80 %}bg-success{% elif item.ats_score >= 50 %}bg-primary{% else %}bg-warning text-dark{% endif %} rounded-pill px-2.5 py-1" style="font-size: 0.75rem;">
+                                            {{ item.ats_score }}/100
+                                        </span>
+                                    </td>
+                                    <td class="text-muted small">
+                                        {{ item.created_at|date:"M d, Y H:i" }}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'ai_resume:detail' item.pk %}" class="btn btn-xs btn-outline-primary rounded-pill px-3 py-1 fw-semibold" style="font-size: 0.78rem;">
+                                            <i class="bi bi-clipboard2-data me-1"></i> View Report
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="hub-empty-state py-5">
+                        <div class="hub-empty-icon" style="background: rgba(37, 99, 235, 0.08); color: var(--dash-primary);">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <h3 class="hub-empty-title">No Analyses Recorded Yet</h3>
+                        <p class="hub-empty-desc">
+                            You haven't evaluated any resumes with our ATS Scanner yet. Run a diagnostic to get transparent metric breakdowns and skill gap analysis.
+                        </p>
+                        <a href="{% url 'ai_resume:analyze' %}" class="btn btn-primary-custom px-4 py-2 rounded-pill fw-semibold shadow-sm" style="font-size: 0.8125rem;">
+                            <i class="bi bi-play-circle-fill me-1"></i> Scan Your First Resume
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
         </div>
-    {% endif %}
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const toggleBtn = document.getElementById("sidebarToggleBtn");
+    const sidebar = document.getElementById("dashboardSidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+    const closeBtn = document.getElementById("sidebarCloseBtn");
+
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener("click", function() {
+            sidebar.classList.add("active");
+            overlay.classList.add("active");
+        });
+        const closeSidebar = function() {
+            sidebar.classList.remove("active");
+            overlay.classList.remove("active");
+        };
+        overlay.addEventListener("click", closeSidebar);
+        if (closeBtn) closeBtn.addEventListener("click", closeSidebar);
+    }
+});
+</script>
 {% endblock %}

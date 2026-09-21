@@ -177,9 +177,13 @@
                             {{ analysis.overall_feedback }}
                         </p>
                         <div class="hero-readiness-tags">
-                            <div class="readiness-chip">
+                            <div class="readiness-chip" title="Percentage of pathway curriculum topics matched by your verified skills">
                                 <span>Role Skill Match:</span>
-                                <span class="readiness-chip-status fw-bold text-primary">{{ analysis.confidence_score }}%</span>
+                                <span class="readiness-chip-status fw-bold text-primary">{{ role_skill_match_pct }}%</span>
+                            </div>
+                            <div class="readiness-chip" title="Overall algorithm alignment confidence blending skill coverage and background readiness">
+                                <span>Role Alignment:</span>
+                                <span class="readiness-chip-status fw-bold text-secondary">{{ analysis.confidence_score }}%</span>
                             </div>
                             <div class="readiness-chip">
                                 <span>Internship Readiness:</span>
@@ -213,7 +217,11 @@
                         {% if matched_career_path %}
                             {% if is_enrolled_in_path %}
                                 <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-sm btn-outline-success rounded-pill w-100 py-1.5 fw-semibold" style="font-size: 0.8125rem;">
-                                    <i class="bi bi-map me-1"></i> View Active Track
+                                    {% if is_path_completed %}
+                                        <i class="bi bi-check2-all me-1"></i> Review Track
+                                    {% else %}
+                                        <i class="bi bi-map me-1"></i> View Active Track
+                                    {% endif %}
                                 </a>
                             {% else %}
                                 <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-sm btn-outline-secondary rounded-pill w-100 py-1.5" style="font-size: 0.8125rem;">
@@ -390,21 +398,36 @@
                 <div class="transition-info">
                     <div class="transition-icon-wrap">
                         {% if is_enrolled_in_path %}
-                            <i class="bi bi-check-circle-fill"></i>
+                            {% if is_path_completed %}
+                                <i class="bi bi-award-fill text-warning"></i>
+                            {% else %}
+                                <i class="bi bi-check-circle-fill"></i>
+                            {% endif %}
                         {% else %}
                             <i class="bi bi-lightning-charge-fill"></i>
                         {% endif %}
                     </div>
                     <div>
                         {% if is_enrolled_in_path %}
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <span class="badge bg-success text-white rounded-pill px-2.5 py-0.5 fw-semibold" style="font-size: 0.7rem;">Active Track</span>
-                                <span class="text-muted small" style="font-size: 0.75rem;">{{ user_roadmap.completed_count }}/{{ matched_career_path.total_topics }} Lessons Mastered</span>
-                            </div>
-                            <h3 class="transition-title">{{ analysis.recommended_career }} Track is Active ({{ user_roadmap.progress_percentage }}% Complete)</h3>
-                            <p class="transition-desc">
-                                All milestone progress is verified directly in your curriculum tracker. Resume at <strong>Week {{ next_active_week }}</strong> to continue closing your skill gaps.
-                            </p>
+                            {% if is_path_completed %}
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge bg-success text-white rounded-pill px-2.5 py-0.5 fw-semibold" style="font-size: 0.7rem;">Curriculum Completed</span>
+                                    <span class="text-success small fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-check2-all"></i> All {{ matched_career_path.total_topics }} Lessons Mastered</span>
+                                </div>
+                                <h3 class="transition-title">{{ analysis.recommended_career }} Track is 100% Complete</h3>
+                                <p class="transition-desc">
+                                    Outstanding accomplishment! You have mastered all {{ matched_career_path.total_topics }} curriculum topics. Review your syllabus anytime or proceed directly to interview preparation.
+                                </p>
+                            {% else %}
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge bg-success text-white rounded-pill px-2.5 py-0.5 fw-semibold" style="font-size: 0.7rem;">Active Track</span>
+                                    <span class="text-muted small" style="font-size: 0.75rem;">{{ user_roadmap.completed_count }}/{{ matched_career_path.total_topics }} Lessons Mastered</span>
+                                </div>
+                                <h3 class="transition-title">{{ analysis.recommended_career }} Track is Active ({{ user_roadmap.progress_percentage }}% Complete)</h3>
+                                <p class="transition-desc">
+                                    All milestone progress is verified directly in your curriculum tracker. Resume at <strong>Week {{ next_active_week }}</strong> to continue closing your skill gaps.
+                                </p>
+                            {% endif %}
                         {% else %}
                             <div class="d-flex align-items-center gap-2 mb-1">
                                 <span class="badge bg-primary text-white rounded-pill px-2.5 py-0.5 fw-semibold" style="font-size: 0.7rem;">⚡ 1-Click Auto-Sync Ready</span>
@@ -420,15 +443,24 @@
 
                 <div class="transition-actions">
                     {% if is_enrolled_in_path %}
-                        <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-primary-custom px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" style="font-size: 0.8125rem;">
-                            <i class="bi bi-play-circle-fill"></i> Continue Learning (Week {{ next_active_week }})
-                        </a>
-                        <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3 py-2 fw-semibold" title="Re-sync newly added profile skills with roadmap milestones">
-                                <i class="bi bi-arrow-repeat me-1"></i> Re-Sync
-                            </button>
-                        </form>
+                        {% if is_path_completed %}
+                            <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-outline-success px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" style="font-size: 0.8125rem;">
+                                <i class="bi bi-check2-all"></i> Review Roadmap
+                            </a>
+                            <a href="{% url 'interviews:hub' %}" class="btn btn-primary-custom px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" style="font-size: 0.8125rem;">
+                                <i class="bi bi-mortarboard-fill"></i> Open Interview Prep
+                            </a>
+                        {% else %}
+                            <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-primary-custom px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" style="font-size: 0.8125rem;">
+                                <i class="bi bi-play-circle-fill"></i> Continue Learning (Week {{ next_active_week }})
+                            </a>
+                            <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3 py-2 fw-semibold" title="Re-sync newly added profile skills with roadmap milestones">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Re-Sync
+                                </button>
+                            </form>
+                        {% endif %}
                     {% else %}
                         <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
                             {% csrf_token %}

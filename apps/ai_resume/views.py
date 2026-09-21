@@ -21,16 +21,15 @@ def resume_to_text(resume):
     text = f"{resume.user.first_name} {resume.user.last_name}\n"
     text += f"Email: {resume.user.email}\n"
     
-    try:
-        profile = resume.user.profile
+    # Safely retrieve user's student profile for contact details
+    profile = getattr(resume.user, 'studentprofile', None)
+    if profile:
         if profile.phone_number:
             text += f"Phone: {profile.phone_number}\n"
         if profile.linkedin:
             text += f"LinkedIn: {profile.linkedin}\n"
         if profile.github:
             text += f"GitHub: {profile.github}\n"
-    except AttributeError:
-        pass
         
     text += "\nEDUCATION\n"
     for edu in resume.educations.all():
@@ -65,7 +64,17 @@ class AnalysisHistoryView(ListView):
     context_object_name = 'analyses'
 
     def get_queryset(self):
-        return ResumeAnalysis.objects.filter(user=self.request.user)
+        return ResumeAnalysis.objects.filter(user=self.request.user).select_related('resume').order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        profile = getattr(self.request.user, 'studentprofile', None)
+        first_initial = (self.request.user.first_name[:1] if self.request.user.first_name else self.request.user.username[:1]).upper()
+        last_initial = (self.request.user.last_name[:1] if self.request.user.last_name else "").upper()
+        context['user_initials'] = f"{first_initial}{last_initial}" if last_initial else (self.request.user.username[:2].upper())
+        context['target_career'] = profile.career_goal.strip() if (profile and profile.career_goal) else ""
+        context['profile'] = profile
+        return context
 
 @method_decorator(login_required, name='dispatch')
 class AnalyzeResumeView(CreateView):
@@ -77,6 +86,17 @@ class AnalyzeResumeView(CreateView):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        profile = getattr(self.request.user, 'studentprofile', None)
+        first_initial = (self.request.user.first_name[:1] if self.request.user.first_name else self.request.user.username[:1]).upper()
+        last_initial = (self.request.user.last_name[:1] if self.request.user.last_name else "").upper()
+        context['user_initials'] = f"{first_initial}{last_initial}" if last_initial else (self.request.user.username[:2].upper())
+        context['target_career'] = profile.career_goal.strip() if (profile and profile.career_goal) else ""
+        context['profile'] = profile
+        context['user_resumes'] = Resume.objects.filter(user=self.request.user).order_by('-updated_at')
+        return context
 
     def form_valid(self, form):
         resume = form.cleaned_data.get('resume')
@@ -127,15 +147,18 @@ class AnalysisDetailView(DetailView):
     context_object_name = 'analysis'
 
     def get_queryset(self):
-        return ResumeAnalysis.objects.filter(user=self.request.user)
+        return ResumeAnalysis.objects.filter(user=self.request.user).select_related('resume')
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         analysis = self.object
         
-        context['high_suggestions'] = analysis.suggestions.filter(priority='High')
-        context['medium_suggestions'] = analysis.suggestions.filter(priority='Medium')
-        context['low_suggestions'] = analysis.suggestions.filter(priority='Low')
+        # Consolidate suggestions queries into a single query grouped in memory
+        all_suggestions = list(analysis.suggestions.all())
+        context['all_suggestions'] = all_suggestions
+        context['high_suggestions'] = [s for s in all_suggestions if s.priority == 'High']
+        context['medium_suggestions'] = [s for s in all_suggestions if s.priority == 'Medium']
+        context['low_suggestions'] = [s for s in all_suggestions if s.priority == 'Low']
         context['user_resume'] = analysis.resume or Resume.objects.filter(user=self.request.user).first()
         
         data = analysis.structured_data or {}
@@ -149,6 +172,13 @@ class AnalysisDetailView(DetailView):
         context['presence'] = data.get('presence', {})
         context['ai_feedback'] = analysis.ai_feedback or {}
         context['pii_summary'] = analysis.pii_summary or {}
+        
+        profile = getattr(self.request.user, 'studentprofile', None)
+        first_initial = (self.request.user.first_name[:1] if self.request.user.first_name else self.request.user.username[:1]).upper()
+        last_initial = (self.request.user.last_name[:1] if self.request.user.last_name else "").upper()
+        context['user_initials'] = f"{first_initial}{last_initial}" if last_initial else (self.request.user.username[:2].upper())
+        context['target_career'] = profile.career_goal.strip() if (profile and profile.career_goal) else ""
+        context['profile'] = profile
         
         return context
 
