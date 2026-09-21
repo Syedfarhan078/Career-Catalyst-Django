@@ -67,12 +67,14 @@
                         <i class="bi {{ next_step.icon }}"></i>
                         <span>Your Next Step &bull; {{ next_step.category }}</span>
                     </div>
+                    {% if next_step.progress != None %}
                     <div class="dash-step-progress-pill" title="Current progress: {{ next_step.progress }}%">
                         <div class="dash-step-progress-mini" role="progressbar" aria-valuenow="{{ next_step.progress }}" aria-valuemin="0" aria-valuemax="100">
                             <div class="dash-step-progress-fill" style="width: {{ next_step.progress }}%;"></div>
                         </div>
                         <span>{{ next_step.progress }}%</span>
                     </div>
+                    {% endif %}
                 </div>
 
                 <div class="dash-step-body">
@@ -127,12 +129,16 @@
                             <span>Current Roadmap</span>
                         </h3>
                         {% if active_enrollment %}
-                            {% if different_from_target %}
+                            {% if is_roadmap_completed %}
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small fw-semibold">
+                                    <i class="bi bi-check2 me-1"></i>Completed
+                                </span>
+                            {% elif different_from_target %}
                                 <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-2.5 py-1 small fw-semibold" title="Enrolled track differs from Target Goal">
                                     Active Track (Target: {{ target_career }})
                                 </span>
                             {% else %}
-                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small fw-semibold">
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold">
                                     Enrolled Track
                                 </span>
                             {% endif %}
@@ -155,16 +161,20 @@
 
                         <!-- Milestone Box -->
                         <div class="dash-roadmap-milestone-box">
-                            {% if current_milestone %}
+                            {% if is_roadmap_completed %}
+                                <div class="dash-milestone-label text-success"><i class="bi bi-check-circle-fill me-1"></i> Track Status</div>
+                                <div class="dash-milestone-title">Roadmap completed</div>
+                                <div class="dash-milestone-count">You've completed all {{ roadmap_total_topics }} topics in this track.</div>
+                            {% elif current_milestone %}
                                 <div class="dash-milestone-label">Current Milestone &bull; Week {{ current_milestone.week_number }}</div>
                                 <div class="dash-milestone-title">{{ current_milestone.title }}</div>
                                 <div class="dash-milestone-count">
                                     Next topic: <strong>{{ current_topic.title }}</strong> ({{ milestone_completed_topics }} of {{ milestone_total_topics }} in milestone)
                                 </div>
                             {% else %}
-                                <div class="dash-milestone-label">Milestone Status</div>
-                                <div class="dash-milestone-title">All milestones completed!</div>
-                                <div class="dash-milestone-count">You have finished all topics in this track.</div>
+                                <div class="dash-milestone-label">Track Status</div>
+                                <div class="dash-milestone-title">Track in progress</div>
+                                <div class="dash-milestone-count">{{ roadmap_completed_count }} of {{ roadmap_total_topics }} topics finished.</div>
                             {% endif %}
                         </div>
 
@@ -176,7 +186,7 @@
 
                         <div class="mt-auto pt-2">
                             <a href="{% url 'roadmaps:path_detail' active_enrollment.career_path.slug %}" class="dash-btn-primary w-100">
-                                <span>Continue roadmap</span>
+                                <span>{% if is_roadmap_completed %}Review roadmap{% else %}Continue roadmap{% endif %}</span>
                                 <i class="bi bi-arrow-right"></i>
                             </a>
                         </div>
@@ -214,12 +224,12 @@
                     {% if readiness_data.has_analysis %}
                         <div class="dash-readiness-score-row">
                             <span class="dash-readiness-big-score">{{ readiness_data.score }}%</span>
-                            <span class="dash-readiness-score-unit">readiness score</span>
+                            <span class="dash-readiness-score-unit">CareerCatalyst readiness</span>
                         </div>
                     {% else %}
                         <div class="dash-readiness-score-row">
-                            <span class="dash-readiness-big-score" style="font-size: 1.85rem;">Ready</span>
-                            <span class="dash-readiness-score-unit">to benchmark</span>
+                            <span class="dash-readiness-big-score" style="font-size: 1.85rem;">Not calibrated</span>
+                            <span class="dash-readiness-score-unit">Check profile readiness</span>
                         </div>
                     {% endif %}
 

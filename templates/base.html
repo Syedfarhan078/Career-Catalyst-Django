@@ -100,8 +100,8 @@
 
 {% block chatbot %}
 <!-- Floating Chatbot Launcher -->
-<button id="chatbot-launcher" aria-label="Open support chat">
-    <img src="{% static 'images/chatbot_robot.png' %}" alt="Career Assistant Bot" style="width: 100%; height: 100%; object-fit: contain;">
+<button id="chatbot-launcher" aria-label="Open support chat" class="d-flex align-items-center justify-content-center">
+    <i class="bi bi-chat-dots-fill text-white fs-5"></i>
 </button>
 
 <!-- Floating Chatbot Window -->
@@ -116,7 +116,9 @@
     <!-- Header -->
     <div class="chatbot-header d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-2">
-            <img src="{% static 'images/chatbot_robot.png' %}" alt="Bot" width="24" height="24" class="rounded-circle shadow-sm">
+            <div class="rounded-circle bg-white bg-opacity-20 d-flex align-items-center justify-content-center" style="width: 26px; height: 26px;">
+                <i class="bi bi-stars text-white" style="font-size: 0.85rem;"></i>
+            </div>
             <h6 class="mb-0 text-white">Career Assistant</h6>
         </div>
         <div class="d-flex align-items-center gap-2">

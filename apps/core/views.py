@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 
@@ -136,6 +137,12 @@ def dashboard_view(request):
                 is_completed=True
             ).count()
 
+    is_roadmap_completed = bool(
+        active_enrollment and 
+        roadmap_total_topics > 0 and 
+        roadmap_completed_count >= roadmap_total_topics
+    )
+
     # Dynamic Time-based Greeting
     hour = timezone.localtime().hour
     if hour < 12:
@@ -150,7 +157,7 @@ def dashboard_view(request):
     last_initial = (request.user.last_name[:1] if request.user.last_name else "").upper()
     user_initials = f"{first_initial}{last_initial}" if last_initial else (request.user.username[:2].upper())
 
-    # Deterministic "Your Next Step" Selection
+    # Deterministic "Your Next Step" Selection (Strictly Real Backend Driven)
     next_step = {}
     if not target_career:
         next_step = {
@@ -158,10 +165,10 @@ def dashboard_view(request):
             'category': 'Target Role',
             'title': 'Choose your target career track',
             'subtitle': 'Select your engineering goal to personalize roadmap syllabus, skill benchmarks, and resume scans.',
-            'progress': 0,
+            'progress': None,
             'why': 'Defining your target role is the primary anchor for curriculum milestones and evaluation criteria.',
             'cta_text': 'Set career goal',
-            'cta_url': '/profiles/edit/',
+            'cta_url': reverse('profile_edit'),
             'icon': 'bi-bullseye',
         }
     elif not active_enrollment:
@@ -170,10 +177,10 @@ def dashboard_view(request):
             'category': 'Career Roadmap',
             'title': f'Enroll in a structured roadmap for {target_career}',
             'subtitle': f'Choose your curated 12-week learning path aligned with {target_career}.',
-            'progress': 0,
+            'progress': None,
             'why': 'A structured syllabus keeps your weekly preparation focused on high-yield interview topics and project milestones.',
             'cta_text': 'Explore roadmaps',
-            'cta_url': '/roadmaps/',
+            'cta_url': reverse('roadmaps:path_list'),
             'icon': 'bi-map',
         }
     elif current_topic:
@@ -188,7 +195,7 @@ def dashboard_view(request):
             'progress': roadmap_progress,
             'why': f'Master {current_topic.title} to progress towards completing week {current_milestone.week_number} of {active_enrollment.career_path.name}.',
             'cta_text': 'Continue learning',
-            'cta_url': f'/roadmaps/{active_enrollment.career_path.slug}/',
+            'cta_url': reverse('roadmaps:path_detail', kwargs={'slug': active_enrollment.career_path.slug}),
             'icon': 'bi-play-circle-fill',
         }
     elif not has_resume:
@@ -197,10 +204,10 @@ def dashboard_view(request):
             'category': 'Resume',
             'title': 'Build your technical resume',
             'subtitle': 'Create an ATS-friendly single-column resume with your verified skills and academic details.',
-            'progress': 60,
+            'progress': None,
             'why': 'Having a structured resume is essential before starting company applications and ATS keyword matching.',
             'cta_text': 'Build resume',
-            'cta_url': '/resume/',
+            'cta_url': reverse('resume:list'),
             'icon': 'bi-file-earmark-text',
         }
     elif not latest_analysis:
@@ -210,9 +217,9 @@ def dashboard_view(request):
             'title': 'Benchmark your resume against industry ATS',
             'subtitle': f'Run an ATS keyword and formatting analysis tailored to {target_career}.',
             'why': 'Detect missing industry keywords and format errors before submitting applications to recruiter portals.',
-            'progress': 75,
+            'progress': None,
             'cta_text': 'Scan resume',
-            'cta_url': '/ai-resume/analyze/',
+            'cta_url': reverse('ai_resume:analyze'),
             'icon': 'bi-shield-check',
         }
     elif not has_interview_attempt:
@@ -222,21 +229,33 @@ def dashboard_view(request):
             'title': 'Start technical mock practice & MCQs',
             'subtitle': 'Practice timed computer science fundamentals and domain coding challenges.',
             'why': 'Technical assessment rounds are the initial filter for campus placements and off-campus roles.',
-            'progress': 85,
+            'progress': None,
             'cta_text': 'Start practice',
-            'cta_url': '/interviews/',
+            'cta_url': reverse('interviews:hub'),
             'icon': 'bi-mortarboard',
         }
-    else:
+    elif total_apps_count > 0:
         next_step = {
             'state': 'track_pipeline',
             'category': 'Job CRM',
             'title': 'Review your job application pipeline',
             'subtitle': f'{total_apps_count} application{"s" if total_apps_count != 1 else ""} tracked · {interview_apps_count} interview stage',
-            'progress': 95,
+            'progress': None,
             'why': 'Consistent tracking and scheduled follow-ups keep your recruitment pipeline moving forward.',
             'cta_text': 'Open Job Tracker',
-            'cta_url': '/tracker/',
+            'cta_url': reverse('tracker:kanban'),
+            'icon': 'bi-kanban',
+        }
+    else:
+        next_step = {
+            'state': 'track_pipeline',
+            'category': 'Job Applications',
+            'title': 'Start tracking your job applications',
+            'subtitle': 'Add your active job and internship applications to monitor stages and deadlines.',
+            'progress': None,
+            'why': 'Organizing your outreach and follow-ups in the CRM pipeline dramatically improves response rates.',
+            'cta_text': 'Track an application',
+            'cta_url': reverse('tracker:kanban'),
             'icon': 'bi-kanban',
         }
 
@@ -260,59 +279,54 @@ def dashboard_view(request):
         profile_status = 'current'
         profile_status_text = 'Current'
     else:
-        profile_status = 'not-started'
-        profile_status_text = 'Not Started'
+        profile_status = 'upcoming'
+        profile_status_text = 'Upcoming'
 
     # Stage 3: Technical Skills
-    if len(skills_list) >= 8 and (active_enrollment and roadmap_progress == 100):
-        skills_status = 'complete'
-        skills_status_text = 'Complete'
-    elif len(skills_list) > 0:
+    # Skills acquisition is an ongoing journey unless fully calibrated
+    if len(skills_list) > 0:
         skills_status = 'in-progress'
         skills_status_text = 'In Progress'
     elif completion_percentage > 0:
         skills_status = 'current'
         skills_status_text = 'Current'
     else:
-        skills_status = 'not-started'
-        skills_status_text = 'Not Started'
+        skills_status = 'upcoming'
+        skills_status_text = 'Upcoming'
 
     # Stage 4: Career Roadmap
-    if active_enrollment and roadmap_progress == 100:
+    if active_enrollment and is_roadmap_completed:
         roadmap_status = 'complete'
         roadmap_status_text = 'Complete'
-    elif active_enrollment and roadmap_progress > 0:
+    elif active_enrollment and roadmap_completed_count > 0:
         roadmap_status = 'in-progress'
         roadmap_status_text = 'In Progress'
     elif active_enrollment:
         roadmap_status = 'current'
-        roadmap_status_text = 'In Progress'
+        roadmap_status_text = 'Current'
     elif len(skills_list) > 0:
         roadmap_status = 'current'
         roadmap_status_text = 'Current'
     else:
-        roadmap_status = 'not-started'
-        roadmap_status_text = 'Not Started'
+        roadmap_status = 'upcoming'
+        roadmap_status_text = 'Upcoming'
 
     # Stage 5: Resume & ATS
-    if latest_analysis and latest_analysis.ats_score and latest_analysis.ats_score >= 80:
+    if latest_analysis and latest_analysis.ats_score and latest_analysis.ats_score >= 85:
         resume_status = 'complete'
         resume_status_text = 'Complete'
-    elif latest_analysis:
-        resume_status = 'in-progress'
-        resume_status_text = 'In Progress'
-    elif has_resume:
+    elif latest_analysis or has_resume:
         resume_status = 'in-progress'
         resume_status_text = 'In Progress'
     elif active_enrollment:
         resume_status = 'current'
         resume_status_text = 'Current'
     else:
-        resume_status = 'not-started'
-        resume_status_text = 'Not Started'
+        resume_status = 'upcoming'
+        resume_status_text = 'Upcoming'
 
     # Stage 6: Interview Prep
-    if has_interview_attempt and interview_attempts_count >= 5:
+    if has_interview_attempt and interview_attempts_count >= 10:
         interview_status = 'complete'
         interview_status_text = 'Complete'
     elif has_interview_attempt:
@@ -322,8 +336,8 @@ def dashboard_view(request):
         interview_status = 'current'
         interview_status_text = 'Current'
     else:
-        interview_status = 'not-started'
-        interview_status_text = 'Not Started'
+        interview_status = 'upcoming'
+        interview_status_text = 'Upcoming'
 
     career_journey = [
         {
@@ -332,7 +346,7 @@ def dashboard_view(request):
             'detail': target_career if target_career else 'Set your target career',
             'status': role_status,
             'status_text': role_status_text,
-            'url': '/profiles/edit/',
+            'url': reverse('profile_edit'),
         },
         {
             'id': 'profile',
@@ -340,7 +354,7 @@ def dashboard_view(request):
             'detail': f"{completion_percentage}% completed" if completion_percentage else 'Add academic details',
             'status': profile_status,
             'status_text': profile_status_text,
-            'url': '/profiles/edit/',
+            'url': reverse('profile_edit'),
         },
         {
             'id': 'skills',
@@ -348,7 +362,7 @@ def dashboard_view(request):
             'detail': f"{len(skills_list)} skill{'s' if len(skills_list) != 1 else ''} added" if skills_list else 'Add technical skills',
             'status': skills_status,
             'status_text': skills_status_text,
-            'url': '/profiles/edit/',
+            'url': reverse('recommendation:dashboard'),
         },
         {
             'id': 'roadmap',
@@ -356,7 +370,7 @@ def dashboard_view(request):
             'detail': f"{active_enrollment.career_path.name} ({roadmap_progress}%)" if active_enrollment else 'Enroll in 12-week path',
             'status': roadmap_status,
             'status_text': roadmap_status_text,
-            'url': f"/roadmaps/{active_enrollment.career_path.slug}/" if active_enrollment else '/roadmaps/',
+            'url': reverse('roadmaps:path_detail', kwargs={'slug': active_enrollment.career_path.slug}) if active_enrollment else reverse('roadmaps:path_list'),
         },
         {
             'id': 'resume',
@@ -364,7 +378,7 @@ def dashboard_view(request):
             'detail': f"ATS Score: {latest_analysis.ats_score}%" if (latest_analysis and latest_analysis.ats_score) else ('Resume created' if has_resume else 'Upload & scan resume'),
             'status': resume_status,
             'status_text': resume_status_text,
-            'url': '/ai-resume/history/' if latest_analysis else ('/ai-resume/analyze/' if has_resume else '/resume/'),
+            'url': reverse('ai_resume:detail', kwargs={'pk': latest_analysis.pk}) if latest_analysis else (reverse('ai_resume:analyze') if has_resume else reverse('resume:list')),
         },
         {
             'id': 'interview',
@@ -372,91 +386,81 @@ def dashboard_view(request):
             'detail': f"{interview_attempts_count} practice session{'s' if interview_attempts_count != 1 else ''}" if has_interview_attempt else 'MCQs & assessments',
             'status': interview_status,
             'status_text': interview_status_text,
-            'url': '/interviews/',
+            'url': reverse('interviews:hub'),
         },
     ]
 
-    # "Recommended for You" - 3 to 4 focused recommendations
+    # "Recommended for You" - Focused 3 Actionable Recommendations (Resume, Interview, Guidance)
     recommendations = []
-    
-    if active_enrollment and current_topic:
-        recommendations.append({
-            'badge': 'Roadmap',
-            'title': f'Continue {current_topic.title}',
-            'subtitle': f'Week {current_milestone.week_number} · {current_milestone.title}',
-            'action_text': 'Continue learning',
-            'action_url': f'/roadmaps/{active_enrollment.career_path.slug}/',
-            'icon': 'bi-map',
-        })
-    elif not active_enrollment:
-        recommendations.append({
-            'badge': 'Roadmap',
-            'title': f'Explore {target_career or "Engineering"} Roadmaps',
-            'subtitle': 'Structured 12-week milestones with curated resources',
-            'action_text': 'Explore roadmaps',
-            'action_url': '/roadmaps/',
-            'icon': 'bi-compass',
-        })
 
-    if not latest_analysis:
-        recommendations.append({
-            'badge': 'Resume',
-            'title': 'Benchmark resume with ATS Analyzer',
-            'subtitle': 'Identify missing industry keywords and format errors',
-            'action_text': 'Scan resume',
-            'action_url': '/ai-resume/analyze/' if has_resume else '/resume/',
-            'icon': 'bi-file-earmark-check',
-        })
-    else:
+    # 1. Resume Recommendation
+    if latest_analysis and latest_analysis.ats_score:
         recommendations.append({
             'badge': 'Resume',
             'title': f'Review ATS score ({latest_analysis.ats_score}%)',
             'subtitle': 'Check keyword coverage and suggested improvements',
             'action_text': 'View ATS report',
-            'action_url': '/ai-resume/history/',
+            'action_url': reverse('ai_resume:detail', kwargs={'pk': latest_analysis.pk}),
+            'icon': 'bi-file-earmark-text',
+        })
+    elif has_resume:
+        recommendations.append({
+            'badge': 'Resume',
+            'title': 'Benchmark resume with ATS Analyzer',
+            'subtitle': 'Identify missing industry keywords and format errors',
+            'action_text': 'Scan resume',
+            'action_url': reverse('ai_resume:analyze'),
+            'icon': 'bi-file-earmark-check',
+        })
+    else:
+        recommendations.append({
+            'badge': 'Resume',
+            'title': 'Build your technical resume',
+            'subtitle': 'Create an ATS-friendly single-column resume with verified skills',
+            'action_text': 'Build resume',
+            'action_url': reverse('resume:list'),
             'icon': 'bi-file-earmark-text',
         })
 
-    if not has_interview_attempt:
+    # 2. Interview Recommendation
+    if has_interview_attempt:
         recommendations.append({
             'badge': 'Interview',
-            'title': 'Practice technical MCQs & assessments',
-            'subtitle': 'Prepare for timed campus screening rounds',
-            'action_text': 'Start practice',
-            'action_url': '/interviews/',
+            'title': 'Take a mock technical interview',
+            'subtitle': 'Practice coding and domain challenges',
+            'action_text': 'Practice more',
+            'action_url': reverse('interviews:hub'),
             'icon': 'bi-mortarboard',
         })
     else:
         recommendations.append({
             'badge': 'Interview',
-            'title': 'Take a mock technical interview',
-            'subtitle': 'Continue practicing coding and domain challenges',
-            'action_text': 'Practice more',
-            'action_url': '/interviews/',
+            'title': 'Practice technical MCQs & assessments',
+            'subtitle': 'Prepare for timed campus screening rounds',
+            'action_text': 'Start practice',
+            'action_url': reverse('interviews:hub'),
             'icon': 'bi-mortarboard',
         })
 
+    # 3. Guidance Recommendation
     recommendations.append({
         'badge': 'Guidance',
         'title': 'Calibrate company hiring tier',
         'subtitle': 'Evaluate profile readiness for Product vs Service-based cutoffs',
         'action_text': 'Check readiness',
-        'action_url': '/recommendation/',
+        'action_url': reverse('recommendation:dashboard'),
         'icon': 'bi-sliders',
     })
-
-    # Limit to 3-4 recommendations
-    recommendations = recommendations[:4]
 
     # Readiness breakdown dictionary
     readiness_data = {
         'has_analysis': bool(career_analysis),
         'score': career_analysis.career_readiness_score if career_analysis else 0,
         'profile_metric': f"{completion_percentage}%",
-        'skills_metric': f"{career_analysis.confidence_score}%" if (career_analysis and career_analysis.confidence_score) else f"{min(len(skills_list)*15, 100)}%",
+        'skills_metric': f"{career_analysis.confidence_score}%" if (career_analysis and career_analysis.confidence_score) else (f"{len(skills_list)} added" if skills_list else "Pending"),
         'roadmap_metric': f"{roadmap_progress}%",
         'resume_metric': f"{latest_analysis.ats_score}%" if (latest_analysis and latest_analysis.ats_score) else ("Created" if has_resume else "Pending"),
-        'interview_metric': "Active" if has_interview_attempt else "Pending",
+        'interview_metric': f"{interview_attempts_count} session{'s' if interview_attempts_count != 1 else ''}" if has_interview_attempt else "Pending",
     }
 
     context = {
@@ -492,5 +496,6 @@ def dashboard_view(request):
         'roadmap_completed_count': roadmap_completed_count,
         'roadmap_total_topics': roadmap_total_topics,
         'different_from_target': different_from_target,
+        'is_roadmap_completed': is_roadmap_completed,
     }
     return render(request, 'core/dashboard.html', context)
