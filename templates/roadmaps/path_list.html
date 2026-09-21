@@ -1,150 +1,489 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Career Roadmaps - Career Catalyst{% endblock %}
+{% block title %}Learning Roadmaps — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'dashboard' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Dashboard
-        </a>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/roadmaps.css' %}?v=1.0">
+{% endblock %}
 
-    <div class="text-center mb-5">
-        <h1 class="fw-bold mb-2">Career Learning Roadmaps</h1>
-        <p class="text-muted fs-5">Choose a career path and follow a structured weekly plan with curated resources.</p>
-    </div>
+{# Override public navbar, footer, and floating chatbot for workspace application shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-    {% if enrollments %}
-    <div class="mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="fw-bold text-secondary mb-0"><i class="bi bi-bookmark-star text-primary"></i> Your Roadmaps</h4>
-            <a href="{% url 'roadmaps:my_roadmap' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">View All Active</a>
-        </div>
-        <div class="row g-3 mb-4">
-            {% for enrollment in in_progress_enrollments %}
-            <div class="col-md-6 col-lg-4">
-                <a href="{% url 'roadmaps:path_detail' enrollment.career_path.slug %}" class="text-decoration-none">
-                    <div class="card border-0 shadow-sm rounded-4 p-3 h-100 hover-lift position-relative overflow-hidden" style="border-left: 4px solid var(--primary) !important;">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <div class="d-flex align-items-center">
-                                <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
-                                    <i class="{{ enrollment.career_path.icon }} fs-4 text-primary"></i>
-                                </div>
-                                <div>
-                                    <h6 class="fw-bold mb-0 text-secondary">{{ enrollment.career_path.name }}</h6>
-                                    <small class="text-muted">Started {{ enrollment.started_at|date:"M d, Y" }}</small>
-                                </div>
-                            </div>
-                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1 small">In Progress</span>
-                        </div>
-                        <div class="progress mt-2" style="height: 8px;">
-                            <div class="progress-bar" role="progressbar" style="width: {{ enrollment.progress_percentage }}%; background: linear-gradient(to right, var(--primary), var(--accent));">
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-muted">{{ enrollment.progress_percentage }}% complete</small>
-                            <small class="text-primary fw-semibold">Continue <i class="bi bi-arrow-right"></i></small>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            {% endfor %}
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
 
-            {% for enrollment in completed_enrollments %}
-            <div class="col-md-6 col-lg-4">
-                <a href="{% url 'roadmaps:path_detail' enrollment.career_path.slug %}" class="text-decoration-none">
-                    <div class="card border-0 shadow-sm rounded-4 p-3 h-100 hover-lift position-relative overflow-hidden" style="border-left: 4px solid #22c55e !important;">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <div class="d-flex align-items-center">
-                                <div class="rounded-circle bg-success bg-opacity-10 p-2 me-3">
-                                    <i class="{{ enrollment.career_path.icon }} fs-4 text-success"></i>
-                                </div>
-                                <div>
-                                    <h6 class="fw-bold mb-0 text-secondary">{{ enrollment.career_path.name }}</h6>
-                                    <small class="text-muted">Completed 🎉</small>
-                                </div>
-                            </div>
-                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small"><i class="bi bi-check-circle-fill me-1"></i> Completed</span>
-                        </div>
-                        <div class="progress mt-2" style="height: 8px;">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%;">
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mt-2">
-                            <small class="text-success fw-semibold">100% Mastered</small>
-                            <small class="text-success fw-semibold">Review <i class="bi bi-arrow-right"></i></small>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-        <hr class="my-4">
-    </div>
-    {% endif %}
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
-    <h4 class="fw-bold text-secondary mb-4"><i class="bi bi-compass"></i> All Career Paths</h4>
-    <div class="row g-4">
-        {% for path in paths %}
-        <div class="col-md-4 col-lg-3">
-            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden hover-lift position-relative">
-                {% if path.id in completed_path_ids %}
-                <div class="position-absolute top-0 end-0 m-3">
-                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small fw-bold">
-                        <i class="bi bi-check-circle-fill me-1"></i> Completed
-                    </span>
-                </div>
-                {% elif path.id in in_progress_path_ids %}
-                <div class="position-absolute top-0 end-0 m-3">
-                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-bold">
-                        In Progress
-                    </span>
-                </div>
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
                 {% endif %}
+            </div>
+        </header>
 
-                <div class="card-body p-4 text-center d-flex flex-column">
-                    <div class="rounded-circle {% if path.id in completed_path_ids %}bg-success bg-opacity-10 text-success{% else %}bg-primary bg-opacity-10 text-primary{% endif %} mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
-                        <i class="{{ path.icon }} fs-3"></i>
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- 1. Roadmaps Page Header -->
+            <header class="roadmap-page-header">
+                <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                    <div>
+                        <h1 class="roadmap-page-title">Learning Roadmaps</h1>
+                        <p class="roadmap-page-subtitle">
+                            Structured, week-by-week curricula designed to develop core competencies for engineering careers.
+                        </p>
                     </div>
-                    <h5 class="fw-bold mb-2">{{ path.name }}</h5>
-                    <p class="text-muted small flex-grow-1">{{ path.description|truncatewords:18 }}</p>
-                    <div class="d-flex justify-content-center gap-2 mb-3">
-                        <span class="badge bg-light text-secondary rounded-pill px-2 py-1 small">
-                            <i class="bi bi-calendar3"></i> {{ path.estimated_weeks }} weeks
-                        </span>
-                        <span class="badge {% if path.difficulty == 'Beginner' %}bg-success{% elif path.difficulty == 'Intermediate' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-10 {% if path.difficulty == 'Beginner' %}text-success{% elif path.difficulty == 'Intermediate' %}text-warning{% else %}text-danger{% endif %} rounded-pill px-2 py-1 small">
-                            {{ path.difficulty }}
-                        </span>
+                    {% if target_career %}
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25" style="font-size: 0.85rem;">
+                        <i class="bi bi-bullseye"></i>
+                        <span>Target Goal: <strong>{{ target_career }}</strong></span>
                     </div>
-                    {% if path.id in completed_path_ids %}
-                        <a href="{% url 'roadmaps:path_detail' path.slug %}" class="btn btn-outline-success rounded-pill btn-sm px-4">
-                            <i class="bi bi-check-circle-fill me-1"></i> Completed
-                        </a>
-                    {% elif path.id in in_progress_path_ids %}
-                        <a href="{% url 'roadmaps:path_detail' path.slug %}" class="btn btn-primary-custom rounded-pill btn-sm px-4">
-                            Continue Path <i class="bi bi-arrow-right ms-1"></i>
-                        </a>
                     {% else %}
-                        <a href="{% url 'roadmaps:path_detail' path.slug %}" class="btn btn-outline-primary rounded-pill btn-sm px-4">
-                            View Path
-                        </a>
+                    <a href="{% url 'profile_edit' %}" class="dash-btn-secondary dash-btn-sm" style="font-size: 0.825rem;">
+                        <i class="bi bi-plus-circle"></i>
+                        <span>Set target career</span>
+                    </a>
                     {% endif %}
                 </div>
-            </div>
-        </div>
-        {% endfor %}
+            </header>
+
+            <!-- 2. PRIMARY: MY ACTIVE ROADMAP -->
+            {% if primary_enrollment %}
+            <section class="roadmap-hero-card {% if is_roadmap_completed %}completed{% endif %}" aria-labelledby="activeRoadmapHeading">
+                <div class="roadmap-hero-top">
+                    <div>
+                        <div class="roadmap-hero-badge-group">
+                            {% if is_roadmap_completed %}
+                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small fw-semibold">
+                                <i class="bi bi-check2-all me-1"></i> Roadmap Completed
+                            </span>
+                            {% else %}
+                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold">
+                                <i class="bi bi-play-circle me-1"></i> Active Learning Track
+                            </span>
+                            {% endif %}
+                            {% if primary_enrollment.career_path.matches_target_goal %}
+                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small">
+                                <i class="bi bi-star-fill me-1"></i> Target Goal Track
+                            </span>
+                            {% endif %}
+                            <span class="badge bg-light text-muted border rounded-pill px-2 py-0.5 small">
+                                {{ primary_enrollment.career_path.difficulty }}
+                            </span>
+                            <span class="badge bg-light text-muted border rounded-pill px-2 py-0.5 small">
+                                {{ primary_enrollment.career_path.estimated_weeks }} Weeks
+                            </span>
+                        </div>
+                        <h2 class="roadmap-hero-track-title" id="activeRoadmapHeading">{{ primary_enrollment.career_path.name }}</h2>
+                        <p class="roadmap-hero-track-desc">{{ primary_enrollment.career_path.description }}</p>
+                    </div>
+
+                    <div class="roadmap-hero-pct-badge" title="Overall track progress: {{ roadmap_progress }}%">
+                        {% if is_roadmap_completed %}
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>100%</span>
+                        {% else %}
+                        <i class="bi bi-activity"></i>
+                        <span>{{ roadmap_progress }}%</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Current Focus Block -->
+                <div class="roadmap-focus-banner">
+                    {% if is_roadmap_completed %}
+                    <div class="roadmap-focus-label"><i class="bi bi-check-circle-fill me-1"></i> Track Status</div>
+                    <div class="roadmap-focus-title">Roadmap completed</div>
+                    <div class="roadmap-focus-meta">
+                        <span><i class="bi bi-trophy"></i> You've completed all {{ roadmap_total_topics }} topics in this track.</span>
+                    </div>
+                    {% elif current_milestone and current_topic %}
+                    <div class="roadmap-focus-label"><i class="bi bi-lightning-charge-fill me-1"></i> Current Focus &bull; Week {{ current_milestone.week_number }}</div>
+                    <div class="roadmap-focus-title">{{ current_milestone.title }}</div>
+                    <div class="roadmap-focus-meta">
+                        <span>Next topic: <strong>{{ current_topic.title }}</strong></span>
+                        <span>&bull;</span>
+                        <span><i class="bi bi-clock"></i> {{ current_topic.estimated_hours }}h</span>
+                        <span>&bull;</span>
+                        <span><i class="bi bi-journal-text"></i> {{ current_topic.resource_type }}</span>
+                    </div>
+                    {% else %}
+                    <div class="roadmap-focus-label"><i class="bi bi-hourglass-split me-1"></i> Track Status</div>
+                    <div class="roadmap-focus-title">Track in progress</div>
+                    <div class="roadmap-focus-meta">
+                        <span>{{ roadmap_completed_count }} of {{ roadmap_total_topics }} topics finished.</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="roadmap-progress-bar-group">
+                    <div class="roadmap-progress-labels">
+                        <span>{{ roadmap_completed_count }} of {{ roadmap_total_topics }} lessons completed</span>
+                        <span>{{ roadmap_progress }}%</span>
+                    </div>
+                    <div class="roadmap-progress-track" role="progressbar" aria-valuenow="{{ roadmap_progress }}" aria-valuemin="0" aria-valuemax="100">
+                        <div class="roadmap-progress-fill" style="width: {{ roadmap_progress }}%;"></div>
+                    </div>
+                </div>
+
+                <!-- CTAs -->
+                <div class="roadmap-hero-actions">
+                    {% if is_roadmap_completed %}
+                    <a href="{% url 'roadmaps:path_detail' primary_enrollment.career_path.slug %}" class="dash-btn-primary">
+                        <span>Review Roadmap</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="{% url 'interviews:hub' %}" class="dash-btn-secondary">
+                        <i class="bi bi-mortarboard"></i>
+                        <span>Practice Interview Challenges</span>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'roadmaps:path_detail' primary_enrollment.career_path.slug %}{% if current_milestone %}#milestone-week-{{ current_milestone.week_number }}{% endif %}" class="dash-btn-primary">
+                        <span>Continue Learning</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="{% url 'roadmaps:path_detail' primary_enrollment.career_path.slug %}" class="dash-btn-secondary">
+                        <span>View Full Syllabus</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </section>
+            {% else %}
+            <!-- Empty State: No Active Roadmap -->
+            <section class="roadmap-empty-card" aria-labelledby="noActiveRoadmapHeading">
+                <div class="roadmap-empty-icon">
+                    <i class="bi bi-compass"></i>
+                </div>
+                <h2 class="roadmap-empty-title" id="noActiveRoadmapHeading">You haven't started a roadmap yet</h2>
+                <p class="roadmap-empty-text">
+                    {% if target_career %}
+                    Follow a curated 12-week roadmap tailored for <strong>{{ target_career }}</strong> to prepare for campus hiring assessments and interviews.
+                    {% else %}
+                    Choose a structured learning path aligned with your target career to build foundational and advanced engineering skills.
+                    {% endif %}
+                </p>
+                <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                    {% if target_career_path %}
+                    <a href="{% url 'roadmaps:path_detail' target_career_path.slug %}" class="dash-btn-primary">
+                        <span>Explore {{ target_career_path.name }} Roadmap</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    {% elif target_career %}
+                    <a href="#explore-roadmaps" class="dash-btn-primary">
+                        <span>Explore Roadmaps</span>
+                        <i class="bi bi-arrow-down"></i>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'profile_edit' %}" class="dash-btn-primary">
+                        <span>Set career goal</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="#explore-roadmaps" class="dash-btn-secondary">
+                        <span>Browse available tracks</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- 3. SEQUENTIAL ROADMAP JOURNEY (Milestone Stepper) -->
+            {% if primary_enrollment and milestone_journey %}
+            <section class="roadmap-journey-section" aria-labelledby="journeyHeading">
+                <div class="roadmap-section-header">
+                    <h3 class="roadmap-section-title" id="journeyHeading">
+                        <i class="bi bi-diagram-3 text-primary"></i>
+                        <span>Roadmap Journey</span>
+                    </h3>
+                    <span class="text-muted small">
+                        {% if is_roadmap_completed %}
+                        All {{ milestone_journey|length }} weeks mastered
+                        {% elif current_milestone %}
+                        Active: Week {{ current_milestone.week_number }} of {{ milestone_journey|length }}
+                        {% else %}
+                        {{ milestone_journey|length }} weeks total
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="roadmap-journey-track">
+                    {% for ms in milestone_journey %}
+                    <a href="{% url 'roadmaps:path_detail' primary_enrollment.career_path.slug %}#milestone-week-{{ ms.week_number }}" 
+                       class="roadmap-journey-node {{ ms.status }}" 
+                       title="Week {{ ms.week_number }}: {{ ms.title }} ({{ ms.completed_topics }}/{{ ms.total_topics }} completed)">
+                        <div class="roadmap-node-top">
+                            <span class="roadmap-node-week">Week {{ ms.week_number }}</span>
+                            <span class="roadmap-node-status-badge">
+                                {% if ms.status == 'completed' %}
+                                <i class="bi bi-check-circle-fill"></i> Done
+                                {% elif ms.status == 'current' %}
+                                <i class="bi bi-record-circle-fill"></i> Active
+                                {% else %}
+                                <i class="bi bi-circle"></i> Next
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="roadmap-node-title">{{ ms.title }}</div>
+                        <div class="roadmap-node-progress-text">
+                            {{ ms.completed_topics }}/{{ ms.total_topics }} topics
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- 4. SECONDARY: OTHER ENROLLED ROADMAPS -->
+            {% if secondary_enrollments %}
+            <section class="roadmap-secondary-section" aria-labelledby="otherRoadmapsHeading">
+                <div class="roadmap-section-header">
+                    <h3 class="roadmap-section-title" id="otherRoadmapsHeading">
+                        <i class="bi bi-collection text-secondary"></i>
+                        <span>Other Enrolled Roadmaps</span>
+                    </h3>
+                    <span class="text-muted small">{{ secondary_enrollments|length }} additional track{{ secondary_enrollments|length|pluralize }}</span>
+                </div>
+
+                <div class="roadmap-secondary-list">
+                    {% for enr in secondary_enrollments %}
+                    <a href="{% url 'roadmaps:path_detail' enr.career_path.slug %}" class="roadmap-secondary-item">
+                        <div class="roadmap-secondary-info">
+                            <div class="roadmap-secondary-icon">
+                                <i class="{{ enr.career_path.icon }}"></i>
+                            </div>
+                            <div>
+                                <div class="roadmap-secondary-title">{{ enr.career_path.name }}</div>
+                                <div class="roadmap-secondary-meta">
+                                    {{ enr.career_path.difficulty }} &bull; {{ enr.career_path.estimated_weeks }} Weeks
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="roadmap-secondary-progress-box">
+                            <div class="roadmap-progress-track w-100">
+                                <div class="roadmap-progress-fill {% if enr.progress_percentage >= 100 %}bg-success{% endif %}" style="width: {{ enr.progress_percentage }}%;"></div>
+                            </div>
+                            <span class="small fw-semibold text-muted" style="min-width: 36px; text-align: right;">{{ enr.progress_percentage }}%</span>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            {% if enr.progress_percentage >= 100 %}
+                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small">
+                                <i class="bi bi-check2"></i> Completed
+                            </span>
+                            {% else %}
+                            <span class="dash-btn-secondary dash-btn-sm" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                                <span>Continue</span>
+                                <i class="bi bi-arrow-right"></i>
+                            </span>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- 5. SECONDARY: EXPLORE ROADMAPS CATALOG -->
+            <section class="roadmap-catalog-section" id="explore-roadmaps" aria-labelledby="catalogHeading">
+                <div class="roadmap-catalog-controls">
+                    <div>
+                        <h3 class="roadmap-section-title" id="catalogHeading">
+                            <i class="bi bi-compass text-primary"></i>
+                            <span>Explore Roadmaps</span>
+                        </h3>
+                        <p class="text-muted small mb-0">{{ paths|length }} career tracks curated for software, data, security, and systems engineering.</p>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <!-- Search Box -->
+                        <div class="roadmap-search-box">
+                            <i class="bi bi-search roadmap-search-icon"></i>
+                            <input type="text" id="roadmapSearchInput" class="roadmap-search-input" placeholder="Filter roadmaps by name or keyword..." aria-label="Search roadmaps">
+                        </div>
+
+                        <!-- Difficulty Pills (Strictly from CareerPath.difficulty choices) -->
+                        <div class="roadmap-filter-pills" role="radiogroup" aria-label="Filter by difficulty">
+                            <button type="button" class="roadmap-filter-pill active" data-difficulty="all" role="radio" aria-checked="true">All</button>
+                            <button type="button" class="roadmap-filter-pill" data-difficulty="beginner" role="radio" aria-checked="false">Beginner</button>
+                            <button type="button" class="roadmap-filter-pill" data-difficulty="intermediate" role="radio" aria-checked="false">Intermediate</button>
+                            <button type="button" class="roadmap-filter-pill" data-difficulty="advanced" role="radio" aria-checked="false">Advanced</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Catalog Grid -->
+                <div class="roadmap-catalog-grid" id="roadmapGrid">
+                    {% for path in paths %}
+                    <article class="roadmap-catalog-card {% if path.matches_target_goal %}target-match{% endif %}" 
+                             data-title="{{ path.name|lower }}" 
+                             data-desc="{{ path.description|lower }}" 
+                             data-difficulty="{{ path.difficulty|lower }}">
+                        {% if path.matches_target_goal %}
+                        <div class="roadmap-target-match-tag">
+                            <i class="bi bi-star-fill"></i>
+                            <span>Recommended for your target role</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="roadmap-card-header">
+                            <div class="roadmap-card-icon">
+                                <i class="{{ path.icon }}"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h4 class="roadmap-card-title">{{ path.name }}</h4>
+                                <div class="roadmap-card-pills">
+                                    <span class="roadmap-card-pill level-{{ path.difficulty|lower }}">
+                                        {{ path.difficulty }}
+                                    </span>
+                                    <span class="roadmap-card-pill">
+                                        <i class="bi bi-calendar3"></i> {{ path.estimated_weeks }} Weeks
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="roadmap-card-desc">{{ path.description }}</p>
+
+                        <div class="roadmap-card-footer">
+                            <span class="roadmap-card-lessons">
+                                <i class="bi bi-journal-code me-1"></i>{{ path.total_topics }} lessons
+                            </span>
+
+                            <div>
+                                {% if path.is_completed %}
+                                <a href="{% url 'roadmaps:path_detail' path.slug %}" class="dash-btn-secondary dash-btn-sm text-success" style="font-size: 0.8rem;">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span>Completed</span>
+                                </a>
+                                {% elif path.is_enrolled %}
+                                <a href="{% url 'roadmaps:path_detail' path.slug %}" class="dash-btn-primary dash-btn-sm" style="font-size: 0.8rem;">
+                                    <span>Continue · {{ path.progress_pct }}%</span>
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                                {% else %}
+                                <a href="{% url 'roadmaps:path_detail' path.slug %}" class="dash-btn-secondary dash-btn-sm" style="font-size: 0.8rem;">
+                                    <span>Explore Path</span>
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+
+                <!-- Empty state if search filter finds 0 results -->
+                <div id="noSearchResults" class="text-center py-5 d-none">
+                    <p class="text-muted mb-2"><i class="bi bi-search fs-3"></i></p>
+                    <h5 class="fw-semibold text-secondary">No matching roadmaps found</h5>
+                    <p class="text-muted small">Try adjusting your keyword search or difficulty filter.</p>
+                </div>
+            </section>
+        </main>
     </div>
 </div>
 
-<style>
-    .hover-lift {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .hover-lift:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
-    }
-</style>
+<!-- Scripts for Search, Filters, and Mobile Drawer -->
+<script>
+    (function() {
+        // Mobile Sidebar Drawer
+        const toggleBtn = document.getElementById('sidebarToggleBtn');
+        const closeBtn = document.getElementById('sidebarCloseBtn');
+        const sidebar = document.getElementById('dashboardSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        function openSidebar() {
+            if (sidebar) sidebar.classList.add('open');
+            if (overlay) overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            if (sidebar) sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+        if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
+
+        // Catalog Search & Difficulty Filter
+        const searchInput = document.getElementById('roadmapSearchInput');
+        const filterPills = document.querySelectorAll('.roadmap-filter-pill');
+        const cards = document.querySelectorAll('.roadmap-catalog-card');
+        const noResults = document.getElementById('noSearchResults');
+
+        let activeDifficulty = 'all';
+        let searchQuery = '';
+
+        function filterCatalog() {
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const title = card.getAttribute('data-title') || '';
+                const desc = card.getAttribute('data-desc') || '';
+                const diff = card.getAttribute('data-difficulty') || '';
+
+                const matchesSearch = !searchQuery || title.includes(searchQuery) || desc.includes(searchQuery);
+                const matchesDifficulty = (activeDifficulty === 'all') || (diff === activeDifficulty);
+
+                if (matchesSearch && matchesDifficulty) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (noResults) {
+                if (visibleCount === 0) {
+                    noResults.classList.remove('d-none');
+                } else {
+                    noResults.classList.add('d-none');
+                }
+            }
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                searchQuery = e.target.value.trim().toLowerCase();
+                filterCatalog();
+            });
+        }
+
+        filterPills.forEach(pill => {
+            pill.addEventListener('click', function() {
+                filterPills.forEach(p => {
+                    p.classList.remove('active');
+                    p.setAttribute('aria-checked', 'false');
+                });
+                this.classList.add('active');
+                this.setAttribute('aria-checked', 'true');
+                activeDifficulty = this.getAttribute('data-difficulty') || 'all';
+                filterCatalog();
+            });
+        });
+    })();
+</script>
 {% endblock %}

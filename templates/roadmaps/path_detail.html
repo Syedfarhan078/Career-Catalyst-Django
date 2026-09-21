@@ -1,243 +1,286 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}{{ path.name }} Roadmap - Career Catalyst{% endblock %}
+{% block title %}{{ path.name }} Curriculum — CareerCatalyst{% endblock %}
 
 {% block extra_css %}
-<style>
-    .milestone-card {
-        border-left: 4px solid var(--primary);
-        transition: all 0.2s ease;
-    }
-    .milestone-card.level-beginner { border-left-color: #22c55e; }
-    .milestone-card.level-intermediate { border-left-color: #f59e0b; }
-    .milestone-card.level-advanced { border-left-color: #ef4444; }
-    
-    .topic-check {
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-        border-radius: 12px;
-    }
-    .topic-check:hover {
-        background-color: var(--hover-bg);
-    }
-    .topic-check.completed {
-        background-color: var(--completed-bg);
-    }
-    .topic-check.completed .topic-title {
-        text-decoration: line-through;
-        color: #9ca3af;
-    }
-    .week-badge {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.9rem;
-    }
-    .resource-badge {
-        font-size: 0.7rem;
-    }
-    @keyframes floatBounce {
-        0%, 100% { transform: translateY(0) scale(1); }
-        50% { transform: translateY(-8px) scale(1.08); }
-    }
-    .celebration-emoji {
-        animation: floatBounce 2s ease-in-out infinite;
-        display: inline-block;
-        font-size: 3.25rem;
-        line-height: 1;
-    }
-    .modal-celebration {
-        border-radius: 24px;
-        background: radial-gradient(circle at top, rgba(37,99,235,0.06) 0%, var(--card-bg, #ffffff) 70%);
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/roadmaps.css' %}?v=1.0">
 {% endblock %}
 
-{% block content %}
+{# Override public navbar, footer, and floating chatbot for workspace application shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
 {% csrf_token %}
-<div class="container py-4 mt-4">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-start mb-4">
-        <div>
-            <div class="mb-3">
-                <a href="{% url 'roadmaps:path_list' %}" class="btn-back">
-                    <i class="bi bi-arrow-left"></i> Back to Roadmaps
-                </a>
-            </div>
-            <div class="d-flex align-items-center gap-3 mb-2">
-                <div class="rounded-circle bg-primary bg-opacity-10 p-3">
-                    <i class="{{ path.icon }} fs-2 text-primary"></i>
-                </div>
-                <div>
-                    <h1 class="fw-bold mb-0">{{ path.name }}</h1>
-                    <p class="text-muted mb-0">{{ path.description }}</p>
-                </div>
-            </div>
-        </div>
-        {% if not user_roadmap %}
-        <form method="POST" action="{% url 'roadmaps:enroll' path.slug %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary-custom btn-lg">
-                <i class="bi bi-play-circle me-2"></i> Start Learning
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
             </button>
-        </form>
-        {% endif %}
-    </div>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
 
-    <!-- Progress Bar (if enrolled) -->
-    {% if user_roadmap %}
-    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="fw-bold mb-0">Your Progress</h5>
-            <span class="fw-bold text-primary" id="progressText">{{ completed_count }}/{{ total_topics }} topics ({{ progress }}%)</span>
-        </div>
-        <div class="progress" style="height: 12px;" id="progressBarWrapper">
-            <div class="progress-bar" id="progressBar" role="progressbar" 
-                 style="width: {{ progress }}%; background: linear-gradient(to right, var(--primary), var(--accent));"
-                 aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">
-            </div>
-        </div>
-    </div>
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'roadmaps:path_list' %}" class="roadmap-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Roadmaps Hub</span>
+            </a>
 
-    <!-- Milestone Unlocked Celebration Banner -->
-    <div id="milestoneUnlockedBanner" class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-success bg-opacity-10 border border-success border-opacity-25 {% if progress < 100 %}d-none{% endif %}">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.3rem;">
-                    <i class="bi bi-trophy-fill"></i>
-                </div>
-                <div>
-                    <h5 class="fw-bold text-success mb-1">🎉 Milestone Unlocked: Track Completed!</h5>
-                    <p class="text-muted small mb-0">You've mastered all learning topics in this path. Test your skills with related interview challenges.</p>
-                </div>
-            </div>
-            <div class="d-flex gap-2 flex-shrink-0">
-                <a href="{% url 'interviews:hub' %}" class="btn btn-primary-custom btn-sm rounded-pill px-3">
-                    Practice Interview Quiz <i class="bi bi-arrow-right ms-1"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Pacing & Commitment Header Bar -->
-    <div class="card border-0 shadow-sm rounded-4 p-3 px-4 mb-4 bg-light" style="border: 1px solid var(--border) !important;">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div class="d-flex flex-wrap align-items-center gap-4 text-muted small">
-                <span class="d-flex align-items-center gap-2">
-                    <i class="bi bi-clock-history text-primary"></i>
-                    <span><strong>Pacing:</strong> ~4-6 hrs/week</span>
-                </span>
-                <span class="d-flex align-items-center gap-2">
-                    <i class="bi bi-calendar-check text-success"></i>
-                    <span><strong>Est. Completion:</strong> {{ path.estimated_weeks }} Weeks</span>
-                </span>
-                <span class="d-flex align-items-center gap-2">
-                    <i class="bi bi-mortarboard text-warning"></i>
-                    <span><strong>Difficulty:</strong> {{ path.difficulty }}</span>
-                </span>
-                <span class="d-flex align-items-center gap-2">
-                    <i class="bi bi-journal-code text-info"></i>
-                    <span><strong>Topics:</strong> {{ total_topics }} Lessons</span>
-                </span>
-            </div>
-            <div>
-                <a href="{% url 'interviews:hub' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
-                    <i class="bi bi-patch-question me-1"></i> Practice Related Quiz
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Milestones Timeline -->
-    {% for milestone in milestones %}
-    <div class="card border-0 shadow-sm rounded-4 mb-4 milestone-card level-{{ milestone.level|lower }}" id="milestone-card-{{ milestone.week_number }}">
-        <div class="card-body p-4">
-            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="week-badge bg-primary bg-opacity-10 text-primary">
-                        W{{ milestone.week_number }}
+            <!-- Track Header Card -->
+            <header class="roadmap-detail-header-card">
+                <div class="roadmap-detail-title-row">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="roadmap-card-icon" style="width: 48px; height: 48px; font-size: 1.4rem;">
+                            <i class="{{ path.icon }}"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                <h1 class="roadmap-page-title mb-0" style="font-size: 1.5rem;">{{ path.name }}</h1>
+                                {% if user_roadmap %}
+                                    {% if is_roadmap_completed %}
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small fw-semibold">
+                                        <i class="bi bi-check2-all me-1"></i> Completed
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold">
+                                        <i class="bi bi-play-circle me-1"></i> Enrolled
+                                    </span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                            <p class="roadmap-page-subtitle mb-0">{{ path.description }}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="fw-bold mb-0">{{ milestone.title }}</h4>
-                        <span class="badge {% if milestone.level == 'Beginner' %}bg-success{% elif milestone.level == 'Intermediate' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-10 {% if milestone.level == 'Beginner' %}text-success{% elif milestone.level == 'Intermediate' %}text-warning{% else %}text-danger{% endif %} rounded-pill small">
-                            {{ milestone.level }}
-                        </span>
-                    </div>
-                </div>
-            </div>
 
-            {% for topic in milestone.topics.all %}
-            <div class="topic-check d-flex align-items-center justify-content-between p-3 mb-2 {% if topic.id in completed_ids %}completed{% endif %}"
-                 {% if user_roadmap %}data-topic-id="{{ topic.id }}" data-week="{{ milestone.week_number }}"{% endif %}>
-                <div class="d-flex align-items-center gap-3">
-                    {% if user_roadmap %}
-                    <div class="form-check mb-0">
-                        <input class="form-check-input topic-checkbox" type="checkbox" 
-                               id="topic-{{ topic.id }}"
-                               data-topic-id="{{ topic.id }}"
-                               data-week="{{ milestone.week_number }}"
-                               {% if topic.id in completed_ids %}checked{% endif %}>
-                    </div>
-                    {% else %}
-                    <i class="bi bi-circle text-muted"></i>
+                    {% if not user_roadmap %}
+                    <form method="POST" action="{% url 'roadmaps:enroll' path.slug %}" class="flex-shrink-0">
+                        {% csrf_token %}
+                        <button type="submit" class="dash-btn-primary">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Start Learning Track</span>
+                        </button>
+                    </form>
                     {% endif %}
-                    <div>
-                        <span class="fw-semibold topic-title">{{ topic.title }}</span>
-                        <p class="text-muted small mb-0">{{ topic.description }}</p>
+                </div>
+
+                <!-- Track Metadata -->
+                <div class="roadmap-detail-meta-bar mb-0">
+                    <span class="roadmap-detail-meta-item">
+                        <i class="bi bi-calendar3 text-primary"></i>
+                        <span>{{ path.estimated_weeks }} Weeks</span>
+                    </span>
+                    <span>&bull;</span>
+                    <span class="roadmap-detail-meta-item">
+                        <i class="bi bi-speedometer text-warning"></i>
+                        <span>{{ path.difficulty }}</span>
+                    </span>
+                    <span>&bull;</span>
+                    <span class="roadmap-detail-meta-item">
+                        <i class="bi bi-journal-code text-info"></i>
+                        <span>{{ total_topics }} Lessons total</span>
+                    </span>
+                    <span>&bull;</span>
+                    <span class="roadmap-detail-meta-item">
+                        <i class="bi bi-clock-history text-muted"></i>
+                        <span>Pacing: ~4-6 hrs/week</span>
+                    </span>
+                </div>
+            </header>
+
+            <!-- Focus & Progress Bar (If Enrolled) -->
+            {% if user_roadmap %}
+            <section class="roadmap-detail-focus-bar" aria-label="Track Progress and Focus">
+                <div class="roadmap-detail-focus-left flex-grow-1">
+                    <div style="min-width: 200px; flex: 1; max-width: 480px;">
+                        <div class="d-flex justify-content-between align-items-center mb-1 small text-muted">
+                            <span class="fw-semibold text-secondary">Track Progress</span>
+                            <span id="progressText" class="fw-bold {% if is_roadmap_completed %}text-success{% else %}text-primary{% endif %}">
+                                {{ completed_count }}/{{ total_topics }} lessons ({{ progress }}%)
+                            </span>
+                        </div>
+                        <div class="roadmap-progress-track" role="progressbar" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="roadmap-progress-fill {% if is_roadmap_completed %}bg-success{% endif %}" id="progressBar" style="width: {{ progress }}%;"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-light text-muted resource-badge rounded-pill px-2 py-1">
-                        <i class="bi bi-clock"></i> {{ topic.estimated_hours }}h
+
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    {% if is_roadmap_completed %}
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1.5 fw-semibold">
+                        <i class="bi bi-check-circle-fill me-1"></i> Track Fully Mastered
                     </span>
-                    {% if topic.resource_url %}
-                    <a href="{{ topic.resource_url }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0 resource-badge" onclick="event.stopPropagation()">
-                        {% if topic.resource_type == 'Video' %}<i class="bi bi-play-circle"></i>
-                        {% elif topic.resource_type == 'Course' %}<i class="bi bi-mortarboard"></i>
-                        {% elif topic.resource_type == 'Documentation' %}<i class="bi bi-file-text"></i>
-                        {% else %}<i class="bi bi-link-45deg"></i>{% endif %}
-                        {{ topic.resource_type }}
+                    <a href="{% url 'interviews:hub' %}" class="dash-btn-secondary dash-btn-sm">
+                        <i class="bi bi-mortarboard"></i>
+                        <span>Practice Interview</span>
+                    </a>
+                    {% elif current_milestone %}
+                    <!-- Constraint 3: Verify the generated ID matches the href exactly -->
+                    <a href="#milestone-week-{{ current_milestone.week_number }}" class="dash-btn-primary dash-btn-sm" id="jumpToCurrentBtn">
+                        <i class="bi bi-arrow-down-circle"></i>
+                        <span>Jump to Week {{ current_milestone.week_number }}</span>
                     </a>
                     {% endif %}
                 </div>
-            </div>
-            {% endfor %}
-        </div>
+            </section>
+            {% endif %}
+
+            <!-- Curriculum: Weekly Milestones -->
+            <section id="milestones-curriculum" aria-label="Curriculum Milestones">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h3 class="roadmap-section-title">
+                        <i class="bi bi-list-check text-primary"></i>
+                        <span>Curriculum Syllabus</span>
+                    </h3>
+                    <span class="text-muted small">{{ milestone_data|length }} Weekly Milestones</span>
+                </div>
+
+                {% for item in milestone_data %}
+                <!-- Constraint 3: Render exact ID milestone-week-{{ week_number }} -->
+                <article class="roadmap-milestone-block {{ item.status }} {% if item.is_current %}current{% endif %}" 
+                         id="milestone-week-{{ item.milestone.week_number }}">
+                    <header class="roadmap-milestone-header">
+                        <div class="roadmap-milestone-title-group">
+                            <div class="roadmap-milestone-week-badge">
+                                W{{ item.milestone.week_number }}
+                            </div>
+                            <div>
+                                <h4 class="roadmap-milestone-heading">
+                                    {{ item.milestone.title }}
+                                </h4>
+                                <p class="roadmap-milestone-subtext">
+                                    {% if item.milestone.description %}{{ item.milestone.description }}{% else %}Week {{ item.milestone.week_number }} core curriculum.{% endif %}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="roadmap-card-pill level-{{ item.milestone.level|lower }}">
+                                {{ item.milestone.level }}
+                            </span>
+
+                            <span class="badge {% if item.status == 'completed' %}bg-success text-success{% elif item.status == 'current' %}bg-primary text-primary{% else %}bg-light text-muted border{% endif %} bg-opacity-10 rounded-pill px-2.5 py-1 small fw-semibold milestone-status-pill">
+                                {% if item.status == 'completed' %}
+                                <i class="bi bi-check-circle-fill me-1"></i> Completed
+                                {% elif item.status == 'current' %}
+                                <i class="bi bi-play-circle me-1"></i> Current Week
+                                {% else %}
+                                <i class="bi bi-circle me-1"></i> Upcoming
+                                {% endif %}
+                            </span>
+
+                            <span class="text-muted small ms-1 milestone-count-text">
+                                {{ item.completed_count }}/{{ item.total_count }} lessons
+                            </span>
+                        </div>
+                    </header>
+
+                    <!-- Topics Checklist inside Milestone -->
+                    <div class="roadmap-topics-list">
+                        {% for topic in item.milestone.topics.all %}
+                        <div class="roadmap-topic-item {% if topic.id in completed_ids %}completed{% endif %}" 
+                             data-topic-id="{{ topic.id }}" 
+                             data-week="{{ item.milestone.week_number }}">
+                            <div class="roadmap-topic-left">
+                                {% if user_roadmap %}
+                                <input class="roadmap-topic-checkbox" 
+                                       type="checkbox" 
+                                       id="topic-{{ topic.id }}"
+                                       data-topic-id="{{ topic.id }}"
+                                       data-week="{{ item.milestone.week_number }}"
+                                       {% if topic.id in completed_ids %}checked{% endif %}
+                                       aria-label="Mark {{ topic.title }} as completed">
+                                {% else %}
+                                <i class="bi bi-circle text-muted mt-1" style="font-size: 0.9rem;"></i>
+                                {% endif %}
+                                <div>
+                                    <label for="topic-{{ topic.id }}" class="roadmap-topic-title d-block mb-0" style="cursor: pointer;">
+                                        {{ topic.title }}
+                                    </label>
+                                    {% if topic.description %}
+                                    <p class="roadmap-topic-desc">{{ topic.description }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="roadmap-topic-right">
+                                <span class="badge bg-light text-muted border rounded-pill px-2 py-0.5 small">
+                                    <i class="bi bi-clock me-1"></i>{{ topic.estimated_hours }}h
+                                </span>
+
+                                {% if topic.resource_url %}
+                                <a href="{{ topic.resource_url }}" target="_blank" rel="noopener noreferrer" class="roadmap-resource-link" title="Open learning resource in new tab">
+                                    {% if topic.resource_type == 'Video' %}
+                                    <i class="bi bi-play-circle"></i>
+                                    {% elif topic.resource_type == 'Course' %}
+                                    <i class="bi bi-mortarboard"></i>
+                                    {% elif topic.resource_type == 'Documentation' %}
+                                    <i class="bi bi-file-text"></i>
+                                    {% else %}
+                                    <i class="bi bi-link-45deg"></i>
+                                    {% endif %}
+                                    <span>{{ topic.resource_type }}</span>
+                                    <i class="bi bi-box-arrow-up-right ms-0.5" style="font-size: 0.65rem;"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </article>
+                {% endfor %}
+            </section>
+        </main>
     </div>
-    {% endfor %}
 </div>
 
-<!-- Week Completion Celebration Modal -->
+<!-- Restrained & Professional Week Completion Modal -->
 <div class="modal fade" id="weekCompletedModal" tabindex="-1" aria-labelledby="weekCompletedTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content modal-celebration border-0 shadow-lg p-4 p-md-5 text-center position-relative">
+        <div class="modal-content roadmap-modal-content">
             <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
             
-            <div class="mb-2">
-                <span class="celebration-emoji">🎉</span>
+            <div class="roadmap-modal-icon">
+                <i class="bi bi-award-fill"></i>
             </div>
             
-            <div class="d-inline-flex align-items-center justify-content-center gap-1 mb-2">
-                <span class="text-warning fs-5">✨</span>
-                <span class="fw-bold text-uppercase text-primary small" style="letter-spacing: 0.1em;">Congratulations!</span>
-                <span class="text-warning fs-5">✨</span>
+            <div class="d-inline-flex align-items-center justify-content-center gap-1 mb-1">
+                <span class="text-primary small fw-semibold text-uppercase" style="letter-spacing: 0.08em;">Milestone Mastered</span>
             </div>
             
-            <h2 class="fw-bold text-secondary mb-2" id="weekCompletedTitle">Week 1 completed!</h2>
+            <h2 class="roadmap-modal-title" id="weekCompletedTitle">Week Completed!</h2>
             
-            <p class="text-muted fs-6 mb-4">
-                You're one step closer to<br>
-                <strong class="text-secondary">your target career</strong>.
+            <p class="roadmap-modal-text">
+                Great job completing all lessons in this milestone. Your progress is saved and your profile readiness has been updated.
             </p>
             
             <div class="d-flex justify-content-center">
-                <button type="button" class="btn btn-primary-custom rounded-pill px-5 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" data-bs-dismiss="modal">
-                    <i class="bi bi-check-lg"></i> Continue
+                <button type="button" class="dash-btn-primary px-4" data-bs-dismiss="modal">
+                    <i class="bi bi-check-lg"></i>
+                    <span>Continue Roadmap</span>
                 </button>
             </div>
         </div>
@@ -246,108 +289,125 @@
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
-{% if user_roadmap %}
 <script>
-function triggerWeekConfetti() {
-    if (typeof confetti === 'function') {
-        // Initial center burst
-        confetti({
-            particleCount: 80,
-            spread: 70,
-            origin: { y: 0.6 }
-        });
-        // Side cannons for extra celebration
-        setTimeout(() => {
-            confetti({
-                particleCount: 50,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0 }
-            });
-            confetti({
-                particleCount: 50,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1 }
-            });
-        }, 200);
-    }
-}
+    (function() {
+        // Mobile Sidebar Drawer
+        const toggleBtn = document.getElementById('sidebarToggleBtn');
+        const closeBtn = document.getElementById('sidebarCloseBtn');
+        const sidebar = document.getElementById('dashboardSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Make entire row clickable to toggle status
-    document.querySelectorAll('.topic-check').forEach(function(row) {
-        row.addEventListener('click', function(e) {
-            if (e.target.classList.contains('topic-checkbox') || e.target.closest('a')) return;
-            
-            const checkbox = this.querySelector('.topic-checkbox');
-            if (checkbox) {
-                checkbox.checked = !checkbox.checked;
-                checkbox.dispatchEvent(new Event('change'));
+        function openSidebar() {
+            if (sidebar) sidebar.classList.add('open');
+            if (overlay) overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            if (sidebar) sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+        if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
+
+        // Week Confetti (Respects prefers-reduced-motion)
+        function triggerWeekConfetti() {
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (prefersReducedMotion) return;
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 50,
+                    spread: 60,
+                    origin: { y: 0.6 }
+                });
             }
-        });
-    });
+        }
 
-    document.querySelectorAll('.topic-checkbox').forEach(function(checkbox) {
-        checkbox.addEventListener('change', function() {
-            const topicId = this.dataset.topicId;
-            const topicRow = this.closest('.topic-check');
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        // AJAX Topic Toggle
+        const checkboxes = document.querySelectorAll('.roadmap-topic-checkbox');
+        const csrfTokenEl = document.querySelector('[name=csrfmiddlewaretoken]');
 
-            fetch(`/roadmaps/api/toggle/${topicId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.is_completed) {
-                        topicRow.classList.add('completed');
-                    } else {
-                        topicRow.classList.remove('completed');
+        checkboxes.forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                const topicId = this.dataset.topicId;
+                const weekNumber = this.dataset.week;
+                const topicRow = this.closest('.roadmap-topic-item');
+                const csrfToken = csrfTokenEl ? csrfTokenEl.value : '';
+
+                fetch(`/roadmaps/api/toggle/${topicId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
-                    // Update progress bar
-                    const progressBar = document.getElementById('progressBar');
-                    if (progressBar) progressBar.style.width = data.progress_percentage + '%';
-                    const progressText = document.getElementById('progressText');
-                    if (progressText) {
-                        progressText.textContent = `${data.completed_count}/${data.total_topics} topics (${data.progress_percentage}%)`;
-                    }
-
-                    // Milestone Unlocked Banner toggle
-                    const banner = document.getElementById('milestoneUnlockedBanner');
-                    if (banner) {
-                        if (data.progress_percentage === 100) {
-                            banner.classList.remove('d-none');
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.is_completed) {
+                            topicRow.classList.add('completed');
                         } else {
-                            banner.classList.add('d-none');
+                            topicRow.classList.remove('completed');
+                        }
+
+                        // Update global progress bar & text
+                        const progressBar = document.getElementById('progressBar');
+                        if (progressBar) progressBar.style.width = data.progress_percentage + '%';
+                        const progressText = document.getElementById('progressText');
+                        if (progressText) {
+                            progressText.textContent = `${data.completed_count}/${data.total_topics} lessons (${data.progress_percentage}%)`;
+                        }
+
+                        // Update Milestone Block Status
+                        const milestoneBlock = document.getElementById(`milestone-week-${weekNumber}`);
+                        if (milestoneBlock) {
+                            const statusPill = milestoneBlock.querySelector('.milestone-status-pill');
+                            const countText = milestoneBlock.querySelector('.milestone-count-text');
+                            const totalInWeek = milestoneBlock.querySelectorAll('.roadmap-topic-item').length;
+                            const completedInWeek = milestoneBlock.querySelectorAll('.roadmap-topic-item.completed').length;
+
+                            if (countText) {
+                                countText.textContent = `${completedInWeek}/${totalInWeek} lessons`;
+                            }
+
+                            if (completedInWeek >= totalInWeek) {
+                                milestoneBlock.classList.add('completed');
+                                milestoneBlock.classList.remove('current');
+                                if (statusPill) {
+                                    statusPill.className = 'badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small fw-semibold milestone-status-pill';
+                                    statusPill.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Completed';
+                                }
+                            } else {
+                                milestoneBlock.classList.remove('completed');
+                            }
+                        }
+
+                        // Milestone Completed Celebration
+                        if (data.week_completed) {
+                            const titleEl = document.getElementById('weekCompletedTitle');
+                            if (titleEl) {
+                                titleEl.textContent = `Week ${data.week_number} Completed!`;
+                            }
+
+                            triggerWeekConfetti();
+
+                            const modalEl = document.getElementById('weekCompletedModal');
+                            if (modalEl && window.bootstrap) {
+                                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                                modal.show();
+                            }
                         }
                     }
-
-                    // Week Completion Celebration with Confetti!
-                    if (data.week_completed) {
-                        const titleEl = document.getElementById('weekCompletedTitle');
-                        if (titleEl) {
-                            titleEl.textContent = `Week ${data.week_number} completed!`;
-                        }
-                        
-                        triggerWeekConfetti();
-
-                        const modalEl = document.getElementById('weekCompletedModal');
-                        if (modalEl && window.bootstrap) {
-                            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-                            modal.show();
-                        }
-                    }
-                }
-            })
-            .catch(error => console.error('Error:', error));
+                })
+                .catch(err => {
+                    console.error('Error toggling topic progress:', err);
+                });
+            });
         });
-    });
-});
+    })();
 </script>
-{% endif %}
 {% endblock %}
