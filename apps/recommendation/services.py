@@ -163,7 +163,7 @@ def evaluate_student_against_path(user, profile, career_path, has_resume, latest
         # Build clean label for radar chart
         clean_radar_name = ms.title
         if len(clean_radar_name) > 20:
-            clean_radar_name = clean_radar_name[:18] + '…'
+            clean_radar_name = clean_radar_name[:17] + '...'
         radar_dimensions.append({
             "name": clean_radar_name,
             "user_score": user_radar_score,
@@ -544,7 +544,8 @@ def generate_career_recommendation(user, target_role_name=None, company_tier='ge
                 "Content-Type": "application/json"
             }
             
-            groq_models = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+            groq_models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+            response = None
             for model_name in groq_models:
                 payload = {
                     "model": model_name,
@@ -556,17 +557,22 @@ def generate_career_recommendation(user, target_role_name=None, company_tier='ge
                     "temperature": 0.2
                 }
                 
-                response = requests.post(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers=headers,
-                    json=payload,
-                    timeout=10
-                )
-                
-                if response.status_code == 200:
-                    break
+                try:
+                    response = requests.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers=headers,
+                        json=payload,
+                        timeout=5
+                    )
+                    if response.status_code == 200:
+                        break
+                    # If invalid API key, no need to retry other models
+                    if response.status_code in (401, 403):
+                        break
+                except requests.RequestException:
+                    continue
             
-            if response.status_code == 200:
+            if response and response.status_code == 200:
                 result_json = response.json()
                 raw_content = result_json["choices"][0]["message"]["content"]
                 ai_data = json.loads(raw_content)

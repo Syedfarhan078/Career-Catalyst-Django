@@ -10,6 +10,150 @@ from .models import CareerAnalysis
 from .forms import CareerTargetForm
 from .services import generate_career_recommendation, enroll_and_sync_roadmap
 
+def _calculate_pillars(analysis, user, profile, matched_career_path, user_roadmap):
+    if not analysis:
+        return None
+    
+    tier = analysis.target_company_tier or 'general'
+    
+    # Calculate matched topics ratio
+    total_path_topics = matched_career_path.total_topics() if matched_career_path else 0
+    all_matched = []
+    for step in (analysis.roadmap_json or []):
+        all_matched.extend(step.get('matched_topics', []))
+    matched_count = len(set(all_matched))
+    skill_match_ratio = (matched_count / total_path_topics) if total_path_topics > 0 else 0.0
+    
+    # Check default resume
+    default_resume = Resume.objects.filter(user=user, is_default=True).first() or Resume.objects.filter(user=user).first()
+    projects_count = default_resume.projects.count() if default_resume else 0
+    experiences_count = default_resume.experiences.count() if default_resume else 0
+    certifications_count = default_resume.certifications.count() if default_resume else 0
+    is_enrolled = bool(user_roadmap and user_roadmap.is_active)
+    
+    cgpa_val = 0.0
+    if profile and profile.cgpa:
+        try:
+            cgpa_val = float(profile.cgpa)
+        except (ValueError, TypeError):
+            cgpa_val = 6.0
+
+    if tier == 'product':
+        max_skills, max_projects, max_academic, max_exp = 45, 30, 10, 15
+        pillar_skills = round(skill_match_ratio * 45)
+        if projects_count >= 3:
+            pillar_projects = 30
+        elif projects_count == 2:
+            pillar_projects = 22
+        elif projects_count == 1:
+            pillar_projects = 12
+        else:
+            pillar_projects = 0
+            
+        if cgpa_val >= 8.5:
+            pillar_academic = 10
+        elif cgpa_val >= 7.5:
+            pillar_academic = 8
+        elif cgpa_val >= 6.5:
+            pillar_academic = 6
+        else:
+            pillar_academic = 4
+            
+        p_exp = min(experiences_count * 6, 8)
+        p_certs = min(certifications_count * 3, 4)
+        p_enr = 3 if is_enrolled else 0
+        pillar_exp = min(p_exp + p_certs + p_enr, 15)
+        
+    elif tier == 'service':
+        max_skills, max_projects, max_academic, max_exp = 35, 20, 25, 20
+        pillar_skills = round(skill_match_ratio * 35)
+        if projects_count >= 2:
+            pillar_projects = 20
+        elif projects_count == 1:
+            pillar_projects = 14
+        else:
+            pillar_projects = 0
+            
+        if cgpa_val >= 8.5:
+            pillar_academic = 25
+        elif cgpa_val >= 7.5:
+            pillar_academic = 20
+        elif cgpa_val >= 6.5:
+            pillar_academic = 15
+        else:
+            pillar_academic = 6
+            
+        p_exp = min(experiences_count * 8, 10)
+        p_certs = min(certifications_count * 6, 8)
+        p_enr = 2 if is_enrolled else 0
+        pillar_exp = min(p_exp + p_certs + p_enr, 20)
+        
+    else:
+        max_skills, max_projects, max_academic, max_exp = 40, 25, 15, 20
+        pillar_skills = round(skill_match_ratio * 40)
+        if projects_count >= 3:
+            pillar_projects = 25
+        elif projects_count == 2:
+            pillar_projects = 18
+        elif projects_count == 1:
+            pillar_projects = 10
+        else:
+            pillar_projects = 0
+            
+        if cgpa_val >= 8.5:
+            pillar_academic = 15
+        elif cgpa_val >= 7.5:
+            pillar_academic = 12
+        elif cgpa_val >= 6.5:
+            pillar_academic = 9
+        else:
+            pillar_academic = 5
+            
+        p_exp = min(experiences_count * 8, 10)
+        p_certs = min(certifications_count * 4, 6)
+        p_enr = 4 if is_enrolled else 0
+        pillar_exp = min(p_exp + p_certs + p_enr, 20)
+
+    return [
+        {
+            'name': 'Core Technical Skills',
+            'icon': 'bi-code-slash',
+            'score': pillar_skills,
+            'max': max_skills,
+            'pct': round((pillar_skills / max_skills) * 100) if max_skills else 0,
+            'metric_label': f"{matched_count}/{total_path_topics} Topics Matched" if total_path_topics else f"{matched_count} Topics",
+            'badge': 'Primary Weight' if tier == 'product' else 'Foundational'
+        },
+        {
+            'name': 'Applied Projects',
+            'icon': 'bi-folder-check',
+            'score': pillar_projects,
+            'max': max_projects,
+            'pct': round((pillar_projects / max_projects) * 100) if max_projects else 0,
+            'metric_label': f"{projects_count} Project{'s' if projects_count != 1 else ''} Documented",
+            'badge': 'High Priority' if tier == 'product' else 'Supporting'
+        },
+        {
+            'name': 'Academic Benchmark',
+            'icon': 'bi-mortarboard',
+            'score': pillar_academic,
+            'max': max_academic,
+            'pct': round((pillar_academic / max_academic) * 100) if max_academic else 0,
+            'metric_label': f"CGPA: {cgpa_val:.1f}" if cgpa_val > 0 else "CGPA Recorded",
+            'badge': 'Strict Cutoff' if tier == 'service' else 'Baseline'
+        },
+        {
+            'name': 'Experience & Certs',
+            'icon': 'bi-award',
+            'score': pillar_exp,
+            'max': max_exp,
+            'pct': round((pillar_exp / max_exp) * 100) if max_exp else 0,
+            'metric_label': f"{experiences_count} Exp · {certifications_count} Cert{'s' if certifications_count != 1 else ''}",
+            'badge': 'Track Active' if is_enrolled else 'Credentials'
+        }
+    ]
+
+
 @login_required
 def career_dashboard(request):
     """
@@ -27,6 +171,12 @@ def career_dashboard(request):
     if not profile.skills or not profile.college:
         messages.warning(request, "Your profile is missing details (e.g. skills, college info). Please update it to get accurate recommendations.")
         return redirect('profile_edit')
+
+    # Compute sidebar user initials and target career
+    first_initial = (request.user.first_name[:1] if request.user.first_name else request.user.username[:1]).upper()
+    last_initial = (request.user.last_name[:1] if request.user.last_name else "").upper()
+    user_initials = f"{first_initial}{last_initial}" if last_initial else (request.user.username[:2].upper())
+    target_career = profile.career_goal.strip() if (profile and profile.career_goal) else ""
 
     # 2. Get the latest analysis with safe fallback
     try:
@@ -72,16 +222,20 @@ def career_dashboard(request):
             
             if user_roadmap and user_roadmap.is_active:
                 is_enrolled_in_path = True
-                # Find the next incomplete week
+                # Find the next incomplete week with a single query (avoid N+1)
+                completed_topic_ids = set(
+                    TopicProgress.objects.filter(
+                        user_roadmap=user_roadmap,
+                        is_completed=True
+                    ).values_list('topic_id', flat=True)
+                )
                 milestones = matched_career_path.milestones.prefetch_related('topics').order_by('week_number')
                 for ms in milestones:
-                    ms_topic_ids = list(ms.topics.values_list('id', flat=True))
-                    completed_in_ms = TopicProgress.objects.filter(
-                        user_roadmap=user_roadmap,
-                        topic_id__in=ms_topic_ids,
-                        is_completed=True
-                    ).count()
-                    if completed_in_ms < len(ms_topic_ids):
+                    ms_topics = ms.topics.all()
+                    if not ms_topics:
+                        continue
+                    completed_count = sum(1 for t in ms_topics if t.id in completed_topic_ids)
+                    if completed_count < len(ms_topics):
                         next_active_week = ms.week_number
                         break
             else:
@@ -99,6 +253,8 @@ def career_dashboard(request):
                         next_active_week = step.get('week', 1)
                         break
 
+    pillars = _calculate_pillars(analysis, request.user, profile, matched_career_path, user_roadmap)
+
     context = {
         'analysis': analysis,
         'profile': profile,
@@ -111,6 +267,9 @@ def career_dashboard(request):
         'auto_synced_count': auto_synced_count,
         'auto_starting_pct': auto_starting_pct,
         'next_active_week': next_active_week,
+        'user_initials': user_initials,
+        'target_career': target_career,
+        'pillars': pillars,
     }
     return render(request, 'recommendation/dashboard.html', context)
 

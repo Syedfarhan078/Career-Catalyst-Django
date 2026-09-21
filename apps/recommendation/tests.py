@@ -167,3 +167,59 @@ class RecommendationTests(TestCase):
         self.assertEqual(result["career_path"], self.path)
         self.assertIsNotNone(result["user_roadmap"])
         self.assertGreaterEqual(result["progress_percentage"], 0)
+
+    def test_workspace_shell_and_active_sidebar(self):
+        response = self.client.get(reverse('recommendation:dashboard'))
+        self.assertEqual(response.status_code, 200)
+        # Verify authenticated workspace shell is present
+        self.assertContains(response, 'class="dash-shell"')
+        self.assertContains(response, 'id="dashboardSidebar"')
+        # Verify public navbar and footer are overridden
+        self.assertNotContains(response, 'class="navbar navbar-expand-lg')
+        self.assertNotContains(response, 'class="landing-footer"')
+        # Verify Career Guidance link has active class
+        self.assertContains(response, 'href="/recommendation/" class="dash-nav-link active"')
+
+    def test_evaluation_pillars_and_no_fake_checklist(self):
+        generate_career_recommendation(self.user, "Software Engineer", company_tier='product')
+        response = self.client.get(reverse('recommendation:dashboard'))
+        self.assertEqual(response.status_code, 200)
+        
+        # Verify 4 evaluation pillars are present in context
+        pillars = response.context.get('pillars')
+        self.assertIsNotNone(pillars)
+        self.assertEqual(len(pillars), 4)
+        pillar_names = [p['name'] for p in pillars]
+        self.assertIn('Core Technical Skills', pillar_names)
+        self.assertIn('Applied Projects', pillar_names)
+        self.assertIn('Academic Benchmark', pillar_names)
+        self.assertIn('Experience & Certs', pillar_names)
+
+        # Verify Hiring Benchmark Diagnostics section in HTML
+        self.assertContains(response, "Hiring Benchmark Diagnostics")
+        
+        # Verify NO fake localStorage milestone checklist in template
+        self.assertNotContains(response, "milestone-check")
+        self.assertNotContains(response, "saveProgress")
+        self.assertNotContains(response, "milestone-")
+
+    def test_radar_labels_ascii_safety(self):
+        # Create a milestone with a long name (>20 chars)
+        Milestone.objects.create(
+            career_path=self.path,
+            week_number=2,
+            title="Advanced Microservices Architecture and Scalability",
+            level="Advanced",
+            order=1
+        )
+        analysis = generate_career_recommendation(self.user, "Software Engineer", company_tier='general')
+        radar_json = analysis.radar_chart_json
+        self.assertTrue(len(radar_json) > 0)
+        for item in radar_json:
+            name = item.get('name', '')
+            # Must NOT contain unicode ellipsis
+            self.assertNotIn('\u2026', name)
+            # If truncated, should use '...'
+            if '...' in name:
+                self.assertTrue(name.endswith('...'))
+

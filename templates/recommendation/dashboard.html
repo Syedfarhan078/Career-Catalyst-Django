@@ -1,709 +1,583 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}AI Career Recommendation Hub | Career Catalyst{% endblock %}
+{% block title %}Career Guidance & Diagnostics — CareerCatalyst{% endblock %}
 
 {% block extra_css %}
-<style>
-    /* Premium Dashboard Styles */
-    .dashboard-header-bg {
-        background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
-        color: white;
-        border-radius: 20px;
-    }
-    .score-circle {
-        position: relative;
-        width: 130px;
-        height: 130px;
-        border-radius: 50%;
-        background: radial-gradient(closest-side, var(--card-bg) 79%, transparent 80% 100%),
-                    conic-gradient(var(--primary) calc(var(--score-val) * 1%), var(--border) 0);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-    .score-circle-inner {
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--secondary);
-    }
-    .score-circle-ats {
-        position: relative;
-        width: 130px;
-        height: 130px;
-        border-radius: 50%;
-        background: radial-gradient(closest-side, var(--card-bg) 79%, transparent 80% 100%),
-                    conic-gradient(var(--accent) calc(var(--score-val) * 1%), var(--border) 0);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-    .score-circle-ats-inner {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: var(--secondary);
-    }
-    .timeline-steps {
-        position: relative;
-        padding-left: 30px;
-    }
-    .timeline-steps::before {
-        content: '';
-        position: absolute;
-        left: 9px;
-        top: 5px;
-        bottom: 5px;
-        width: 3px;
-        background: linear-gradient(to bottom, var(--primary), var(--accent));
-        border-radius: 3px;
-    }
-    .timeline-step-item {
-        position: relative;
-        margin-bottom: 25px;
-    }
-    .timeline-step-item::before {
-        content: '';
-        position: absolute;
-        left: -26px;
-        top: 4px;
-        width: 15px;
-        height: 15px;
-        border-radius: 50%;
-        background: var(--card-bg);
-        border: 4px solid var(--primary);
-    }
-    .timeline-step-item.advanced::before {
-        border-color: var(--accent);
-    }
-    .badge-chip {
-        font-size: 0.85rem;
-        font-weight: 500;
-        padding: 0.5rem 1rem;
-        border-radius: 50px;
-        border: 1px solid rgba(0,0,0,0.08);
-    }
-    .plan-card {
-        border-left: 5px solid var(--primary);
-    }
-    .plan-card-90 {
-        border-left: 5px solid var(--accent);
-    }
-    .motivational-alert {
-        background: linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(20,184,166,0.05) 100%);
-        border: 1px solid rgba(37,99,235,0.15);
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/guidance.css' %}?v=1.0">
 {% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'dashboard' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Dashboard
-        </a>
-    </div>
-    
-    {% if not analysis %}
-    <!-- LANDING INTRO STATE -->
-    <div class="row justify-content-center py-5">
-        <div class="col-lg-8 text-center">
-            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-bold mb-3">
-                <i class="bi bi-cpu-fill"></i> Hybrid AI Core Layer
-            </span>
-            <h1 class="display-4 fw-bold text-secondary mb-3">AI Career Recommendation Hub</h1>
-            <p class="text-muted fs-5 mb-5 mx-auto" style="max-width: 650px;">
-                Analyze your academic performance, skill completeness, and resume content against real database career roadmaps to calculate placement readiness and uncover missing skill gaps.
-            </p>
-            
-            <div class="card border-0 shadow-sm rounded-4 p-5 mb-5 text-start bg-white">
-                <h5 class="fw-bold mb-4 text-secondary"><i class="bi bi-diagram-3-fill text-primary"></i> Analysis Workflow</h5>
-                <div class="row g-4 text-center">
-                    <div class="col-md-3">
-                        <div class="p-3 bg-light rounded-4 h-100">
-                            <i class="bi bi-person-badge text-primary display-6 mb-2"></i>
-                            <h6 class="fw-bold small mb-1">1. Student Profile</h6>
-                            <span class="text-muted" style="font-size: 0.75rem;">Skills, CGPA, and career goal details.</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="p-3 bg-light rounded-4 h-100">
-                            <i class="bi bi-database text-success display-6 mb-2"></i>
-                            <h6 class="fw-bold small mb-1">2. Core Database</h6>
-                            <span class="text-muted" style="font-size: 0.75rem;">Match against active roadmaps & topics.</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="p-3 bg-light rounded-4 h-100">
-                            <i class="bi bi-shield-check text-warning display-6 mb-2"></i>
-                            <h6 class="fw-bold small mb-1">3. Score Matching</h6>
-                            <span class="text-muted" style="font-size: 0.75rem;">Extract skill gap list & base metrics.</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="p-3 bg-light rounded-4 h-100">
-                            <i class="bi bi-robot text-info display-6 mb-2"></i>
-                            <h6 class="fw-bold small mb-1">4. Groq LLM Refinement</h6>
-                            <span class="text-muted" style="font-size: 0.75rem;">Synthesize 30-90 day plans & advice.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+{# Override public navbar, footer, and floating chatbot for workspace application shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-            <!-- Start Form -->
-            <form action="{% url 'recommendation:analyze' %}" method="POST" class="d-flex flex-column align-items-center gap-3">
-                {% csrf_token %}
-                <div class="w-100 text-start" style="max-width: 480px;">
-                    <label class="form-label fw-bold text-secondary small mb-1"><i class="bi bi-briefcase-fill text-primary me-1"></i> Target Career Track</label>
-                    {{ form.target_career }}
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Breadcrumbs and Header -->
+            <header class="guidance-page-header">
+                <div class="guidance-breadcrumb">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>Career Guidance</span>
                 </div>
-                <div class="w-100 text-start" style="max-width: 480px;">
-                    <label class="form-label fw-bold text-secondary small mb-1"><i class="bi bi-buildings-fill text-primary me-1"></i> Target Company Tier</label>
-                    {{ form.company_tier }}
-                    <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
-                        <i class="bi bi-info-circle me-1"></i>Calibrates scoring weights between DSA/System Design (Product) vs. Core CS/Aptitude/CGPA cutoffs (Service).
-                    </small>
-                </div>
-                <button type="submit" class="btn btn-primary-custom px-5 py-3 fs-5 rounded-pill shadow-lg mt-2">
-                    <i class="bi bi-play-circle-fill"></i> Run Career Analysis
-                </button>
-            </form>
-        </div>
-    </div>
-    
-    {% else %}
-    <!-- DASHBOARD VIEW STATE -->
-    <div class="dashboard-header-bg p-5 mb-5 shadow-sm text-start">
-        <div class="row align-items-center g-4">
-            <div class="col-md-8">
-                <div class="d-flex flex-wrap gap-2 mb-3">
-                    <span class="badge bg-white bg-opacity-25 text-white px-3 py-2 rounded-pill fw-bold">
-                        <i class="bi bi-shield-fill-check"></i> Analysis Complete
-                    </span>
-                    {% if analysis.target_company_tier == 'product' %}
-                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold shadow-sm">
-                            <i class="bi bi-rocket-takeoff-fill"></i> Product & Startup Calibrated
-                        </span>
-                    {% elif analysis.target_company_tier == 'service' %}
-                        <span class="badge bg-info text-dark px-3 py-2 rounded-pill fw-bold shadow-sm">
-                            <i class="bi bi-buildings-fill"></i> Enterprise & IT Services Calibrated
-                        </span>
-                    {% else %}
-                        <span class="badge bg-light text-dark px-3 py-2 rounded-pill fw-bold shadow-sm">
-                            <i class="bi bi-sliders"></i> General Industry Calibrated
-                        </span>
+                <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                    <div>
+                        <h1 class="guidance-page-title">Career Guidance & Diagnostics</h1>
+                        <p class="guidance-page-subtitle">
+                            Hiring-tier calibrated readiness assessment, curriculum gap analysis, and strategic roadmap transitions.
+                        </p>
+                    </div>
+                    {% if analysis %}
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25" style="font-size: 0.8125rem;">
+                        <i class="bi bi-bullseye"></i>
+                        <span>Target: <strong>{{ analysis.recommended_career }}</strong></span>
+                    </div>
                     {% endif %}
                 </div>
-                <h1 class="fw-bold text-white mb-2">My Career Recommendations</h1>
-                <p class="mb-0 text-white text-opacity-75">
-                    Analyzed on {{ analysis.created_at|date:"F d, Y - H:i" }}. Matches against active syllabus, project models, and hiring calibration parameters.
+            </header>
+
+            {% if not analysis %}
+            <!-- ==========================================================
+                 LANDING INTRO STATE (NO ANALYSIS YET)
+                 ========================================================== -->
+            <div class="guidance-landing-wrap">
+                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1.5 rounded-pill fw-semibold mb-3">
+                    <i class="bi bi-cpu-fill me-1"></i> Diagnostic Intelligence Engine
+                </span>
+                <h2 class="fw-bold mb-2" style="letter-spacing: -0.02em;">Calibrate Your Engineering Placement Readiness</h2>
+                <p class="text-muted fs-6 mx-auto mb-4" style="max-width: 620px;">
+                    Evaluate your coursework, documented portfolio projects, and technical skills against real database curricula calibrated for specific industry hiring standards.
                 </p>
-            </div>
-            
-            <div class="col-md-4 text-md-end">
-                <!-- Trigger Regenerate Modal/Dropdown -->
-                <button class="btn btn-light rounded-pill px-4 py-2 fw-bold text-primary shadow-sm" data-bs-toggle="collapse" data-bs-target="#regeneratePanel">
-                    <i class="bi bi-arrow-repeat"></i> Calibrate / Re-analyze
-                </button>
-            </div>
-        </div>
 
-        <!-- Hidden Collapse Panel to selection target and re-analyze -->
-        <div class="collapse mt-4 p-4 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-4" id="regeneratePanel">
-            <h5 class="fw-bold text-white mb-3"><i class="bi bi-sliders2 me-2"></i>Recalibrate Target Career Pathway & Company Tier</h5>
-            <form action="{% url 'recommendation:analyze' %}" method="POST" class="row g-3 align-items-end">
-                {% csrf_token %}
-                <div class="col-md-5">
-                    <label class="form-label text-white small fw-bold mb-1">Target Career Pathway</label>
-                    {{ form.target_career }}
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label text-white small fw-bold mb-1">Target Company Tier</label>
-                    {{ form.company_tier }}
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-success w-100 rounded-pill py-2 fw-bold shadow-sm">
-                        <i class="bi bi-arrow-clockwise"></i> Recalibrate Report
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Core Metrics Cards Row -->
-    <div class="row g-4 mb-5">
-        <!-- 1. Readiness Score -->
-        <div class="col-md-4 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <h6 class="fw-bold text-secondary mb-3">Career Readiness Score</h6>
-                    <div class="score-circle" style="--score-val: {{ analysis.career_readiness_score }};">
-                        <div class="score-circle-inner">{{ analysis.career_readiness_score }}%</div>
+                <!-- 4-Step Analysis Pipeline -->
+                <div class="landing-flow-grid">
+                    <div class="landing-step-card">
+                        <i class="bi bi-person-badge text-primary"></i>
+                        <div class="landing-step-title">1. Profile Extraction</div>
+                        <p class="landing-step-desc">Extracts academic CGPA, recorded skills, and career interests.</p>
+                    </div>
+                    <div class="landing-step-card">
+                        <i class="bi bi-database text-success"></i>
+                        <div class="landing-step-title">2. Syllabus Matching</div>
+                        <p class="landing-step-desc">Matches skills against week-by-week roadmap milestones.</p>
+                    </div>
+                    <div class="landing-step-card">
+                        <i class="bi bi-sliders text-warning"></i>
+                        <div class="landing-step-title">3. Tier Calibration</div>
+                        <p class="landing-step-desc">Weights DSA/System Design vs. Core CS & eligibility cutoffs.</p>
+                    </div>
+                    <div class="landing-step-card">
+                        <i class="bi bi-lightning-charge text-info"></i>
+                        <div class="landing-step-title">4. Auto-Sync Plan</div>
+                        <p class="landing-step-desc">Auto-verifies known topics and builds 30/90 day action plans.</p>
                     </div>
                 </div>
-                <p class="text-muted small mt-3 mb-0">
-                    {% if analysis.target_company_tier == 'product' %}
-                        <i class="bi bi-rocket-takeoff text-warning me-1"></i>Calibrated for <strong>Product & Startup</strong> hiring standards (DSA, System Design & Projects).
-                    {% elif analysis.target_company_tier == 'service' %}
-                        <i class="bi bi-building text-info me-1"></i>Calibrated for <strong>Enterprise & IT Services</strong> cutoffs (Core CS, CGPA & Aptitude).
-                    {% else %}
-                        <i class="bi bi-sliders text-secondary me-1"></i>Calibrated for <strong>General Industry</strong> balanced baseline.
-                    {% endif %}
-                </p>
-            </div>
-        </div>
 
-        <!-- 2. Recommended Career -->
-        <div class="col-md-4 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <h6 class="fw-bold text-secondary mb-3">Target Career Pathway</h6>
-                    <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
-                        <i class="bi bi-briefcase display-6"></i>
-                    </div>
-                    <h5 class="fw-bold text-secondary mb-1">{{ analysis.recommended_career }}</h5>
-                    {% if analysis.confidence_score >= 70 %}
-                        <span class="badge bg-success rounded-pill px-3 py-1 mt-2">Strong Alignment</span>
-                    {% elif analysis.confidence_score >= 40 %}
-                        <span class="badge bg-primary rounded-pill px-3 py-1 mt-2">Moderate Match</span>
-                    {% else %}
-                        <span class="badge bg-secondary bg-opacity-75 text-white rounded-pill px-3 py-1 mt-2">Target Pathway</span>
-                    {% endif %}
+                <!-- Analysis Initiation Form -->
+                <div class="landing-form-card">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-sliders2 me-2"></i>Configure Career Diagnostic</h6>
+                    <form action="{% url 'recommendation:analyze' %}" method="POST" class="d-flex flex-column gap-3">
+                        {% csrf_token %}
+                        <div>
+                            <label class="form-label small fw-semibold text-secondary mb-1">
+                                <i class="bi bi-briefcase text-primary me-1"></i> Target Career Track
+                            </label>
+                            {{ form.target_career }}
+                        </div>
+                        <div>
+                            <label class="form-label small fw-semibold text-secondary mb-1">
+                                <i class="bi bi-buildings text-primary me-1"></i> Hiring Company Tier
+                            </label>
+                            {{ form.company_tier }}
+                            <div class="text-muted mt-1" style="font-size: 0.72rem; line-height: 1.4;">
+                                Calibrates evaluation weights between Product (DSA, system design, projects) and Enterprise IT Services (Core CS, CGPA cutoff, aptitude).
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary-custom w-100 py-2.5 rounded-pill fw-semibold mt-2 shadow-sm">
+                            <i class="bi bi-play-circle-fill me-1"></i> Run Career Analysis
+                        </button>
+                    </form>
                 </div>
-                <div class="w-100 mt-3 text-start">
-                    <div class="d-flex justify-content-between mb-1 small text-muted">
-                        <span>Role Skill Alignment</span>
-                        <span>{{ analysis.confidence_score }}%</span>
-                    </div>
-                    <div class="progress mb-3" style="height: 6px; border-radius: 50px;">
-                        {% if analysis.confidence_score >= 70 %}
-                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ analysis.confidence_score }}%;"></div>
-                        {% elif analysis.confidence_score >= 40 %}
-                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ analysis.confidence_score }}%;"></div>
+            </div>
+
+            {% else %}
+            <!-- ==========================================================
+                 ANALYZED STATE: 5 FOCUSED SECTIONS
+                 ========================================================== -->
+
+            <!-- SECTION 1: HEADER / DIAGNOSTIC HERO -->
+            <section class="guidance-hero">
+                <div class="guidance-hero-top">
+                    <div class="guidance-hero-badges">
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill fw-semibold" style="font-size: 0.75rem;">
+                            <i class="bi bi-check2-circle me-1"></i> Verified Diagnostic
+                        </span>
+                        {% if analysis.target_company_tier == 'product' %}
+                            <span class="tier-badge product">
+                                <i class="bi bi-rocket-takeoff-fill"></i> Product & Startup Calibrated
+                            </span>
+                        {% elif analysis.target_company_tier == 'service' %}
+                            <span class="tier-badge service">
+                                <i class="bi bi-buildings-fill"></i> Enterprise & IT Services Calibrated
+                            </span>
                         {% else %}
-                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ analysis.confidence_score }}%;"></div>
+                            <span class="tier-badge general">
+                                <i class="bi bi-sliders"></i> General Industry Calibrated
+                            </span>
                         {% endif %}
                     </div>
+                    <div class="text-muted small" style="font-size: 0.75rem;">
+                        <i class="bi bi-clock-history me-1"></i> Last analyzed {{ analysis.created_at|date:"M d, Y" }}
+                    </div>
+                </div>
+
+                <div class="guidance-hero-main">
+                    <!-- Readiness Score Circular Dial -->
+                    <div class="score-ring-wrap">
+                        <div class="score-ring" style="--score-val: {{ analysis.career_readiness_score }};">
+                            <div class="score-ring-value">{{ analysis.career_readiness_score }}%</div>
+                        </div>
+                        <div class="score-ring-label">Readiness Score</div>
+                    </div>
+
+                    <!-- Center Diagnostic Details -->
+                    <div>
+                        <h2 class="hero-details-title">{{ analysis.recommended_career }}</h2>
+                        <p class="hero-details-desc">
+                            {{ analysis.overall_feedback }}
+                        </p>
+                        <div class="hero-readiness-tags">
+                            <div class="readiness-chip">
+                                <span>Role Skill Match:</span>
+                                <span class="readiness-chip-status fw-bold text-primary">{{ analysis.confidence_score }}%</span>
+                            </div>
+                            <div class="readiness-chip">
+                                <span>Internship Readiness:</span>
+                                {% if "Almost" in analysis.internship_readiness %}
+                                    <span class="readiness-chip-status status-almost">Almost Ready</span>
+                                {% elif "Ready" in analysis.internship_readiness %}
+                                    <span class="readiness-chip-status status-ready">Ready</span>
+                                {% else %}
+                                    <span class="readiness-chip-status status-prep">Need Prep</span>
+                                {% endif %}
+                            </div>
+                            <div class="readiness-chip">
+                                <span>Placement Readiness:</span>
+                                {% if "Almost" in analysis.placement_readiness %}
+                                    <span class="readiness-chip-status status-almost">Almost Ready</span>
+                                {% elif "Ready" in analysis.placement_readiness %}
+                                    <span class="readiness-chip-status status-ready">Ready</span>
+                                {% else %}
+                                    <span class="readiness-chip-status status-prep">Need Prep</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions & Recalibrate Trigger -->
+                    <div class="hero-actions">
+                        <button type="button" class="btn-recalibrate" data-bs-toggle="collapse" data-bs-target="#recalibrateDrawer" aria-expanded="false" aria-controls="recalibrateDrawer">
+                            <i class="bi bi-arrow-repeat"></i>
+                            <span>Recalibrate Report</span>
+                        </button>
+                        {% if matched_career_path %}
+                            {% if is_enrolled_in_path %}
+                                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-sm btn-outline-success rounded-pill w-100 py-1.5 fw-semibold" style="font-size: 0.8125rem;">
+                                    <i class="bi bi-map me-1"></i> View Active Track
+                                </a>
+                            {% else %}
+                                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-sm btn-outline-secondary rounded-pill w-100 py-1.5" style="font-size: 0.8125rem;">
+                                    <i class="bi bi-eye me-1"></i> Preview Curriculum
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Recalibrate Collapsible Drawer -->
+                <div class="collapse" id="recalibrateDrawer">
+                    <div class="recalibrate-drawer">
+                        <h6><i class="bi bi-sliders2 me-2"></i>Recalibrate Target Role & Company Tier</h6>
+                        <form action="{% url 'recommendation:analyze' %}" method="POST" class="row g-3 align-items-end">
+                            {% csrf_token %}
+                            <div class="col-md-5">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Target Career Pathway</label>
+                                {{ form.target_career }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Hiring Benchmark Tier</label>
+                                {{ form.company_tier }}
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary-custom w-100 rounded-pill py-2 fw-semibold shadow-sm" style="font-size: 0.8125rem;">
+                                    <i class="bi bi-check2-circle me-1"></i> Apply & Recalibrate
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: HIRING BENCHMARK DIAGNOSTICS (4 EVALUATION PILLARS) -->
+            <section class="pillars-section">
+                <div class="section-label-row">
+                    <h2 class="section-title">
+                        <i class="bi bi-shield-check text-primary"></i>
+                        <span>Hiring Benchmark Diagnostics</span>
+                    </h2>
+                    <span class="section-subtitle">
+                        Calibrated weights summing to 100-point composite score
+                    </span>
+                </div>
+
+                {% if pillars %}
+                <div class="pillars-grid">
+                    {% for p in pillars %}
+                    <div class="pillar-card">
+                        <div>
+                            <div class="pillar-header">
+                                <div class="pillar-icon-wrap">
+                                    <i class="bi {{ p.icon }}"></i>
+                                </div>
+                                <span class="pillar-tag">{{ p.badge }}</span>
+                            </div>
+                            <div class="pillar-title">{{ p.name }}</div>
+                            <div class="pillar-score-row">
+                                <span class="pillar-score-val">{{ p.score }}</span>
+                                <span class="pillar-score-max">/ {{ p.max }} pts</span>
+                            </div>
+                            <div class="pillar-progress">
+                                <div class="pillar-progress-bar" style="width: {{ p.pct }}%;"></div>
+                            </div>
+                        </div>
+                        <p class="pillar-footer-label">
+                            <i class="bi bi-info-circle me-1"></i> {{ p.metric_label }}
+                        </p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- SECTION 3: INSIGHTS & SKILL COVERAGE RADAR -->
+            <section class="diagnostics-row">
+                <!-- Left: Strengths, Growth Areas, and Missing Skill Gaps -->
+                <div class="d-flex flex-column gap-3">
+                    <!-- Strengths & Growth Areas in a 2-Col Card -->
+                    <div class="guidance-card">
+                        <div class="guidance-card-header">
+                            <h3 class="guidance-card-title">
+                                <i class="bi bi-bar-chart-steps text-primary"></i>
+                                <span>Core Evaluation Feedback</span>
+                            </h3>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="fw-semibold text-secondary small mb-2 d-flex align-items-center gap-1.5">
+                                    <i class="bi bi-check-circle-fill text-success"></i> Verified Strengths
+                                </div>
+                                <ul class="insight-list">
+                                    {% for str in analysis.strengths %}
+                                    <li class="insight-item">
+                                        <i class="bi bi-check2 insight-icon success"></i>
+                                        <span>{{ str }}</span>
+                                    </li>
+                                    {% empty %}
+                                    <li class="insight-item text-muted small">No verified strengths recorded yet.</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="fw-semibold text-secondary small mb-2 d-flex align-items-center gap-1.5">
+                                    <i class="bi bi-exclamation-circle-fill text-warning"></i> Growth Areas
+                                </div>
+                                <ul class="insight-list">
+                                    {% for wk in analysis.weaknesses %}
+                                    <li class="insight-item">
+                                        <i class="bi bi-arrow-right insight-icon warning"></i>
+                                        <span>{{ wk }}</span>
+                                    </li>
+                                    {% empty %}
+                                    <li class="insight-item text-muted small">No growth areas flagged.</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Missing Skills Gaps Card -->
+                    <div class="guidance-card">
+                        <div class="guidance-card-header">
+                            <h3 class="guidance-card-title">
+                                <i class="bi bi-tag text-danger"></i>
+                                <span>Identified Skill Gaps</span>
+                            </h3>
+                            <span class="text-muted small">Topics to master for role alignment</span>
+                        </div>
+                        <div class="missing-skills-container">
+                            {% for skill in analysis.missing_skills %}
+                            <span class="skill-gap-chip">
+                                <i class="bi bi-x-circle-fill"></i>
+                                <span>{{ skill }}</span>
+                            </span>
+                            {% empty %}
+                            <div class="d-inline-flex align-items-center gap-2 text-success small py-1">
+                                <i class="bi bi-patch-check-fill"></i>
+                                <span>Zero missing skills detected! You meet full baseline requirements for this roadmap.</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Radar Chart Card -->
+                <div class="guidance-card">
+                    <div class="guidance-card-header">
+                        <h3 class="guidance-card-title">
+                            <i class="bi bi-pentagon text-accent"></i>
+                            <span>Syllabus Milestone Coverage</span>
+                        </h3>
+                        <span class="text-muted small">Profile vs Required Roadmap</span>
+                    </div>
+                    <div class="radar-wrap">
+                        <canvas id="skillRadarChart"></canvas>
+                    </div>
+                    <div class="d-flex justify-content-center gap-4 mt-2 pt-2 border-top border-light">
+                        <div class="d-flex align-items-center gap-1.5 small text-muted" style="font-size: 0.75rem;">
+                            <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(37, 99, 235, 0.7); display: inline-block;"></span>
+                            <span>Your Verified Match</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1.5 small text-muted" style="font-size: 0.75rem;">
+                            <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(20, 184, 166, 0.5); display: inline-block;"></span>
+                            <span>Required Benchmark</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 4: ROADMAP TRANSITION HERO (1-CLICK SYNC / NO FAKE CHECKLIST) -->
+            <section class="transition-hero-card {% if is_enrolled_in_path %}enrolled{% else %}sync-ready{% endif %}">
+                <div class="transition-info">
+                    <div class="transition-icon-wrap">
+                        {% if is_enrolled_in_path %}
+                            <i class="bi bi-check-circle-fill"></i>
+                        {% else %}
+                            <i class="bi bi-lightning-charge-fill"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {% if is_enrolled_in_path %}
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="badge bg-success text-white rounded-pill px-2.5 py-0.5 fw-semibold" style="font-size: 0.7rem;">Active Track</span>
+                                <span class="text-muted small" style="font-size: 0.75rem;">{{ user_roadmap.completed_count }}/{{ matched_career_path.total_topics }} Lessons Mastered</span>
+                            </div>
+                            <h3 class="transition-title">{{ analysis.recommended_career }} Track is Active ({{ user_roadmap.progress_percentage }}% Complete)</h3>
+                            <p class="transition-desc">
+                                All milestone progress is verified directly in your curriculum tracker. Resume at <strong>Week {{ next_active_week }}</strong> to continue closing your skill gaps.
+                            </p>
+                        {% else %}
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="badge bg-primary text-white rounded-pill px-2.5 py-0.5 fw-semibold" style="font-size: 0.7rem;">⚡ 1-Click Auto-Sync Ready</span>
+                                <span class="text-success small fw-semibold" style="font-size: 0.75rem;"><i class="bi bi-check2-all"></i> {{ auto_synced_count }} Topics Pre-Verified</span>
+                            </div>
+                            <h3 class="transition-title">Activate & Auto-Sync Your {{ analysis.recommended_career }} Roadmap</h3>
+                            <p class="transition-desc">
+                                Based on your student profile, we will automatically credit <strong>{{ auto_synced_count }} matched topics</strong>. You will start immediately at <strong>{{ auto_starting_pct }}% progress</strong> on Week {{ next_active_week }}.
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="transition-actions">
                     {% if is_enrolled_in_path %}
-                        <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-sm btn-outline-success rounded-pill w-100 py-1 fw-semibold" style="font-size: 0.85rem;">
-                            <i class="bi bi-check-circle me-1"></i> Enrolled ({{ user_roadmap.progress_percentage }}%)
+                        <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-primary-custom px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" style="font-size: 0.8125rem;">
+                            <i class="bi bi-play-circle-fill"></i> Continue Learning (Week {{ next_active_week }})
                         </a>
+                        <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3 py-2 fw-semibold" title="Re-sync newly added profile skills with roadmap milestones">
+                                <i class="bi bi-arrow-repeat me-1"></i> Re-Sync
+                            </button>
+                        </form>
                     {% else %}
                         <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-primary-custom rounded-pill w-100 py-1" style="font-size: 0.85rem;">
-                                <i class="bi bi-lightning-charge-fill me-1"></i> Auto-Sync Roadmap
+                            <button type="submit" class="btn btn-primary-custom px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" style="font-size: 0.8125rem;">
+                                <i class="bi bi-lightning-charge-fill"></i> Activate & Auto-Sync Roadmap
                             </button>
                         </form>
+                        {% if matched_career_path %}
+                        <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-2">
+                            <i class="bi bi-eye me-1"></i> Preview
+                        </a>
+                        {% endif %}
                     {% endif %}
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <!-- 3. ATS Resume Score -->
-        <div class="col-md-4 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <h6 class="fw-bold text-secondary mb-3">ATS Resume Match</h6>
-                    {% if user_has_resume and analysis.ats_resume_score %}
-                        <div class="score-circle-ats" style="--score-val: {{ analysis.ats_resume_score }};">
-                            <div class="score-circle-ats-inner">{{ analysis.ats_resume_score }}%</div>
-                        </div>
-                        <p class="text-muted small mt-3 mb-0">Compliance grade comparing keywords with selected role profiles.</p>
-                    {% else %}
-                        <div class="d-flex flex-column align-items-center justify-content-center py-2">
-                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 72px; height: 72px; background: rgba(37,99,235,0.08); border: 2px dashed rgba(37,99,235,0.3);">
-                                <i class="bi bi-file-earmark-arrow-up text-primary fs-2"></i>
-                            </div>
-                            <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1 mb-2 fw-semibold">No Resume Uploaded</span>
-                            <p class="text-muted small mb-0" style="font-size: 0.8rem; line-height: 1.4;">
-                                Upload or build your resume to get an ATS compliance match.
-                            </p>
-                        </div>
-                    {% endif %}
+            <!-- SECTION 5: STRATEGIC ACTION PLANS & INTERVIEW TOPICS -->
+            <section class="plans-grid">
+                <!-- 30-Day Plan -->
+                <div class="plan-card plan-30">
+                    <div class="guidance-card-header">
+                        <h3 class="guidance-card-title">
+                            <i class="bi bi-calendar-event text-primary"></i>
+                            <span>30-Day Immediate Plan</span>
+                        </h3>
+                        <span class="text-muted small">Month 1 Focus</span>
+                    </div>
+                    <ul class="insight-list">
+                        {% for step in analysis.thirty_day_plan %}
+                        <li class="insight-item">
+                            <span class="step-badge-num">{{ forloop.counter }}</span>
+                            <span>{{ step }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="insight-item text-muted small">Focus on foundational roadmap milestones and daily coding practice.</li>
+                        {% endfor %}
+                    </ul>
                 </div>
-                {% if user_has_resume and analysis.ats_resume_score %}
-                    <div class="mt-3">
-                        <a href="{% url 'ai_resume:history' %}" class="btn btn-sm btn-outline-primary rounded-pill w-100 py-1" style="font-size: 0.85rem;">
-                            <i class="bi bi-file-earmark-text me-1"></i> View ATS Report
+
+                <!-- 90-Day Plan -->
+                <div class="plan-card plan-90">
+                    <div class="guidance-card-header">
+                        <h3 class="guidance-card-title">
+                            <i class="bi bi-calendar-check text-accent"></i>
+                            <span>90-Day Placement Plan</span>
+                        </h3>
+                        <span class="text-muted small">Quarter Goal</span>
+                    </div>
+                    <ul class="insight-list">
+                        {% for step in analysis.ninety_day_plan %}
+                        <li class="insight-item">
+                            <span class="step-badge-num">{{ forloop.counter }}</span>
+                            <span>{{ step }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="insight-item text-muted small">Complete advanced milestone projects and begin active mock interviews.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Key Interview Topics -->
+                <div class="plan-card interview-prep">
+                    <div class="guidance-card-header">
+                        <h3 class="guidance-card-title">
+                            <i class="bi bi-person-video3 text-warning"></i>
+                            <span>Key Interview Topics</span>
+                        </h3>
+                        <span class="text-muted small">Role-Specific</span>
+                    </div>
+                    <ul class="insight-list">
+                        {% for topic in analysis.interview_topics %}
+                        <li class="insight-item">
+                            <i class="bi bi-chevron-right text-warning insight-icon"></i>
+                            <span>{{ topic }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="insight-item text-muted small">Core data structures, role fundamentals, and behavioral questions.</li>
+                        {% endfor %}
+                    </ul>
+                    <div class="mt-auto pt-3 border-top border-light">
+                        <a href="{% url 'interviews:hub' %}" class="btn btn-sm btn-outline-warning rounded-pill w-100 py-1.5 fw-semibold" style="font-size: 0.8125rem;">
+                            <i class="bi bi-mortarboard me-1"></i> Open Interview Prep Hub
                         </a>
                     </div>
-                {% else %}
-                    <div class="mt-3">
-                        <a href="{% url 'ai_resume:analyze' %}" class="btn btn-sm btn-primary-custom rounded-pill w-100 py-2">
-                            <i class="bi bi-upload me-1"></i> Scan Resume
-                        </a>
+                </div>
+            </section>
+
+            <!-- ATS Resume Guidance & Recommendations -->
+            <section class="resume-guidance-card">
+                <div class="guidance-card-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-text text-danger" style="font-size: 1.1rem;"></i>
+                        <h3 class="guidance-card-title mb-0">ATS Resume Compliance Guidance</h3>
                     </div>
+                    <div>
+                        {% if user_has_resume and analysis.ats_resume_score %}
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill fw-semibold" style="font-size: 0.75rem;">
+                                ATS Score: {{ analysis.ats_resume_score }}%
+                            </span>
+                        {% else %}
+                            <a href="{% url 'ai_resume:analyze' %}" class="btn btn-sm btn-primary-custom rounded-pill px-3 py-1" style="font-size: 0.8125rem;">
+                                <i class="bi bi-upload me-1"></i> Scan Resume
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if not user_has_resume %}
+                <div class="p-3 mb-3 rounded-3 bg-light border d-flex align-items-center gap-3">
+                    <i class="bi bi-info-circle text-primary fs-4 flex-shrink-0"></i>
+                    <div class="small text-muted">
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2.5 py-0.5 fw-semibold me-2">No Resume Uploaded</span>
+                        Uploading your resume in the <a href="{% url 'ai_resume:analyze' %}" class="fw-semibold text-primary">ATS Scanner</a> or creating one in the <a href="{% url 'resume:list' %}" class="fw-semibold text-primary">Resume Builder</a> unlocks role-specific keyword density metrics.
+                    </div>
+                </div>
                 {% endif %}
-            </div>
-        </div>
 
-        <!-- 4. Target Indicators -->
-        <div class="col-md-12 col-xl-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-center gap-3">
-                <div class="p-3 bg-light rounded-4 border">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="fw-bold text-secondary small">Internship Readiness</span>
-                        {% if "Almost" in analysis.internship_readiness %}
-                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-bold">Almost Ready</span>
-                        {% elif "Ready" in analysis.internship_readiness %}
-                        <span class="badge bg-success text-white rounded-pill px-3 py-2 fw-bold">Ready</span>
-                        {% else %}
-                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2 fw-bold">Need Preparation</span>
-                        {% endif %}
+                <div class="row g-2.5">
+                    {% for suggestion in analysis.resume_suggestions %}
+                    <div class="col-md-4">
+                        <div class="resume-tip-card">
+                            <i class="bi bi-lightbulb-fill text-warning me-1.5"></i>
+                            <span>{{ suggestion }}</span>
+                        </div>
                     </div>
-                </div>
-                <div class="p-3 bg-light rounded-4 border">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="fw-bold text-secondary small">Placement Readiness</span>
-                        {% if "Almost" in analysis.placement_readiness %}
-                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-bold">Almost Ready</span>
-                        {% elif "Ready" in analysis.placement_readiness %}
-                        <span class="badge bg-success text-white rounded-pill px-3 py-2 fw-bold">Ready</span>
-                        {% else %}
-                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2 fw-bold">Need Preparation</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Strengths, Weaknesses, and Missing Skills -->
-    <div class="row g-4 mb-5">
-        <!-- Strengths -->
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-patch-check-fill text-success"></i> My Strengths</h5>
-                <ul class="list-group list-group-flush">
-                    {% for str in analysis.strengths %}
-                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-start gap-2">
-                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
-                        <span>{{ str }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-
-        <!-- Weaknesses -->
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-exclamation-triangle-fill text-warning"></i> Growth Areas</h5>
-                <ul class="list-group list-group-flush">
-                    {% for wk in analysis.weaknesses %}
-                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-start gap-2">
-                        <i class="bi bi-exclamation-circle-fill text-warning mt-1"></i>
-                        <span>{{ wk }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-        
-        <!-- Missing Skills Gaps -->
-        <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-tag-fill text-primary"></i> Missing Skill Gaps</h5>
-                <p class="text-muted small">Acquiring these key technical concepts and tools will significantly boost your readiness match.</p>
-                <div class="d-flex flex-wrap gap-2 flex-grow-1">
-                    {% for skill in analysis.missing_skills %}
-                    <span class="badge badge-chip bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20 align-self-start">
-                        <i class="bi bi-x-circle-fill me-1"></i> {{ skill }}
-                    </span>
                     {% empty %}
-                    <span class="text-success small fw-semibold"><i class="bi bi-check-circle-fill"></i> No missing skills identified! You are fully aligned.</span>
+                    <div class="col-12">
+                        <div class="resume-tip-card">
+                            Tailor your project descriptions to emphasize core {{ analysis.recommended_career }} tools and quantifiable metrics.
+                        </div>
+                    </div>
                     {% endfor %}
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <!-- Radar Chart Card -->
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <h5 class="fw-bold text-secondary mb-2"><i class="bi bi-bar-chart-fill text-accent"></i> Skill Coverage Analysis</h5>
-                <p class="text-muted small mb-3">Comparison of your current profile against target syllabus milestones.</p>
-                <div class="d-flex justify-content-center align-items-center" style="position: relative; height: 260px;">
-                    <canvas id="skillRadarChart" style="max-height: 250px; max-width: 250px;"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 1-Click Live Roadmap Activation & Sync Hero Card -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" style="{% if is_enrolled_in_path %}background: linear-gradient(135deg, rgba(34,197,94,0.06) 0%, rgba(20,184,166,0.06) 100%); border: 1px solid rgba(34,197,94,0.25) !important;{% else %}background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(20,184,166,0.08) 100%); border: 2px dashed rgba(37,99,235,0.35) !important;{% endif %}">
-        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
-            <div class="d-flex align-items-start gap-3">
-                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 52px; height: 52px; {% if is_enrolled_in_path %}background: rgba(34,197,94,0.15); color: #15803d;{% else %}background: rgba(37,99,235,0.15); color: var(--primary);{% endif %} font-size: 1.5rem;">
-                    {% if is_enrolled_in_path %}
-                    <i class="bi bi-check-circle-fill"></i>
-                    {% else %}
-                    <i class="bi bi-lightning-charge-fill"></i>
-                    {% endif %}
-                </div>
+            <!-- Career Coach Motivational Banner -->
+            {% if analysis.motivational_message %}
+            <div class="coach-message-card">
+                <i class="bi bi-chat-quote-fill coach-icon"></i>
                 <div>
-                    {% if is_enrolled_in_path %}
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="badge bg-success text-white rounded-pill px-3 py-1 fw-bold">Active Track Enrolled</span>
-                        <span class="text-muted small"><i class="bi bi-clock-history"></i> {{ user_roadmap.completed_count }}/{{ matched_career_path.total_topics }} Lessons Done</span>
-                    </div>
-                    <h5 class="fw-bold text-secondary mb-1">Your {{ analysis.recommended_career }} Track is Active ({{ user_roadmap.progress_percentage }}% Progress)</h5>
-                    <p class="text-muted small mb-0">
-                        Jump right into <strong>Week {{ next_active_week }}</strong> to continue closing your missing technical skill gaps.
-                    </p>
-                    {% else %}
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="badge bg-primary text-white rounded-pill px-3 py-1 fw-bold">⚡ 1-Click Auto-Sync Ready</span>
-                        <span class="text-success small fw-semibold"><i class="bi bi-check2-all"></i> {{ auto_synced_count }} Topics Pre-Verified</span>
-                    </div>
-                    <h5 class="fw-bold text-secondary mb-1">Activate Your Personalized {{ analysis.recommended_career }} Roadmap</h5>
-                    <p class="text-muted small mb-0">
-                        Based on your profile skills, we can auto-complete <strong>{{ auto_synced_count }} topics</strong> so you don't start from scratch. Start directly at <strong>{{ auto_starting_pct }}% progress</strong> on Week {{ next_active_week }}!
-                    </p>
-                    {% endif %}
+                    <strong class="d-block small text-secondary mb-1">AI Career Coach Insight</strong>
+                    <p class="coach-text">"{{ analysis.motivational_message }}"</p>
                 </div>
             </div>
-            
-            <div class="d-flex flex-wrap gap-2 flex-shrink-0">
-                {% if is_enrolled_in_path %}
-                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-primary-custom px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2">
-                    <i class="bi bi-play-circle-fill"></i> Continue Roadmap (Week {{ next_active_week }})
-                </a>
-                <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3 py-2 fw-semibold" title="Re-sync newly added profile skills with roadmap milestones">
-                        <i class="bi bi-arrow-repeat"></i> Re-Sync
-                    </button>
-                </form>
-                {% else %}
-                <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-primary-custom px-4 py-2 fs-6 rounded-pill shadow-sm d-inline-flex align-items-center gap-2">
-                        <i class="bi bi-lightning-charge-fill"></i> Activate & Auto-Sync Roadmap
-                    </button>
-                </form>
-                {% if matched_career_path %}
-                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-2">
-                    <i class="bi bi-eye"></i> Preview Path
-                </a>
-                {% endif %}
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Career Roadmap Timeline & Learning Resources -->
-    <div class="row g-4 mb-5">
-        <!-- Roadmap Timeline -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-compass-fill text-primary me-2"></i> Curriculum Milestone Roadmap</h5>
-                    {% if matched_career_path %}
-                    <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1" style="font-size: 0.8rem;">
-                        <i class="bi bi-box-arrow-up-right me-1"></i> Full Interactive View
-                    </a>
-                    {% endif %}
-                </div>
-                <div class="timeline-steps overflow-auto" style="max-height: 480px;">
-                    {% for step in analysis.roadmap_json %}
-                    <div class="timeline-step-item {% if step.level == 'Advanced' %}advanced{% endif %} cursor-pointer p-2 rounded-3 hover-bg" onclick="toggleMilestone(this)" style="transition: all 0.2s ease;">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="fw-bold text-secondary">Week {{ step.week }}: {{ step.title }}</div>
-                            <i class="bi bi-chevron-down text-muted small collapse-icon"></i>
-                        </div>
-                        <div class="d-flex align-items-center gap-2 mt-1 mb-2">
-                            <span class="badge bg-light text-muted border small py-1 px-2">{{ step.level }}</span>
-                            {% if step.coverage_pct >= 100 %}
-                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 small py-1 px-2">
-                                <i class="bi bi-check2-all"></i> 100% Mastered
-                            </span>
-                            {% elif step.coverage_pct > 0 %}
-                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 small py-1 px-2">
-                                {{ step.coverage_pct }}% Covered
-                            </span>
-                            {% endif %}
-                        </div>
-                        <div class="topics-wrapper mt-1 d-none">
-                            <p class="small text-muted mb-2"><i class="bi bi-list-task text-primary"></i> Checklist Tasks:</p>
-                            <div class="d-flex flex-column gap-2 ms-2">
-                                {% for topic in step.topics %}
-                                <div class="d-flex align-items-center justify-content-between small text-secondary py-1">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <input type="checkbox" class="milestone-check" data-week="{{ step.week }}" data-topic="{{ topic }}" onclick="event.stopPropagation(); saveProgress(this)">
-                                        <span class="topic-name">{{ topic }}</span>
-                                    </div>
-                                    {% if topic in step.matched_topics %}
-                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-0" style="font-size: 0.72rem;">
-                                        <i class="bi bi-check2"></i> Mastered
-                                    </span>
-                                    {% endif %}
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Learning Resources -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-book-fill text-success"></i> Learning Resources</h5>
-                    <p class="text-muted small mb-4">Top database resource modules linked to your recommended path milestones.</p>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <tbody>
-                                {% for res in analysis.learning_resources_json %}
-                                <tr>
-                                    <td>
-                                        <div class="fw-bold text-secondary" style="font-size: 0.9rem;">{{ res.title }}</div>
-                                        <span class="badge bg-light text-muted border small">{{ res.type }}</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <a href="{{ res.url }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                            <i class="bi bi-box-arrow-up-right"></i> Open Link
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- Recommendations: Certs, Projects, Interview topics & Resume suggestions -->
-    <div class="row g-4 mb-5">
-        <!-- Certs -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-shield-lock-fill text-info"></i> Recommended Certifications</h5>
-                <ul class="list-group list-group-flush">
-                    {% for cert in analysis.recommended_certifications %}
-                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-center gap-2">
-                        <i class="bi bi-award-fill text-info"></i>
-                        <span class="small fw-semibold">{{ cert }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-
-        <!-- Projects -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-cpu-fill text-primary"></i> Recommended Projects</h5>
-                <ul class="list-group list-group-flush">
-                    {% for proj in analysis.recommended_projects %}
-                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-start gap-2">
-                        <i class="bi bi-folder-fill text-primary mt-1"></i>
-                        <span class="small">{{ proj }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-
-        <!-- Interview Topics -->
-        <div class="col-md-12 col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-people-fill text-warning"></i> Key Interview Topics</h5>
-                <ul class="list-group list-group-flush">
-                    {% for topic in analysis.interview_topics %}
-                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-center gap-2">
-                        <i class="bi bi-chevron-right text-warning"></i>
-                        <span class="small fw-semibold">{{ topic }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- Resume Guidance -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-5">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-file-earmark-text-fill text-danger me-2"></i> Resume Guidance</h5>
-            {% if not user_has_resume %}
-            <a href="{% url 'ai_resume:analyze' %}" class="btn btn-sm btn-outline-danger rounded-pill px-3">
-                <i class="bi bi-upload me-1"></i> Upload Resume for ATS Scan
-            </a>
             {% endif %}
-        </div>
-        
-        {% if not user_has_resume %}
-        <div class="alert alert-warning border-0 rounded-4 p-3 d-flex align-items-center gap-3 mb-3" style="background: rgba(245, 158, 11, 0.08);">
-            <i class="bi bi-info-circle-fill text-warning fs-3 flex-shrink-0"></i>
-            <div class="small">
-                <strong>No resume uploaded yet.</strong> Uploading your resume in the <a href="{% url 'ai_resume:analyze' %}" class="fw-bold text-decoration-underline text-warning">ATS Resume Analyzer</a> or creating one in our <a href="{% url 'resume:list' %}" class="fw-bold text-decoration-underline text-warning">Resume Builder</a> will generate keyword density metrics, missing skill chips, and formatting improvements.
-            </div>
-        </div>
-        {% endif %}
 
-        <div class="row g-3">
-            {% for suggestion in analysis.resume_suggestions %}
-            <div class="col-md-4">
-                <div class="p-3 bg-light rounded-4 border-start border-danger border-4 h-100">
-                    <p class="mb-0 text-secondary small fw-semibold">{{ suggestion }}</p>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+            {% endif %}
+        </main>
     </div>
-
-    <!-- Execution Plan (30 Day & 90 Day) -->
-    <div class="row g-4 mb-5">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 plan-card">
-                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-calendar-event text-primary"></i> 30-Day Transition Plan</h5>
-                <ul class="list-group list-group-flush">
-                    {% for step in analysis.thirty_day_plan %}
-                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-start gap-2">
-                        <span class="badge bg-primary rounded-circle text-white" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;">{{ forloop.counter }}</span>
-                        <span class="small mt-1">{{ step }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 plan-card-90">
-                <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-calendar-check text-accent"></i> 90-Day Transition Plan</h5>
-                <ul class="list-group list-group-flush">
-                    {% for step in analysis.ninety_day_plan %}
-                    <li class="list-group-item bg-transparent border-0 px-0 d-flex align-items-start gap-2">
-                        <span class="badge bg-accent rounded-circle text-white" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;">{{ forloop.counter }}</span>
-                        <span class="small mt-1">{{ step }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- Motivational Callout Alert -->
-    <div class="alert motivational-alert rounded-4 p-4 d-flex align-items-center gap-3 mb-5" role="alert">
-        <i class="bi bi-lightning-charge-fill text-primary display-5"></i>
-        <div>
-            <h5 class="alert-heading fw-bold text-secondary mb-1">Career Coach Message</h5>
-            <p class="mb-0 text-muted italic">"{{ analysis.motivational_message }}"</p>
-        </div>
-    </div>
-
-    {% endif %}
-
 </div>
 {% endblock %}
 
@@ -712,11 +586,33 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Mobile Sidebar Toggle ---
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('sidebarCloseBtn');
+    const sidebar = document.getElementById('dashboardSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+
+    // --- Radar Chart Initialization ---
     const ctx = document.getElementById('skillRadarChart');
     if (!ctx) return;
 
     {% if analysis %}
-    // Load dynamic milestone dimensions from CareerAnalysis
     const categories = [{% for lbl in analysis.get_radar_labels %}"{{ lbl|escapejs }}",{% endfor %}];
     const studentScores = [{% for sc in analysis.get_radar_user_scores %}{{ sc }},{% endfor %}];
     const targetScores = [{% for sc in analysis.get_radar_target_scores %}{{ sc }},{% endfor %}];
@@ -730,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     label: 'Your Verified Match',
                     data: studentScores.length > 0 ? studentScores : [0, 0, 0, 0, 0],
                     fill: true,
-                    backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                    backgroundColor: 'rgba(37, 99, 235, 0.18)',
                     borderColor: 'rgb(37, 99, 235)',
                     pointBackgroundColor: 'rgb(37, 99, 235)',
                     pointBorderColor: '#fff',
@@ -738,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     pointHoverBorderColor: 'rgb(37, 99, 235)'
                 },
                 {
-                    label: 'Required Milestone Syllabus',
+                    label: 'Required Benchmark',
                     data: targetScores.length > 0 ? targetScores : [10, 10, 10, 10, 10],
                     fill: true,
                     backgroundColor: 'rgba(20, 184, 166, 0.08)',
@@ -755,7 +651,8 @@ document.addEventListener('DOMContentLoaded', function() {
             maintainAspectRatio: false,
             scales: {
                 r: {
-                    angleLines: { display: true },
+                    angleLines: { display: true, color: 'rgba(0, 0, 0, 0.05)' },
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
                     suggestedMin: 0,
                     suggestedMax: 10,
                     ticks: { stepSize: 2, display: false }
@@ -763,59 +660,12 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             plugins: {
                 legend: {
-                    position: 'bottom',
-                    labels: { boxWidth: 12, font: { size: 10 } }
+                    display: false
                 }
             }
         }
     });
     {% endif %}
-
-    // --- Interactive Milestone Progress Tracker ---
-    window.saveProgress = function(checkbox) {
-        const key = `milestone-${checkbox.dataset.week}-${checkbox.dataset.topic}`;
-        localStorage.setItem(key, checkbox.checked ? 'true' : 'false');
-        
-        const labelText = checkbox.nextElementSibling;
-        if (labelText) {
-            if (checkbox.checked) {
-                labelText.style.textDecoration = 'line-through';
-                labelText.style.opacity = '0.6';
-            } else {
-                labelText.style.textDecoration = 'none';
-                labelText.style.opacity = '1';
-            }
-        }
-    };
-
-    window.toggleMilestone = function(element) {
-        const wrapper = element.querySelector('.topics-wrapper');
-        const icon = element.querySelector('.collapse-icon');
-        if (wrapper) {
-            if (wrapper.classList.contains('d-none')) {
-                wrapper.classList.remove('d-none');
-                if (icon) icon.className = 'bi bi-chevron-up text-muted small collapse-icon';
-                element.style.backgroundColor = 'rgba(37, 99, 235, 0.04)';
-            } else {
-                wrapper.classList.add('d-none');
-                if (icon) icon.className = 'bi bi-chevron-down text-muted small collapse-icon';
-                element.style.backgroundColor = 'transparent';
-            }
-        }
-    };
-
-    // Load initial checkmark state from localStorage
-    document.querySelectorAll('.milestone-check').forEach(checkbox => {
-        const key = `milestone-${checkbox.dataset.week}-${checkbox.dataset.topic}`;
-        const isChecked = localStorage.getItem(key) === 'true';
-        checkbox.checked = isChecked;
-        
-        const labelText = checkbox.nextElementSibling;
-        if (labelText && isChecked) {
-            labelText.style.textDecoration = 'line-through';
-            labelText.style.opacity = '0.6';
-        }
-    });
 });
 </script>
 {% endblock %}

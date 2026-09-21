@@ -1,0 +1,766 @@
+/* ==========================================================================
+   CareerCatalyst Career Guidance — static/css/guidance.css
+   Clean · Professional · Educational · Diagnostic Intelligence
+   Reuses dashboard design tokens: --dash-bg, --dash-surface, --dash-primary, etc.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. PAGE HEADER & BREADCRUMBS
+   -------------------------------------------------------------------------- */
+.guidance-page-header {
+    margin-bottom: 1.5rem;
+}
+
+.guidance-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.guidance-breadcrumb a {
+    color: var(--dash-text-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.guidance-breadcrumb a:hover {
+    color: var(--dash-primary);
+}
+
+.guidance-page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    letter-spacing: -0.02em;
+    margin: 0 0 0.25rem 0;
+}
+
+.guidance-page-subtitle {
+    font-size: 0.875rem;
+    color: var(--dash-text-muted);
+    margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   2. DIAGNOSTIC HERO BANNER
+   -------------------------------------------------------------------------- */
+.guidance-hero {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    box-shadow: var(--dash-shadow-card);
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.guidance-hero-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.guidance-hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tier-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    letter-spacing: 0.01em;
+}
+
+.tier-badge.product {
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+    border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.tier-badge.service {
+    background: rgba(14, 165, 233, 0.12);
+    color: #0369a1;
+    border: 1px solid rgba(14, 165, 233, 0.28);
+}
+
+.tier-badge.general {
+    background: rgba(107, 114, 128, 0.12);
+    color: #4b5563;
+    border: 1px solid rgba(107, 114, 128, 0.25);
+}
+
+[data-theme='dark'] .tier-badge.product {
+    color: #fcd34d;
+}
+[data-theme='dark'] .tier-badge.service {
+    color: #7dd3fc;
+}
+[data-theme='dark'] .tier-badge.general {
+    color: #d1d5db;
+}
+
+.guidance-hero-main {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 2rem;
+    align-items: center;
+}
+
+@media (max-width: 991px) {
+    .guidance-hero-main {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+/* Circular Score Visual */
+.score-ring-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.score-ring {
+    position: relative;
+    width: 116px;
+    height: 116px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, var(--dash-surface) 78%, transparent 80% 100%),
+                conic-gradient(var(--dash-primary) calc(var(--score-val) * 1%), var(--dash-border) 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.score-ring-value {
+    font-size: 1.625rem;
+    font-weight: 800;
+    color: var(--dash-text);
+    line-height: 1;
+}
+
+.score-ring-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--dash-text-muted);
+    letter-spacing: 0.04em;
+    margin-top: 0.25rem;
+}
+
+/* Hero Center Details */
+.hero-details-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    margin: 0 0 0.375rem 0;
+}
+
+.hero-details-desc {
+    font-size: 0.875rem;
+    color: var(--dash-text-muted);
+    line-height: 1.5;
+    margin-bottom: 0.875rem;
+}
+
+.hero-readiness-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.readiness-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 6px;
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    color: var(--dash-text);
+}
+
+.readiness-chip-status {
+    font-weight: 600;
+}
+
+.status-ready {
+    color: var(--dash-success);
+}
+
+.status-almost {
+    color: var(--dash-warning);
+}
+
+.status-prep {
+    color: #dc2626;
+}
+
+/* Hero Actions & Recalibrate Button */
+.hero-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 190px;
+}
+
+.btn-recalibrate {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: var(--dash-radius, 8px);
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border-strong);
+    color: var(--dash-text);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-recalibrate:hover {
+    background: var(--dash-surface-hover);
+    border-color: var(--dash-primary);
+    color: var(--dash-primary);
+}
+
+/* Recalibrate Collapse Drawer */
+.recalibrate-drawer {
+    margin-top: 1.25rem;
+    padding: 1.25rem;
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+}
+
+.recalibrate-drawer h6 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin-bottom: 0.875rem;
+}
+
+/* --------------------------------------------------------------------------
+   3. EVALUATION PILLARS (4 HIRING BENCHMARK PILLARS)
+   -------------------------------------------------------------------------- */
+.pillars-section {
+    margin-bottom: 1.5rem;
+}
+
+.section-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.875rem;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    letter-spacing: -0.01em;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-subtitle {
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+    margin: 0;
+}
+
+.pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 991px) {
+    .pillars-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 575px) {
+    .pillars-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pillar-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    box-shadow: var(--dash-shadow-sm);
+    padding: 1rem 1.125rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.pillar-card:hover {
+    border-color: var(--dash-border-strong);
+    transform: translateY(-1px);
+}
+
+.pillar-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.pillar-icon-wrap {
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    background: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.pillar-tag {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    color: var(--dash-text-muted);
+}
+
+.pillar-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin: 0 0 0.375rem 0;
+}
+
+.pillar-score-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.pillar-score-val {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--dash-text);
+}
+
+.pillar-score-max {
+    font-size: 0.75rem;
+    color: var(--dash-text-muted);
+}
+
+.pillar-progress {
+    height: 5px;
+    background: var(--dash-border);
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.pillar-progress-bar {
+    height: 100%;
+    background: var(--dash-primary);
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+}
+
+.pillar-footer-label {
+    font-size: 0.6875rem;
+    color: var(--dash-text-muted);
+    margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   4. DIAGNOSTICS ROW: STRENGTHS, GROWTH AREAS, GAPS & RADAR
+   -------------------------------------------------------------------------- */
+.diagnostics-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 991px) {
+    .diagnostics-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.guidance-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    box-shadow: var(--dash-shadow-sm);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.guidance-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.guidance-card-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Insight List Items */
+.insight-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.insight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    font-size: 0.8125rem;
+    color: var(--dash-text);
+    line-height: 1.45;
+}
+
+.insight-icon {
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    font-size: 0.9375rem;
+}
+
+.insight-icon.success {
+    color: var(--dash-success);
+}
+
+.insight-icon.warning {
+    color: var(--dash-warning);
+}
+
+/* Missing Skills Chips */
+.missing-skills-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.skill-gap-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    background: rgba(220, 38, 38, 0.08);
+    color: #b91c1c;
+    border: 1px solid rgba(220, 38, 38, 0.20);
+}
+
+[data-theme='dark'] .skill-gap-chip {
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* Radar Chart Wrap */
+.radar-wrap {
+    position: relative;
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   5. ROADMAP TRANSITION HERO (NO FAKE CHECKLIST)
+   -------------------------------------------------------------------------- */
+.transition-hero-card {
+    border-radius: var(--dash-radius-lg, 10px);
+    box-shadow: var(--dash-shadow-card);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+}
+
+.transition-hero-card.enrolled {
+    background: linear-gradient(135deg, rgba(22, 163, 74, 0.05) 0%, rgba(13, 148, 136, 0.05) 100%);
+    border: 1px solid rgba(22, 163, 74, 0.25);
+}
+
+.transition-hero-card.sync-ready {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);
+    border: 1px dashed rgba(37, 99, 235, 0.35);
+}
+
+.transition-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    max-width: 680px;
+}
+
+.transition-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.transition-hero-card.enrolled .transition-icon-wrap {
+    background: rgba(22, 163, 74, 0.15);
+    color: var(--dash-success);
+}
+
+.transition-hero-card.sync-ready .transition-icon-wrap {
+    background: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+}
+
+.transition-title {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    margin: 0 0 0.25rem 0;
+}
+
+.transition-desc {
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+    line-height: 1.45;
+    margin: 0;
+}
+
+.transition-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   6. STRATEGIC ACTION PLANS & INTERVIEW TOPICS
+   -------------------------------------------------------------------------- */
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .plans-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.plan-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    box-shadow: var(--dash-shadow-sm);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.plan-card.plan-30 {
+    border-top: 3px solid var(--dash-primary);
+}
+
+.plan-card.plan-90 {
+    border-top: 3px solid #0d9488;
+}
+
+.plan-card.interview-prep {
+    border-top: 3px solid #f59e0b;
+}
+
+.step-badge-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.plan-card.plan-90 .step-badge-num {
+    background: rgba(13, 148, 136, 0.12);
+    color: #0d9488;
+}
+
+/* Resume ATS Section */
+.resume-guidance-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    box-shadow: var(--dash-shadow-sm);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.resume-tip-card {
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-left: 3px solid var(--dash-primary);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+    color: var(--dash-text);
+    height: 100%;
+}
+
+/* Coach Motivational Message */
+.coach-message-card {
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-left: 4px solid var(--dash-primary);
+    border-radius: var(--dash-radius, 8px);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+    margin-bottom: 1.5rem;
+}
+
+.coach-icon {
+    font-size: 1.25rem;
+    color: var(--dash-primary);
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.coach-text {
+    font-size: 0.8125rem;
+    font-style: italic;
+    color: var(--dash-text);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   7. LANDING INTRO STATE (NO ANALYSIS YET)
+   -------------------------------------------------------------------------- */
+.guidance-landing-wrap {
+    max-width: 800px;
+    margin: 1rem auto 3rem auto;
+    text-align: center;
+}
+
+.landing-flow-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin: 2rem 0;
+    text-align: left;
+}
+
+@media (max-width: 768px) {
+    .landing-flow-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .landing-flow-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.landing-step-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    padding: 1rem;
+    box-shadow: var(--dash-shadow-sm);
+}
+
+.landing-step-card i {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.landing-step-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin-bottom: 0.25rem;
+}
+
+.landing-step-desc {
+    font-size: 0.75rem;
+    color: var(--dash-text-muted);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.landing-form-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    box-shadow: var(--dash-shadow-card);
+    padding: 2rem;
+    text-align: left;
+    max-width: 520px;
+    margin: 0 auto;
+}
