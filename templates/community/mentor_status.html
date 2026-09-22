@@ -1,39 +1,133 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Application Status - Career Catalyst{% endblock %}
+{% block title %}Mentor Application Status — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5 mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-6 text-center">
-            <div class="card border-0 shadow-sm rounded-4 p-5">
-                {% if profile.status == 'Pending' %}
-                <i class="bi bi-clock-history text-warning display-1 mb-4"></i>
-                <h2 class="fw-bold text-secondary mb-3">Verification Pending</h2>
-                <p class="text-muted leading-relaxed mb-4">Your registration request as a mentor has been received and is currently under review by our administrators.</p>
-                <div class="badge bg-warning bg-opacity-10 text-warning px-4 py-2 fs-6 rounded-pill">Status: Pending Verification</div>
-                
-                {% elif profile.status == 'Rejected' %}
-                <i class="bi bi-exclamation-triangle-fill text-danger display-1 mb-4"></i>
-                <h2 class="fw-bold text-secondary mb-3">Application Declined</h2>
-                <p class="text-muted leading-relaxed mb-4">Unfortunately, your application was not approved at this time. Please check your qualifications or URLs, update your details, and submit a new request.</p>
-                <div class="badge bg-danger bg-opacity-10 text-danger px-4 py-2 fs-6 rounded-pill mb-4">Status: Rejected</div>
-                <div class="d-grid mt-2">
-                    <!-- Overwrite registration profile -->
-                    <a href="{% url 'community:mentor_register' %}" class="btn btn-primary rounded-pill">Resubmit Registration Form</a>
-                </div>
-                
-                {% elif profile.status == 'Blocked' %}
-                <i class="bi bi-shield-slash-fill text-danger display-1 mb-4"></i>
-                <h2 class="fw-bold text-secondary mb-3">Profile Blocked</h2>
-                <p class="text-muted leading-relaxed mb-4">Your mentor account has been blocked by administrators due to violations of our community guidelines.</p>
-                <div class="badge bg-danger bg-opacity-10 text-danger px-4 py-2 fs-6 rounded-pill">Status: Blocked</div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
+
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
                 {% endif %}
-                
-                <hr class="my-4">
-                <a href="{% url 'community:mentor_list' %}" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> Return to Marketplace</a>
             </div>
-        </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header mb-4">
+                <div class="community-breadcrumbs">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:mentor_list' %}">Mentors</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>Application Status</span>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="community-card text-center p-5">
+                        {% if profile.status == 'Pending' %}
+                            <div class="community-metric-icon amber mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem;">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <h1 class="h4 fw-bold text-body mb-2">Verification Pending</h1>
+                            <p class="text-muted small mb-4 lh-base">
+                                Your mentor profile application has been recorded and is currently being verified by CareerCatalyst administrators. You will be notified once reviewed.
+                            </p>
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 fw-semibold">
+                                Status: Pending Admin Review
+                            </span>
+
+                        {% elif profile.status == 'Rejected' %}
+                            <div class="community-metric-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem; background: rgba(239, 68, 68, 0.1); color: #DC2626;">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </div>
+                            <h1 class="h4 fw-bold text-body mb-2">Application Declined</h1>
+                            <p class="text-muted small mb-4 lh-base">
+                                Your application was not approved at this time. Please verify your background credentials, LinkedIn URL, and portfolio links before reapplying.
+                            </p>
+                            <div class="d-flex flex-column gap-2 align-items-center">
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fw-semibold">
+                                    Status: Declined
+                                </span>
+                                <a href="{% url 'community:mentor_register' %}" class="btn btn-primary btn-sm px-4 py-2 mt-3">
+                                    Resubmit Application
+                                </a>
+                            </div>
+
+                        {% elif profile.status == 'Blocked' %}
+                            <div class="community-metric-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem; background: rgba(239, 68, 68, 0.1); color: #DC2626;">
+                                <i class="bi bi-shield-slash-fill"></i>
+                            </div>
+                            <h1 class="h4 fw-bold text-body mb-2">Account Blocked</h1>
+                            <p class="text-muted small mb-4 lh-base">
+                                Your mentor profile has been suspended by system administrators due to community policy violations.
+                            </p>
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fw-semibold">
+                                Status: Suspended
+                            </span>
+                        {% endif %}
+
+                        <div class="pt-4 border-top mt-4">
+                            <a href="{% url 'community:mentor_list' %}" class="text-decoration-none small text-muted">
+                                <i class="bi bi-arrow-left me-1"></i> Browse Mentor Directory
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+});
+</script>
 {% endblock %}

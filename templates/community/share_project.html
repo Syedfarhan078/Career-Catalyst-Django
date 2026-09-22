@@ -1,57 +1,161 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Share Project - Career Catalyst{% endblock %}
+{% block title %}Share a Project — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-                <div class="mb-3">
-                    <a href="{% url 'community:project_list' %}" class="btn-back">
-                        <i class="bi bi-arrow-left"></i> Back to Projects
-                    </a>
-                </div>
-                
-                <h2 class="fw-bold mb-2">Share Your Project</h2>
-                <p class="text-muted mb-4">Post your repository or demo links to showcase your coding milestones to the community and mentors.</p>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
 
-                <form method="POST" action="{% url 'community:share_project' %}">
-                    {% csrf_token %}
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary">Project Title</label>
-                        <input type="text" class="form-control rounded-pill px-3 py-2" name="title" required placeholder="e.g. Distributed Chat Room with Django Channels">
-                    </div>
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary">Description</label>
-                        <textarea class="form-control rounded-4 p-3" name="description" rows="5" required placeholder="Explain what the project does, the architecture, tools used, and key milestones solved..."></textarea>
-                    </div>
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-secondary">GitHub Repository Link (Optional)</label>
-                            <input type="url" class="form-control rounded-pill px-3 py-2" name="github_link" placeholder="https://github.com/yourusername/project">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-secondary">Live Demo Link (Optional)</label>
-                            <input type="url" class="form-control rounded-pill px-3 py-2" name="live_link" placeholder="https://project.herokuap.com">
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-secondary">Tags / Skills</label>
-                        <div class="form-text text-muted mb-2">Comma-separated list (e.g. Django, WebSockets, Python, React)</div>
-                        <input type="text" class="form-control rounded-pill px-3 py-2" name="tags" placeholder="Django, WebSockets, JavaScript">
-                    </div>
-
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary-custom btn-lg rounded-pill py-2 fw-bold">Share Project</button>
-                    </div>
-                </form>
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
             </div>
-        </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header mb-4">
+                <div class="community-breadcrumbs">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:hub' %}">Community</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:project_list' %}">Projects</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>Share Project</span>
+                </div>
+                <h1 class="community-title">Share Your Project</h1>
+                <p class="community-subtitle">
+                    Post your codebase repository or live deployment to get peer feedback, likes, and mentor visibility.
+                </p>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="community-card">
+                        <form method="POST" action="{% url 'community:share_project' %}">
+                            {% csrf_token %}
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-body small">Project Title <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="title" required placeholder="e.g. Distributed Task Queue & Monitoring Engine">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-body small">Project Description <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="description" rows="5" required placeholder="Describe the core features, architectural tradeoffs, databases used, and what you learned while building this project..."></textarea>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold text-body small">GitHub Repository Link</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-github"></i></span>
+                                        <input type="url" class="form-control" name="github_link" placeholder="https://github.com/username/repo">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold text-body small">Live Demo URL</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-globe"></i></span>
+                                        <input type="url" class="form-control" name="live_link" placeholder="https://your-app.com">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-body small">Tags & Technologies</label>
+                                <input type="text" class="form-control" name="tags" placeholder="Django, PostgreSQL, Redis, Docker, React">
+                                <div class="form-text text-muted">Separate technologies with commas.</div>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                                <a href="{% url 'community:project_list' %}" class="btn btn-outline-secondary btn-sm px-3 py-2">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-medium">
+                                    <i class="bi bi-cloud-arrow-up me-1"></i> Publish Project
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="community-card">
+                        <div class="community-card-header">
+                            <h2 class="community-card-title">
+                                <i class="bi bi-lightbulb text-warning"></i> Best Practices
+                            </h2>
+                        </div>
+                        <ul class="list-unstyled small text-muted d-flex flex-column gap-2 mb-0">
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check2 text-success mt-0.5"></i>
+                                <span>Ensure your GitHub repository has a clear <code>README.md</code> with architecture overview.</span>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check2 text-success mt-0.5"></i>
+                                <span>Specify database schema or API design choices.</span>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check2 text-success mt-0.5"></i>
+                                <span>Tag the key frameworks and cloud tools used.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+});
+</script>
 {% endblock %}

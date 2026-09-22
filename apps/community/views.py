@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView
 from django.http import JsonResponse, HttpResponseForbidden
@@ -32,6 +33,25 @@ from .utils import calculate_mentor_match_score
 User = get_user_model()
 
 
+def get_user_sidebar_context(user):
+    """
+    Helper to provide consistent sidebar user badge and career context
+    across the Community & Mentors workspace.
+    """
+    if not user or not user.is_authenticated:
+        return {'profile': None, 'user_initials': '', 'target_career': ''}
+    profile = getattr(user, 'studentprofile', None)
+    first_initial = (user.first_name[:1] if user.first_name else user.username[:1]).upper()
+    last_initial = (user.last_name[:1] if user.last_name else "").upper()
+    user_initials = f"{first_initial}{last_initial}" if last_initial else (user.username[:2].upper())
+    target_career = profile.career_goal.strip() if (profile and profile.career_goal) else ""
+    return {
+        'profile': profile,
+        'user_initials': user_initials,
+        'target_career': target_career,
+    }
+
+
 # --- COMMUNITY FORUM VIEWS (FROM SPRINT 22) ---
 
 @method_decorator(login_required, name='dispatch')
@@ -40,13 +60,14 @@ class CommunityHubView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["recent_threads"] = ForumThread.objects.select_related('category', 'author').order_by('-created_at')[:3]
-        context["active_mentors"] = MentorProfile.objects.filter(status='Approved', verified=True)[:4]
+        context["recent_threads"] = ForumThread.objects.select_related('category', 'author', 'author__mentor_profile').order_by('-created_at')[:3]
+        context["active_mentors"] = MentorProfile.objects.filter(status='Approved', verified=True).select_related('user')[:4]
         context["recent_projects"] = SharedProject.objects.select_related('author').annotate(likes_count=Count('likes')).order_by('-created_at')[:3]
         context["recent_stories"] = SuccessStory.objects.all()[:3]
         
         user_likes = ProjectLike.objects.filter(user=self.request.user).values_list('project_id', flat=True)
         context["liked_project_ids"] = list(user_likes)
+        context.update(get_user_sidebar_context(self.request.user))
         return context
 
 
@@ -58,7 +79,7 @@ class ForumListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = ForumThread.objects.select_related('category', 'author').annotate(replies_count=Count('replies'))
+        queryset = ForumThread.objects.select_related('category', 'author', 'author__mentor_profile').annotate(replies_count=Count('replies')).order_by('-created_at')
         category_slug = self.request.GET.get('category')
         if category_slug:
             queryset = queryset.filter(category__slug=category_slug)
@@ -68,6 +89,7 @@ class ForumListView(ListView):
         context = super().get_context_data(**kwargs)
         context["categories"] = ForumCategory.objects.all()
         context["active_category"] = self.request.GET.get('category', '')
+        context.update(get_user_sidebar_context(self.request.user))
         return context
 
 
@@ -79,7 +101,8 @@ class ForumThreadDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["replies"] = self.object.replies.select_related('author').all()
+        context["replies"] = self.object.replies.select_related('author', 'author__mentor_profile').all()
+        context.update(get_user_sidebar_context(self.request.user))
         return context
 
 
@@ -105,7 +128,8 @@ def create_thread(request):
         return redirect('community:forum_detail', pk=thread.pk)
 
     categories = ForumCategory.objects.all()
-    return render(request, "community/create_thread.html", {"categories": categories})
+    context = {"categories": categories, **get_user_sidebar_context(request.user)}
+    return render(request, "community/create_thread.html", context)
 
 
 @login_required
@@ -137,7 +161,7 @@ class ProjectListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return SharedProject.objects.select_related('author').annotate(likes_count=Count('likes'))
+        return SharedProject.objects.select_related('author').annotate(likes_count=Count('likes')).order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -145,6 +169,7 @@ class ProjectListView(ListView):
             user=self.request.user
         ).values_list('project_id', flat=True)
         context["liked_project_ids"] = list(user_likes)
+        context.update(get_user_sidebar_context(self.request.user))
         return context
 
 
@@ -172,7 +197,7 @@ def share_project(request):
         messages.success(request, f"Your project '{title}' has been shared successfully!")
         return redirect('community:project_list')
 
-    return render(request, "community/share_project.html")
+    return render(request, "community/share_project.html", get_user_sidebar_context(request.user))
 
 
 @login_required
@@ -204,6 +229,11 @@ class SuccessStoryListView(ListView):
     template_name = "community/stories.html"
     context_object_name = "stories"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(get_user_sidebar_context(self.request.user))
+        return context
+
 
 # --- MENTOR MARKETPLACE VIEWS ---
 
@@ -216,7 +246,7 @@ class MarketplaceListView(ListView):
 
     def get_queryset(self):
         # Only public visible approved mentors
-        queryset = MentorProfile.objects.filter(status='Approved', verified=True)
+        queryset = MentorProfile.objects.filter(status='Approved', verified=True).select_related('user').prefetch_related('mentor_skills')
         
         # Advanced Filtering
         search_query = self.request.GET.get('search', '').strip()
@@ -293,6 +323,7 @@ class MarketplaceListView(ListView):
         # Filter lists for layout widgets
         context["all_domains"] = ["Frontend", "Backend", "Full Stack", "Data Science", "Machine Learning", "DevOps", "Cyber Security", "Product Management", "System Design"]
         context["current_filters"] = self.request.GET.dict()
+        context.update(get_user_sidebar_context(self.request.user))
         return context
 
 
@@ -330,6 +361,7 @@ class MentorDetailView(DetailView):
         else:
             context["has_accepted_booking"] = False
 
+        context.update(get_user_sidebar_context(self.request.user))
         return context
 
 
@@ -345,7 +377,7 @@ def mentor_register(request):
         if profile.status == 'Approved':
             return redirect('community:mentor_dashboard')
         else:
-            return render(request, "community/mentor_status.html", {"profile": profile})
+            return render(request, "community/mentor_status.html", {"profile": profile, **get_user_sidebar_context(request.user)})
     except MentorProfile.DoesNotExist:
         pass
 
@@ -359,7 +391,7 @@ def mentor_register(request):
     else:
         form = MentorRegistrationForm()
 
-    return render(request, "community/mentor_register.html", {"form": form})
+    return render(request, "community/mentor_register.html", {"form": form, **get_user_sidebar_context(request.user)})
 
 
 @login_required
@@ -370,10 +402,10 @@ def mentor_dashboard(request):
     # Ensure they are approved mentors
     mentor = get_object_or_404(MentorProfile, user=request.user)
     if mentor.status != 'Approved':
-        return render(request, "community/mentor_status.html", {"profile": mentor})
+        return render(request, "community/mentor_status.html", {"profile": mentor, **get_user_sidebar_context(request.user)})
 
     # Analytics calculation
-    all_requests = MentorshipRequest.objects.filter(mentor=mentor)
+    all_requests = MentorshipRequest.objects.filter(mentor=mentor).select_related('student')
     total_sessions = all_requests.filter(status='Completed').count()
     upcoming_sessions = all_requests.filter(status='Accepted').count()
     pending_sessions = all_requests.filter(status='Pending').count()
@@ -393,7 +425,8 @@ def mentor_dashboard(request):
         "pending_sessions": pending_sessions,
         "recent_requests": recent_requests,
         "recent_reviews": recent_reviews,
-        "profile_completion": profile_completion
+        "profile_completion": profile_completion,
+        **get_user_sidebar_context(request.user)
     })
 
 
@@ -411,7 +444,7 @@ def edit_mentor_profile(request):
     else:
         form = MentorProfileEditForm(instance=mentor, initial={'skills_csv': mentor.skills})
 
-    return render(request, "community/edit_mentor_profile.html", {"form": form, "mentor": mentor})
+    return render(request, "community/edit_mentor_profile.html", {"form": form, "mentor": mentor, **get_user_sidebar_context(request.user)})
 
 
 @login_required
@@ -438,11 +471,13 @@ def manage_availability(request):
     return render(request, "community/manage_availability.html", {
         "form": form,
         "availabilities": availabilities,
-        "mentor": mentor
+        "mentor": mentor,
+        **get_user_sidebar_context(request.user)
     })
 
 
 @login_required
+@require_POST
 def delete_availability(request, pk):
     mentor = get_object_or_404(MentorProfile, user=request.user)
     avail = get_object_or_404(MentorAvailability, pk=pk, mentor=mentor)
@@ -478,11 +513,12 @@ def book_mentorship_session(request, mentor_id):
 @login_required
 def mentor_requests_list(request):
     mentor = get_object_or_404(MentorProfile, user=request.user)
-    requests_received = MentorshipRequest.objects.filter(mentor=mentor)
+    requests_received = MentorshipRequest.objects.filter(mentor=mentor).select_related('student')
     
     return render(request, "community/mentor_requests.html", {
         "requests": requests_received,
-        "mentor": mentor
+        "mentor": mentor,
+        **get_user_sidebar_context(request.user)
     })
 
 
@@ -513,16 +549,18 @@ def respond_to_request(request, pk):
 
 @login_required
 def student_bookings_list(request):
-    bookings = MentorshipRequest.objects.filter(student=request.user)
+    bookings = MentorshipRequest.objects.filter(student=request.user).select_related('mentor', 'mentor__user')
     review_form = MentorReviewForm()
     
     return render(request, "community/student_bookings.html", {
         "bookings": bookings,
-        "review_form": review_form
+        "review_form": review_form,
+        **get_user_sidebar_context(request.user)
     })
 
 
 @login_required
+@require_POST
 def cancel_student_booking(request, pk):
     req = get_object_or_404(MentorshipRequest, pk=pk, student=request.user)
     if req.status in ['Pending', 'Accepted']:
@@ -563,16 +601,18 @@ def admin_verification_dashboard(request):
     if not request.user.is_staff and not request.user.is_superuser:
         return HttpResponseForbidden("Access Denied.")
         
-    pending_mentors = MentorProfile.objects.filter(status='Pending')
-    all_mentors = MentorProfile.objects.exclude(status='Pending')
+    pending_mentors = MentorProfile.objects.filter(status='Pending').select_related('user')
+    all_mentors = MentorProfile.objects.exclude(status='Pending').select_related('user')
     
     return render(request, "community/admin_verify.html", {
         "pending": pending_mentors,
-        "all_mentors": all_mentors
+        "all_mentors": all_mentors,
+        **get_user_sidebar_context(request.user)
     })
 
 
 @login_required
+@require_POST
 def admin_action_mentor(request, pk, action):
     """
     Staff review action endpoint. Action values: 'approve', 'reject', 'block'
@@ -592,54 +632,69 @@ def admin_action_mentor(request, pk, action):
 
 @login_required
 def mentor_chat_view(request, mentor_id):
-    mentor = get_object_or_404(User, pk=mentor_id)
-    profile = get_object_or_404(MentorProfile, user=mentor)
-    
-    # Restrict chat access to accepted bookings
-    is_mentor = (request.user == mentor)
-    if not is_mentor:
-        has_accepted = MentorshipRequest.objects.filter(
-            student=request.user,
-            mentor=profile,
-            status='Accepted'
-        ).exists()
-        if not has_accepted:
-            messages.error(request, "Chat access is locked until the mentor accepts your booking request.")
-            return redirect('community:mentor_detail', pk=profile.id)
-    
+    other_user = get_object_or_404(User, pk=mentor_id)
+
+    if other_user == request.user:
+        messages.error(request, "You cannot chat with yourself.")
+        return redirect('community:mentor_list')
+
+    # Restrict chat access to accepted bookings between the two participants
+    accepted_request = MentorshipRequest.objects.filter(
+        (Q(student=request.user, mentor__user=other_user) |
+         Q(student=other_user, mentor__user=request.user)),
+        status='Accepted'
+    ).select_related('mentor', 'mentor__user', 'student').first()
+
+    if not accepted_request:
+        messages.error(request, "Chat access is locked until the booking request is accepted.")
+        mentor_profile = getattr(other_user, 'mentor_profile', None)
+        if mentor_profile:
+            return redirect('community:mentor_detail', pk=mentor_profile.id)
+        return redirect('community:student_bookings')
+
+    mentor_profile = accepted_request.mentor
+
     messages_query = MentorMessage.objects.filter(
-        (Q(sender=request.user) & Q(recipient=mentor)) |
-        (Q(sender=mentor) & Q(recipient=request.user))
+        (Q(sender=request.user) & Q(recipient=other_user)) |
+        (Q(sender=other_user) & Q(recipient=request.user))
     ).order_by('sent_at')
 
     messages_query.filter(recipient=request.user, is_read=False).update(is_read=True)
 
     return render(request, "community/mentor_chat.html", {
-        "mentor": mentor,
-        "profile": profile,
-        "chat_messages": messages_query
+        "other_user": other_user,
+        "mentor": other_user,  # Backward compatibility
+        "mentor_profile": mentor_profile,
+        "profile": mentor_profile,
+        "chat_messages": messages_query,
+        "is_mentor": (request.user == mentor_profile.user),
+        **get_user_sidebar_context(request.user)
     })
 
 
 @login_required
 def send_mentor_message(request, mentor_id):
     if request.method == 'POST':
-        mentor = get_object_or_404(User, pk=mentor_id)
-        profile = get_object_or_404(MentorProfile, user=mentor)
-        
-        # Restrict message sending to accepted bookings
-        is_mentor = (request.user == mentor)
-        if not is_mentor:
-            has_accepted = MentorshipRequest.objects.filter(
-                student=request.user,
-                mentor=profile,
-                status='Accepted'
-            ).exists()
-            if not has_accepted:
-                return JsonResponse({"error": "Chat access is locked until the booking is accepted."}, status=403)
+        other_user = get_object_or_404(User, pk=mentor_id)
 
-        import json
-        data = json.loads(request.body)
+        if other_user == request.user:
+            return JsonResponse({"error": "Cannot send messages to yourself."}, status=400)
+
+        # Restrict message sending to accepted bookings
+        accepted_request = MentorshipRequest.objects.filter(
+            (Q(student=request.user, mentor__user=other_user) |
+             Q(student=other_user, mentor__user=request.user)),
+            status='Accepted'
+        ).exists()
+
+        if not accepted_request:
+            return JsonResponse({"error": "Chat access is locked until the booking is accepted."}, status=403)
+
+        try:
+            data = json.loads(request.body)
+        except (ValueError, json.JSONDecodeError):
+            return JsonResponse({"error": "Invalid JSON."}, status=400)
+
         content = data.get("content", "").strip()
 
         if not content:
@@ -647,14 +702,14 @@ def send_mentor_message(request, mentor_id):
 
         user_msg = MentorMessage.objects.create(
             sender=request.user,
-            recipient=mentor,
+            recipient=other_user,
             content=content
         )
 
         return JsonResponse({
             "success": True,
             "message": {
-                "sender": "Candidate",
+                "sender": request.user.username,
                 "content": user_msg.content,
                 "sent_at": user_msg.sent_at.strftime("%I:%M %p")
             }

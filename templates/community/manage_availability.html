@@ -1,62 +1,146 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}Manage Availability - Career Catalyst{% endblock %}
+{% block title %}Manage Availability Slots — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5 mt-5">
-    <div class="row g-4">
-        <!-- Sidebar Navigation & Add Form -->
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-                <a href="{% url 'community:mentor_dashboard' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3 align-self-start">
-                    <i class="bi bi-arrow-left"></i> Dashboard
-                </a>
-                
-                <h3 class="fw-bold mb-2">Configure Availability</h3>
-                <p class="text-muted mb-4">Set up specific day and time slots when students can request bookings.</p>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
 
-                <form method="POST">
-                    {% csrf_token %}
-                    {{ form|crispy }}
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-success rounded-pill py-2"><i class="bi bi-plus-lg"></i> Add Availability Slot</button>
-                    </div>
-                </form>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
             </div>
-        </div>
+        </header>
 
-        <!-- Available Slots Display -->
-        <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-                <h4 class="fw-bold mb-4 text-secondary"><i class="bi bi-calendar-check"></i> Configured Slots</h4>
-                
-                <div class="d-flex flex-column gap-3">
-                    {% for avail in availabilities %}
-                    <div class="p-3 bg-light rounded-4 d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="fw-bold mb-1 text-secondary">{{ avail.day }}</h6>
-                            <span class="badge bg-primary bg-opacity-10 text-primary fs-6">
-                                <i class="bi bi-clock"></i> {{ avail.start_time|time:"g:i A" }} - {{ avail.end_time|time:"g:i A" }}
-                            </span>
-                            <small class="text-muted d-block mt-2">Max Sessions: {{ avail.max_sessions }} per day</small>
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header mb-4">
+                <div class="community-breadcrumbs">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:mentor_list' %}">Mentors</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:mentor_dashboard' %}">Dashboard</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>Availability</span>
+                </div>
+                <h1 class="community-title">Manage Availability Slots</h1>
+                <p class="community-subtitle">
+                    Configure the recurring days and time windows during which students can book 1-on-1 mentorship sessions.
+                </p>
+            </div>
+
+            <div class="row g-4">
+                <!-- Add Slot Form -->
+                <div class="col-lg-5">
+                    <div class="community-card">
+                        <div class="community-card-header">
+                            <h2 class="community-card-title">
+                                <i class="bi bi-calendar-plus text-primary"></i> Add Recurring Slot
+                            </h2>
                         </div>
-                        <div>
-                            <a href="{% url 'community:delete_availability' avail.id %}" class="btn btn-outline-danger btn-sm rounded-pill px-3">
-                                <i class="bi bi-trash"></i> Remove
-                            </a>
+                        <form method="POST">
+                            {% csrf_token %}
+                            {{ form|crispy }}
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-primary btn-sm py-2 fw-medium">
+                                    <i class="bi bi-plus-lg me-1"></i> Save Availability Slot
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Existing Slots Display -->
+                <div class="col-lg-7">
+                    <div class="community-card">
+                        <div class="community-card-header">
+                            <h2 class="community-card-title">
+                                <i class="bi bi-calendar-check text-success"></i> Active Slots ({{ availabilities.count }})
+                            </h2>
+                        </div>
+                        <div class="d-flex flex-column gap-3">
+                            {% for avail in availabilities %}
+                            <div class="p-3 border rounded-3 bg-body-tertiary d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h3 class="h6 fw-bold text-body mb-1">{{ avail.day }}</h3>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.8rem;">
+                                        <i class="bi bi-clock me-1"></i>{{ avail.start_time|time:"g:i A" }} - {{ avail.end_time|time:"g:i A" }}
+                                    </span>
+                                    <small class="text-muted d-block mt-1">Maximum {{ avail.max_sessions }} session(s) per day</small>
+                                </div>
+                                <div>
+                                    <form method="POST" action="{% url 'community:delete_availability' avail.id %}" onsubmit="return confirm('Are you sure you want to delete this availability window?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="bi bi-trash me-1"></i> Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-calendar-x display-4 mb-3 d-block text-body-tertiary"></i>
+                                <h4 class="h6 fw-semibold text-body">No recurring slots configured</h4>
+                                <p class="small text-muted mb-0">Use the form on the left to add your first available time window.</p>
+                            </div>
+                            {% endfor %}
                         </div>
                     </div>
-                    {% empty %}
-                    <div class="text-center py-5 text-muted">
-                        <i class="bi bi-calendar-x display-4 mb-3 d-block"></i>
-                        <p class="my-0">No active availability slots configured yet.</p>
-                        <small>Use the form on the left to set up your slots.</small>
-                    </div>
-                    {% endfor %}
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+});
+</script>
 {% endblock %}

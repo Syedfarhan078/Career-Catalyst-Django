@@ -1,106 +1,177 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Mentorship Requests - Career Catalyst{% endblock %}
+{% block title %}Mentorship Requests — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5 mt-5">
-    <div class="mb-5">
-        <a href="{% url 'community:mentor_dashboard' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
-            <i class="bi bi-arrow-left"></i> Dashboard
-        </a>
-        <h1 class="fw-bold mb-1">Mentorship Requests</h1>
-        <p class="text-muted">Review, accept, or decline session booking requests sent by students.</p>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
 
-    <!-- Booking Requests list -->
-    <div class="row g-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-                <div class="d-flex flex-column gap-4">
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header mb-4">
+                <div class="community-breadcrumbs">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:mentor_list' %}">Mentors</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:mentor_dashboard' %}">Dashboard</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>Session Requests</span>
+                </div>
+                <h1 class="community-title">Candidate Mentorship Requests</h1>
+                <p class="community-subtitle">
+                    Review incoming booking requests, accept slots, provide virtual meeting links, or mark finished sessions as completed.
+                </p>
+            </div>
+
+            <!-- Requests List Container -->
+            <div class="community-card p-0 overflow-hidden">
+                <div class="p-3 px-4 border-bottom bg-body-tertiary d-flex align-items-center justify-content-between">
+                    <span class="small fw-semibold text-body">
+                        Total Requests ({{ requests.count }})
+                    </span>
+                    <a href="{% url 'community:mentor_dashboard' %}" class="text-decoration-none small text-muted">
+                        <i class="bi bi-arrow-left me-1"></i> Mentor Dashboard
+                    </a>
+                </div>
+
+                <div class="p-3 p-md-4 d-flex flex-column gap-3">
                     {% for req in requests %}
-                    <div class="p-4 bg-light rounded-4 border">
-                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 border-bottom pb-3 mb-3">
+                    <div class="booking-item-card mb-0">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-2 mb-3 pb-2 border-bottom">
                             <div>
-                                <span class="badge bg-primary bg-opacity-10 text-primary mb-2 fs-6 px-3 py-1">{{ req.purpose }}</span>
-                                <h5 class="fw-bold mb-1 text-secondary">Student: {{ req.student.username }}</h5>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.75rem;">
+                                        {{ req.purpose }}
+                                    </span>
+                                    <h2 class="h6 fw-bold text-body mb-0">Candidate: {{ req.student.username }}</h2>
+                                </div>
                                 <div class="d-flex gap-3 small text-muted">
-                                    <span><i class="bi bi-calendar"></i> Proposed: {{ req.requested_date }}</span>
-                                    <span><i class="bi bi-clock"></i> Proposed: {{ req.requested_time|time:"g:i A" }}</span>
+                                    <span><i class="bi bi-calendar me-1"></i>{{ req.requested_date }}</span>
+                                    <span><i class="bi bi-clock me-1"></i>{{ req.requested_time|time:"g:i A" }}</span>
                                 </div>
                             </div>
-                            
-                            <!-- Status Badges -->
+
                             <div>
                                 {% if req.status == 'Pending' %}
-                                <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill fw-bold">Pending Review</span>
+                                <span class="badge status-badge-pending px-3 py-1.5 rounded-pill fw-semibold">Pending Review</span>
                                 {% elif req.status == 'Accepted' %}
-                                <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-bold">Accepted</span>
+                                <span class="badge status-badge-accepted px-3 py-1.5 rounded-pill fw-semibold">Accepted</span>
                                 {% elif req.status == 'Rejected' %}
-                                <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill fw-bold">Declined</span>
+                                <span class="badge status-badge-declined px-3 py-1.5 rounded-pill fw-semibold">Declined</span>
                                 {% elif req.status == 'Completed' %}
-                                <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill fw-bold">Completed</span>
+                                <span class="badge status-badge-completed px-3 py-1.5 rounded-pill fw-semibold">Completed</span>
                                 {% elif req.status == 'Cancelled' %}
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill fw-bold">Cancelled</span>
+                                <span class="badge status-badge-cancelled px-3 py-1.5 rounded-pill fw-semibold">Cancelled</span>
                                 {% endif %}
                             </div>
                         </div>
 
-                        <!-- Message -->
                         <div class="mb-3">
-                            <h6 class="fw-bold text-secondary mb-1">Student Message:</h6>
-                            <p class="text-secondary small bg-white p-3 rounded-3 border mb-0">{{ req.student_message }}</p>
+                            <span class="small fw-semibold text-body d-block mb-1">Candidate Message:</span>
+                            <div class="p-3 border rounded-3 bg-body-tertiary small text-body lh-base">
+                                {{ req.student_message }}
+                            </div>
                         </div>
 
                         {% if req.mentor_response %}
                         <div class="mb-3">
-                            <h6 class="fw-bold text-secondary mb-1">Your Response:</h6>
-                            <p class="text-muted small bg-white p-3 rounded-3 border mb-0">{{ req.mentor_response }}</p>
+                            <span class="small fw-semibold text-body d-block mb-1">Your Response Note:</span>
+                            <div class="p-3 border rounded-3 bg-body-tertiary small text-muted">
+                                {{ req.mentor_response }}
+                            </div>
                         </div>
                         {% endif %}
 
                         {% if req.meeting_link and req.status == 'Accepted' %}
-                        <div class="alert alert-info py-2 px-3 rounded-3 d-flex align-items-center mb-3">
-                            <i class="bi bi-camera-video me-2"></i>
-                            <span class="small">Meeting Link: <a href="{{ req.meeting_link }}" target="_blank" class="fw-bold text-info">{{ req.meeting_link }}</a></span>
+                        <div class="alert alert-info py-2 px-3 rounded-3 d-flex align-items-center mb-3 small">
+                            <i class="bi bi-camera-video me-2 fs-5"></i>
+                            <div>
+                                <span>Meeting URL: </span>
+                                <a href="{{ req.meeting_link }}" target="_blank" rel="noopener noreferrer" class="fw-bold text-info text-break">
+                                    {{ req.meeting_link }}
+                                </a>
+                            </div>
                         </div>
                         {% endif %}
 
-                        <!-- Actions Buttons -->
-                        {% if req.status == 'Pending' %}
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-success rounded-pill btn-sm px-4 py-2" data-bs-toggle="modal" data-bs-target="#actionModal" 
+                        <!-- Actions -->
+                        <div class="d-flex align-items-center gap-2 flex-wrap pt-2">
+                            {% if req.status == 'Pending' %}
+                            <button type="button" class="btn btn-success btn-sm px-3 fw-medium" data-bs-toggle="modal" data-bs-target="#actionModal"
                                     data-req-id="{{ req.id }}" data-action="accept">
-                                Accept Request
+                                <i class="bi bi-check-lg me-1"></i> Accept Request
                             </button>
-                            <button class="btn btn-outline-danger rounded-pill btn-sm px-4 py-2" data-bs-toggle="modal" data-bs-target="#actionModal" 
+                            <button type="button" class="btn btn-outline-danger btn-sm px-3" data-bs-toggle="modal" data-bs-target="#actionModal"
                                     data-req-id="{{ req.id }}" data-action="reject">
-                                Decline
+                                <i class="bi bi-x-lg me-1"></i> Decline
                             </button>
-                        </div>
-                        {% elif req.status == 'Accepted' %}
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-outline-success rounded-pill btn-sm px-4 py-2" data-bs-toggle="modal" data-bs-target="#actionModal" 
+                            {% elif req.status == 'Accepted' %}
+                            <a href="{% url 'community:mentor_chat' req.student.id %}" class="btn btn-primary btn-sm px-3 fw-medium">
+                                <i class="bi bi-chat-dots me-1"></i> Direct Message Candidate
+                            </a>
+                            <button type="button" class="btn btn-outline-success btn-sm px-3" data-bs-toggle="modal" data-bs-target="#actionModal"
                                     data-req-id="{{ req.id }}" data-action="complete">
-                                Mark as Completed
+                                <i class="bi bi-check2-all me-1"></i> Mark as Completed
                             </button>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
                     {% empty %}
-                    <p class="text-muted text-center py-5">You haven't received any session requests yet.</p>
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox display-4 mb-3 d-block text-body-tertiary"></i>
+                        <h3 class="h6 fw-semibold text-body">No session booking requests</h3>
+                        <p class="small text-muted mb-0">You have no pending or past candidate requests at this time.</p>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
 
 <!-- Response Modal dialog -->
 <div class="modal fade" id="actionModal" tabindex="-1" aria-labelledby="actionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 p-3">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold text-secondary" id="actionModalLabel">Respond to Booking</h5>
+        <div class="modal-content border shadow-sm">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-body" id="actionModalLabel">Respond to Booking</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             
@@ -110,56 +181,73 @@
                 
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary small">Your Message to Student</label>
-                        <textarea class="form-control rounded-3" name="response_message" rows="3" required placeholder="Write a brief response message..."></textarea>
+                        <label class="form-label small fw-semibold text-body">Message / Note to Candidate</label>
+                        <textarea class="form-control" name="response_message" rows="3" required placeholder="Provide prep instructions, agenda, or reason..."></textarea>
                     </div>
 
                     <div class="mb-3 d-none" id="meetingLinkGroup">
-                        <label class="form-label fw-bold text-secondary small">Virtual Meeting Link (Zoom, Meet, Teams)</label>
-                        <input type="url" class="form-control rounded-pill px-3" name="meeting_link" placeholder="https://meet.google.com/abc-defg-hij">
+                        <label class="form-label small fw-semibold text-body">Virtual Meeting Link (Google Meet, Zoom, Teams)</label>
+                        <input type="url" class="form-control" name="meeting_link" placeholder="https://meet.google.com/abc-defg-hij">
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4" id="submitBtn">Confirm Action</button>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-medium" id="submitBtn">Confirm Action</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+
     const actionModal = document.getElementById('actionModal');
     const actionForm = document.getElementById('actionForm');
     const actionInput = document.getElementById('actionInput');
     const meetingLinkGroup = document.getElementById('meetingLinkGroup');
     const modalTitle = document.getElementById('actionModalLabel');
+    const meetingInput = document.querySelector('[name=meeting_link]');
 
-    actionModal.addEventListener('show.bs.modal', function(event) {
-        const btn = event.relatedTarget;
-        const reqId = btn.dataset.reqId;
-        const action = btn.dataset.action;
+    if (actionModal) {
+        actionModal.addEventListener('show.bs.modal', function(event) {
+            const btn = event.relatedTarget;
+            const reqId = btn.dataset.reqId;
+            const action = btn.dataset.action;
 
-        // Set action route url dynamically
-        actionForm.action = `/community/mentors/dashboard/requests/${reqId}/respond/`;
-        actionInput.value = action;
+            actionForm.action = `/community/mentors/dashboard/requests/${reqId}/respond/`;
+            actionInput.value = action;
 
-        // Update display text
-        if (action === 'accept') {
-            modalTitle.textContent = "Accept Mentorship Session";
-            meetingLinkGroup.classList.remove('d-none');
-            document.querySelector('[name=meeting_link]').required = true;
-        } else if (action === 'reject') {
-            modalTitle.textContent = "Decline Session Request";
-            meetingLinkGroup.classList.add('d-none');
-            document.querySelector('[name=meeting_link]').required = false;
-        } else if (action === 'complete') {
-            modalTitle.textContent = "Mark Session as Completed";
-            meetingLinkGroup.classList.add('d-none');
-            document.querySelector('[name=meeting_link]').required = false;
-        }
-    });
+            if (action === 'accept') {
+                modalTitle.textContent = "Accept Mentorship Session";
+                meetingLinkGroup.classList.remove('d-none');
+                if (meetingInput) meetingInput.required = true;
+            } else if (action === 'reject') {
+                modalTitle.textContent = "Decline Session Request";
+                meetingLinkGroup.classList.add('d-none');
+                if (meetingInput) meetingInput.required = false;
+            } else if (action === 'complete') {
+                modalTitle.textContent = "Mark Session as Completed";
+                meetingLinkGroup.classList.add('d-none');
+                if (meetingInput) meetingInput.required = false;
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

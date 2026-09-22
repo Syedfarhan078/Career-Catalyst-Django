@@ -1,187 +1,319 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Community & Mentorship Hub - Career Catalyst{% endblock %}
+{% block title %}Community & Mentors — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'dashboard' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Dashboard
-        </a>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
 
-    <div class="text-center mb-5">
-        <h1 class="fw-bold mb-2">Community & Mentorship Hub</h1>
-        <p class="text-muted fs-5">Collaborate with peers, follow industry mentors, share code, and read success stories.</p>
-    </div>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-    <!-- Quick Navigation Banner -->
-    <div class="row g-3 mb-5 justify-content-center text-center">
-        <div class="col-6 col-md">
-            <a href="{% url 'community:forum_list' %}" class="text-decoration-none">
-                <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-4 hover-lift">
-                    <i class="bi bi-chat-left-text fs-3"></i>
-                    <h6 class="fw-bold mt-2 mb-0">Discussion Forum</h6>
-                </div>
-            </a>
-        </div>
-        <div class="col-6 col-md">
-            <a href="{% url 'community:mentor_list' %}" class="text-decoration-none">
-                <div class="bg-success bg-opacity-10 text-success p-3 rounded-4 hover-lift">
-                    <i class="bi bi-people fs-3"></i>
-                    <h6 class="fw-bold mt-2 mb-0">Mentor Directory</h6>
-                </div>
-            </a>
-        </div>
-        <div class="col-6 col-md">
-            <a href="{% url 'community:student_bookings' %}" class="text-decoration-none">
-                <div class="bg-danger bg-opacity-10 text-danger p-3 rounded-4 hover-lift">
-                    <i class="bi bi-calendar-check fs-3"></i>
-                    <h6 class="fw-bold mt-2 mb-0">My Bookings</h6>
-                </div>
-            </a>
-        </div>
-        <div class="col-6 col-md">
-            <a href="{% url 'community:project_list' %}" class="text-decoration-none">
-                <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-4 hover-lift">
-                    <i class="bi bi-code-slash fs-3"></i>
-                    <h6 class="fw-bold mt-2 mb-0">Shared Projects</h6>
-                </div>
-            </a>
-        </div>
-        <div class="col-6 col-md">
-            <a href="{% url 'community:story_list' %}" class="text-decoration-none">
-                <div class="bg-info bg-opacity-10 text-info p-3 rounded-4 hover-lift">
-                    <i class="bi bi-award fs-3"></i>
-                    <h6 class="fw-bold mt-2 mb-0">Success Stories</h6>
-                </div>
-            </a>
-        </div>
-    </div>
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
 
-    <div class="row g-4">
-        <!-- Forum Widget (Left Column) -->
-        <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="fw-bold mb-0 text-secondary"><i class="bi bi-chat-right-text"></i> Forum Feed</h4>
-                    <a href="{% url 'community:forum_list' %}" class="small text-decoration-none">View All</a>
-                </div>
-                <div class="d-flex flex-column gap-3">
-                    {% for thread in recent_threads %}
-                    <div class="p-3 bg-light rounded-3 transition hover-bg">
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary mb-2 small">{{ thread.category.name }}</span>
-                        <h6 class="fw-bold mb-1">
-                            <a href="{% url 'community:forum_detail' thread.id %}" class="text-dark text-decoration-none">{{ thread.title }}</a>
-                        </h6>
-                        <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
-                            <span>Posted by {{ thread.author.username }}</span>
-                            <span>{{ thread.created_at|date:"M d, Y" }}</span>
-                        </div>
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="community-breadcrumbs">
+                        <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <span>Community</span>
                     </div>
-                    {% empty %}
-                    <p class="text-muted text-center py-4">No discussions started yet.</p>
-                    {% endfor %}
+                    <h1 class="community-title">Community & Mentorship Hub</h1>
+                    <p class="community-subtitle">
+                        Collaborate with peers, ask technical questions in the forum, discover active mentors, and explore student projects.
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{% url 'community:create_thread' %}" class="btn btn-outline-primary btn-sm px-3 py-2 fw-medium">
+                        <i class="bi bi-plus-circle me-1"></i> Start Discussion
+                    </a>
+                    <a href="{% url 'community:mentor_list' %}" class="btn btn-primary btn-sm px-3 py-2 fw-medium">
+                        <i class="bi bi-person-workspace me-1"></i> Find a Mentor
+                    </a>
                 </div>
             </div>
 
-            <!-- Shared Projects Widget -->
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="fw-bold mb-0 text-secondary"><i class="bi bi-code-square"></i> Student Projects</h4>
-                    <a href="{% url 'community:project_list' %}" class="small text-decoration-none">View All</a>
+            <!-- Workspace Navigation Tabs -->
+            <nav class="community-nav-tabs" aria-label="Community Sections">
+                <a href="{% url 'community:hub' %}" class="community-nav-tab active">
+                    <i class="bi bi-house-door"></i> Hub Overview
+                </a>
+                <a href="{% url 'community:forum_list' %}" class="community-nav-tab">
+                    <i class="bi bi-chat-left-text"></i> Discussions
+                </a>
+                <a href="{% url 'community:project_list' %}" class="community-nav-tab">
+                    <i class="bi bi-code-slash"></i> Projects
+                </a>
+                <a href="{% url 'community:story_list' %}" class="community-nav-tab">
+                    <i class="bi bi-award"></i> Success Stories
+                </a>
+                <a href="{% url 'community:mentor_list' %}" class="community-nav-tab">
+                    <i class="bi bi-people"></i> Mentors Directory
+                </a>
+                <a href="{% url 'community:student_bookings' %}" class="community-nav-tab">
+                    <i class="bi bi-calendar-check"></i> My Bookings
+                </a>
+            </nav>
+
+            <!-- Metrics Overview Row -->
+            <div class="community-metrics-row">
+                <div class="community-metric-card">
+                    <div class="community-metric-icon blue">
+                        <i class="bi bi-chat-dots-fill"></i>
+                    </div>
+                    <div>
+                        <div class="community-metric-val">{{ recent_threads.count|default:"0" }}+</div>
+                        <div class="community-metric-lbl">Active Discussions</div>
+                    </div>
                 </div>
-                <div class="d-flex flex-column gap-3">
-                    {% for project in recent_projects %}
-                    <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="fw-bold mb-1">{{ project.title }}</h6>
-                            <p class="text-muted small mb-1">{{ project.description|truncatewords:15 }}</p>
-                            <div class="d-flex gap-1 flex-wrap">
-                                {% for tag in project.get_tags_list %}
-                                <span class="badge bg-light text-muted border small">{{ tag }}</span>
-                                {% endfor %}
+                <div class="community-metric-card">
+                    <div class="community-metric-icon green">
+                        <i class="bi bi-person-check-fill"></i>
+                    </div>
+                    <div>
+                        <div class="community-metric-val">{{ active_mentors.count|default:"0" }}</div>
+                        <div class="community-metric-lbl">Verified Mentors</div>
+                    </div>
+                </div>
+                <div class="community-metric-card">
+                    <div class="community-metric-icon amber">
+                        <i class="bi bi-code-square"></i>
+                    </div>
+                    <div>
+                        <div class="community-metric-val">{{ recent_projects.count|default:"0" }}</div>
+                        <div class="community-metric-lbl">Shared Projects</div>
+                    </div>
+                </div>
+                <div class="community-metric-card">
+                    <div class="community-metric-icon purple">
+                        <i class="bi bi-trophy-fill"></i>
+                    </div>
+                    <div>
+                        <div class="community-metric-val">{{ recent_stories.count|default:"0" }}</div>
+                        <div class="community-metric-lbl">Placement Stories</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two-Column Feed Layout -->
+            <div class="row g-4">
+                <!-- Left Column: Discussions & Projects -->
+                <div class="col-lg-7">
+                    <!-- Recent Discussions Card -->
+                    <div class="community-card">
+                        <div class="community-card-header">
+                            <h2 class="community-card-title">
+                                <i class="bi bi-chat-right-text text-primary"></i> Recent Discussions
+                            </h2>
+                            <a href="{% url 'community:forum_list' %}" class="text-decoration-none small text-primary fw-medium">
+                                View Forum <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                        <div class="d-flex flex-column gap-2">
+                            {% for thread in recent_threads %}
+                            <div class="forum-thread-item">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="forum-category-badge">
+                                        <i class="bi bi-tag-fill"></i> {{ thread.category.name }}
+                                    </span>
+                                    <span class="small text-muted">{{ thread.created_at|date:"M d, Y" }}</span>
+                                </div>
+                                <a href="{% url 'community:forum_detail' thread.id %}" class="forum-thread-title">
+                                    {{ thread.title }}
+                                </a>
+                                <div class="forum-meta">
+                                    <span><i class="bi bi-person me-1"></i>{{ thread.author.username }}</span>
+                                    <span><i class="bi bi-chat-square-text me-1"></i>{{ thread.replies.count }} replies</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="text-end">
-                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-2">
-                                <i class="bi bi-heart-fill"></i> {{ project.likes_count }}
-                            </span>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <p class="text-muted text-center py-4">No projects shared yet.</p>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Mentors & Placement Stories (Right Column) -->
-        <div class="col-lg-5">
-            <!-- Mentors Widget -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="fw-bold mb-0 text-secondary"><i class="bi bi-people-fill"></i> Active Mentors</h4>
-                    <a href="{% url 'community:mentor_list' %}" class="small text-decoration-none">View All</a>
-                </div>
-                <div class="d-flex flex-column gap-3">
-                    {% for mentor in active_mentors %}
-                    <div class="d-flex align-items-center justify-content-between p-2">
-                        <div class="d-flex align-items-center">
-                            <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                                <i class="bi bi-person-badge fs-4"></i>
+                            {% empty %}
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-chat-dots fs-3 d-block mb-2"></i>
+                                <p class="mb-2">No discussion threads started yet.</p>
+                                <a href="{% url 'community:create_thread' %}" class="btn btn-sm btn-outline-primary">Start First Discussion</a>
                             </div>
-                            <div>
-                                <h6 class="fw-bold mb-0 text-secondary">{{ mentor.user.username }}</h6>
-                                <small class="text-muted">{{ mentor.job_title }} at {{ mentor.company }}</small>
-                            </div>
+                            {% endfor %}
                         </div>
-                        {% if mentor.user.id in followed_mentor_ids %}
-                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2">Following</span>
-                        {% endif %}
                     </div>
-                    {% empty %}
-                    <p class="text-muted text-center py-4">No active mentors found.</p>
-                    {% endfor %}
-                </div>
-            </div>
 
-            <!-- Placements stories Widget -->
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="fw-bold mb-0 text-secondary"><i class="bi bi-award-fill"></i> Success Stories</h4>
-                    <a href="{% url 'community:story_list' %}" class="small text-decoration-none">View All</a>
-                </div>
-                <div class="d-flex flex-column gap-3">
-                    {% for story in recent_stories %}
-                    <div class="p-3 bg-light rounded-3">
-                        <h6 class="fw-bold mb-1">{{ story.title }}</h6>
-                        <small class="text-success fw-bold d-block mb-1">{{ story.author_name }} placed at {{ story.placed_company }}</small>
-                        <p class="text-muted small mb-0">{{ story.content|truncatewords:15 }}</p>
+                    <!-- Shared Projects Card -->
+                    <div class="community-card">
+                        <div class="community-card-header">
+                            <h2 class="community-card-title">
+                                <i class="bi bi-code-slash text-warning"></i> Peer Project Showcase
+                            </h2>
+                            <a href="{% url 'community:project_list' %}" class="text-decoration-none small text-primary fw-medium">
+                                Explore All <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                        <div class="d-flex flex-column gap-3">
+                            {% for project in recent_projects %}
+                            <div class="p-3 border rounded-3 bg-body-tertiary d-flex flex-column flex-md-row justify-content-between align-items-start gap-2">
+                                <div>
+                                    <div class="fw-semibold text-body mb-1">{{ project.title }}</div>
+                                    <p class="text-muted small mb-2">{{ project.description|truncatewords:16 }}</p>
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        {% for tag in project.get_tags_list %}
+                                        <span class="project-tag">{{ tag }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 align-self-end align-self-md-center flex-shrink-0">
+                                    {% if project.github_link %}
+                                    <a href="{{ project.github_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary" title="GitHub Source">
+                                        <i class="bi bi-github"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if project.live_link %}
+                                    <a href="{{ project.live_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary" title="Live Demo">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                    {% endif %}
+                                    <span class="btn-like {% if project.id in liked_project_ids %}liked{% endif %}" style="cursor: default;">
+                                        <i class="bi bi-heart-fill"></i> {{ project.likes_count }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-folder2-open fs-3 d-block mb-2"></i>
+                                <p class="mb-2">No projects shared yet.</p>
+                                <a href="{% url 'community:share_project' %}" class="btn btn-sm btn-outline-primary">Share Your Project</a>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
-                    {% empty %}
-                    <p class="text-muted text-center py-4">No stories published yet.</p>
-                    {% endfor %}
+                </div>
+
+                <!-- Right Column: Mentors & Success Stories -->
+                <div class="col-lg-5">
+                    <!-- Featured Mentors Card -->
+                    <div class="community-card">
+                        <div class="community-card-header">
+                            <h2 class="community-card-title">
+                                <i class="bi bi-people-fill text-success"></i> Verified Mentors
+                            </h2>
+                            <a href="{% url 'community:mentor_list' %}" class="text-decoration-none small text-primary fw-medium">
+                                Directory <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                        <div class="d-flex flex-column gap-3">
+                            {% for mentor in active_mentors %}
+                            <div class="d-flex align-items-center justify-content-between p-2 border rounded-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if mentor.profile_photo %}
+                                    <img src="{{ mentor.profile_photo.url }}" alt="{{ mentor.full_name }}" class="mentor-avatar" style="width: 44px; height: 44px;">
+                                    {% else %}
+                                    <div class="mentor-avatar-initials" style="width: 44px; height: 44px; font-size: 0.95rem;">
+                                        {{ mentor.full_name|slice:":2"|upper }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <a href="{% url 'community:mentor_detail' mentor.id %}" class="text-decoration-none text-body fw-semibold d-block">
+                                            {{ mentor.full_name|default:mentor.user.username }}
+                                        </a>
+                                        <small class="text-muted d-block">{{ mentor.designation }} at {{ mentor.company }}</small>
+                                    </div>
+                                </div>
+                                <a href="{% url 'community:mentor_detail' mentor.id %}" class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                            </div>
+                            {% empty %}
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-person-x fs-3 d-block mb-2"></i>
+                                <p class="mb-0">No verified mentors available right now.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Placement Success Stories Card -->
+                    <div class="community-card">
+                        <div class="community-card-header">
+                            <h2 class="community-card-title">
+                                <i class="bi bi-award-fill text-primary"></i> Placement Stories
+                            </h2>
+                            <a href="{% url 'community:story_list' %}" class="text-decoration-none small text-primary fw-medium">
+                                All Stories <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                        <div class="d-flex flex-column gap-3">
+                            {% for story in recent_stories %}
+                            <div class="p-3 border rounded-3 bg-body-tertiary">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <span class="fw-semibold text-body">{{ story.title }}</span>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        {{ story.placed_company }}
+                                    </span>
+                                </div>
+                                <small class="text-muted d-block mb-2">Placed Student: <strong>{{ story.author_name }}</strong></small>
+                                <p class="text-muted small mb-0">{{ story.content|truncatewords:16 }}</p>
+                            </div>
+                            {% empty %}
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-stars fs-3 d-block mb-2"></i>
+                                <p class="mb-0">No placement stories published yet.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
+{% endblock %}
 
-<style>
-    .hover-lift {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
     }
-    .hover-lift:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
-    }
-    .hover-bg:hover {
-        background-color: #f1f5f9 !important;
-    }
-    .transition {
-        transition: background-color 0.2s ease;
-    }
-</style>
+});
+</script>
 {% endblock %}

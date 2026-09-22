@@ -1,126 +1,198 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Shared Student Projects - Career Catalyst{% endblock %}
+{% block title %}Shared Student Projects — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'community:hub' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Community Hub
-        </a>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
 
-    <div class="d-flex justify-content-between align-items-center mb-5">
-        <div>
-            <h1 class="fw-bold mb-0">Shared Student Projects</h1>
-            <p class="text-muted">Showcase your programming projects, get peer reviews, and inspect other students' codebases.</p>
-        </div>
-        <a href="{% url 'community:share_project' %}" class="btn btn-primary-custom rounded-pill">
-            <i class="bi bi-plus-circle"></i> Share Project
-        </a>
-    </div>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-    {% csrf_token %}
-    <div class="row g-4">
-        {% for project in projects %}
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden d-flex flex-column hover-lift">
-                <div class="card-body p-4 d-flex flex-column">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h4 class="fw-bold text-secondary mb-0">{{ project.title }}</h4>
-                        <!-- Like upvote toggle -->
-                        <button class="btn like-btn border-0 p-0 fs-5 transition" 
-                                data-project-id="{{ project.id }}"
-                                style="color: {% if project.id in liked_project_ids %}#ef4444{% else %}#9ca3af{% endif %};">
-                            <i class="{% if project.id in liked_project_ids %}bi bi-heart-fill{% else %}bi bi-heart{% endif %}"></i> 
-                            <span class="likes-count fs-6" id="likes-{{ project.id }}">{{ project.likes_count }}</span>
-                        </button>
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="community-breadcrumbs">
+                        <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <a href="{% url 'community:hub' %}">Community</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <span>Shared Projects</span>
                     </div>
+                    <h1 class="community-title">Student Project Showcase</h1>
+                    <p class="community-subtitle">
+                        Explore full-stack apps, cloud microservices, and portfolio repos created by CareerCatalyst candidates.
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{% url 'community:share_project' %}" class="btn btn-primary btn-sm px-3 py-2 fw-medium">
+                        <i class="bi bi-cloud-arrow-up me-1"></i> Share Your Project
+                    </a>
+                </div>
+            </div>
 
-                    <p class="text-muted small mb-4 flex-grow-1">{{ project.description }}</p>
+            <!-- Workspace Navigation Tabs -->
+            <nav class="community-nav-tabs" aria-label="Community Sections">
+                <a href="{% url 'community:hub' %}" class="community-nav-tab">
+                    <i class="bi bi-house-door"></i> Hub Overview
+                </a>
+                <a href="{% url 'community:forum_list' %}" class="community-nav-tab">
+                    <i class="bi bi-chat-left-text"></i> Discussions
+                </a>
+                <a href="{% url 'community:project_list' %}" class="community-nav-tab active">
+                    <i class="bi bi-code-slash"></i> Projects
+                </a>
+                <a href="{% url 'community:story_list' %}" class="community-nav-tab">
+                    <i class="bi bi-award"></i> Success Stories
+                </a>
+                <a href="{% url 'community:mentor_list' %}" class="community-nav-tab">
+                    <i class="bi bi-people"></i> Mentors Directory
+                </a>
+                <a href="{% url 'community:student_bookings' %}" class="community-nav-tab">
+                    <i class="bi bi-calendar-check"></i> My Bookings
+                </a>
+            </nav>
 
-                    <div class="mb-4">
-                        <div class="d-flex gap-1 flex-wrap">
+            {% csrf_token %}
+
+            <!-- Projects Grid -->
+            <div class="projects-grid mb-4">
+                {% for project in projects %}
+                <div class="project-card">
+                    <div>
+                        <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                            <h2 class="h5 fw-bold text-body mb-0">{{ project.title }}</h2>
+                            <button type="button" class="btn-like {% if project.id in liked_project_ids %}liked{% endif %}"
+                                    data-project-id="{{ project.id }}" aria-label="Like project">
+                                <i class="bi {% if project.id in liked_project_ids %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                                <span class="likes-count" id="likes-{{ project.id }}">{{ project.likes_count }}</span>
+                            </button>
+                        </div>
+
+                        <p class="text-muted small mb-3 lh-base">
+                            {{ project.description|truncatewords:24 }}
+                        </p>
+
+                        <div class="mb-3">
                             {% for tag in project.get_tags_list %}
-                            <span class="badge bg-light text-muted border small">{{ tag }}</span>
+                            <span class="project-tag">{{ tag }}</span>
                             {% endfor %}
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-3 small text-muted border-top pt-3">
-                        <span><i class="bi bi-person"></i> Shared by {{ project.author.username }}</span>
-                        <span>{{ project.created_at|date:"M d, Y" }}</span>
-                    </div>
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between pt-2 border-top mb-3 small text-muted">
+                            <span><i class="bi bi-person me-1"></i>{{ project.author.username }}</span>
+                            <span>{{ project.created_at|date:"M d, Y" }}</span>
+                        </div>
 
-                    <div class="d-flex gap-2 mt-auto">
-                        {% if project.github_link %}
-                        <a href="{{ project.github_link }}" target="_blank" class="btn btn-outline-dark btn-sm rounded-pill flex-grow-1">
-                            <i class="bi bi-github"></i> Repository
-                        </a>
-                        {% endif %}
-                        {% if project.live_link %}
-                        <a href="{{ project.live_link }}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1">
-                            <i class="bi bi-eye"></i> Live Demo
-                        </a>
-                        {% endif %}
+                        <div class="d-flex gap-2">
+                            {% if project.github_link %}
+                            <a href="{{ project.github_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm flex-grow-1">
+                                <i class="bi bi-github me-1"></i> GitHub
+                            </a>
+                            {% endif %}
+                            {% if project.live_link %}
+                            <a href="{{ project.live_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm flex-grow-1">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Demo
+                            </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
+                {% empty %}
+                <div class="col-12 text-center py-5 text-muted community-card" style="grid-column: 1 / -1;">
+                    <i class="bi bi-code-square display-4 mb-3 d-block text-body-tertiary"></i>
+                    <h5 class="fw-semibold text-body">No projects shared yet</h5>
+                    <p class="text-muted mb-3">Be the first to share your project or portfolio with the community!</p>
+                    <a href="{% url 'community:share_project' %}" class="btn btn-primary btn-sm px-4 py-2">
+                        <i class="bi bi-plus-circle me-1"></i> Share a Project
+                    </a>
+                </div>
+                {% endfor %}
             </div>
-        </div>
-        {% empty %}
-        <div class="col-12 text-center py-5 text-muted">
-            <i class="bi bi-code-square display-3 mb-3 d-block"></i>
-            <h5>No student projects shared yet.</h5>
-            <p>Share your GitHub project repository now!</p>
-            <a href="{% url 'community:share_project' %}" class="btn btn-primary-custom rounded-pill mt-2">Share Project</a>
-        </div>
-        {% endfor %}
-    </div>
 
-    <!-- Pagination -->
-    {% if is_paginated %}
-    <div class="d-flex justify-content-center mt-5">
-        <nav>
-            <ul class="pagination pagination-sm gap-1">
-                {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link rounded-circle border-0 bg-light text-dark" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
-                </li>
-                {% endif %}
-                <li class="page-item active">
-                    <span class="page-link rounded-circle border-0 bg-primary">{{ page_obj.number }}</span>
-                </li>
-                {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link rounded-circle border-0 bg-light text-dark" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="d-flex justify-content-center">
+                <nav aria-label="Projects pagination">
+                    <ul class="pagination pagination-sm mb-0 gap-1">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link border" href="?page={{ page_obj.previous_page_number }}">&laquo; Prev</a>
+                        </li>
+                        {% endif %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link border" href="?page={{ page_obj.next_page_number }}">Next &raquo;</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </main>
     </div>
-    {% endif %}
 </div>
+{% endblock %}
 
-<style>
-    .hover-lift {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .hover-lift:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
-    }
-    .like-btn:hover {
-        transform: scale(1.1);
-    }
-    .transition {
-        transition: all 0.2s ease;
-    }
-</style>
-
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.like-btn').forEach(function(btn) {
+    // Mobile Drawer Toggle
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+
+    // Like Button AJAX
+    document.querySelectorAll('.btn-like').forEach(function(btn) {
         btn.addEventListener('click', function() {
             const projectId = this.dataset.projectId;
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -140,19 +212,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 btn.disabled = false;
                 if (data.success) {
                     if (data.is_liked) {
-                        btn.style.color = "#ef4444";
+                        btn.classList.add('liked');
                         heartIcon.className = "bi bi-heart-fill";
                     } else {
-                        btn.style.color = "#9ca3af";
+                        btn.classList.remove('liked');
                         heartIcon.className = "bi bi-heart";
                     }
-                    // Update count
-                    document.getElementById(`likes-${projectId}`).textContent = data.likes_count;
+                    const countElem = document.getElementById(`likes-${projectId}`);
+                    if (countElem) {
+                        countElem.textContent = data.likes_count;
+                    }
                 }
             })
             .catch(err => {
                 btn.disabled = false;
-                console.error('Like error:', err);
+                console.error('Like toggle error:', err);
             });
         });
     });

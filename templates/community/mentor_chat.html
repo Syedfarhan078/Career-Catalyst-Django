@@ -1,117 +1,180 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Chat with {{ mentor.username }} - Career Catalyst{% endblock %}
+{% block title %}Mentorship Chat — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5 mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <!-- Back Button -->
-            <a href="{% url 'community:mentor_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3 align-self-start">
-                <i class="bi bi-arrow-left"></i> Mentors Directory
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
+
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
             </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
 
-            <!-- Chat Interface Card -->
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden d-flex flex-column" style="height: 580px;">
-                <!-- Header -->
-                <div class="bg-primary text-white p-3 px-4 d-flex align-items-center">
-                    <div class="rounded-circle bg-white bg-opacity-20 p-2 me-3 text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                        <i class="bi bi-person-badge-fill fs-3"></i>
-                    </div>
-                    <div>
-                        <h5 class="fw-bold mb-0 text-white">{{ mentor.username }}</h5>
-                        <small class="text-white text-opacity-75">{{ profile.designation }} at {{ profile.company }}</small>
-                    </div>
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header mb-3">
+                <div class="community-breadcrumbs">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:mentor_list' %}">Mentors</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>Direct Chat</span>
                 </div>
+            </div>
 
-                <!-- Messages Log Box -->
-                <div class="card-body bg-light p-4 overflow-auto flex-grow-1" id="chatContainer">
-                    {% for msg in chat_messages %}
-                    <div class="d-flex mb-3 {% if msg.sender == request.user %}justify-content-end{% endif %}">
-                        <div class="card border-0 rounded-4 px-3 py-2 max-width-75 {% if msg.sender == request.user %}bg-primary text-white{% else %}bg-white text-secondary{% endif %} shadow-sm">
-                            <span class="small fw-semibold mb-1 d-block text-opacity-75 {% if msg.sender == request.user %}text-white{% else %}text-muted{% endif %}">
-                                {% if msg.sender == request.user %}You{% else %}{{ mentor.username }}{% endif %}
-                            </span>
-                            <span>{{ msg.content|linebreaksbr }}</span>
-                            <small class="text-end d-block mt-1 text-opacity-50 {% if msg.sender == request.user %}text-white{% else %}text-muted{% endif %}" style="font-size: 0.7rem;">
-                                {{ msg.sent_at|date:"h:i A" }}
-                            </small>
+            <div class="row justify-content-center">
+                <div class="col-lg-10 col-xl-9">
+                    <!-- Chat Window Container -->
+                    <div class="chat-window">
+                        <!-- Chat Header Bar -->
+                        <div class="chat-header-bar">
+                            <div class="d-flex align-items-center gap-3">
+                                {% if is_mentor %}
+                                    <div class="mentor-avatar-initials" style="width: 44px; height: 44px; font-size: 1rem;">
+                                        {{ other_user.username|slice:":2"|upper }}
+                                    </div>
+                                    <div>
+                                        <h1 class="h6 fw-bold text-body mb-0">Student: {{ other_user.username }}</h1>
+                                        <small class="text-muted">Accepted Mentorship Session Candidate</small>
+                                    </div>
+                                {% else %}
+                                    {% if mentor_profile.profile_photo %}
+                                    <img src="{{ mentor_profile.profile_photo.url }}" class="mentor-avatar" style="width: 44px; height: 44px;" alt="{{ mentor_profile.full_name }}">
+                                    {% else %}
+                                    <div class="mentor-avatar-initials" style="width: 44px; height: 44px; font-size: 1rem;">
+                                        {{ mentor_profile.full_name|slice:":2"|upper }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <h1 class="h6 fw-bold text-body mb-0">{{ mentor_profile.full_name }}</h1>
+                                        <small class="text-primary">{{ mentor_profile.designation }} at {{ mentor_profile.company }}</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                {% if is_mentor %}
+                                <a href="{% url 'community:mentor_requests' %}" class="btn btn-outline-secondary btn-sm px-3">
+                                    <i class="bi bi-inbox me-1"></i> Requests
+                                </a>
+                                {% else %}
+                                <a href="{% url 'community:student_bookings' %}" class="btn btn-outline-secondary btn-sm px-3">
+                                    <i class="bi bi-calendar-check me-1"></i> Bookings
+                                </a>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                    {% empty %}
-                    <div class="text-center py-5 text-muted" id="noMessagesPlaceholder">
-                        <i class="bi bi-chat-dots display-4 mb-3 d-block"></i>
-                        <h5>No messages yet.</h5>
-                        <p>Ask a question about their career goal or tech stack to start the discussion!</p>
-                    </div>
-                    {% endfor %}
 
-                    <!-- Typing Indicator -->
-                    <div class="d-none mb-3" id="typingIndicator">
-                        <div class="card border-0 rounded-4 px-3 py-2 bg-white text-secondary shadow-sm align-self-start" style="width: 100px;">
-                            <span class="small fw-semibold mb-1 d-block text-muted">{{ mentor.username }}</span>
-                            <div class="typing-dots d-flex gap-1 py-1">
-                                <span class="dot"></span>
-                                <span class="dot"></span>
-                                <span class="dot"></span>
+                        <!-- Chat Messages Scroll Area -->
+                        <div class="chat-messages-scroll" id="chatContainer">
+                            {% for msg in chat_messages %}
+                            <div class="chat-bubble {% if msg.sender == request.user %}sent{% else %}received{% endif %}">
+                                <span class="d-block fw-semibold mb-1" style="font-size: 0.75rem; opacity: 0.85;">
+                                    {% if msg.sender == request.user %}You{% else %}{{ msg.sender.username }}{% endif %}
+                                </span>
+                                <div>{{ msg.content|linebreaksbr }}</div>
+                                <span class="chat-time text-end">
+                                    {{ msg.sent_at|date:"h:i A" }}
+                                </span>
+                            </div>
+                            {% empty %}
+                            <div class="text-center py-5 text-muted m-auto" id="noMessagesPlaceholder">
+                                <i class="bi bi-chat-heart display-4 mb-2 d-block text-body-tertiary"></i>
+                                <h2 class="h6 fw-semibold text-body">Direct Session Messaging Ready</h2>
+                                <p class="small text-muted mb-0">Share meeting agendas, target job links, or technical questions to begin.</p>
+                            </div>
+                            {% endfor %}
+
+                            <!-- Sending / Typing Indicator Placeholder -->
+                            <div class="chat-bubble received d-none" id="typingIndicator" style="width: 80px;">
+                                <div class="typing-dots d-flex gap-1 py-1 justify-content-center">
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                    <span class="dot"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chat Input Bar -->
+                        <div class="chat-footer-bar">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <textarea class="form-control border shadow-none" id="chatInput" rows="2" style="resize: none;" placeholder="Type your message... (Press Ctrl+Enter or click Send)"></textarea>
+                                <button class="btn btn-primary px-4 fw-medium" id="sendBtn" type="button" aria-label="Send message">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Input box Footer -->
-                <div class="border-top p-3 bg-white">
-                    {% csrf_token %}
-                    <div class="input-group">
-                        <textarea class="form-control rounded-start-4 p-3" id="chatInput" rows="2" style="resize: none;" placeholder="Ask for career advice, resume tips..."></textarea>
-                        <button class="btn btn-primary-custom px-4 rounded-end-4" id="sendBtn" type="button">
-                            <i class="bi bi-send-fill fs-5"></i>
-                        </button>
-                    </div>
-                </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
+{% endblock %}
 
-<style>
-    .max-width-75 {
-        max-width: 75%;
-    }
-    textarea:focus {
-        outline: none !important;
-        box-shadow: none !important;
-    }
-    /* Typing dots */
-    .typing-dots .dot {
-        width: 8px;
-        height: 8px;
-        background-color: #9ca3af;
-        border-radius: 50%;
-        display: inline-block;
-        animation: typing 1.4s infinite both;
-    }
-    .typing-dots .dot:nth-child(2) { animation-delay: .2s; }
-    .typing-dots .dot:nth-child(3) { animation-delay: .4s; }
-    
-    @keyframes typing {
-        0%, 80%, 100% { transform: scale(0.6); }
-        40% { transform: scale(1.2); }
-    }
-</style>
-
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Mobile Drawer Toggle
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+
     const chatContainer = document.getElementById('chatContainer');
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
     const typing = document.getElementById('typingIndicator');
     const noMsgPlaceholder = document.getElementById('noMessagesPlaceholder');
 
-    // Scroll to bottom
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+    // Auto-scroll to bottom
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
 
-    sendBtn.addEventListener('click', function() {
+    function doSendMessage() {
         const text = chatInput.value.trim();
         if (!text) return;
 
@@ -119,22 +182,19 @@ document.addEventListener('DOMContentLoaded', function() {
             noMsgPlaceholder.classList.add('d-none');
         }
 
-        // 1. Render student bubble locally
-        appendBubble('Candidate', text, new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+        // Render sent bubble locally
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        appendBubble('You', text, timeStr, true);
         chatInput.value = '';
 
-        // Disable input
+        // Disable input while sending
         chatInput.disabled = true;
         sendBtn.disabled = true;
-        
-        // Show typing indicator
-        typing.classList.remove('d-none');
-        chatContainer.scrollTop = chatContainer.scrollHeight;
 
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        // 2. Submit to database via AJAX
-        fetch("{% url 'community:send_mentor_message' mentor.id %}", {
+        fetch("{% url 'community:send_mentor_message' other_user.id %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -145,45 +205,53 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(res => res.json())
         .then(data => {
-            // Hide typing indicator
-            typing.classList.add('d-none');
             chatInput.disabled = false;
             sendBtn.disabled = false;
             chatInput.focus();
 
-            if (data.success) {
-                // Rerender the dynamically added replies
-                // The backend returns user message and the simulated mentor response
-                // Since we already rendered Candidate locally, we just render the Mentor response!
-                const mentorMsg = data.messages[1];
-                appendBubble('Mentor', mentorMsg.content, mentorMsg.sent_at);
-            } else if (data.error) {
+            if (!data.success && data.error) {
                 alert(data.error);
             }
         })
         .catch(err => {
-            typing.classList.add('d-none');
             chatInput.disabled = false;
             sendBtn.disabled = false;
-            console.error('Send error:', err);
+            console.error('Send message error:', err);
         });
-    });
+    }
 
-    function appendBubble(sender, text, timeStr) {
-        const wrap = document.createElement('div');
-        wrap.className = `d-flex mb-3 ${sender === 'Candidate' ? 'justify-content-end' : ''}`;
+    if (sendBtn && chatInput) {
+        sendBtn.addEventListener('click', doSendMessage);
+        chatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                doSendMessage();
+            }
+        });
+    }
+
+    function appendBubble(sender, text, timeStr, isSelf) {
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble ${isSelf ? 'sent' : 'received'}`;
         
-        const card = document.createElement('div');
-        card.className = `card border-0 rounded-4 px-3 py-2 max-width-75 ${sender === 'Candidate' ? 'bg-primary text-white' : 'bg-white text-secondary'} shadow-sm`;
-        
-        card.innerHTML = `
-            <span class="small fw-semibold mb-1 d-block text-opacity-75 ${sender === 'Candidate' ? 'text-white' : 'text-muted'}">${sender === 'Candidate' ? 'You' : '{{ mentor.username }}'}</span>
-            <span>${text.replace(/\n/g, '<br>')}</span>
-            <small class="text-end d-block mt-1 text-opacity-50 ${sender === 'Candidate' ? 'text-white' : 'text-muted'}" style="font-size: 0.7rem;">${timeStr}</small>
-        `;
-        
-        wrap.appendChild(card);
-        chatContainer.insertBefore(wrap, typing);
+        const senderLabel = document.createElement('span');
+        senderLabel.className = 'd-block fw-semibold mb-1';
+        senderLabel.style.fontSize = '0.75rem';
+        senderLabel.style.opacity = '0.85';
+        senderLabel.textContent = sender;
+
+        const textDiv = document.createElement('div');
+        textDiv.textContent = text;
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'chat-time text-end';
+        timeSpan.textContent = timeStr;
+
+        bubble.appendChild(senderLabel);
+        bubble.appendChild(textDiv);
+        bubble.appendChild(timeSpan);
+
+        chatContainer.insertBefore(bubble, typing);
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 });

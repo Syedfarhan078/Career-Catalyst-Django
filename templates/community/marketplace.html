@@ -1,223 +1,310 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Mentor Marketplace - Career Catalyst{% endblock %}
+{% block title %}Mentors Directory — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'community:hub' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Community Hub
-        </a>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
 
-    <!-- Header -->
-    <div class="text-center mb-5">
-        <h1 class="fw-bold mb-2">Mentor Marketplace</h1>
-        <p class="text-muted fs-5">Browse and book 1-to-1 sessions with verified industry experts matching your career path.</p>
-        <div class="d-flex gap-2 justify-content-center mt-2 flex-wrap">
-            <a href="{% url 'community:mentor_register' %}" class="btn btn-primary-custom rounded-pill px-4 py-2">
-                <i class="bi bi-person-workspace"></i> Register as a Mentor
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
             </a>
-            <a href="{% url 'community:student_bookings' %}" class="btn btn-outline-primary rounded-pill px-4 py-2">
-                <i class="bi bi-calendar-check"></i> My Booking History
-            </a>
-        </div>
-    </div>
-
-    <!-- Search & Filters Container -->
-    <div class="row g-4">
-        <!-- Sidebar Filters -->
-        <div class="col-lg-3">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h5 class="fw-bold mb-4 text-secondary"><i class="bi bi-funnel"></i> Filters</h5>
-                
-                <form method="GET" action="{% url 'community:mentor_list' %}">
-                    <!-- Search Input -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-secondary small">Keyword Search</label>
-                        <input type="text" name="search" class="form-control rounded-pill px-3" placeholder="Name, skills, company..." value="{{ current_filters.search }}">
-                    </div>
-
-                    <!-- Domain -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-secondary small">Career Domain</label>
-                        <select name="domain" class="form-select rounded-pill px-3">
-                            <option value="">All Domains</option>
-                            {% for dom in all_domains %}
-                            <option value="{{ dom }}" {% if current_filters.domain == dom %}selected{% endif %}>{{ dom }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <!-- Company -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-secondary small">Company</label>
-                        <input type="text" name="company" class="form-control rounded-pill px-3" placeholder="e.g. Google, Meta" value="{{ current_filters.company }}">
-                    </div>
-
-                    <!-- Min Experience -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-secondary small">Min Experience (Years)</label>
-                        <input type="number" name="experience" min="0" class="form-control rounded-pill px-3" placeholder="e.g. 3" value="{{ current_filters.experience }}">
-                    </div>
-
-                    <!-- Location -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-secondary small">Location</label>
-                        <input type="text" name="location" class="form-control rounded-pill px-3" placeholder="e.g. New York, Bengaluru" value="{{ current_filters.location }}">
-                    </div>
-
-                    <!-- Min Rating -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-secondary small">Min Rating</label>
-                        <select name="rating" class="form-select rounded-pill px-3">
-                            <option value="">Any Rating</option>
-                            <option value="4.5" {% if current_filters.rating == "4.5" %}selected{% endif %}>4.5 ★ &amp; above</option>
-                            <option value="4.0" {% if current_filters.rating == "4.0" %}selected{% endif %}>4.0 ★ &amp; above</option>
-                            <option value="3.5" {% if current_filters.rating == "3.5" %}selected{% endif %}>3.5 ★ &amp; above</option>
-                        </select>
-                    </div>
-
-                    <!-- Sorting -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-secondary small">Sort By</label>
-                        <select name="sort" class="form-select rounded-pill px-3">
-                            <option value="">Default</option>
-                            <option value="recommended" {% if current_filters.sort == "recommended" %}selected{% endif %}>Recommended Matching (Recommended)</option>
-                            <option value="highest_rated" {% if current_filters.sort == "highest_rated" %}selected{% endif %}>Highest Rated</option>
-                            <option value="most_experienced" {% if current_filters.sort == "most_experienced" %}selected{% endif %}>Most Experienced</option>
-                            <option value="newest" {% if current_filters.sort == "newest" %}selected{% endif %}>Newest</option>
-                        </select>
-                    </div>
-
-                    <!-- Submit & Clear buttons -->
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary rounded-pill">Apply Filters</button>
-                        <a href="{% url 'community:mentor_list' %}" class="btn btn-outline-secondary rounded-pill">Clear All</a>
-                    </div>
-                </form>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
             </div>
-        </div>
+        </header>
 
-        <!-- Mentors Cards Grid -->
-        <div class="col-lg-9">
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="community-breadcrumbs">
+                        <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <a href="{% url 'community:hub' %}">Community</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <span>Mentors</span>
+                    </div>
+                    <h1 class="community-title">Mentor Directory & Marketplace</h1>
+                    <p class="community-subtitle">
+                        Connect with verified senior engineers, tech leads, and hiring managers matched to your target career path.
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{% url 'community:mentor_register' %}" class="btn btn-outline-primary btn-sm px-3 py-2 fw-medium">
+                        <i class="bi bi-person-workspace me-1"></i> Apply as Mentor
+                    </a>
+                    <a href="{% url 'community:student_bookings' %}" class="btn btn-primary btn-sm px-3 py-2 fw-medium">
+                        <i class="bi bi-calendar-check me-1"></i> My Sessions
+                    </a>
+                </div>
+            </div>
+
+            <!-- Workspace Navigation Tabs -->
+            <nav class="community-nav-tabs" aria-label="Community Sections">
+                <a href="{% url 'community:hub' %}" class="community-nav-tab">
+                    <i class="bi bi-house-door"></i> Hub Overview
+                </a>
+                <a href="{% url 'community:forum_list' %}" class="community-nav-tab">
+                    <i class="bi bi-chat-left-text"></i> Discussions
+                </a>
+                <a href="{% url 'community:project_list' %}" class="community-nav-tab">
+                    <i class="bi bi-code-slash"></i> Projects
+                </a>
+                <a href="{% url 'community:story_list' %}" class="community-nav-tab">
+                    <i class="bi bi-award"></i> Success Stories
+                </a>
+                <a href="{% url 'community:mentor_list' %}" class="community-nav-tab active">
+                    <i class="bi bi-people"></i> Mentors Directory
+                </a>
+                <a href="{% url 'community:student_bookings' %}" class="community-nav-tab">
+                    <i class="bi bi-calendar-check"></i> My Bookings
+                </a>
+            </nav>
+
+            <!-- Search & Filters + Mentors Grid -->
             <div class="row g-4">
-                {% for mentor in mentors %}
-                <div class="col-md-6 col-xxl-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden d-flex flex-column hover-lift">
-                        <!-- Card Body -->
-                        <div class="card-body p-4 d-flex flex-column">
-                            <!-- Match Score Tag (if logged in and score calculated) -->
-                            {% if mentor.match_score is not None %}
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-bold">
-                                    <i class="bi bi-cpu-fill"></i> {{ mentor.match_score }}% Match
-                                </span>
-                            </div>
-                            {% endif %}
+                <!-- Sidebar Filters -->
+                <div class="col-lg-3">
+                    <div class="community-card p-3 p-md-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                            <h2 class="h6 fw-bold text-body mb-0">
+                                <i class="bi bi-funnel text-primary me-1"></i> Directory Filters
+                            </h2>
+                            <a href="{% url 'community:mentor_list' %}" class="text-decoration-none small text-muted">
+                                Reset
+                            </a>
+                        </div>
 
-                            <!-- Mentor Profile Summary -->
-                            <div class="d-flex align-items-center mb-3">
-                                {% if mentor.profile_photo %}
-                                <img src="{{ mentor.profile_photo.url }}" class="rounded-circle me-3 object-fit-cover" style="width: 56px; height: 56px;" alt="{{ mentor.full_name }}">
-                                {% else %}
-                                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
-                                    <i class="bi bi-person-badge fs-3"></i>
-                                </div>
-                                {% endif %}
-                                <div>
-                                    <h5 class="fw-bold mb-0 text-secondary">{{ mentor.full_name }}</h5>
-                                    <span class="text-primary small fw-semibold">{{ mentor.designation }} at {{ mentor.company }}</span>
-                                </div>
-                            </div>
-
-                            <!-- Rating & Location -->
-                            <div class="d-flex gap-3 mb-3 text-muted small">
-                                <span><i class="bi bi-star-fill text-warning"></i> {{ mentor.rating|default:"0.0" }} ({{ mentor.total_reviews }})</span>
-                                <span><i class="bi bi-geo-alt"></i> {{ mentor.current_location }}</span>
-                            </div>
-
-                            <!-- Bio -->
-                            <p class="text-muted small mb-3 flex-grow-1">{{ mentor.bio|truncatewords:18 }}</p>
-
-                            <!-- Domain tags -->
+                        <form method="GET" action="{% url 'community:mentor_list' %}">
                             <div class="mb-3">
-                                <div class="d-flex gap-1 flex-wrap">
-                                    {% for dom in mentor.get_domains_list %}
-                                    <span class="badge bg-primary bg-opacity-10 text-primary small">{{ dom }}</span>
-                                    {% endfor %}
-                                </div>
+                                <label class="form-label small fw-semibold text-body">Search Mentors</label>
+                                <input type="text" name="search" class="form-control form-control-sm" placeholder="Name, skills, company..." value="{{ current_filters.search }}">
                             </div>
 
-                            <!-- Skills badges -->
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-body">Career Domain</label>
+                                <select name="domain" class="form-select form-select-sm">
+                                    <option value="">All Domains</option>
+                                    {% for dom in all_domains %}
+                                    <option value="{{ dom }}" {% if current_filters.domain == dom %}selected{% endif %}>{{ dom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-body">Company</label>
+                                <input type="text" name="company" class="form-control form-control-sm" placeholder="e.g. Google, Stripe" value="{{ current_filters.company }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-body">Min Experience (Years)</label>
+                                <input type="number" name="experience" min="0" class="form-control form-control-sm" placeholder="e.g. 3" value="{{ current_filters.experience }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-body">Location</label>
+                                <input type="text" name="location" class="form-control form-control-sm" placeholder="e.g. San Francisco" value="{{ current_filters.location }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-body">Min Rating</label>
+                                <select name="rating" class="form-select form-select-sm">
+                                    <option value="">Any Rating</option>
+                                    <option value="4.5" {% if current_filters.rating == "4.5" %}selected{% endif %}>4.5 ★ &amp; above</option>
+                                    <option value="4.0" {% if current_filters.rating == "4.0" %}selected{% endif %}>4.0 ★ &amp; above</option>
+                                    <option value="3.5" {% if current_filters.rating == "3.5" %}selected{% endif %}>3.5 ★ &amp; above</option>
+                                </select>
+                            </div>
+
                             <div class="mb-4">
-                                <h6 class="fw-bold text-secondary small mb-2">Skills</h6>
-                                <div class="d-flex gap-1 flex-wrap">
-                                    {% for skill in mentor.get_skills_list %}
-                                    <span class="badge bg-light text-muted border small">{{ skill }}</span>
+                                <label class="form-label small fw-semibold text-body">Sort Order</label>
+                                <select name="sort" class="form-select form-select-sm">
+                                    <option value="">Default</option>
+                                    <option value="recommended" {% if current_filters.sort == "recommended" %}selected{% endif %}>Best Profile Match</option>
+                                    <option value="highest_rated" {% if current_filters.sort == "highest_rated" %}selected{% endif %}>Highest Rated</option>
+                                    <option value="most_experienced" {% if current_filters.sort == "most_experienced" %}selected{% endif %}>Most Experienced</option>
+                                    <option value="newest" {% if current_filters.sort == "newest" %}selected{% endif %}>Newest</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-sm w-100 fw-medium">
+                                <i class="bi bi-check2 me-1"></i> Apply Filters
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Mentors Grid -->
+                <div class="col-lg-9">
+                    <div class="mentors-grid mb-4">
+                        {% for mentor in mentors %}
+                        <div class="mentor-card">
+                            <div>
+                                <!-- Top Bar: Match Score & Verified Badge -->
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    {% if mentor.match_score is not None %}
+                                    <span class="match-score-badge">
+                                        <i class="bi bi-stars"></i> {{ mentor.match_score }}% Match
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary-subtle text-muted border px-2.5 py-1" style="font-size: 0.725rem;">
+                                        General Mentor
+                                    </span>
+                                    {% endif %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.7rem;">
+                                        <i class="bi bi-patch-check-fill me-1"></i> Verified
+                                    </span>
+                                </div>
+
+                                <!-- Avatar & Details -->
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    {% if mentor.profile_photo %}
+                                    <img src="{{ mentor.profile_photo.url }}" alt="{{ mentor.full_name }}" class="mentor-avatar">
+                                    {% else %}
+                                    <div class="mentor-avatar-initials">
+                                        {{ mentor.full_name|slice:":2"|upper }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <h2 class="h6 fw-bold text-body mb-0">{{ mentor.full_name }}</h2>
+                                        <span class="small text-primary fw-medium d-block">{{ mentor.designation }}</span>
+                                        <span class="small text-muted d-block">{{ mentor.company }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Rating & Location -->
+                                <div class="d-flex align-items-center gap-3 mb-3 small text-muted">
+                                    <span class="d-flex align-items-center gap-1">
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <strong class="text-body">{{ mentor.rating|default:"0.0" }}</strong>
+                                        <span>({{ mentor.total_reviews }})</span>
+                                    </span>
+                                    <span>·</span>
+                                    <span class="d-flex align-items-center gap-1">
+                                        <i class="bi bi-geo-alt"></i> {{ mentor.current_location|truncatewords:2 }}
+                                    </span>
+                                </div>
+
+                                <p class="text-muted small mb-3 lh-base">
+                                    {{ mentor.bio|truncatewords:18 }}
+                                </p>
+
+                                <!-- Domain badges -->
+                                <div class="d-flex gap-1 flex-wrap mb-3">
+                                    {% for dom in mentor.get_domains_list %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.725rem;">
+                                        {{ dom }}
+                                    </span>
                                     {% endfor %}
+                                </div>
+
+                                <!-- Skills -->
+                                <div class="mb-3">
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        {% for skill in mentor.get_skills_list|slice:":4" %}
+                                        <span class="project-tag">{{ skill }}</span>
+                                        {% endfor %}
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Available Details -->
-                            <div class="d-flex justify-content-between align-items-center border-top pt-3 small text-muted mb-3">
-                                <span><i class="bi bi-briefcase"></i> {{ mentor.experience_years }} Years Exp</span>
-                                <span><i class="bi bi-laptop"></i> {{ mentor.mentorship_type }}</span>
-                            </div>
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between pt-2 border-top mb-3 small text-muted">
+                                    <span><i class="bi bi-briefcase me-1"></i>{{ mentor.experience_years }} yrs experience</span>
+                                    <span><i class="bi bi-camera-video me-1"></i>{{ mentor.mentorship_type }}</span>
+                                </div>
 
-                            <!-- View Profile Button -->
-                            <div class="d-grid mt-auto">
-                                <a href="{% url 'community:mentor_detail' mentor.id %}" class="btn btn-outline-primary rounded-pill btn-sm py-2">
-                                    View Full Profile
+                                <a href="{% url 'community:mentor_detail' mentor.id %}" class="btn btn-outline-primary btn-sm w-100 fw-medium">
+                                    View Profile &amp; Book
                                 </a>
                             </div>
                         </div>
+                        {% empty %}
+                        <div class="col-12 text-center py-5 text-muted community-card" style="grid-column: 1 / -1;">
+                            <i class="bi bi-people display-4 mb-3 d-block text-body-tertiary"></i>
+                            <h5 class="fw-semibold text-body">No mentors match your search filters</h5>
+                            <p class="text-muted mb-3">Try clearing some filter criteria to browse all available mentors.</p>
+                            <a href="{% url 'community:mentor_list' %}" class="btn btn-outline-primary btn-sm px-3 py-2">
+                                Clear Filters
+                            </a>
+                        </div>
+                        {% endfor %}
                     </div>
-                </div>
-                {% empty %}
-                <div class="col-12 text-center py-5 text-muted">
-                    <i class="bi bi-people display-2 mb-3 d-block"></i>
-                    <h5>No active mentors found matching your filters.</h5>
-                    <p>Try clearing some filters or searching for different keywords.</p>
-                    <a href="{% url 'community:mentor_list' %}" class="btn btn-primary-custom rounded-pill mt-2">Reset Filters</a>
-                </div>
-                {% endfor %}
-            </div>
 
-            <!-- Pagination -->
-            {% if is_paginated %}
-            <div class="d-flex justify-content-center mt-5">
-                <nav>
-                    <ul class="pagination pagination-sm gap-1">
-                        {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link rounded-circle border-0 bg-light text-dark" href="?page={{ page_obj.previous_page_number }}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}{% if current_filters.domain %}&domain={{ current_filters.domain }}{% endif %}{% if current_filters.company %}&company={{ current_filters.company }}{% endif %}{% if current_filters.sort %}&sort={{ current_filters.sort }}{% endif %}">&laquo;</a>
-                        </li>
-                        {% endif %}
-                        <li class="page-item active">
-                            <span class="page-link rounded-circle border-0 bg-primary">{{ page_obj.number }}</span>
-                        </li>
-                        {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link rounded-circle border-0 bg-light text-dark" href="?page={{ page_obj.next_page_number }}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}{% if current_filters.domain %}&domain={{ current_filters.domain }}{% endif %}{% if current_filters.company %}&company={{ current_filters.company }}{% endif %}{% if current_filters.sort %}&sort={{ current_filters.sort }}{% endif %}">&raquo;</a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </nav>
+                    <!-- Pagination -->
+                    {% if is_paginated %}
+                    <div class="d-flex justify-content-center">
+                        <nav aria-label="Mentors pagination">
+                            <ul class="pagination pagination-sm mb-0 gap-1">
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link border" href="?page={{ page_obj.previous_page_number }}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}{% if current_filters.domain %}&domain={{ current_filters.domain }}{% endif %}{% if current_filters.company %}&company={{ current_filters.company }}{% endif %}{% if current_filters.sort %}&sort={{ current_filters.sort }}{% endif %}">&laquo; Prev</a>
+                                </li>
+                                {% endif %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                                </li>
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link border" href="?page={{ page_obj.next_page_number }}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}{% if current_filters.domain %}&domain={{ current_filters.domain }}{% endif %}{% if current_filters.company %}&company={{ current_filters.company }}{% endif %}{% if current_filters.sort %}&sort={{ current_filters.sort }}{% endif %}">Next &raquo;</a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            {% endif %}
-        </div>
+        </main>
     </div>
 </div>
+{% endblock %}
 
-<style>
-    .hover-lift {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
     }
-    .hover-lift:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
-    }
-</style>
+});
+</script>
 {% endblock %}

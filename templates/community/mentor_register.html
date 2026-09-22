@@ -1,110 +1,194 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}Register as Mentor - Career Catalyst{% endblock %}
+{% block title %}Register as a Mentor — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5 mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-9">
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-                <a href="{% url 'community:mentor_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3 align-self-start">
-                    <i class="bi bi-arrow-left"></i> Marketplace
-                </a>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
 
-                <h2 class="fw-bold mb-2">Register as a Mentor</h2>
-                <p class="text-muted mb-4">Complete your professional background profile to submit a verification request. Approved mentors become visible in the marketplace.</p>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-                <form method="POST" enctype="multipart/form-data">
-                    {% csrf_token %}
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
 
-                    <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">1. Personal & Contact Information</h5>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            {{ form.full_name|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6">
-                            {{ form.email|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6">
-                            {{ form.phone_number|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6">
-                            {{ form.current_location|as_crispy_field }}
-                        </div>
-                    </div>
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
-                    <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">2. Professional Details & Bio</h5>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-5">
-                            {{ form.company|as_crispy_field }}
-                        </div>
-                        <div class="col-md-5">
-                            {{ form.designation|as_crispy_field }}
-                        </div>
-                        <div class="col-md-2">
-                            {{ form.experience_years|as_crispy_field }}
-                        </div>
-                        <div class="col-12">
-                            {{ form.bio|as_crispy_field }}
-                        </div>
-                    </div>
-
-                    <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">3. Domains, Skills & Languages</h5>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            {{ form.career_domains|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6">
-                            {{ form.skills_csv|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6">
-                            {{ form.languages|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6">
-                            {{ form.mentorship_type|as_crispy_field }}
-                        </div>
-                    </div>
-
-                    <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">4. Portfolio & Resume Links</h5>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            {{ form.linkedin_url|as_crispy_field }}
-                        </div>
-                        <div class="col-md-4">
-                            {{ form.github_url|as_crispy_field }}
-                        </div>
-                        <div class="col-md-4">
-                            {{ form.portfolio_url|as_crispy_field }}
-                        </div>
-                        <div class="col-12">
-                            {{ form.resume|as_crispy_field }}
-                        </div>
-                    </div>
-
-                    <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">5. General Availability Config</h5>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-5">
-                            {{ form.available_days|as_crispy_field }}
-                        </div>
-                        <div class="col-md-5">
-                            {{ form.available_time_slots|as_crispy_field }}
-                        </div>
-                        <div class="col-md-2">
-                            {{ form.max_sessions_per_week|as_crispy_field }}
-                        </div>
-                    </div>
-
-                    <div class="mb-4 bg-light p-3 rounded-3 border">
-                        {{ form.agreement|as_crispy_field }}
-                    </div>
-
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary-custom btn-lg rounded-pill fw-bold">Submit Registration Request</button>
-                    </div>
-                </form>
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
             </div>
-        </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header mb-4">
+                <div class="community-breadcrumbs">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:mentor_list' %}">Mentors</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>Mentor Registration</span>
+                </div>
+                <h1 class="community-title">Register as an Industry Mentor</h1>
+                <p class="community-subtitle">
+                    Help guide emerging engineers, review real-world architectures, and conduct 1-on-1 mock interviews.
+                </p>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-9">
+                    <div class="community-card">
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+
+                            <h2 class="h6 fw-bold text-primary mb-3 pb-2 border-bottom">
+                                1. Personal &amp; Contact Details
+                            </h2>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    {{ form.full_name|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.email|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.phone_number|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.current_location|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <h2 class="h6 fw-bold text-primary mb-3 pb-2 border-bottom">
+                                2. Professional Background &amp; Bio
+                            </h2>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-5">
+                                    {{ form.company|as_crispy_field }}
+                                </div>
+                                <div class="col-md-5">
+                                    {{ form.designation|as_crispy_field }}
+                                </div>
+                                <div class="col-md-2">
+                                    {{ form.experience_years|as_crispy_field }}
+                                </div>
+                                <div class="col-12">
+                                    {{ form.bio|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <h2 class="h6 fw-bold text-primary mb-3 pb-2 border-bottom">
+                                3. Domains, Skills &amp; Languages
+                            </h2>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    {{ form.career_domains|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.skills_csv|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.languages|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.mentorship_type|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <h2 class="h6 fw-bold text-primary mb-3 pb-2 border-bottom">
+                                4. Professional Links &amp; Resume
+                            </h2>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    {{ form.linkedin_url|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.github_url|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.portfolio_url|as_crispy_field }}
+                                </div>
+                                <div class="col-12">
+                                    {{ form.resume|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <h2 class="h6 fw-bold text-primary mb-3 pb-2 border-bottom">
+                                5. Weekly Availability Preferences
+                            </h2>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-5">
+                                    {{ form.available_days|as_crispy_field }}
+                                </div>
+                                <div class="col-md-5">
+                                    {{ form.available_time_slots|as_crispy_field }}
+                                </div>
+                                <div class="col-md-2">
+                                    {{ form.max_sessions_per_week|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <div class="p-3 border rounded-3 bg-body-tertiary mb-4">
+                                {{ form.agreement|as_crispy_field }}
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                                <a href="{% url 'community:mentor_list' %}" class="btn btn-outline-secondary btn-sm px-3 py-2">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-medium">
+                                    <i class="bi bi-send-check me-1"></i> Submit Application for Verification
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+});
+</script>
 {% endblock %}

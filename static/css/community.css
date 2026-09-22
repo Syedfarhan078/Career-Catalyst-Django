@@ -1,0 +1,652 @@
+/* ==========================================================================
+   CareerCatalyst Community & Mentors — static/css/community.css
+   Clean · Professional · Educational · Collaborative
+   Consumes dashboard design tokens: --dash-bg, --dash-surface, --dash-primary, etc.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. HEADER & BREADCRUMBS
+   -------------------------------------------------------------------------- */
+.community-header {
+    margin-bottom: 1.5rem;
+}
+
+.community-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.community-breadcrumbs a {
+    color: var(--dash-text-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.community-breadcrumbs a:hover {
+    color: var(--dash-primary);
+}
+
+.community-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    letter-spacing: -0.02em;
+    margin: 0 0 0.25rem 0;
+}
+
+.community-subtitle {
+    font-size: 0.875rem;
+    color: var(--dash-text-muted);
+    margin: 0;
+    max-width: 760px;
+    line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   2. COMMUNITY WORKSPACE TABS & PILLS
+   -------------------------------------------------------------------------- */
+.community-nav-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.community-nav-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--dash-radius, 8px);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--dash-text-muted);
+    text-decoration: none;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.community-nav-tab:hover {
+    color: var(--dash-text);
+    background: var(--dash-surface-hover);
+}
+
+.community-nav-tab.active {
+    color: var(--dash-primary);
+    background: var(--dash-primary-subtle);
+    border-color: var(--dash-primary-border);
+    font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   3. METRIC CARDS ROW
+   -------------------------------------------------------------------------- */
+.community-metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 992px) {
+    .community-metrics-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .community-metrics-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.community-metric-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 1.125rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--dash-shadow-card);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.community-metric-card:hover {
+    border-color: var(--dash-border-strong);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.community-metric-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--dash-radius, 8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.community-metric-icon.blue {
+    background: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+}
+
+.community-metric-icon.green {
+    background: var(--dash-success-subtle);
+    color: var(--dash-success);
+}
+
+.community-metric-icon.amber {
+    background: var(--dash-warning-subtle);
+    color: var(--dash-warning);
+}
+
+.community-metric-icon.purple {
+    background: rgba(168, 85, 247, 0.12);
+    color: #9333EA;
+}
+
+.community-metric-val {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    line-height: 1.2;
+}
+
+.community-metric-lbl {
+    font-size: 0.775rem;
+    font-weight: 500;
+    color: var(--dash-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.15rem;
+}
+
+/* --------------------------------------------------------------------------
+   4. CARDS & SECTIONS
+   -------------------------------------------------------------------------- */
+.community-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    box-shadow: var(--dash-shadow-card);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.15s ease;
+}
+
+.community-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.community-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   5. FORUM & DISCUSSION THREADS
+   -------------------------------------------------------------------------- */
+.forum-thread-item {
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    background: var(--dash-surface);
+    margin-bottom: 0.75rem;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.forum-thread-item:hover {
+    border-color: var(--dash-border-strong);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.forum-thread-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.forum-thread-title:hover {
+    color: var(--dash-primary);
+}
+
+.forum-category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: var(--dash-surface-muted);
+    color: var(--dash-text-muted);
+    border: 1px solid var(--dash-border);
+}
+
+.forum-category-pill {
+    padding: 0.4rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--dash-text-muted);
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    transition: all 0.15s ease;
+}
+
+.forum-category-pill:hover {
+    color: var(--dash-text);
+    border-color: var(--dash-border-strong);
+}
+
+.forum-category-pill.active {
+    color: var(--dash-primary);
+    background: var(--dash-primary-subtle);
+    border-color: var(--dash-primary-border);
+    font-weight: 600;
+}
+
+.forum-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+}
+
+.forum-reply-box {
+    padding: 1.125rem 1.25rem;
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    margin-bottom: 0.85rem;
+}
+
+/* --------------------------------------------------------------------------
+   6. SHARED PROJECTS
+   -------------------------------------------------------------------------- */
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+}
+
+@media (max-width: 992px) {
+    .projects-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .projects-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.project-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: var(--dash-shadow-card);
+    transition: all 0.15s ease;
+}
+
+.project-card:hover {
+    border-color: var(--dash-border-strong);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.project-tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.725rem;
+    border-radius: var(--dash-radius-sm, 6px);
+    background: var(--dash-surface-muted);
+    color: var(--dash-text-muted);
+    border: 1px solid var(--dash-border);
+    margin-right: 0.35rem;
+    margin-bottom: 0.35rem;
+}
+
+.btn-like {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--dash-text-muted);
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-like:hover {
+    color: #DC2626;
+    border-color: #FCA5A5;
+    background: rgba(220, 38, 38, 0.05);
+}
+
+.btn-like.liked {
+    color: #DC2626;
+    border-color: #F87171;
+    background: rgba(220, 38, 38, 0.08);
+    font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   7. MENTOR MARKETPLACE & DIRECTORY
+   -------------------------------------------------------------------------- */
+.mentors-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+}
+
+@media (max-width: 1100px) {
+    .mentors-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .mentors-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.mentor-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 1.25rem;
+    box-shadow: var(--dash-shadow-card);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+    transition: all 0.15s ease;
+}
+
+.mentor-card:hover {
+    border-color: var(--dash-border-strong);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.mentor-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--dash-border);
+    flex-shrink: 0;
+}
+
+.mentor-avatar-initials {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    border: 2px solid var(--dash-primary-border);
+    flex-shrink: 0;
+}
+
+.match-score-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.775rem;
+    font-weight: 600;
+    background: var(--dash-success-subtle);
+    color: var(--dash-success);
+    border: 1px solid var(--dash-success-border);
+}
+
+.mentor-filter-bar {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   8. BOOKINGS & SESSIONS
+   -------------------------------------------------------------------------- */
+.booking-item-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--dash-shadow-card);
+    transition: all 0.15s ease;
+}
+
+.booking-item-card:hover {
+    border-color: var(--dash-border-strong);
+}
+
+.status-badge-pending {
+    background: var(--dash-warning-subtle);
+    color: var(--dash-warning);
+    border: 1px solid var(--dash-warning-border);
+}
+
+.status-badge-accepted {
+    background: var(--dash-success-subtle);
+    color: var(--dash-success);
+    border: 1px solid var(--dash-success-border);
+}
+
+.status-badge-declined {
+    background: rgba(239, 68, 68, 0.08);
+    color: #DC2626;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.status-badge-completed {
+    background: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+    border: 1px solid var(--dash-primary-border);
+}
+
+.status-badge-cancelled {
+    background: var(--dash-surface-muted);
+    color: var(--dash-text-muted);
+    border: 1px solid var(--dash-border);
+}
+
+/* --------------------------------------------------------------------------
+   9. CHAT CONSOLE
+   -------------------------------------------------------------------------- */
+.chat-window {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 600px;
+    box-shadow: var(--dash-shadow-card);
+}
+
+.chat-header-bar {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--dash-border);
+    background: var(--dash-surface-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chat-messages-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    background: var(--dash-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.chat-bubble {
+    max-width: 72%;
+    padding: 0.75rem 1rem;
+    border-radius: var(--dash-radius-lg, 10px);
+    font-size: 0.875rem;
+    line-height: 1.45;
+    box-shadow: var(--dash-shadow-sm);
+    position: relative;
+    word-break: break-word;
+}
+
+.chat-bubble.sent {
+    align-self: flex-end;
+    background: var(--dash-primary);
+    color: #FFFFFF;
+    border-bottom-right-radius: 2px;
+}
+
+.chat-bubble.received {
+    align-self: flex-start;
+    background: var(--dash-surface);
+    color: var(--dash-text);
+    border: 1px solid var(--dash-border);
+    border-bottom-left-radius: 2px;
+}
+
+.chat-time {
+    font-size: 0.7rem;
+    margin-top: 0.25rem;
+    display: block;
+    opacity: 0.75;
+}
+
+.chat-footer-bar {
+    padding: 0.85rem 1.25rem;
+    border-top: 1px solid var(--dash-border);
+    background: var(--dash-surface);
+}
+
+/* Typing Indicator Animation */
+.typing-dots .dot {
+    width: 6px;
+    height: 6px;
+    background-color: var(--dash-text-subtle);
+    border-radius: 50%;
+    display: inline-block;
+    animation: chatTyping 1.4s infinite both;
+}
+
+.typing-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes chatTyping {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1.1); opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   10. ADMIN VERIFICATION TABLE
+   -------------------------------------------------------------------------- */
+.admin-table-wrap {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    overflow: hidden;
+    box-shadow: var(--dash-shadow-card);
+}
+
+.admin-table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: collapse;
+}
+
+.admin-table th {
+    background: var(--dash-surface-muted);
+    font-size: 0.775rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--dash-text-muted);
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.admin-table td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+    font-size: 0.875rem;
+    color: var(--dash-text);
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.admin-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* --------------------------------------------------------------------------
+   11. REDUCED MOTION PREFERENCE
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .community-metric-card,
+    .community-card,
+    .forum-thread-item,
+    .project-card,
+    .mentor-card,
+    .btn-like,
+    .community-nav-tab {
+        transition: none !important;
+        transform: none !important;
+    }
+    .typing-dots .dot {
+        animation: none !important;
+    }
+}

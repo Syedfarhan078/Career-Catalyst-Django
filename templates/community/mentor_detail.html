@@ -1,212 +1,328 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}{{ mentor.full_name }} - Profile Details{% endblock %}
+{% block title %}{{ mentor.full_name }} — Mentor Profile — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'community:mentor_list' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Mentors
-        </a>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
 
-    <div class="row g-4">
-        <!-- Mentor Info Details (Left Column) -->
-        <div class="col-lg-8">
-            <!-- Profile Banner Header -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4">
-                <div class="d-flex flex-column flex-md-row align-items-center text-center text-md-start gap-4">
-                    {% if mentor.profile_photo %}
-                    <img src="{{ mentor.profile_photo.url }}" class="rounded-circle object-fit-cover shadow-sm" style="width: 120px; height: 120px;" alt="{{ mentor.full_name }}">
-                    {% else %}
-                    <div class="rounded-circle bg-primary bg-opacity-10 p-4 text-primary d-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
-                        <i class="bi bi-person-badge display-3"></i>
-                    </div>
-                    {% endif %}
-                    <div class="flex-grow-1">
-                        <div class="d-flex flex-column flex-md-row align-items-center gap-2 mb-2">
-                            <h2 class="fw-bold mb-0 text-secondary">{{ mentor.full_name }}</h2>
-                            {% if mentor.verified %}
-                            <span class="badge bg-success rounded-pill px-3 py-1"><i class="bi bi-patch-check-fill"></i> Verified</span>
-                            {% endif %}
-                        </div>
-                        <h5 class="text-primary fw-semibold mb-2">{{ mentor.designation }} at {{ mentor.company }}</h5>
-                        
-                        <div class="d-flex flex-wrap justify-content-center justify-content-md-start gap-3 small text-muted">
-                            <span><i class="bi bi-star-fill text-warning"></i> {{ mentor.rating|default:"0.0" }} ({{ mentor.total_reviews }} Reviews)</span>
-                            <span><i class="bi bi-geo-alt"></i> {{ mentor.current_location }}</span>
-                            <span><i class="bi bi-briefcase"></i> {{ mentor.experience_years }} Years Exp</span>
-                        </div>
-                    </div>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-                    <!-- Recommended Match Score -->
-                    {% if match_score is not None %}
-                    <div class="text-center bg-success bg-opacity-10 text-success p-3 rounded-4" style="width: 130px;">
-                        <div class="fs-2 fw-bold">{{ match_score }}%</div>
-                        <small class="fw-semibold">Match Score</small>
-                    </div>
-                    {% endif %}
-                </div>
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
             </div>
+        </header>
 
-            <!-- About & Career Bio -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4">
-                <h4 class="fw-bold mb-3 text-secondary">About Me</h4>
-                <div class="fs-5 text-secondary lh-lg mb-4" style="white-space: pre-wrap;">{{ mentor.bio }}</div>
-
-                <div class="row g-4 border-top pt-4">
-                    <div class="col-md-6">
-                        <h6 class="fw-bold text-secondary mb-2">Career Domains</h6>
-                        <div class="d-flex gap-1 flex-wrap">
-                            {% for dom in mentor.get_domains_list %}
-                            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill small">{{ dom }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="fw-bold text-secondary mb-2">Expertise Skills</h6>
-                        <div class="d-flex gap-1 flex-wrap">
-                            {% for skill in mentor.get_skills_list %}
-                            <span class="badge bg-light text-muted border px-3 py-2 rounded-pill small">{{ skill }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header mb-4">
+                <div class="community-breadcrumbs">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:mentor_list' %}">Mentors</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>{{ mentor.full_name }}</span>
                 </div>
-            </div>
-
-            <!-- Reviews List -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-                <h4 class="fw-bold mb-4 text-secondary"><i class="bi bi-star"></i> Student Reviews</h4>
-                <div class="d-flex flex-column gap-3">
-                    {% for rev in reviews %}
-                    <div class="p-3 bg-light rounded-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="fw-bold mb-0 text-secondary">{{ rev.student.username }}</h6>
-                            <span class="text-warning">
-                                {% for i in "12345"|make_list %}
-                                    {% if forloop.counter <= rev.rating %}★{% else %}☆{% endif %}
-                                {% endfor %}
-                            </span>
-                        </div>
-                        <p class="text-muted small mb-0">{{ rev.comment }}</p>
-                        <small class="text-muted text-opacity-50 mt-1 d-block" style="font-size: 0.75rem;">{{ rev.created_at|date:"M d, Y" }}</small>
-                    </div>
-                    {% empty %}
-                    <p class="text-muted text-center py-4">No reviews recorded yet for this mentor.</p>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Availability calendar & Booking Sidebar (Right Column) -->
-        <div class="col-lg-4">
-            <!-- Details Cards -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-                <h5 class="fw-bold mb-3 text-secondary"><i class="bi bi-globe"></i> Mentorship Info</h5>
-                <ul class="list-unstyled d-flex flex-column gap-2 text-secondary mb-4">
-                    <li><i class="bi bi-translate text-primary me-2"></i><strong>Languages:</strong> {{ mentor.languages }}</li>
-                    <li><i class="bi bi-laptop text-primary me-2"></i><strong>Type:</strong> {{ mentor.mentorship_type }}</li>
-                    <li><i class="bi bi-clock text-primary me-2"></i><strong>Max Sessions/Week:</strong> {{ mentor.max_sessions_per_week }}</li>
-                </ul>
-
-                <!-- Social Handles Buttons -->
-                <div class="d-flex gap-2">
-                    {% if mentor.linkedin_url %}
-                    <a href="{{ mentor.linkedin_url }}" target="_blank" class="btn btn-outline-primary rounded-circle flex-fill py-2"><i class="bi bi-linkedin fs-5"></i></a>
-                    {% endif %}
-                    {% if mentor.github_url %}
-                    <a href="{{ mentor.github_url }}" target="_blank" class="btn btn-outline-dark rounded-circle flex-fill py-2"><i class="bi bi-github fs-5"></i></a>
-                    {% endif %}
-                    {% if mentor.portfolio_url %}
-                    <a href="{{ mentor.portfolio_url }}" target="_blank" class="btn btn-outline-success rounded-circle flex-fill py-2"><i class="bi bi-globe fs-5"></i></a>
-                    {% endif %}
-                </div>
-                {% if mentor.resume %}
-                <div class="d-grid mt-3">
-                    <a href="{{ mentor.resume.url }}" target="_blank" class="btn btn-outline-secondary rounded-pill btn-sm py-2">
-                        <i class="bi bi-file-earmark-pdf"></i> View Professional Resume
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <a href="{% url 'community:mentor_list' %}" class="text-decoration-none small text-muted">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Directory
                     </a>
                 </div>
-                {% endif %}
             </div>
 
-            <!-- Availability slots grid -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-                <h5 class="fw-bold mb-3 text-secondary"><i class="bi bi-calendar-check"></i> Availability Calendar</h5>
-                <div class="d-flex flex-column gap-2 mb-4">
-                    {% for avail in availabilities %}
-                    <div class="p-2 bg-light rounded-3 d-flex justify-content-between align-items-center">
-                        <span class="small fw-semibold text-secondary">{{ avail.day }}</span>
-                        <span class="badge bg-primary bg-opacity-10 text-primary small">{{ avail.start_time|time:"g:i A" }} - {{ avail.end_time|time:"g:i A" }}</span>
+            <div class="row g-4">
+                <!-- Left Main Content Column -->
+                <div class="col-lg-8">
+                    <!-- Profile Header Card -->
+                    <div class="community-card mb-4">
+                        <div class="d-flex flex-column flex-md-row align-items-center align-items-md-start gap-4">
+                            {% if mentor.profile_photo %}
+                            <img src="{{ mentor.profile_photo.url }}" class="mentor-avatar" style="width: 96px; height: 96px;" alt="{{ mentor.full_name }}">
+                            {% else %}
+                            <div class="mentor-avatar-initials" style="width: 96px; height: 96px; font-size: 2rem;">
+                                {{ mentor.full_name|slice:":2"|upper }}
+                            </div>
+                            {% endif %}
+
+                            <div class="flex-grow-1 text-center text-md-start">
+                                <div class="d-flex flex-column flex-md-row align-items-center gap-2 mb-1">
+                                    <h1 class="h3 fw-bold text-body mb-0">{{ mentor.full_name }}</h1>
+                                    {% if mentor.verified %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.75rem;">
+                                        <i class="bi bi-patch-check-fill me-1"></i> Verified Expert
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-primary fw-medium mb-2">{{ mentor.designation }} at <strong class="text-body">{{ mentor.company }}</strong></div>
+
+                                <div class="d-flex flex-wrap justify-content-center justify-content-md-start align-items-center gap-3 small text-muted">
+                                    <span class="d-flex align-items-center gap-1">
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <strong class="text-body">{{ mentor.rating|default:"0.0" }}</strong>
+                                        <span>({{ mentor.total_reviews }} reviews)</span>
+                                    </span>
+                                    <span>·</span>
+                                    <span><i class="bi bi-geo-alt me-1"></i>{{ mentor.current_location }}</span>
+                                    <span>·</span>
+                                    <span><i class="bi bi-briefcase me-1"></i>{{ mentor.experience_years }} Years Experience</span>
+                                </div>
+                            </div>
+
+                            {% if match_score is not None %}
+                            <div class="text-center p-3 border rounded-3 bg-success-subtle border-success-subtle flex-shrink-0" style="min-width: 110px;">
+                                <div class="h3 fw-bold text-success mb-0">{{ match_score }}%</div>
+                                <small class="text-success fw-semibold" style="font-size: 0.75rem;">Profile Match</small>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    {% empty %}
-                    <p class="text-muted small text-center my-0">No specific slots configured. General slots: {{ mentor.available_days }} ({{ mentor.available_time_slots }})</p>
-                    {% endfor %}
+
+                    <!-- Career Bio Card -->
+                    <div class="community-card mb-4">
+                        <div class="community-card-header">
+                            <h2 class="community-card-title">
+                                <i class="bi bi-person-lines-fill text-primary"></i> Professional Overview
+                            </h2>
+                        </div>
+                        <div class="text-body lh-base mb-4" style="white-space: pre-wrap; font-size: 0.95rem;">{{ mentor.bio }}</div>
+
+                        <div class="row g-3 pt-3 border-top">
+                            <div class="col-md-6">
+                                <span class="small fw-semibold text-body d-block mb-2">Target Domains</span>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    {% for dom in mentor.get_domains_list %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.75rem;">{{ dom }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="small fw-semibold text-body d-block mb-2">Technical Skills</span>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    {% for skill in mentor.get_skills_list %}
+                                    <span class="project-tag">{{ skill }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Reviews Card -->
+                    <div class="community-card">
+                        <div class="community-card-header">
+                            <h2 class="community-card-title">
+                                <i class="bi bi-star-half text-warning"></i> Mentee Feedback &amp; Reviews
+                            </h2>
+                        </div>
+                        <div class="d-flex flex-column gap-3">
+                            {% for rev in reviews %}
+                            <div class="p-3 border rounded-3 bg-body-tertiary">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="fw-semibold text-body small">{{ rev.student.username }}</span>
+                                    <span class="text-warning small">
+                                        {% for i in "12345"|make_list %}
+                                            {% if forloop.counter <= rev.rating %}★{% else %}☆{% endif %}
+                                        {% endfor %}
+                                    </span>
+                                </div>
+                                <p class="text-muted small mb-1">{{ rev.comment }}</p>
+                                <span class="text-muted text-opacity-75" style="font-size: 0.7rem;">{{ rev.created_at|date:"M d, Y" }}</span>
+                            </div>
+                            {% empty %}
+                            <div class="text-center py-4 text-muted">
+                                <p class="mb-0">No reviews recorded yet for this mentor.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Book Session Button -->
-                {% if mentor.user == request.user %}
-                <button class="btn btn-outline-secondary rounded-pill w-100 py-2" disabled>This is you</button>
-                {% else %}
-                <button class="btn btn-primary-custom rounded-pill w-100 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#bookingModal">
-                    <i class="bi bi-calendar-event"></i> Book Mentorship Session
-                </button>
-                {% if has_accepted_booking %}
-                <a href="{% url 'community:mentor_chat' mentor.user.id %}" class="btn btn-outline-success rounded-pill w-100 py-2 mt-2 fw-bold">
-                    <i class="bi bi-chat-dots"></i> Message Mentor
-                </a>
-                {% else %}
-                <button class="btn btn-outline-secondary rounded-pill w-100 py-2 mt-2 fw-bold" disabled data-bs-toggle="tooltip" title="Chat option is locked until a booking request is accepted.">
-                    <i class="bi bi-lock-fill"></i> Message Mentor (Locked)
-                </button>
-                {% endif %}
-                {% endif %}
+                <!-- Right Sidebar Column: Booking & Session Rules -->
+                <div class="col-lg-4">
+                    <!-- Session Action Card -->
+                    <div class="community-card mb-4">
+                        <h2 class="h6 fw-bold text-body mb-3">Book Mentorship Session</h2>
+
+                        <div class="d-flex flex-column gap-2 mb-4 small text-muted">
+                            <div class="d-flex justify-content-between">
+                                <span><i class="bi bi-translate me-2 text-primary"></i>Languages:</span>
+                                <strong class="text-body">{{ mentor.languages }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span><i class="bi bi-laptop me-2 text-primary"></i>Format:</span>
+                                <strong class="text-body">{{ mentor.mentorship_type }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span><i class="bi bi-clock me-2 text-primary"></i>Weekly Cap:</span>
+                                <strong class="text-body">{{ mentor.max_sessions_per_week }} sessions/wk</strong>
+                            </div>
+                        </div>
+
+                        <!-- Social Handles -->
+                        <div class="d-flex gap-2 mb-3">
+                            {% if mentor.linkedin_url %}
+                            <a href="{{ mentor.linkedin_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm flex-fill" title="LinkedIn">
+                                <i class="bi bi-linkedin"></i>
+                            </a>
+                            {% endif %}
+                            {% if mentor.github_url %}
+                            <a href="{{ mentor.github_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm flex-fill" title="GitHub">
+                                <i class="bi bi-github"></i>
+                            </a>
+                            {% endif %}
+                            {% if mentor.portfolio_url %}
+                            <a href="{{ mentor.portfolio_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm flex-fill" title="Portfolio">
+                                <i class="bi bi-globe"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+
+                        {% if mentor.resume %}
+                        <a href="{{ mentor.resume.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm w-100 mb-3">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> View Resume PDF
+                        </a>
+                        {% endif %}
+
+                        <!-- Booking Action Buttons -->
+                        {% if mentor.user == request.user %}
+                        <button class="btn btn-outline-secondary btn-sm w-100" disabled>You cannot book with yourself</button>
+                        {% else %}
+                        <button class="btn btn-primary btn-sm w-100 py-2 fw-medium mb-2" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                            <i class="bi bi-calendar-plus me-1"></i> Request Mentorship Session
+                        </button>
+
+                        {% if has_accepted_booking %}
+                        <a href="{% url 'community:mentor_chat' mentor.user.id %}" class="btn btn-success btn-sm w-100 py-2 fw-medium">
+                            <i class="bi bi-chat-dots me-1"></i> Open Direct Chat
+                        </a>
+                        {% else %}
+                        <button class="btn btn-outline-secondary btn-sm w-100 py-2 text-muted" disabled title="Messaging unlocks once the mentor accepts a booking request.">
+                            <i class="bi bi-lock-fill me-1"></i> Direct Chat (Locked until accepted)
+                        </button>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Available Time Windows Card -->
+                    <div class="community-card">
+                        <div class="community-card-header">
+                            <h2 class="community-card-title">
+                                <i class="bi bi-calendar-week text-primary"></i> Available Windows
+                            </h2>
+                        </div>
+                        <div class="d-flex flex-column gap-2">
+                            {% for avail in availabilities %}
+                            <div class="p-2 px-3 border rounded-3 bg-body-tertiary d-flex align-items-center justify-content-between">
+                                <span class="small fw-semibold text-body">{{ avail.day }}</span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                    {{ avail.start_time|time:"g:i A" }} - {{ avail.end_time|time:"g:i A" }}
+                                </span>
+                            </div>
+                            {% empty %}
+                            <div class="text-center py-3 text-muted small">
+                                General windows: {{ mentor.available_days|default:"Flexible" }} ({{ mentor.available_time_slots|default:"By appointment" }})
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
 
 <!-- Booking Modal Form Dialog -->
 <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 p-3">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold text-secondary" id="bookingModalLabel">Book a Session with {{ mentor.full_name }}</h5>
+        <div class="modal-content border shadow-sm">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold text-body" id="bookingModalLabel">
+                    Request Session with {{ mentor.full_name }}
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             
             <form method="POST" action="{% url 'community:book_session' mentor.id %}">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <p class="text-muted small mb-4">Propose a suitable date and time slot from the mentor's available windows below.</p>
+                    <p class="text-muted small mb-3">
+                        Propose a date and start time based on the mentor's availability calendar.
+                    </p>
                     
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary small">Session Date</label>
+                        <label class="form-label small fw-semibold text-body">Requested Date</label>
                         {{ booking_form.requested_date }}
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary small">Session Time</label>
+                        <label class="form-label small fw-semibold text-body">Requested Time</label>
                         {{ booking_form.requested_time }}
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary small">Discussion Topic Category</label>
+                        <label class="form-label small fw-semibold text-body">Session Objective / Topic</label>
                         {{ booking_form.purpose }}
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary small">Detailed Message</label>
+                        <label class="form-label small fw-semibold text-body">Message / What would you like guidance on?</label>
                         {{ booking_form.student_message }}
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">Submit Booking Request</button>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-3 fw-medium">Submit Request</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+});
+</script>
 {% endblock %}

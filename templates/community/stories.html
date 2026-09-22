@@ -1,56 +1,145 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Career Success Stories - Career Catalyst{% endblock %}
+{% block title %}Career Success Stories — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'community:hub' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Community Hub
-        </a>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
 
-    <div class="mb-5">
-        <h1 class="fw-bold mb-1">Career Success Stories</h1>
-        <p class="text-muted">Read how past students landed placements at top tech organizations. Get tips, resume feedback advice, and interview structures.</p>
-    </div>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-    <div class="row g-4">
-        {% for story in stories %}
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden d-flex flex-column hover-lift">
-                <div class="card-body p-4 d-flex flex-column">
-                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 align-self-start mb-3">
-                        Placed in {{ story.grad_year }}
-                    </span>
-                    
-                    <h4 class="fw-bold text-secondary mb-1">{{ story.title }}</h4>
-                    <span class="text-primary small fw-semibold mb-3 d-block">{{ story.author_name }} &middot; {{ story.placed_role }} at {{ story.placed_company }}</span>
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
 
-                    <p class="text-muted small lh-lg flex-grow-1" style="white-space: pre-wrap;">{{ story.content }}</p>
-                    
-                    <div class="border-top pt-3 mt-4 text-muted small">
-                        <i class="bi bi-check-circle-fill text-success"></i> Verified placement by Career Catalyst
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header mb-4">
+                <div class="community-breadcrumbs">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:hub' %}">Community</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>Success Stories</span>
+                </div>
+                <h1 class="community-title">Career Success Stories</h1>
+                <p class="community-subtitle">
+                    Read how CareerCatalyst students cracked technical interviews, built standout portfolios, and secured offers at top tech firms.
+                </p>
+            </div>
+
+            <!-- Workspace Navigation Tabs -->
+            <nav class="community-nav-tabs" aria-label="Community Sections">
+                <a href="{% url 'community:hub' %}" class="community-nav-tab">
+                    <i class="bi bi-house-door"></i> Hub Overview
+                </a>
+                <a href="{% url 'community:forum_list' %}" class="community-nav-tab">
+                    <i class="bi bi-chat-left-text"></i> Discussions
+                </a>
+                <a href="{% url 'community:project_list' %}" class="community-nav-tab">
+                    <i class="bi bi-code-slash"></i> Projects
+                </a>
+                <a href="{% url 'community:story_list' %}" class="community-nav-tab active">
+                    <i class="bi bi-award"></i> Success Stories
+                </a>
+                <a href="{% url 'community:mentor_list' %}" class="community-nav-tab">
+                    <i class="bi bi-people"></i> Mentors Directory
+                </a>
+                <a href="{% url 'community:student_bookings' %}" class="community-nav-tab">
+                    <i class="bi bi-calendar-check"></i> My Bookings
+                </a>
+            </nav>
+
+            <!-- Stories Grid -->
+            <div class="row g-4 mb-4">
+                {% for story in stories %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="community-card h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Class of {{ story.grad_year }}
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1">
+                                    {{ story.placed_company }}
+                                </span>
+                            </div>
+
+                            <h2 class="h5 fw-bold text-body mb-2">{{ story.title }}</h2>
+
+                            <div class="small fw-medium text-primary mb-3">
+                                {{ story.author_name }} · <span class="text-muted">{{ story.placed_role }}</span>
+                            </div>
+
+                            <p class="text-muted small lh-base mb-4" style="white-space: pre-wrap;">{{ story.content }}</p>
+                        </div>
+
+                        <div class="pt-3 border-top d-flex align-items-center justify-content-between text-muted small">
+                            <span class="d-flex align-items-center gap-1">
+                                <i class="bi bi-patch-check-fill text-success"></i> Verified Student Offer
+                            </span>
+                        </div>
                     </div>
                 </div>
+                {% empty %}
+                <div class="col-12 text-center py-5 text-muted community-card">
+                    <i class="bi bi-award display-4 mb-3 d-block text-body-tertiary"></i>
+                    <h5 class="fw-semibold text-body">No placement stories published yet</h5>
+                    <p class="text-muted mb-0">Success stories will appear here once candidates share their offer experiences.</p>
+                </div>
+                {% endfor %}
             </div>
-        </div>
-        {% empty %}
-        <div class="col-12 text-center py-5 text-muted">
-            No success stories published yet. Run `python manage.py seed_community` to populate.
-        </div>
-        {% endfor %}
+        </main>
     </div>
 </div>
+{% endblock %}
 
-<style>
-    .hover-lift {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
     }
-    .hover-lift:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
-    }
-</style>
+});
+</script>
 {% endblock %}

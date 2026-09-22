@@ -1,50 +1,148 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Ask a Question - Career Catalyst{% endblock %}
+{% block title %}Start Discussion — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-                <div class="mb-3">
-                    <a href="{% url 'community:forum_list' %}" class="btn-back">
-                        <i class="bi bi-arrow-left"></i> Back to Discussions
-                    </a>
-                </div>
-                
-                <h2 class="fw-bold mb-2">Ask a Question</h2>
-                <p class="text-muted mb-4">Start a discussion with peers and mentors. Share your thoughts or issues.</p>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
 
-                <form method="POST" action="{% url 'community:create_thread' %}">
-                    {% csrf_token %}
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary">Topic Category</label>
-                        <select name="category" class="form-select rounded-pill px-3 py-2" required>
-                            <option value="" disabled selected>Select category...</option>
-                            {% for cat in categories %}
-                            <option value="{{ cat.id }}">{{ cat.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary">Discussion Title</label>
-                        <input type="text" class="form-control rounded-pill px-3 py-2" name="title" required placeholder="e.g. Tips for passing off-campus Django screening rounds?">
-                    </div>
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-secondary">Content Details</label>
-                        <textarea class="form-control rounded-4 p-3" name="content" rows="6" required placeholder="Describe your question or problem statement in detail..."></textarea>
-                    </div>
-
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary-custom btn-lg rounded-pill py-2 fw-bold">Post Discussion</button>
-                    </div>
-                </form>
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
             </div>
-        </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header mb-4">
+                <div class="community-breadcrumbs">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:hub' %}">Community</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:forum_list' %}">Forum</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>New Thread</span>
+                </div>
+                <h1 class="community-title">Start a Discussion Thread</h1>
+                <p class="community-subtitle">
+                    Post questions regarding system design, coding challenges, interview experiences, or general career transitions.
+                </p>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="community-card">
+                        <form method="POST" action="{% url 'community:create_thread' %}">
+                            {% csrf_token %}
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-body small">Topic Category <span class="text-danger">*</span></label>
+                                <select name="category" class="form-select" required>
+                                    <option value="" disabled selected>Select an appropriate category...</option>
+                                    {% for cat in categories %}
+                                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-body small">Discussion Title <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="title" required placeholder="e.g., Best strategies for optimizing PostgreSQL queries in Django REST framework">
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-body small">Problem Details & Context <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="content" rows="7" required placeholder="Provide code snippets, specific error messages, or detailed context so mentors and peers can give precise feedback..."></textarea>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                                <a href="{% url 'community:forum_list' %}" class="btn btn-outline-secondary btn-sm px-3 py-2">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-sm px-4 py-2 fw-medium">
+                                    <i class="bi bi-send me-1"></i> Post Discussion
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="community-card">
+                        <div class="community-card-header">
+                            <h2 class="community-card-title">
+                                <i class="bi bi-info-circle text-primary"></i> Posting Guidelines
+                            </h2>
+                        </div>
+                        <ul class="list-unstyled small text-muted d-flex flex-column gap-2 mb-0">
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check2 text-success mt-0.5"></i>
+                                <span>Be specific and formulate clear titles describing the technical challenge.</span>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check2 text-success mt-0.5"></i>
+                                <span>Include minimal reproducible examples or system logs when asking coding questions.</span>
+                            </li>
+                            <li class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check2 text-success mt-0.5"></i>
+                                <span>Respect community standards and peer feedback.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+});
+</script>
 {% endblock %}

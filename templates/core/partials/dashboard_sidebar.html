@@ -51,11 +51,11 @@
         <!-- COMMUNITY -->
         <div class="dash-nav-group">
             <span class="dash-nav-label">Community</span>
-            <a href="{% url 'community:hub' %}" class="dash-nav-link {% if 'community' in request.path and 'mentor' not in request.path %}active{% endif %}">
+            <a href="{% url 'community:hub' %}" class="dash-nav-link {% if 'community' in request.path and 'mentor' not in request.path and 'booking' not in request.path and 'admin/verify' not in request.path %}active{% endif %}">
                 <i class="bi bi-people"></i>
                 <span>Community</span>
             </a>
-            <a href="{% url 'community:mentor_list' %}" class="dash-nav-link {% if 'mentor' in request.path %}active{% endif %}">
+            <a href="{% url 'community:mentor_list' %}" class="dash-nav-link {% if 'mentor' in request.path or 'booking' in request.path or 'admin/verify' in request.path %}active{% endif %}">
                 <i class="bi bi-person-workspace"></i>
                 <span>Mentors</span>
             </a>

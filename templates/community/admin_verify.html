@@ -1,143 +1,260 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Mentor Verification Dashboard - Career Catalyst{% endblock %}
+{% block title %}Mentor Verification Panel — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5 mt-5">
-    <div class="mb-5">
-        <a href="{% url 'community:mentor_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
-            <i class="bi bi-arrow-left"></i> Marketplace
-        </a>
-        <h1 class="fw-bold mb-1">Mentor Verification Panel</h1>
-        <p class="text-muted">Admin panel to review and verify incoming professional registrations.</p>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
 
-    <!-- Pending Verification Applications -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5">
-        <h3 class="fw-bold text-secondary mb-4"><i class="bi bi-clock-history text-warning"></i> Pending Verification Applications</h3>
-        
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead>
-                    <tr class="text-secondary small">
-                        <th>Name</th>
-                        <th>Job details</th>
-                        <th>Location</th>
-                        <th>Credentials Links</th>
-                        <th>General Slots</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in pending %}
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                {% if p.profile_photo %}
-                                <img src="{{ p.profile_photo.url }}" class="rounded-circle me-2 object-fit-cover" style="width: 40px; height: 40px;" alt="{{ p.full_name }}">
-                                {% else %}
-                                <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-2 text-primary"><i class="bi bi-person"></i></div>
-                                {% endif %}
-                                <div>
-                                    <span class="fw-bold d-block text-secondary">{{ p.full_name }}</span>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header mb-4">
+                <div class="community-breadcrumbs">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'community:mentor_list' %}">Mentors</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>Admin Review Panel</span>
+                </div>
+                <h1 class="community-title">Mentor Verification Panel</h1>
+                <p class="community-subtitle">
+                    Staff administration console to review, verify, approve, or suspend mentor marketplace applications.
+                </p>
+            </div>
+
+            <!-- Pending Applications Card -->
+            <div class="community-card p-0 overflow-hidden mb-4">
+                <div class="p-3 px-4 border-bottom bg-body-tertiary d-flex align-items-center justify-content-between">
+                    <h2 class="h6 fw-bold text-body mb-0">
+                        <i class="bi bi-clock-history text-warning me-1"></i> Pending Verification Queue ({{ pending.count }})
+                    </h2>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table admin-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Candidate Mentor</th>
+                                <th>Role &amp; Experience</th>
+                                <th>Location</th>
+                                <th>Profile Links</th>
+                                <th>Availability</th>
+                                <th class="text-end">Verification Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in pending %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        {% if p.profile_photo %}
+                                        <img src="{{ p.profile_photo.url }}" class="mentor-avatar" style="width: 38px; height: 38px;" alt="{{ p.full_name }}">
+                                        {% else %}
+                                        <div class="mentor-avatar-initials" style="width: 38px; height: 38px; font-size: 0.85rem;">
+                                            {{ p.full_name|slice:":2"|upper }}
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <span class="fw-semibold text-body d-block">{{ p.full_name }}</span>
+                                            <small class="text-muted">{{ p.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-medium text-body d-block">{{ p.designation }}</span>
+                                    <small class="text-primary">{{ p.company }} · {{ p.experience_years }} yrs</small>
+                                </td>
+                                <td class="small text-muted">{{ p.current_location }}</td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        {% if p.linkedin_url %}
+                                        <a href="{{ p.linkedin_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm py-0 px-2" title="LinkedIn">
+                                            <i class="bi bi-linkedin"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if p.github_url %}
+                                        <a href="{{ p.github_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm py-0 px-2" title="GitHub">
+                                            <i class="bi bi-github"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if p.resume %}
+                                        <a href="{{ p.resume.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Resume">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="small text-muted">
+                                    {{ p.available_days|truncatechars:18 }} · {{ p.available_time_slots|truncatechars:18 }}
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        <form method="POST" action="{% url 'community:admin_action' p.id 'approve' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-success btn-sm px-3 fw-medium">
+                                                <i class="bi bi-check-lg me-1"></i> Approve
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{% url 'community:admin_action' p.id 'reject' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-danger btn-sm px-3">
+                                                <i class="bi bi-x-lg me-1"></i> Reject
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    No pending mentor verification requests at this time.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Existing Mentors Roster Card -->
+            <div class="community-card p-0 overflow-hidden">
+                <div class="p-3 px-4 border-bottom bg-body-tertiary d-flex align-items-center justify-content-between">
+                    <h2 class="h6 fw-bold text-body mb-0">
+                        <i class="bi bi-patch-check-fill text-success me-1"></i> All Registered Mentors ({{ all_mentors.count }})
+                    </h2>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table admin-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Mentor Name</th>
+                                <th>Company &amp; Role</th>
+                                <th>Rating</th>
+                                <th>Account Status</th>
+                                <th class="text-end">Administrative Controls</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in all_mentors %}
+                            <tr>
+                                <td>
+                                    <span class="fw-semibold text-body d-block">{{ p.full_name }}</span>
                                     <small class="text-muted">{{ p.email }}</small>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="fw-semibold text-secondary d-block">{{ p.designation }}</span>
-                            <small class="text-primary">{{ p.company }} &middot; {{ p.experience_years }} Yrs Exp</small>
-                        </td>
-                        <td class="small text-muted">{{ p.current_location }}</td>
-                        <td>
-                            <div class="d-flex gap-2">
-                                {% if p.linkedin_url %}
-                                <a href="{{ p.linkedin_url }}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill px-2 py-1 small">LinkedIn</a>
-                                {% endif %}
-                                {% if p.github_url %}
-                                <a href="{{ p.github_url }}" target="_blank" class="btn btn-outline-dark btn-sm rounded-pill px-2 py-1 small">GitHub</a>
-                                {% endif %}
-                                {% if p.resume %}
-                                <a href="{{ p.resume.url }}" target="_blank" class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1 small"><i class="bi bi-file-pdf"></i> Resume</a>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td class="small text-muted">
-                            {{ p.available_days|truncatechars:20 }} &middot; {{ p.available_time_slots|truncatechars:20 }}
-                        </td>
-                        <td class="text-end">
-                            <div class="d-flex gap-2 justify-content-end">
-                                <a href="{% url 'community:admin_action' p.id 'approve' %}" class="btn btn-success btn-sm rounded-pill px-3">Approve</a>
-                                <a href="{% url 'community:admin_action' p.id 'reject' %}" class="btn btn-outline-danger btn-sm rounded-pill px-3">Reject</a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">No pending applications found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Active/Verified Mentors Database -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-        <h3 class="fw-bold text-secondary mb-4"><i class="bi bi-patch-check-fill text-success"></i> Active / Verified Mentors Database</h3>
-        
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead>
-                    <tr class="text-secondary small">
-                        <th>Mentor</th>
-                        <th>Company & Role</th>
-                        <th>Rating</th>
-                        <th>Current Status</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in all_mentors %}
-                    <tr>
-                        <td>
-                            <span class="fw-bold text-secondary d-block">{{ p.full_name }}</span>
-                            <small class="text-muted">{{ p.email }}</small>
-                        </td>
-                        <td>
-                            <span class="fw-semibold text-secondary d-block">{{ p.designation }}</span>
-                            <small class="text-primary">{{ p.company }}</small>
-                        </td>
-                        <td>
-                            <span class="text-warning"><i class="bi bi-star-fill"></i> {{ p.rating|default:"0.0" }}</span>
-                        </td>
-                        <td>
-                            {% if p.status == 'Approved' %}
-                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-bold">Approved</span>
-                            {% elif p.status == 'Blocked' %}
-                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-1 fw-bold">Blocked</span>
-                            {% elif p.status == 'Rejected' %}
-                            <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1 fw-bold">Rejected</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-end">
-                            <div class="d-flex gap-2 justify-content-end">
-                                {% if p.status == 'Approved' %}
-                                <a href="{% url 'community:admin_action' p.id 'block' %}" class="btn btn-outline-danger btn-sm rounded-pill px-3">Block</a>
-                                {% else %}
-                                <a href="{% url 'community:admin_action' p.id 'approve' %}" class="btn btn-success btn-sm rounded-pill px-3">Activate</a>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">No other mentors found in database.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                                </td>
+                                <td>
+                                    <span class="text-body d-block">{{ p.designation }}</span>
+                                    <small class="text-muted">{{ p.company }}</small>
+                                </td>
+                                <td>
+                                    <span class="d-flex align-items-center gap-1 text-warning small">
+                                        <i class="bi bi-star-fill"></i>
+                                        <strong class="text-body">{{ p.rating|default:"0.0" }}</strong>
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if p.status == 'Approved' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1">
+                                        Approved &amp; Active
+                                    </span>
+                                    {% elif p.status == 'Blocked' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1">
+                                        Blocked
+                                    </span>
+                                    {% elif p.status == 'Rejected' %}
+                                    <span class="badge bg-secondary-subtle text-muted border px-2.5 py-1">
+                                        Rejected
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        {% if p.status == 'Approved' %}
+                                        <form method="POST" action="{% url 'community:admin_action' p.id 'block' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-danger btn-sm px-3">
+                                                Block Access
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <form method="POST" action="{% url 'community:admin_action' p.id 'approve' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-success btn-sm px-3">
+                                                Re-activate
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    No mentors registered in database yet.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+});
+</script>
 {% endblock %}
