@@ -11,6 +11,23 @@ from .forms import JobApplicationForm
 from .services import parse_job_url, generate_follow_up_email
 
 
+def get_user_sidebar_context(user):
+    """
+    Helper to provide consistent sidebar user badge and career context
+    across the Job Tracker workspace.
+    """
+    profile = getattr(user, 'studentprofile', None)
+    first_initial = (user.first_name[:1] if user.first_name else user.username[:1]).upper()
+    last_initial = (user.last_name[:1] if user.last_name else "").upper()
+    user_initials = f"{first_initial}{last_initial}" if last_initial else (user.username[:2].upper())
+    target_career = profile.career_goal.strip() if (profile and profile.career_goal) else ""
+    return {
+        'profile': profile,
+        'user_initials': user_initials,
+        'target_career': target_career,
+    }
+
+
 @login_required
 def kanban_view(request):
     """
@@ -51,15 +68,16 @@ def kanban_view(request):
     follow_up_needed_count = sum(1 for a in all_apps if a.needs_follow_up)
     ghosted_count = sum(1 for a in all_apps if a.is_ghosted)
     
-    # Column Grouping
+    # Column Grouping (All 8 Statuses Represented)
     column_definitions = [
         {'id': 'bookmarked', 'title': 'Bookmarked', 'icon': 'bi-bookmark', 'badge': 'secondary'},
         {'id': 'applied', 'title': 'Applied', 'icon': 'bi-send', 'badge': 'primary'},
         {'id': 'referral_requested', 'title': 'Referral Requested', 'icon': 'bi-people', 'badge': 'info'},
         {'id': 'assessment', 'title': 'Assessment / OA', 'icon': 'bi-code-slash', 'badge': 'warning'},
-        {'id': 'interview', 'title': 'Interview', 'icon': 'bi-chat-dots', 'badge': 'primary'},
+        {'id': 'interview', 'title': 'Interviewing', 'icon': 'bi-chat-dots', 'badge': 'primary'},
         {'id': 'offer', 'title': 'Offer Received', 'icon': 'bi-trophy-fill', 'badge': 'success'},
-        {'id': 'rejected', 'title': 'Rejected / Closed', 'icon': 'bi-x-circle', 'badge': 'danger'},
+        {'id': 'rejected', 'title': 'Rejected', 'icon': 'bi-x-circle', 'badge': 'danger'},
+        {'id': 'withdrawn', 'title': 'Withdrawn', 'icon': 'bi-arrow-return-left', 'badge': 'secondary'},
     ]
     
     columns = []
@@ -78,6 +96,7 @@ def kanban_view(request):
     
     context = {
         'columns': columns,
+        'all_apps': all_apps,
         'form': form,
         'total_apps': total_apps,
         'response_rate': response_rate,
@@ -89,6 +108,7 @@ def kanban_view(request):
         'job_type_filter': job_type_filter,
         'job_type_choices': JobApplication.JOB_TYPE_CHOICES,
         'status_choices': JobApplication.STATUS_CHOICES,
+        **get_user_sidebar_context(request.user),
     }
     
     return render(request, 'tracker/kanban.html', context)

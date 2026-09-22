@@ -1,0 +1,665 @@
+/* ==========================================================================
+   CareerCatalyst Job Tracker — static/css/tracker.css
+   Clean · Professional · Educational · Fast CRM
+   Reuses dashboard design tokens: --dash-bg, --dash-surface, --dash-primary, etc.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. HEADER & BREADCRUMBS
+   -------------------------------------------------------------------------- */
+.tracker-header {
+    margin-bottom: 1.5rem;
+}
+
+.tracker-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.tracker-breadcrumbs a {
+    color: var(--dash-text-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.tracker-breadcrumbs a:hover {
+    color: var(--dash-primary);
+}
+
+.tracker-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    letter-spacing: -0.02em;
+    margin: 0 0 0.25rem 0;
+}
+
+.tracker-subtitle {
+    font-size: 0.875rem;
+    color: var(--dash-text-muted);
+    margin: 0;
+    max-width: 720px;
+    line-height: 1.45;
+}
+
+/* --------------------------------------------------------------------------
+   2. SUMMARY METRICS ROW
+   -------------------------------------------------------------------------- */
+.tracker-metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 992px) {
+    .tracker-metrics-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .tracker-metrics-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.tracker-metric-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--dash-shadow-card);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.tracker-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    border-color: var(--dash-border-strong);
+}
+
+.tracker-metric-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.tracker-metric-icon.primary {
+    background: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+    border: 1px solid var(--dash-primary-border);
+}
+
+.tracker-metric-icon.info {
+    background: rgba(14, 165, 233, 0.1);
+    color: #0284c7;
+    border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.tracker-metric-icon.success {
+    background: var(--dash-success-subtle);
+    color: var(--dash-success);
+    border: 1px solid var(--dash-success-border);
+}
+
+.tracker-metric-icon.warning {
+    background: var(--dash-warning-subtle);
+    color: var(--dash-warning);
+    border: 1px solid var(--dash-warning-border);
+}
+
+.tracker-metric-icon.muted {
+    background: var(--dash-surface-muted);
+    color: var(--dash-text-muted);
+    border: 1px solid var(--dash-border);
+}
+
+.tracker-metric-val {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    line-height: 1.2;
+}
+
+.tracker-metric-label {
+    font-size: 0.775rem;
+    color: var(--dash-text-muted);
+    font-weight: 500;
+    margin-top: 0.15rem;
+}
+
+.tracker-metric-sub {
+    font-size: 0.75rem;
+    color: var(--dash-text-subtle);
+    font-weight: normal;
+}
+
+/* --------------------------------------------------------------------------
+   3. TOOLBAR & CONTROLS
+   -------------------------------------------------------------------------- */
+.tracker-toolbar {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 0.875rem 1.125rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--dash-shadow-sm);
+}
+
+.tracker-search-input {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    color: var(--dash-text);
+    border-radius: var(--dash-radius, 8px);
+    font-size: 0.85rem;
+    padding: 0.45rem 0.75rem;
+}
+
+.tracker-search-input:focus {
+    background: var(--dash-surface);
+    border-color: var(--dash-primary);
+    color: var(--dash-text);
+    box-shadow: 0 0 0 3px var(--dash-primary-subtle);
+}
+
+.tracker-select {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    color: var(--dash-text);
+    border-radius: var(--dash-radius, 8px);
+    font-size: 0.85rem;
+    padding: 0.45rem 2rem 0.45rem 0.75rem;
+}
+
+.tracker-select:focus {
+    background: var(--dash-surface);
+    border-color: var(--dash-primary);
+    color: var(--dash-text);
+    box-shadow: 0 0 0 3px var(--dash-primary-subtle);
+}
+
+.tracker-view-toggle {
+    display: inline-flex;
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    padding: 2px;
+}
+
+.tracker-view-btn {
+    border: none;
+    background: transparent;
+    color: var(--dash-text-muted);
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tracker-view-btn:hover {
+    color: var(--dash-text);
+}
+
+.tracker-view-btn.active {
+    background: var(--dash-surface);
+    color: var(--dash-primary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   4. KANBAN BOARD CONTAINER & COLUMNS
+   -------------------------------------------------------------------------- */
+.tracker-board {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 1.5rem;
+    min-height: calc(100vh - 360px);
+    align-items: flex-start;
+    scrollbar-width: thin;
+    scrollbar-color: var(--dash-border-strong) transparent;
+}
+
+.tracker-board::-webkit-scrollbar {
+    height: 8px;
+}
+
+.tracker-board::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tracker-board::-webkit-scrollbar-thumb {
+    background: var(--dash-border-strong);
+    border-radius: 4px;
+}
+
+.tracker-column {
+    flex: 0 0 310px;
+    width: 310px;
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 260px);
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tracker-column.drag-over {
+    background: var(--dash-primary-subtle);
+    border: 2px dashed var(--dash-primary);
+    box-shadow: 0 0 0 3px var(--dash-primary-subtle);
+}
+
+.tracker-column-header {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid var(--dash-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--dash-surface);
+    border-top-left-radius: var(--dash-radius-lg, 10px);
+    border-top-right-radius: var(--dash-radius-lg, 10px);
+}
+
+.tracker-column-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dash-text);
+}
+
+.tracker-column-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+
+.tracker-column-badge.badge-bookmarked {
+    background: var(--dash-surface-muted);
+    color: var(--dash-text-muted);
+    border-color: var(--dash-border);
+}
+
+.tracker-column-badge.badge-applied {
+    background: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+    border-color: var(--dash-primary-border);
+}
+
+.tracker-column-badge.badge-referral_requested {
+    background: rgba(14, 165, 233, 0.1);
+    color: #0284c7;
+    border-color: rgba(14, 165, 233, 0.25);
+}
+
+.tracker-column-badge.badge-assessment {
+    background: var(--dash-warning-subtle);
+    color: var(--dash-warning);
+    border-color: var(--dash-warning-border);
+}
+
+.tracker-column-badge.badge-interview {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
+.tracker-column-badge.badge-offer {
+    background: var(--dash-success-subtle);
+    color: var(--dash-success);
+    border-color: var(--dash-success-border);
+}
+
+.tracker-column-badge.badge-rejected {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+.tracker-column-badge.badge-withdrawn {
+    background: var(--dash-surface-muted);
+    color: var(--dash-text-muted);
+    border-color: var(--dash-border);
+}
+
+.tracker-column-body {
+    padding: 0.75rem;
+    overflow-y: auto;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 120px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--dash-border) transparent;
+}
+
+.tracker-col-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--dash-text-subtle);
+    font-size: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+}
+
+.tracker-col-empty i {
+    font-size: 1.5rem;
+    opacity: 0.4;
+}
+
+/* --------------------------------------------------------------------------
+   5. KANBAN CARDS
+   -------------------------------------------------------------------------- */
+.tracker-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    padding: 0.875rem;
+    box-shadow: var(--dash-shadow-sm);
+    cursor: grab;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    position: relative;
+    user-select: none;
+}
+
+.tracker-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--dash-primary);
+}
+
+.tracker-card.dragging {
+    opacity: 0.45;
+    cursor: grabbing;
+    transform: scale(0.98);
+}
+
+.tracker-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.tracker-card-company {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--dash-text);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.tracker-card-role {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dash-primary);
+    line-height: 1.3;
+    margin-top: 0.1rem;
+}
+
+.tracker-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0.5rem 0;
+}
+
+.tracker-card-tag {
+    font-size: 0.7rem;
+    background: var(--dash-surface-muted);
+    color: var(--dash-text-muted);
+    border: 1px solid var(--dash-border);
+    border-radius: 4px;
+    padding: 0.15rem 0.45rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.tracker-card-tag.tag-salary {
+    color: var(--dash-success);
+    background: var(--dash-success-subtle);
+    border-color: var(--dash-success-border);
+}
+
+.tracker-card-alert {
+    padding: 0.35rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.725rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+}
+
+.tracker-card-alert.alert-followup {
+    background: var(--dash-warning-subtle);
+    border: 1px solid var(--dash-warning-border);
+    color: var(--dash-warning);
+}
+
+.tracker-card-alert.alert-ghosted {
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    color: var(--dash-text-muted);
+}
+
+.tracker-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--dash-border);
+    font-size: 0.725rem;
+    color: var(--dash-text-subtle);
+    margin-top: 0.25rem;
+}
+
+.tracker-interview-badge {
+    color: var(--dash-primary);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   6. LIST / TABLE VIEW
+   -------------------------------------------------------------------------- */
+.tracker-list-view {
+    display: none;
+}
+
+.tracker-table-container {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    overflow: hidden;
+    box-shadow: var(--dash-shadow-sm);
+}
+
+.tracker-table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: collapse;
+}
+
+.tracker-table th {
+    background: var(--dash-surface-muted);
+    color: var(--dash-text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.tracker-table td {
+    padding: 0.875rem 1rem;
+    font-size: 0.85rem;
+    color: var(--dash-text);
+    border-bottom: 1px solid var(--dash-border);
+    vertical-align: middle;
+}
+
+.tracker-table tr:hover td {
+    background: var(--dash-surface-hover);
+}
+
+.tracker-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* --------------------------------------------------------------------------
+   7. EMPTY STATES
+   -------------------------------------------------------------------------- */
+.tracker-empty-state {
+    background: var(--dash-surface);
+    border: 1px dashed var(--dash-border-strong);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 3.5rem 1.5rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.tracker-empty-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--dash-surface-muted);
+    color: var(--dash-text-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin: 0 auto 1.25rem auto;
+    border: 1px solid var(--dash-border);
+}
+
+.tracker-empty-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    margin-bottom: 0.35rem;
+}
+
+.tracker-empty-desc {
+    font-size: 0.875rem;
+    color: var(--dash-text-muted);
+    max-width: 460px;
+    margin: 0 auto 1.25rem auto;
+    line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   8. MODALS & AUTO-FILL BOX
+   -------------------------------------------------------------------------- */
+.smart-autofill-box {
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+}
+
+.tracker-modal-content {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 12px);
+    color: var(--dash-text);
+}
+
+.tracker-modal-header {
+    border-bottom: 1px solid var(--dash-border);
+    padding: 1.25rem 1.5rem;
+}
+
+.tracker-modal-body {
+    padding: 1.5rem;
+}
+
+.tracker-modal-footer {
+    border-top: 1px solid var(--dash-border);
+    padding: 1rem 1.5rem;
+}
+
+/* Dark mode overrides for modals */
+[data-theme='dark'] .modal-content,
+[data-bs-theme='dark'] .modal-content {
+    background-color: var(--dash-surface) !important;
+    color: var(--dash-text) !important;
+    border-color: var(--dash-border) !important;
+}
+
+[data-theme='dark'] .modal-header,
+[data-theme='dark'] .modal-footer,
+[data-bs-theme='dark'] .modal-header,
+[data-bs-theme='dark'] .modal-footer {
+    border-color: var(--dash-border) !important;
+}
+
+[data-theme='dark'] .btn-close,
+[data-bs-theme='dark'] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+[data-theme='dark'] .form-control,
+[data-theme='dark'] .form-select,
+[data-bs-theme='dark'] .form-control,
+[data-bs-theme='dark'] .form-select {
+    background-color: var(--dash-surface-muted);
+    border-color: var(--dash-border);
+    color: var(--dash-text);
+}
+
+[data-theme='dark'] .form-control:focus,
+[data-theme='dark'] .form-select:focus,
+[data-bs-theme='dark'] .form-control:focus,
+[data-bs-theme='dark'] .form-select:focus {
+    background-color: var(--dash-surface);
+    border-color: var(--dash-primary);
+    color: var(--dash-text);
+}
+
+/* --------------------------------------------------------------------------
+   9. ACCESSIBILITY & MOTION REDUCTION
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .tracker-metric-card,
+    .tracker-card,
+    .tracker-view-btn,
+    .tracker-column {
+        transition: none !important;
+        transform: none !important;
+    }
+}
