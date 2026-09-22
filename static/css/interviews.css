@@ -1,0 +1,879 @@
+/* ==========================================================================
+   CareerCatalyst Interview Prep — static/css/interviews.css
+   Clean · Professional · Educational · Diagnostic Intelligence
+   Reuses dashboard design tokens: --dash-bg, --dash-surface, --dash-primary, etc.
+   ========================================================================== */
+
+:root {
+    --interview-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --interview-danger: #EF4444;
+    --interview-danger-subtle: rgba(239, 68, 68, 0.08);
+    --interview-danger-border: rgba(239, 68, 68, 0.22);
+    --interview-terminal-bg: #0F172A;
+    --interview-terminal-text: #38BDF8;
+}
+
+[data-theme='dark'],
+[data-bs-theme='dark'] {
+    --interview-danger: #F87171;
+    --interview-danger-subtle: rgba(248, 113, 113, 0.12);
+    --interview-danger-border: rgba(248, 113, 113, 0.28);
+    --interview-terminal-bg: #0B0F19;
+    --interview-terminal-text: #38BDF8;
+}
+
+/* --------------------------------------------------------------------------
+   1. PAGE HEADER & BREADCRUMBS
+   -------------------------------------------------------------------------- */
+.interview-page-header {
+    margin-bottom: 1.5rem;
+}
+
+.interview-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.interview-breadcrumb a {
+    color: var(--dash-text-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.interview-breadcrumb a:hover {
+    color: var(--dash-primary);
+}
+
+.interview-page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    letter-spacing: -0.02em;
+    margin: 0 0 0.25rem 0;
+}
+
+.interview-page-subtitle {
+    font-size: 0.875rem;
+    color: var(--dash-text-muted);
+    margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   2. HUB QUICK STATS & TRACK CARDS
+   -------------------------------------------------------------------------- */
+.interview-stat-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--dash-shadow-sm);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.interview-stat-card:hover {
+    border-color: var(--dash-border-strong);
+}
+
+.interview-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--dash-radius, 8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.interview-stat-val {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--dash-text);
+    letter-spacing: -0.02em;
+}
+
+.interview-stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--dash-text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.interview-stat-sub {
+    font-size: 0.8125rem;
+    color: var(--dash-text-muted);
+}
+
+/* Category & Practice Track Cards */
+.interview-track-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow: var(--dash-shadow-card);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    position: relative;
+}
+
+.interview-track-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    border-color: var(--dash-primary-border);
+}
+
+.interview-track-icon-wrapper {
+    width: 46px;
+    height: 46px;
+    border-radius: var(--dash-radius, 8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    background: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+    border: 1px solid var(--dash-primary-border);
+}
+
+.interview-track-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    margin-bottom: 0.5rem;
+}
+
+.interview-track-desc {
+    font-size: 0.84rem;
+    color: var(--dash-text-muted);
+    line-height: 1.5;
+    flex-grow: 1;
+    margin-bottom: 1.25rem;
+}
+
+.interview-track-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 1rem;
+    border-top: 1px solid var(--dash-border);
+    gap: 0.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   3. QUIZ WORKSPACE
+   -------------------------------------------------------------------------- */
+.quiz-question-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 1.75rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--dash-shadow-card);
+    transition: border-color 0.15s ease;
+}
+
+.quiz-question-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.quiz-question-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--dash-radius-sm, 6px);
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    flex-shrink: 0;
+}
+
+.quiz-question-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.quiz-option-label {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.875rem 1.125rem;
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    margin-bottom: 0.625rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--dash-text);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.quiz-option-label:hover {
+    background: var(--dash-surface-hover);
+    border-color: var(--dash-border-strong);
+}
+
+.quiz-option-label input[type="radio"] {
+    accent-color: var(--dash-primary);
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.quiz-option-label:has(input[type="radio"]:checked) {
+    background: var(--dash-primary-subtle);
+    border-color: var(--dash-primary);
+    font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   4. CODING WORKSPACE
+   -------------------------------------------------------------------------- */
+.coding-layout {
+    display: grid;
+    grid-template-columns: minmax(320px, 1fr) minmax(380px, 1.35fr) minmax(260px, 320px);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+@media (max-width: 1200px) {
+    .coding-layout {
+        grid-template-columns: 1fr 1fr;
+    }
+    .coding-proctor-col {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 900px) {
+    .coding-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.coding-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 1.5rem;
+    box-shadow: var(--dash-shadow-card);
+}
+
+.coding-problem-text {
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    padding: 1rem 1.25rem;
+    font-size: 0.875rem;
+    color: var(--dash-text);
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.coding-table {
+    width: 100%;
+    font-size: 0.8125rem;
+    border-collapse: collapse;
+}
+
+.coding-table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--dash-text-muted);
+    padding: 0.5rem 0.75rem;
+    background: var(--dash-surface-muted);
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.coding-table td {
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid var(--dash-border);
+    color: var(--dash-text);
+}
+
+.coding-table code {
+    font-family: var(--interview-mono);
+    font-size: 0.8125rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    background: var(--dash-surface-muted);
+}
+
+/* Editor & Console */
+.coding-editor-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.875rem;
+    margin-bottom: 0.875rem;
+    border-bottom: 1px solid var(--dash-border);
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.coding-textarea {
+    width: 100%;
+    min-height: 360px;
+    font-family: var(--interview-mono);
+    font-size: 0.875rem;
+    line-height: 1.55;
+    padding: 1rem;
+    border-radius: var(--dash-radius, 8px);
+    border: 1px solid var(--dash-border);
+    background: var(--dash-surface-muted);
+    color: var(--dash-text);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s ease;
+    tab-size: 4;
+}
+
+.coding-textarea:focus {
+    border-color: var(--dash-primary);
+}
+
+.coding-console {
+    margin-top: 1.25rem;
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    padding: 1rem;
+}
+
+.testcase-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-radius: var(--dash-radius-sm, 6px);
+    font-size: 0.8125rem;
+    border: 1px solid var(--dash-border);
+    background: var(--dash-surface);
+}
+
+.testcase-item.passed {
+    border-color: var(--dash-success-border);
+    background: var(--dash-success-subtle);
+}
+
+.testcase-item.failed {
+    border-color: var(--interview-danger-border);
+    background: var(--interview-danger-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   5. STAR BEHAVIORAL WORKSPACE
+   -------------------------------------------------------------------------- */
+.star-section-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius, 8px);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.15s ease;
+}
+
+.star-section-card:focus-within {
+    border-color: var(--dash-primary);
+}
+
+.star-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.star-badge-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.8125rem;
+    background: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+    border: 1px solid var(--dash-primary-border);
+    margin-right: 0.5rem;
+}
+
+.star-char-counter {
+    font-size: 0.75rem;
+    color: var(--dash-text-muted);
+    font-family: var(--interview-mono);
+}
+
+.star-char-counter.valid {
+    color: var(--dash-success);
+    font-weight: 600;
+}
+
+.star-textarea {
+    width: 100%;
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-sm, 6px);
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--dash-text);
+    background: var(--dash-surface-muted);
+    outline: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    resize: vertical;
+}
+
+.star-textarea:focus {
+    background: var(--dash-surface);
+    border-color: var(--dash-primary);
+}
+
+/* --------------------------------------------------------------------------
+   6. AI MOCK INTERVIEW CHAT WORKSPACE
+   -------------------------------------------------------------------------- */
+.mock-chat-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 620px;
+    box-shadow: var(--dash-shadow-card);
+}
+
+.mock-chat-header {
+    background: var(--dash-surface-muted);
+    border-bottom: 1px solid var(--dash-border);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mock-chat-body {
+    background: var(--dash-surface);
+    padding: 1.25rem;
+    overflow-y: auto;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.mock-bubble-wrapper {
+    display: flex;
+    gap: 0.75rem;
+    max-width: 80%;
+}
+
+.mock-bubble-wrapper.candidate {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.mock-bubble-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8125rem;
+    flex-shrink: 0;
+}
+
+.mock-bubble-avatar.interviewer {
+    background: var(--dash-primary-subtle);
+    color: var(--dash-primary);
+    border: 1px solid var(--dash-primary-border);
+}
+
+.mock-bubble-avatar.candidate {
+    background: var(--dash-surface-muted);
+    color: var(--dash-text);
+    border: 1px solid var(--dash-border);
+}
+
+.mock-bubble-content {
+    border-radius: var(--dash-radius, 8px);
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+}
+
+.mock-bubble-wrapper.interviewer .mock-bubble-content {
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    color: var(--dash-text);
+}
+
+.mock-bubble-wrapper.candidate .mock-bubble-content {
+    background: var(--dash-primary);
+    color: #FFFFFF;
+}
+
+.mock-bubble-author {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+    opacity: 0.8;
+}
+
+.mock-chat-footer {
+    background: var(--dash-surface-muted);
+    border-top: 1px solid var(--dash-border);
+    padding: 0.875rem 1.25rem;
+}
+
+/* Typing Dots Animation */
+.typing-dots {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px 6px;
+}
+
+.typing-dots .dot {
+    width: 6px;
+    height: 6px;
+    background: var(--dash-text-muted);
+    border-radius: 50%;
+    animation: typingPulse 1.4s infinite ease-in-out both;
+}
+
+.typing-dots .dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots .dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typingPulse {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   7. COMPACT PROCTORING WIDGET (PARTIAL)
+   -------------------------------------------------------------------------- */
+.proctor-panel {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 1.125rem;
+    box-shadow: var(--dash-shadow-card);
+    transition: all 0.2s ease;
+}
+
+.proctor-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.875rem;
+}
+
+.proctor-panel-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.proctor-video-box {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    background: #000000;
+    border-radius: var(--dash-radius, 8px);
+    overflow: hidden;
+    margin-bottom: 0.875rem;
+    border: 1px solid var(--dash-border);
+}
+
+.proctor-video-box video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+.proctor-video-box canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    transform: scaleX(-1);
+}
+
+.proctor-video-inactive {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--dash-surface-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--dash-text-muted);
+    font-size: 0.8125rem;
+}
+
+.proctor-signals-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.875rem;
+}
+
+.proctor-signal-chip {
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-sm, 6px);
+    padding: 0.4rem 0.5rem;
+    text-align: center;
+}
+
+.proctor-signal-label {
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--dash-text-muted);
+    display: block;
+}
+
+.proctor-signal-value {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--dash-text);
+}
+
+.proctor-risk-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    margin-bottom: 0.35rem;
+}
+
+.proctor-progress-track {
+    width: 100%;
+    height: 6px;
+    background: var(--dash-surface-muted);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 0.875rem;
+}
+
+.proctor-progress-bar {
+    height: 100%;
+    background: var(--dash-success);
+    border-radius: 999px;
+    transition: width 0.3s ease, background 0.3s ease;
+}
+
+.proctor-terminal {
+    background: var(--interview-terminal-bg);
+    color: var(--interview-terminal-text);
+    font-family: var(--interview-mono);
+    font-size: 0.6875rem;
+    line-height: 1.45;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--dash-radius-sm, 6px);
+    height: 80px;
+    overflow-y: auto;
+}
+
+.proctor-toast-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--dash-radius, 8px);
+    background: var(--interview-danger-subtle);
+    border: 1px solid var(--interview-danger-border);
+    color: var(--interview-danger);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   8. RESULTS & PERFORMANCE REPORTS
+   -------------------------------------------------------------------------- */
+.interview-result-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    box-shadow: var(--dash-shadow-card);
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.interview-score-display {
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 1rem 0;
+}
+
+.interview-score-display.high { color: var(--dash-success); }
+.interview-score-display.medium { color: var(--dash-warning); }
+.interview-score-display.low { color: var(--interview-danger); }
+
+.interview-score-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.interview-score-pill.high {
+    background: var(--dash-success-subtle);
+    color: var(--dash-success);
+    border: 1px solid var(--dash-success-border);
+}
+
+.interview-score-pill.medium {
+    background: var(--dash-warning-subtle);
+    color: var(--dash-warning);
+    border: 1px solid var(--dash-warning-border);
+}
+
+.interview-score-pill.low {
+    background: var(--interview-danger-subtle);
+    color: var(--interview-danger);
+    border: 1px solid var(--interview-danger-border);
+}
+
+/* Tabs for Reports */
+.interview-tabs {
+    display: inline-flex;
+    gap: 0.375rem;
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    padding: 0.25rem;
+    border-radius: var(--dash-radius, 8px);
+    margin-bottom: 1.5rem;
+}
+
+.interview-tab-btn {
+    padding: 0.45rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--dash-text-muted);
+    background: transparent;
+    border: none;
+    border-radius: var(--dash-radius-sm, 6px);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.interview-tab-btn:hover {
+    color: var(--dash-text);
+}
+
+.interview-tab-btn.active {
+    background: var(--dash-surface);
+    color: var(--dash-text);
+    font-weight: 600;
+    box-shadow: var(--dash-shadow-sm);
+}
+
+/* Modern Clean Tables */
+.interview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.interview-table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--dash-text-muted);
+    padding: 0.75rem 1rem;
+    background: var(--dash-surface-muted);
+    border-bottom: 1px solid var(--dash-border);
+    text-align: left;
+}
+
+.interview-table td {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid var(--dash-border);
+    color: var(--dash-text);
+    vertical-align: middle;
+}
+
+.interview-table tr:hover td {
+    background: var(--dash-surface-hover);
+}
+
+/* Empty States */
+.interview-empty-state {
+    padding: 3.5rem 1.5rem;
+    text-align: center;
+    color: var(--dash-text-muted);
+}
+
+.interview-empty-icon {
+    font-size: 2.5rem;
+    color: var(--dash-text-subtle);
+    margin-bottom: 0.75rem;
+}
+
+/* --------------------------------------------------------------------------
+   9. ACCESSIBILITY & PREFERS-REDUCED-MOTION
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .interview-track-card,
+    .quiz-option-label,
+    .proctor-progress-bar,
+    .typing-dots .dot {
+        transition: none !important;
+        animation: none !important;
+    }
+}

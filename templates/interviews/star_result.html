@@ -1,41 +1,120 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}STAR Assessment Result - Career Catalyst{% endblock %}
+{% block title %}STAR Evaluation Result — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5 mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
-                <div class="rounded-circle {% if score >= 75 %}bg-success bg-opacity-10{% else %}bg-warning bg-opacity-10{% endif %} p-3 mx-auto mb-4 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                    <i class="bi bi-award fs-1 {% if score >= 75 %}text-success{% else %}text-warning{% endif %}"></i>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/interviews.css' %}?v=1.0">
+{% endblock %}
+
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="interview-page-header mb-4">
+                <div class="interview-breadcrumb">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'interviews:hub' %}">Interview Prep</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'interviews:behavioral_list' %}">HR & Behavioral</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>STAR Evaluation</span>
                 </div>
-                
-                <h2 class="fw-bold mb-2">STAR Assessment Graded</h2>
-                <p class="text-muted">Your behavioral interview response has been analyzed structurally.</p>
-                
-                <hr class="my-4">
-                
-                <div class="mb-4">
-                    <h6 class="text-uppercase text-muted fw-bold small">Structure Completeness</h6>
-                    <div class="display-3 fw-bold {% if score >= 75 %}text-success{% elif score >= 50 %}text-warning{% else %}text-danger{% endif %}">
-                        {{ score }}%
+            </div>
+
+            <!-- Scorecard Container -->
+            <div class="interview-result-card">
+                <div class="interview-track-icon-wrapper mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.75rem; background: var(--dash-primary-subtle); color: var(--dash-primary); border-color: var(--dash-primary-border);">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+
+                <h2 class="fw-bold mb-1 text-secondary">Behavioral Response Graded</h2>
+                <p class="text-muted small mb-3">{{ question.title }}</p>
+
+                <div class="interview-score-display {% if score >= 75 %}high{% elif score >= 50 %}medium{% else %}low{% endif %}">
+                    {{ score }}%
+                </div>
+
+                <div class="p-3 rounded-3 mb-4 mx-auto text-start" style="max-width: 480px; background: var(--dash-surface-muted); border: 1px solid var(--dash-border);">
+                    <div class="small fw-semibold text-secondary mb-1">
+                        <i class="bi bi-info-circle me-1 text-primary"></i> Structural Completeness:
                     </div>
-                    <p class="text-muted mt-3 fs-6 px-4">
+                    <p class="small text-muted mb-0" style="line-height: 1.55;">
                         {{ feedback }}
                     </p>
                 </div>
 
-                <div class="d-flex gap-3 justify-content-center mt-5">
-                    <a href="{% url 'interviews:behavioral_list' %}" class="btn btn-primary-custom px-4 py-2 rounded-pill">
-                        Practice More
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="{% url 'interviews:behavioral_list' %}" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
+                        <i class="bi bi-arrow-repeat me-1"></i> Practice More Questions
                     </a>
-                    <a href="{% url 'interviews:reports' %}" class="btn btn-outline-primary px-4 py-2 rounded-pill">
-                        View Scorecard Reports
+                    <a href="{% url 'interviews:reports' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                        <i class="bi bi-graph-up-arrow me-1"></i> View Reports
                     </a>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('dashSidebarClose');
+    const sidebar = document.getElementById('dashSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+});
+</script>
 {% endblock %}

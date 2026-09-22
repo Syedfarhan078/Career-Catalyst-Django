@@ -1,84 +1,93 @@
-<!-- Proctoring Floating Toasts Container -->
+<!-- Toast Container for non-blocking proctor alerts -->
 <div id="proctorToastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1090;"></div>
 
-<!-- Full-screen Auto-submission Overlay -->
+<!-- Full-screen Auto-submission Overlay (Only triggered when max warnings exceeded) -->
 <div id="proctorSubmissionOverlay" class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-none justify-content-center align-items-center" style="z-index: 10000; backdrop-filter: blur(4px);">
-    <div class="card border-0 shadow-lg rounded-4 p-5 text-center bg-white" style="max-width: 500px;">
-        <div class="spinner-border text-danger mb-4" role="status" style="width: 3rem; height: 3rem;">
+    <div class="card border-0 shadow-lg rounded-4 p-4 text-center bg-white" style="max-width: 440px;">
+        <div class="spinner-border text-danger mb-3" role="status" style="width: 2.5rem; height: 2.5rem;">
             <span class="visually-hidden">Loading...</span>
         </div>
-        <h3 class="fw-bold text-danger mb-2">Warnings Limit Reached</h3>
-        <p class="text-muted fs-5 mb-0">Your proctor warning threshold has been exceeded. Automatically submitting your assessment, please do not close the tab...</p>
+        <h4 class="fw-bold text-danger mb-2">Proctor Limit Reached</h4>
+        <p class="text-muted small mb-0">The maximum allowable violation threshold has been exceeded. Submitting your assessment...</p>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm rounded-4 p-4 text-center d-flex flex-column align-items-center" style="max-height: 600px; min-height: 600px; width: 100%;">
-    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-shield-fill-check text-primary"></i> AI Proctoring Stream</h5>
-    
-    <!-- Live Video Feed Container -->
-    <div class="position-relative bg-dark rounded-4 mb-3 overflow-hidden shadow-inner w-100" style="height: 180px;">
-        <video id="proctorVideo" autoplay muted playsinline class="w-100 h-100 object-fit-cover" style="transform: scaleX(-1);"></video>
-        <canvas id="proctorCanvas" class="position-absolute top-0 start-0 w-100 h-100" style="transform: scaleX(-1); pointer-events: none;"></canvas>
-        
-        <div id="videoPlaceholder" class="position-absolute top-0 start-0 w-100 h-100 bg-secondary d-flex flex-column justify-content-center align-items-center text-white">
-            <i class="bi bi-camera-video-off display-4 mb-2"></i>
-            <span class="small">Webcam Feed Inactive</span>
-            <button class="btn btn-primary btn-sm rounded-pill mt-2" onclick="startWebcam()"><i class="bi bi-camera-video"></i> Enable Webcam</button>
+<!-- Compact Collapsible Proctoring Panel -->
+<div class="proctor-panel" id="proctorPanel">
+    <div class="proctor-panel-header">
+        <h6 class="proctor-panel-title">
+            <i class="bi bi-shield-check text-primary"></i>
+            <span>AI Proctoring</span>
+        </h6>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1" id="proctorBadgePill" style="font-size: 0.7rem;">
+                Monitoring
+            </span>
+            <button type="button" class="btn btn-sm btn-link p-0 text-muted" id="proctorCollapseBtn" title="Toggle proctor view" aria-label="Toggle proctor panel">
+                <i class="bi bi-chevron-up" id="proctorCollapseIcon"></i>
+            </button>
         </div>
     </div>
 
-    <!-- Model Loader Indicator -->
-    <div class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill mb-3 w-100 fw-bold" id="modelStatus">
-        <i class="bi bi-arrow-repeat spin"></i> CV Models: Loading...
-    </div>
+    <div id="proctorPanelBody">
+        <!-- Live Video Feed Container -->
+        <div class="proctor-video-box">
+            <video id="proctorVideo" autoplay muted playsinline></video>
+            <canvas id="proctorCanvas"></canvas>
+            
+            <div id="videoPlaceholder" class="proctor-video-inactive">
+                <i class="bi bi-camera-video-off fs-3"></i>
+                <span>Webcam Inactive</span>
+                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1" onclick="startWebcam()">
+                    <i class="bi bi-camera-video me-1"></i> Enable
+                </button>
+            </div>
+        </div>
 
-    <!-- CV Signal Indicators -->
-    <div class="row g-2 w-100 mb-3 text-start small">
-        <div class="col-6">
-            <div class="p-2 border rounded-3 text-center bg-light" id="faceStatus">
-                <span class="d-block text-muted mb-1 font-monospace" style="font-size: 0.65rem;">FACE TRACKING</span>
-                <span class="fw-bold text-secondary fs-6" id="faceVal">0 / 1</span>
-            </div>
+        <!-- Model Status Chip -->
+        <div class="d-flex align-items-center justify-content-between p-2 rounded-2 mb-2" id="modelStatus" style="background: var(--dash-surface-muted); font-size: 0.75rem; border: 1px solid var(--dash-border);">
+            <span class="text-muted"><i class="bi bi-cpu me-1"></i> Computer Vision</span>
+            <span class="text-secondary fw-semibold" id="modelStatusText">Standby</span>
         </div>
-        <div class="col-6">
-            <div class="p-2 border rounded-3 text-center bg-light" id="gazeStatus">
-                <span class="d-block text-muted mb-1 font-monospace" style="font-size: 0.65rem;">EYE GAZE</span>
-                <span class="fw-bold text-secondary fs-6" id="gazeVal">None</span>
-            </div>
-        </div>
-        <div class="col-6">
-            <div class="p-2 border rounded-3 text-center bg-light" id="motionStatus">
-                <span class="d-block text-muted mb-1 font-monospace" style="font-size: 0.65rem;">MOTION LEVEL</span>
-                <span class="fw-bold text-secondary fs-6" id="motionVal">Stable</span>
-            </div>
-        </div>
-        <div class="col-6">
-            <div class="p-2 border rounded-3 text-center bg-light" id="phoneStatus">
-                <span class="d-block text-muted mb-1 font-monospace" style="font-size: 0.65rem;">PHONE DETECT</span>
-                <span class="fw-bold text-secondary fs-6" id="phoneVal">None</span>
-            </div>
-        </div>
-    </div>
 
-    <!-- Risk Score Gauge -->
-    <div class="w-100 mb-3 text-start">
-        <div class="d-flex justify-content-between mb-1 small">
-            <span class="fw-bold text-secondary">Proctor Risk Score</span>
-            <span class="fw-bold text-primary" id="riskScoreVal">0%</span>
+        <!-- CV Signal Indicators -->
+        <div class="proctor-signals-grid">
+            <div class="proctor-signal-chip" id="faceStatus">
+                <span class="proctor-signal-label">Face</span>
+                <span class="proctor-signal-value" id="faceVal">0 / 1</span>
+            </div>
+            <div class="proctor-signal-chip" id="gazeStatus">
+                <span class="proctor-signal-label">Gaze</span>
+                <span class="proctor-signal-value" id="gazeVal">Center</span>
+            </div>
+            <div class="proctor-signal-chip" id="motionStatus">
+                <span class="proctor-signal-label">Motion</span>
+                <span class="proctor-signal-value" id="motionVal">Stable</span>
+            </div>
+            <div class="proctor-signal-chip" id="phoneStatus">
+                <span class="proctor-signal-label">Phone</span>
+                <span class="proctor-signal-value" id="phoneVal">Clear</span>
+            </div>
         </div>
-        <div class="progress rounded-pill bg-light" style="height: 12px;">
-            <div class="progress-bar bg-success rounded-pill" id="riskProgressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
-    </div>
 
-    <!-- Logs Terminal console -->
-    <div class="w-100 bg-dark text-success rounded-3 p-3 text-start font-monospace overflow-auto flex-grow-1" id="cvLogs" style="font-size: 0.75rem; height: 110px;">
-        <div class="text-secondary">[SYS] AI Proctor initialization completed.</div>
-        <div class="text-info">[SYS] Waiting for webcam activation...</div>
+        <!-- Risk Score Gauge -->
+        <div class="proctor-risk-row">
+            <span class="text-muted fw-semibold">Risk Meter</span>
+            <span class="fw-bold" id="riskScoreVal" style="color: var(--dash-success);">0%</span>
+        </div>
+        <div class="proctor-progress-track">
+            <div class="proctor-progress-bar" id="riskProgressBar" style="width: 0%;"></div>
+        </div>
+
+        <!-- Compact Terminal Console -->
+        <div class="proctor-terminal" id="cvLogs">
+            <div>[SYS] Proctor engine ready.</div>
+            <div style="color: var(--dash-text-muted);">[SYS] Awaiting camera authorization...</div>
+        </div>
     </div>
 </div>
 
-<!-- Hidden tiny canvas for motion detection pixel differences -->
+<!-- Hidden canvas for motion frame delta calculation -->
 <canvas id="motionCanvas" style="display: none;" width="80" height="60"></canvas>
 
 <script>
@@ -86,60 +95,80 @@ document.addEventListener('DOMContentLoaded', function() {
     let violationCount = 0;
     let riskScore = 0;
     let isSessionTerminated = false;
-    
+
+    // Collapsible widget logic
+    const collapseBtn = document.getElementById('proctorCollapseBtn');
+    const panelBody = document.getElementById('proctorPanelBody');
+    const collapseIcon = document.getElementById('proctorCollapseIcon');
+
+    if (collapseBtn && panelBody && collapseIcon) {
+        collapseBtn.addEventListener('click', function() {
+            if (panelBody.style.display === 'none') {
+                panelBody.style.display = 'block';
+                collapseIcon.className = 'bi bi-chevron-up';
+            } else {
+                panelBody.style.display = 'none';
+                collapseIcon.className = 'bi bi-chevron-down';
+            }
+        });
+    }
+
+    // Non-intrusive toast alert system
     function showProctorToast(message, tags='warning') {
         const container = document.getElementById('proctorToastContainer');
         if (!container) return;
         const toast = document.createElement('div');
-        toast.className = `toast align-items-center text-white bg-${tags === 'danger' ? 'danger' : 'warning'} border-0 show mb-2 shadow-lg transition`;
-        toast.role = 'alert';
-        toast.style.minWidth = '280px';
+        const isDanger = tags === 'danger';
+        toast.className = 'toast align-items-center show mb-2 shadow-sm border-0';
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        toast.style.backgroundColor = isDanger ? '#EF4444' : '#F59E0B';
+        toast.style.color = '#FFFFFF';
+        toast.style.borderRadius = '8px';
         toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body fw-bold">
-                    <i class="bi ${tags === 'danger' ? 'bi-exclamation-triangle-fill' : 'bi-exclamation-circle-fill'} me-2"></i> ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            <div class="d-flex align-items-center p-2 px-3">
+                <i class="bi ${isDanger ? 'bi-exclamation-triangle-fill' : 'bi-shield-exclamation'} me-2 fs-6"></i>
+                <div class="toast-body p-0 fw-semibold" style="font-size: 0.8125rem;">${message}</div>
+                <button type="button" class="btn-close btn-close-white ms-auto me-1" style="font-size: 0.65rem;" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         `;
         container.appendChild(toast);
         setTimeout(() => {
             toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 500);
+            setTimeout(() => toast.remove(), 400);
         }, 4000);
     }
-    
+
     const badge = document.getElementById('violationBadge');
-    const overlay = document.getElementById('proctorOverlay');
-    
-    // Core parameters passed from templates
+    const badgePill = document.getElementById('proctorBadgePill');
     const sessionType = "{{ session_type|default:'Quiz' }}";
     const sessionId = "{{ session_id|default:0 }}";
     const maxAllowedWarnings = sessionType === 'Quiz' ? 3 : 6;
 
-    // --- CLIENT-SIDE COMPUTER VISION PROCTORING ---
     let faceModel = null;
     let cocoModel = null;
-    let modelsLoaded = false;
     let videoStream = null;
-    
-    // Motion detection variables
     let lastFramePixels = null;
     const motionCanvas = document.getElementById('motionCanvas');
-    const motionCtx = motionCanvas.getContext('2d');
+    const motionCtx = motionCanvas ? motionCanvas.getContext('2d') : null;
 
     window.startWebcam = async function() {
         try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
             const video = document.getElementById('proctorVideo');
-            video.srcObject = videoStream;
-            document.getElementById('videoPlaceholder').classList.add('d-none');
-            logCVMessage("[SYS] Webcam stream initialized.", "success");
-            
+            if (video) {
+                video.srcObject = videoStream;
+            }
+            const placeholder = document.getElementById('videoPlaceholder');
+            if (placeholder) {
+                placeholder.classList.add('d-none');
+            }
+            logCVMessage("[SYS] Webcam stream activated.", "success");
             initCVModels(video);
         } catch (err) {
-            logCVMessage("[ERROR] Camera permission denied: " + err, "danger");
-            alert("Webcam permission is required to enable Computer Vision AI proctoring.");
+            logCVMessage("[WARN] Webcam unavailable: " + err, "danger");
+            showProctorToast('Webcam access was not granted. Basic event proctoring active.', 'warning');
         }
     };
 
@@ -149,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const d = new Date();
         const ts = d.toLocaleTimeString([], { hour12: false });
         const line = document.createElement('div');
-        line.className = `text-${tags} mb-1`;
+        line.style.fontSize = '0.6875rem';
         line.textContent = `[${ts}] ${msg}`;
         logs.appendChild(line);
         logs.scrollTop = logs.scrollHeight;
@@ -166,9 +195,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function initCVModels(video) {
+        const statusText = document.getElementById('modelStatusText');
         try {
-            logCVMessage("[SYS] Loading TF.js and model layers via CDN...", "warning");
-            
+            if (statusText) statusText.textContent = "Loading...";
             if (typeof tf === 'undefined') {
                 await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs");
             }
@@ -176,345 +205,212 @@ document.addEventListener('DOMContentLoaded', function() {
                 await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface");
             }
             faceModel = await blazeface.load();
-            logCVMessage("[SYS] BlazeFace model loaded successfully.", "success");
-            
+            logCVMessage("[SYS] BlazeFace model loaded.", "success");
+
             if (typeof cocoSsd === 'undefined') {
                 await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd");
             }
             cocoModel = await cocoSsd.load();
-            logCVMessage("[SYS] COCO-SSD object detection loaded.", "success");
-            
-            modelsLoaded = true;
-            document.getElementById('modelStatus').className = "badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill mb-3 w-100 fw-bold";
-            document.getElementById('modelStatus').innerHTML = "<i class='bi bi-shield-fill-check'></i> CV Models: Active";
-            
+            logCVMessage("[SYS] Object detection loaded.", "success");
+
+            if (statusText) {
+                statusText.textContent = "Active";
+                statusText.style.color = "var(--dash-success)";
+            }
             startDetectionLoop(video);
         } catch (err) {
-            logCVMessage("[ERROR] Model load failed: " + err + ". Degrading to simulated checks.", "danger");
-            startSimulatedLoop();
+            logCVMessage("[NOTICE] Models degraded to event monitoring.", "secondary");
+            if (statusText) {
+                statusText.textContent = "Event Mode";
+            }
         }
     }
 
     function updateRiskScore(hasActiveViolation) {
         if (hasActiveViolation) {
-            riskScore = Math.min(riskScore + 8, 100);
+            riskScore = Math.min(riskScore + 10, 100);
         } else {
             riskScore = Math.max(riskScore - 2, 0);
         }
-        
-        document.getElementById('riskScoreVal').textContent = `${riskScore}%`;
+
+        const scoreEl = document.getElementById('riskScoreVal');
         const bar = document.getElementById('riskProgressBar');
+        if (scoreEl) scoreEl.textContent = `${riskScore}%`;
         if (bar) {
             bar.style.width = `${riskScore}%`;
-            if (riskScore > 70) {
-                bar.className = "progress-bar bg-danger rounded-pill";
-            } else if (riskScore > 40) {
-                bar.className = "progress-bar bg-warning rounded-pill";
+            if (riskScore > 65) {
+                bar.style.backgroundColor = 'var(--interview-danger)';
+                if (scoreEl) scoreEl.style.color = 'var(--interview-danger)';
+            } else if (riskScore > 35) {
+                bar.style.backgroundColor = 'var(--dash-warning)';
+                if (scoreEl) scoreEl.style.color = 'var(--dash-warning)';
             } else {
-                bar.className = "progress-bar bg-success rounded-pill";
+                bar.style.backgroundColor = 'var(--dash-success)';
+                if (scoreEl) scoreEl.style.color = 'var(--dash-success)';
             }
         }
     }
 
-    window.triggerProctorViolation = function(type, forcePopup = false) {
+    window.triggerProctorViolation = function(type) {
         if (isSessionTerminated) return;
 
-        // Show real-time screen toast warning
-        showProctorToast(`[WARN] Proctor Flagged: ${type}`, 'warning');
-
         violationCount++;
+        showProctorToast(`Proctor notice: ${type}`, violationCount >= maxAllowedWarnings - 1 ? 'danger' : 'warning');
+        updateRiskScore(true);
+
         if (badge) {
-            badge.textContent = sessionType === 'Quiz' ? `Warnings: ${violationCount}/3` : `Warnings: ${violationCount}`;
+            badge.textContent = sessionType === 'Quiz' ? `Warnings: ${violationCount}/${maxAllowedWarnings}` : `Warnings: ${violationCount}`;
         }
-        
-        // Update hidden inputs for quizzes
+        if (badgePill) {
+            badgePill.textContent = `${violationCount} Flag${violationCount === 1 ? '' : 's'}`;
+            badgePill.className = "badge bg-danger-subtle text-danger rounded-pill px-2 py-1";
+        }
+
         const inputViolations = document.getElementById('proctorViolationsInput');
         if (inputViolations) {
             inputViolations.value = violationCount;
         }
 
-        // Log to backend
+        const csrfEl = document.querySelector('[name=csrfmiddlewaretoken]');
+        const csrfToken = csrfEl ? csrfEl.value : '';
+
         fetch("{% url 'interviews:log_proctor_violation' %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify({
                 session_type: sessionType,
                 session_id: sessionId,
                 violation_type: type
             })
-        }).catch(err => console.error('Violation logging failed:', err));
+        }).catch(() => {});
 
-        // Auto-submit quiz on 3 warnings
+        // Auto-submit quiz when warnings threshold reached
         if (sessionType === 'Quiz' && violationCount >= maxAllowedWarnings) {
             isSessionTerminated = true;
-            // Stop webcam video stream tracks to shut down hardware
             if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
+                videoStream.getTracks().forEach(t => t.stop());
             }
-            
-            // Show custom full-screen overlay instead of browser alert
             const subOverlay = document.getElementById('proctorSubmissionOverlay');
             if (subOverlay) {
                 subOverlay.classList.remove('d-none');
                 subOverlay.classList.add('d-flex');
             }
-            
-            // Short delay to let candidate read the status before redirecting
             setTimeout(() => {
-                const quizForm = document.getElementById('quizForm');
-                if (quizForm) quizForm.submit();
-            }, 2500);
-            return;
-        }
-
-        if (forcePopup || violationCount % 5 === 0) {
-            if (overlay) {
-                overlay.classList.remove('d-none');
-                overlay.classList.add('d-flex');
-            }
+                const form = document.getElementById('quizForm');
+                if (form) form.submit();
+            }, 2000);
         }
     };
 
     async function startDetectionLoop(video) {
         const canvas = document.getElementById('proctorCanvas');
-        const ctx = canvas.getContext('2d');
-        
+        const ctx = canvas ? canvas.getContext('2d') : null;
         let cycleCount = 0;
-        let lastFaceViolationTime = 0;
-        let lastGazeViolationTime = 0;
-        let lastMotionViolationTime = 0;
-        let lastPhoneViolationTime = 0;
-
-        let faceDetectedCache = true;
-        let facesCountCache = 1;
-        let leftEyeCache = [0, 0];
-        let rightEyeCache = [0, 0];
-        let noseCache = [0, 0];
-        let sizeCache = [100, 100];
 
         async function detectFrame() {
-            if (isSessionTerminated || video.paused || video.ended) return;
-            
-            canvas.width = video.videoWidth || 640;
-            canvas.height = video.videoHeight || 480;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (isSessionTerminated || !video || video.paused || video.ended) return;
 
-            const now = Date.now();
-            let motionDetected = false;
-
-            try {
-                // --- MOTION DETECTION (HAND/BODY MOVEMENT) ---
-                motionCtx.drawImage(video, 0, 0, 80, 60);
-                const frameData = motionCtx.getImageData(0, 0, 80, 60).data;
-                
-                if (lastFramePixels) {
-                    let totalDifference = 0;
-                    for (let i = 0; i < frameData.length; i += 4) {
-                        const rDiff = Math.abs(frameData[i] - lastFramePixels[i]);
-                        const gDiff = Math.abs(frameData[i+1] - lastFramePixels[i+1]);
-                        const bDiff = Math.abs(frameData[i+2] - lastFramePixels[i+2]);
-                        const brightnessDiff = (rDiff + gDiff + bDiff) / 3;
-                        totalDifference += brightnessDiff;
-                    }
-                    const avgDifference = totalDifference / (80 * 60);
-                    if (avgDifference > 14.0) {
-                        motionDetected = true;
-                    }
-                }
-                lastFramePixels = frameData;
-
-                if (motionDetected) {
-                    lastMotionViolationTime = now;
-                    logCVMessage("[WARN] Excessive hand or body movement detected!", "warning");
-                    triggerProctorViolation('Suspicious Motion Detected');
-                }
-
-                // --- FACE DETECTION (Runs on EVERY cycle - 800ms) ---
-                const faces = await faceModel.estimateFaces(video, false);
-                
-                let validFaceFound = false;
-                if (faces.length === 1) {
-                    const face = faces[0];
-                    let prob = 1.0;
-                    if (face.probability) {
-                        prob = Array.isArray(face.probability) ? face.probability[0] : (typeof face.probability === 'number' ? face.probability : face.probability[0]);
-                    } else if (face.score) {
-                        prob = Array.isArray(face.score) ? face.score[0] : (typeof face.score === 'number' ? face.score : face.score[0]);
-                    }
-
-                    // Enforce strict confidence threshold (0.85) to reject false positives (e.g. hands, mouse, shadows)
-                    if (prob > 0.85) {
-                        validFaceFound = true;
-                        faceDetectedCache = true;
-                        facesCountCache = 1;
-                        const start = face.topLeft;
-                        const end = face.bottomRight;
-                        sizeCache = [end[0] - start[0], end[1] - start[1]];
-                        
-                        leftEyeCache = face.landmarks[0];
-                        rightEyeCache = face.landmarks[1];
-                        noseCache = face.landmarks[2];
-
-                        ctx.strokeStyle = '#3b82f6';
-                        ctx.lineWidth = 3;
-                        ctx.strokeRect(start[0], start[1], sizeCache[0], sizeCache[1]);
-                    }
-                } else if (faces.length > 1) {
-                    facesCountCache = faces.length;
-                    faceDetectedCache = true;
-                }
-
-                if (!validFaceFound && faces.length <= 1) {
-                    faceDetectedCache = false;
-                    facesCountCache = 0;
-                }
-
-                // --- OBJECT DETECTION (Runs on ALTERNATE cycles - 1600ms) ---
-                if (cycleCount % 2 === 1) {
-                    const objects = await cocoModel.detect(video, 5, 0.32);
-                    let phoneFound = false;
-                    objects.forEach(obj => {
-                        if (obj.class === 'cell phone') {
-                            phoneFound = true;
-                            ctx.strokeStyle = '#ef4444';
-                            ctx.lineWidth = 3;
-                            ctx.strokeRect(obj.bbox[0], obj.bbox[1], obj.bbox[2], obj.bbox[3]);
-                        }
-                    });
-                    
-                    if (phoneFound) {
-                        lastPhoneViolationTime = now;
-                        logCVMessage("[CRITICAL] Cell phone object detected!", "danger");
-                        triggerProctorViolation('Mobile Phone Detected');
-                    }
-                }
-
-                cycleCount++;
-
-                // --- EVALUATE EYE GAZE DEVIATION ---
-                let gazeAway = false;
-                if (faceDetectedCache) {
-                    const eyeMidpointX = (leftEyeCache[0] + rightEyeCache[0]) / 2;
-                    const gazeDev = (noseCache[0] - eyeMidpointX) / sizeCache[0];
-                    if (Math.abs(gazeDev) > 0.08) {
-                        gazeAway = true;
-                    }
-                }
-
-                if (gazeAway) {
-                    lastGazeViolationTime = now;
-                    logCVMessage("[WARN] Gaze warning: looking away from screen!", "warning");
-                    triggerProctorViolation('Eye Gaze Deviation Detected');
-                }
-
-                // --- EVALUATE FACE COUNT ---
-                if (!faceDetectedCache && facesCountCache === 0) {
-                    lastFaceViolationTime = now;
-                    logCVMessage("[WARN] Face missing from camera bounds!", "warning");
-                    triggerProctorViolation('Face Missing Detected');
-                }
-
-                // --- 5-SECOND HOLDS ---
-                const isFaceViolationActive = (now - lastFaceViolationTime) < 5000;
-                const isGazeViolationActive = (now - lastGazeViolationTime) < 5000;
-                const isMotionViolationActive = (now - lastMotionViolationTime) < 5000;
-                const isPhoneViolationActive = (now - lastPhoneViolationTime) < 5000;
-
-                // Update UI badges
-                
-                // Faces
-                if (facesCountCache > 1) {
-                    document.getElementById('faceVal').textContent = `${facesCountCache} Detected`;
-                    document.getElementById('faceStatus').className = "p-2 border border-danger rounded-3 text-center bg-danger bg-opacity-10 text-danger";
-                } else if (isFaceViolationActive) {
-                    document.getElementById('faceVal').textContent = "0 / 1";
-                    document.getElementById('faceStatus').className = "p-2 border border-danger rounded-3 text-center bg-danger bg-opacity-10 text-danger";
-                } else {
-                    document.getElementById('faceVal').textContent = "1 / 1";
-                    document.getElementById('faceStatus').className = "p-2 border border-success rounded-3 text-center bg-success bg-opacity-10 text-success";
-                }
-
-                // Gaze
-                if (isGazeViolationActive) {
-                    document.getElementById('gazeVal').textContent = "Looking Away";
-                    document.getElementById('gazeStatus').className = "p-2 border border-danger rounded-3 text-center bg-danger bg-opacity-10 text-danger";
-                } else {
-                    document.getElementById('gazeVal').textContent = "Center";
-                    document.getElementById('gazeStatus').className = "p-2 border border-success rounded-3 text-center bg-success bg-opacity-10 text-success";
-                }
-
-                // Motion
-                if (isMotionViolationActive) {
-                    document.getElementById('motionVal').textContent = "Moving";
-                    document.getElementById('motionStatus').className = "p-2 border border-warning rounded-3 text-center bg-warning bg-opacity-10 text-warning";
-                } else {
-                    document.getElementById('motionVal').textContent = "Stable";
-                    document.getElementById('motionStatus').className = "p-2 border border-success rounded-3 text-center bg-success bg-opacity-10 text-success";
-                }
-
-                // Phone
-                if (isPhoneViolationActive) {
-                    document.getElementById('phoneVal').textContent = "Detected!";
-                    document.getElementById('phoneStatus').className = "p-2 border border-danger rounded-3 text-center bg-danger bg-opacity-10 text-danger";
-                } else {
-                    document.getElementById('phoneVal').textContent = "None";
-                    document.getElementById('phoneStatus').className = "p-2 border rounded-3 text-center bg-light";
-                }
-
-                updateRiskScore(isFaceViolationActive || isGazeViolationActive || isMotionViolationActive || isPhoneViolationActive);
-
-            } catch (err) {
-                console.error("Frame evaluation error:", err);
+            if (canvas && ctx) {
+                canvas.width = video.videoWidth || 320;
+                canvas.height = video.videoHeight || 240;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
 
-            setTimeout(detectFrame, 800);
+            try {
+                // Motion check
+                if (motionCtx) {
+                    motionCtx.drawImage(video, 0, 0, 80, 60);
+                    const frameData = motionCtx.getImageData(0, 0, 80, 60).data;
+                    if (lastFramePixels) {
+                        let totalDiff = 0;
+                        for (let i = 0; i < frameData.length; i += 4) {
+                            totalDiff += Math.abs(frameData[i] - lastFramePixels[i]);
+                        }
+                        const avgDiff = totalDiff / (80 * 60);
+                        const motionVal = document.getElementById('motionVal');
+                        if (avgDiff > 18.0) {
+                            if (motionVal) motionVal.textContent = "High";
+                            window.triggerProctorViolation('Suspicious Motion');
+                        } else {
+                            if (motionVal) motionVal.textContent = "Stable";
+                        }
+                    }
+                    lastFramePixels = frameData;
+                }
+
+                // Face check
+                if (faceModel) {
+                    const predictions = await faceModel.estimateFaces(video, false);
+                    const faceVal = document.getElementById('faceVal');
+                    if (predictions.length === 1) {
+                        if (faceVal) faceVal.textContent = "1 / 1";
+                    } else if (predictions.length > 1) {
+                        if (faceVal) faceVal.textContent = `${predictions.length} Faces!`;
+                        window.triggerProctorViolation('Multiple Faces Detected');
+                    } else {
+                        if (faceVal) faceVal.textContent = "0 / 1";
+                        if (cycleCount % 4 === 0) {
+                            window.triggerProctorViolation('Face Not Detected');
+                        }
+                    }
+                }
+
+                // Object detection (cell phones) every 5 cycles
+                cycleCount++;
+                if (cocoModel && cycleCount % 5 === 0) {
+                    const objects = await cocoModel.detect(video);
+                    const phoneEl = document.getElementById('phoneVal');
+                    const hasPhone = objects.some(obj => obj.class === 'cell phone');
+                    if (hasPhone) {
+                        if (phoneEl) phoneEl.textContent = "Detected!";
+                        window.triggerProctorViolation('Cell Phone Detected');
+                    } else {
+                        if (phoneEl) phoneEl.textContent = "Clear";
+                    }
+                }
+            } catch (e) {
+                // Non-fatal CV loop error
+            }
+
+            if (!isSessionTerminated) {
+                setTimeout(detectFrame, 800);
+            }
         }
-        
+
         detectFrame();
     }
 
-    function startSimulatedLoop() {
-        document.getElementById('modelStatus').className = "badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill mb-3 w-100 fw-bold";
-        document.getElementById('modelStatus').innerHTML = "<i class='bi bi-shield-slash'></i> CV Models: Simulated (Offline)";
-        logCVMessage("[SYS] Initiating simulated background checks...", "info");
-        
-        function simulate() {
-            if (isSessionTerminated) return;
-            const hasViolation = Math.random() > 0.88;
-            if (hasViolation) {
-                const types = [
-                    { t: 'Looking Away', msg: '[WARN] Gaze warning: looking away from screen!', status: 'gazeStatus', val: 'gazeVal', label: 'Looking Away' },
-                    { t: 'Mobile Phone Detected', msg: '[CRITICAL] Cell phone device detected!', status: 'phoneStatus', val: 'phoneVal', label: 'Detected!' },
-                    { t: 'Hand Movement', msg: '[WARN] Excessive hand or body movement detected!', status: 'motionStatus', val: 'motionVal', label: 'Moving' }
-                ];
-                const choice = types[Math.floor(Math.random() * types.length)];
-                logCVMessage(choice.msg, 'warning');
-                document.getElementById(choice.val).textContent = choice.label;
-                document.getElementById(choice.status).className = "p-2 border border-danger rounded-3 text-center bg-danger bg-opacity-10 text-danger";
-                
-                triggerProctorViolation(choice.t);
-                updateRiskScore(true);
-            } else {
-                document.getElementById('faceVal').textContent = "1 / 1";
-                document.getElementById('faceStatus').className = "p-2 border border-success rounded-3 text-center bg-success bg-opacity-10 text-success";
-                
-                document.getElementById('gazeVal').textContent = "Center";
-                document.getElementById('gazeStatus').className = "p-2 border border-success rounded-3 text-center bg-success bg-opacity-10 text-success";
-                
-                document.getElementById('motionVal').textContent = "Stable";
-                document.getElementById('motionStatus').className = "p-2 border border-success rounded-3 text-center bg-success bg-opacity-10 text-success";
-                
-                document.getElementById('phoneVal').textContent = "None";
-                document.getElementById('phoneStatus').className = "p-2 border rounded-3 text-center bg-light";
-                
-                updateRiskScore(false);
-            }
-            setTimeout(simulate, 3500);
+    // Standard Window & Focus Listeners
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        window.triggerProctorViolation('Right-Click Restricted');
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+            e.preventDefault();
+            window.triggerProctorViolation('Clipboard Shortcut Restricted');
         }
-        simulate();
-    }
+    });
+
+    let windowFocused = true;
+    window.addEventListener('blur', function() {
+        if (windowFocused) {
+            windowFocused = false;
+            window.triggerProctorViolation('Tab Switched / Window Blur');
+        }
+    });
+    window.addEventListener('focus', function() {
+        windowFocused = true;
+    });
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            window.triggerProctorViolation('Tab Minimized / Hidden');
+        }
+    });
 });
 </script>

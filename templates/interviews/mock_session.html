@@ -1,224 +1,220 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Mock Interview Session - Career Catalyst{% endblock %}
+{% block title %}Mock Interview Session — {{ session.role }} — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'interviews:mock_list' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Exit to Mock Interviews
-        </a>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/interviews.css' %}?v=1.0">
+{% endblock %}
 
-    <!-- Proctoring Alert overlay -->
-    <div id="proctorOverlay" class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-none justify-content-center align-items-center" style="z-index: 9999;">
-        <div class="card border-0 shadow rounded-4 p-5 text-center max-width-500 bg-white">
-            <i class="bi bi-exclamation-triangle-fill text-danger display-3 mb-3"></i>
-            <h3 class="fw-bold text-danger">Proctor Warning!</h3>
-            <p class="text-muted fs-5 mb-4">Focus lost, multiple people, or camera rules violated during this mock interview session. This event is logged.</p>
-            <button id="resumeTestBtn" class="btn btn-primary-custom px-4 py-2 rounded-pill">Resume Interview</button>
-        </div>
-    </div>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-    {% csrf_token %}
-    <div class="row g-4">
-        <!-- Chat container (Col 8) -->
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden d-flex flex-column" style="height: 600px;">
-                <!-- Header -->
-                <div class="bg-dark text-white p-3 px-4 d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-robot text-primary"></i> AI Technical Interviewer</h5>
-                        <small class="text-light text-opacity-75">Target Role: {{ session.role }}</small>
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            {% csrf_token %}
+            <!-- Header & Breadcrumbs -->
+            <div class="interview-page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="interview-breadcrumb">
+                        <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <a href="{% url 'interviews:hub' %}">Interview Prep</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <a href="{% url 'interviews:mock_list' %}">Mock Simulator</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <span>Live Session</span>
                     </div>
-                    <span class="badge bg-danger rounded-pill px-3 py-2" id="violationBadge">
+                    <div class="d-flex align-items-center gap-2">
+                        <h1 class="interview-page-title mb-0">{{ session.role }} Simulator</h1>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                            Live Assessment
+                        </span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2 fw-semibold" id="violationBadge" style="font-size: 0.8125rem;">
                         Warnings: 0
                     </span>
+                    <a href="{% url 'interviews:mock_list' %}" class="btn btn-outline-secondary rounded-pill btn-sm px-3 py-2" onclick="return confirm('Exit this mock interview? You can resume later.');">
+                        <i class="bi bi-door-open me-1"></i> Exit Session
+                    </a>
                 </div>
+            </div>
 
-                <!-- Chat Box Body -->
-                <div class="card-body bg-light p-4 overflow-auto flex-grow-1" id="chatContainer">
-                    {% for msg in session.chats.all %}
-                    <div class="d-flex mb-3 {% if msg.sender == 'Candidate' %}justify-content-end{% endif %}">
-                        <div class="card border-0 rounded-4 px-3 py-2 max-width-75 {% if msg.sender == 'Candidate' %}bg-primary text-white{% else %}bg-white text-secondary{% endif %} shadow-sm">
-                            <span class="small fw-semibold mb-1 d-block text-opacity-75 {% if msg.sender == 'Candidate' %}text-white{% else %}text-muted{% endif %}">
-                                {{ msg.sender }}
+            <div class="row g-4 align-items-start">
+                <!-- Chat Workspace (Left Column) -->
+                <div class="col-lg-8">
+                    <div class="mock-chat-card">
+                        <!-- Header -->
+                        <div class="mock-chat-header">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="mock-bubble-avatar interviewer" style="width: 28px; height: 28px;">
+                                    <i class="bi bi-robot"></i>
+                                </div>
+                                <div>
+                                    <span class="fw-bold text-secondary small d-block">Simulated Technical Interviewer</span>
+                                    <span class="text-muted" style="font-size: 0.7rem;">Target Track: {{ session.role }}</span>
+                                </div>
+                            </div>
+                            <span class="text-muted small">
+                                <i class="bi bi-shield-check me-1 text-success"></i> Focus Monitored
                             </span>
-                            <span>{{ msg.message|linebreaksbr }}</span>
                         </div>
-                    </div>
-                    {% endfor %}
 
-                    <!-- Typing Indicator -->
-                    <div class="d-none mb-3" id="typingIndicator">
-                        <div class="card border-0 rounded-4 px-3 py-2 bg-white text-secondary shadow-sm align-self-start" style="width: 100px;">
-                            <span class="small fw-semibold mb-1 d-block text-muted">Interviewer</span>
-                            <div class="typing-dots d-flex gap-1 py-1">
-                                <span class="dot"></span>
-                                <span class="dot"></span>
-                                <span class="dot"></span>
+                        <!-- Chat Messages Container -->
+                        <div class="mock-chat-body" id="chatContainer">
+                            {% for msg in session.chats.all %}
+                            <div class="mock-bubble-wrapper {% if msg.sender == 'Candidate' %}candidate{% else %}interviewer{% endif %}">
+                                <div class="mock-bubble-avatar {% if msg.sender == 'Candidate' %}candidate{% else %}interviewer{% endif %}">
+                                    {% if msg.sender == 'Candidate' %}
+                                        <i class="bi bi-person-fill"></i>
+                                    {% else %}
+                                        <i class="bi bi-robot"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="mock-bubble-content">
+                                    <div class="mock-bubble-author">{{ msg.sender }}</div>
+                                    <div>{{ msg.message|linebreaksbr }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+
+                            <!-- Typing Indicator Placeholder -->
+                            <div class="mock-bubble-wrapper interviewer d-none" id="typingIndicator">
+                                <div class="mock-bubble-avatar interviewer">
+                                    <i class="bi bi-robot"></i>
+                                </div>
+                                <div class="mock-bubble-content py-2">
+                                    <div class="typing-dots">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input Footer -->
+                        <div class="mock-chat-footer">
+                            <div class="input-group">
+                                <textarea class="form-control" id="chatInput" rows="2" style="border-radius: var(--dash-radius-sm, 6px); resize: none; background: var(--dash-surface); color: var(--dash-text); border-color: var(--dash-border); font-size: 0.875rem;" placeholder="Type your detailed response here..."></textarea>
+                                <button type="button" class="btn btn-primary px-4 fw-semibold" id="sendBtn" style="border-radius: var(--dash-radius-sm, 6px);">
+                                    <i class="bi bi-send-fill me-1"></i> Send
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Input Footer -->
-                <div class="border-top p-3 bg-white">
-                    <div class="input-group">
-                        <textarea class="form-control rounded-start-4 p-3" id="chatInput" rows="2" style="resize: none;" placeholder="Type your detailed response here..."></textarea>
-                        <button class="btn btn-primary-custom px-4 rounded-end-4" id="sendBtn" type="button">
-                            <i class="bi bi-send-fill fs-5"></i>
-                        </button>
-                    </div>
+                <!-- Right: Proctoring Stream Sidebar -->
+                <div class="col-lg-4" style="position: sticky; top: 1rem;">
+                    {% include 'interviews/partials/proctor_stream.html' with session_type='MockInterview' session_id=session.id %}
                 </div>
             </div>
-        </div>
-
-        <!-- AI Proctoring Stream (Col 4) -->
-        <div class="col-lg-4" style="position: sticky; top: 90px; align-self: start;">
-            {% include 'interviews/partials/proctor_stream.html' with session_type='MockInterview' session_id=session.id %}
-        </div>
+        </main>
     </div>
 </div>
+{% endblock %}
 
-<style>
-    .max-width-75 {
-        max-width: 75%;
-    }
-    .max-width-500 {
-        max-width: 500px;
-    }
-    .typing-dots .dot {
-        width: 8px;
-        height: 8px;
-        background-color: #9ca3af;
-        border-radius: 50%;
-        display: inline-block;
-        animation: typing 1.4s infinite both;
-    }
-    .typing-dots .dot:nth-child(2) { animation-delay: .2s; }
-    .typing-dots .dot:nth-child(3) { animation-delay: .4s; }
-    
-    @keyframes typing {
-        0%, 80%, 100% { transform: scale(0.6); }
-        40% { transform: scale(1.2); }
-    }
-    .spin {
-        display: inline-block;
-        animation: spin 2s linear infinite;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    .text-secondary { color: #6b7280 !important; }
-    .text-success { color: #10b981 !important; }
-    .text-warning { color: #f59e0b !important; }
-    .text-danger { color: #ef4444 !important; }
-</style>
-
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Sidebar drawer toggle
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('dashSidebarClose');
+    const sidebar = document.getElementById('dashSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+
+    // Chat Mechanics
     const chatContainer = document.getElementById('chatContainer');
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
     const typing = document.getElementById('typingIndicator');
 
-    // Auto scroll chat to bottom
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-
-    // AI Proctoring variables
-    let violationCount = 0;
-    let riskScore = 0;
-    const badge = document.getElementById('violationBadge');
-    const overlay = document.getElementById('proctorOverlay');
-    const resumeBtn = document.getElementById('resumeTestBtn');
-
-    // Disable Right Click
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        triggerProctorViolation('Right-Click Blocked', true);
-    });
-
-    // Disable copy-paste key combinations
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
-            e.preventDefault();
-            triggerProctorViolation('Copy-Paste Attempted', true);
-        }
-    });
-
-    // Tab switches focus monitoring
-    let isWindowFocused = true;
-    window.addEventListener('blur', function() {
-        if (isWindowFocused) {
-            isWindowFocused = false;
-            triggerProctorViolation('Tab Switched / Focus Lost', true);
-        }
-    });
-    window.addEventListener('focus', function() {
-        isWindowFocused = true;
-    });
-
-    document.addEventListener('visibilitychange', function() {
-        if (document.hidden) {
-            triggerProctorViolation('Tab Switched (Hidden)', true);
-        }
-    });
-
-    function triggerProctorViolation(type, forcePopup = false) {
-        violationCount++;
-        badge.textContent = `Warnings: ${violationCount}`;
-
-        // Log to backend
-        fetch("{% url 'interviews:log_proctor_violation' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({
-                session_type: 'MockInterview',
-                session_id: {{ session.id }},
-                violation_type: type
-            })
-        }).catch(err => console.error('Violation logging failed:', err));
-
-        if (forcePopup || violationCount % 6 === 0) {
-            overlay.classList.remove('d-none');
-            overlay.classList.add('d-flex');
-        }
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    resumeBtn.addEventListener('click', function() {
-        overlay.classList.add('d-none');
-        overlay.classList.remove('d-flex');
+    sendBtn.addEventListener('click', handleSend);
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
     });
 
-    // Chat reply handler
-    sendBtn.addEventListener('click', function() {
+    function handleSend() {
         const msg = chatInput.value.trim();
         if (!msg) return;
 
         appendBubble('Candidate', msg);
         chatInput.value = '';
-
         chatInput.disabled = true;
         sendBtn.disabled = true;
-        
+
         typing.classList.remove('d-none');
         chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        const violations = parseInt(document.getElementById('proctorViolationsInput')?.value || '0', 10);
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         fetch("{% url 'interviews:chat_reply' session.id %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify({
                 message: msg,
-                proctor_violations: violationCount
+                proctor_violations: violations
             })
         })
         .then(res => res.json())
@@ -237,32 +233,29 @@ document.addEventListener('DOMContentLoaded', function() {
             typing.classList.add('d-none');
             chatInput.disabled = false;
             sendBtn.disabled = false;
-            alert('Interviewer reply failed: ' + err);
+            alert('Interviewer response error: ' + err);
         });
-    });
-
-    function appendBubble(sender, text) {
-        const wrap = document.createElement('div');
-        wrap.className = `d-flex mb-3 ${sender === 'Candidate' ? 'justify-content-end' : ''}`;
-        
-        const card = document.createElement('div');
-        card.className = `card border-0 rounded-4 px-3 py-2 max-width-75 ${sender === 'Candidate' ? 'bg-primary text-white' : 'bg-white text-secondary'} shadow-sm`;
-        
-        card.innerHTML = `
-            <span class="small fw-semibold mb-1 d-block text-opacity-75 ${sender === 'Candidate' ? 'text-white' : 'text-muted'}">${sender}</span>
-            <span>${text.replace(/\n/g, '<br>')}</span>
-        `;
-        
-        wrap.appendChild(card);
-        chatContainer.insertBefore(wrap, typing);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    // Helper to log and warn
-    function triggerProctorViolation(type) {
-        if (typeof window.triggerProctorViolation === 'function') {
-            window.triggerProctorViolation(type);
-        }
+    function appendBubble(sender, text) {
+        const isCand = sender === 'Candidate';
+        const wrap = document.createElement('div');
+        wrap.className = `mock-bubble-wrapper ${isCand ? 'candidate' : 'interviewer'}`;
+
+        const icon = isCand ? '<i class="bi bi-person-fill"></i>' : '<i class="bi bi-robot"></i>';
+
+        wrap.innerHTML = `
+            <div class="mock-bubble-avatar ${isCand ? 'candidate' : 'interviewer'}">
+                ${icon}
+            </div>
+            <div class="mock-bubble-content">
+                <div class="mock-bubble-author">${sender}</div>
+                <div>${text.replace(/\n/g, '<br>')}</div>
+            </div>
+        `;
+
+        chatContainer.insertBefore(wrap, typing);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 });
 </script>

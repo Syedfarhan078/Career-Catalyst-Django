@@ -1,55 +1,144 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}HR & Behavioral Interview Prep - Career Catalyst{% endblock %}
+{% block title %}HR & Behavioral Interview Prep — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <div class="mb-4">
-        <a href="{% url 'interviews:hub' %}" class="btn-back mb-3">
-            <i class="bi bi-arrow-left"></i> Back to Interview Hub
-        </a>
-        <h1 class="fw-bold mb-1">HR & Behavioral Practice</h1>
-        <p class="text-muted">Master structured storytelling for soft-skills questions using the STAR framework.</p>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/interviews.css' %}?v=1.0">
+{% endblock %}
 
-    <div class="row g-4">
-        {% for question in questions %}
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden hover-lift d-flex flex-column">
-                <div class="card-body p-4 d-flex flex-column">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge {% if question.difficulty == 'Easy' %}bg-success{% elif question.difficulty == 'Medium' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-10 {% if question.difficulty == 'Easy' %}text-success{% elif question.difficulty == 'Medium' %}text-warning{% else %}text-danger{% endif %} rounded-pill px-3 py-1">
-                            {{ question.difficulty }}
-                        </span>
-                        <span class="text-muted small"><i class="bi bi-star"></i> STAR Method</span>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="interview-page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="interview-breadcrumb">
+                        <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <a href="{% url 'interviews:hub' %}">Interview Prep</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <span>HR & Behavioral</span>
                     </div>
-
-                    <h5 class="fw-bold mb-2">{{ question.title }}</h5>
-                    <p class="text-muted small flex-grow-1">{{ question.content|truncatewords:20 }}</p>
-
-                    <div class="d-grid mt-4">
-                        <a href="{% url 'interviews:behavioral_detail' question.id %}" class="btn btn-primary-custom rounded-pill btn-sm">
-                            Write Response
-                        </a>
-                    </div>
+                    <h1 class="interview-page-title">HR & Behavioral Practice</h1>
+                    <p class="interview-page-subtitle">
+                        Master structured communication and storytelling for behavioral questions using the Situation, Task, Action, Result (STAR) framework.
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 fw-semibold" style="font-size: 0.8125rem;">
+                        <i class="bi bi-check-circle me-1"></i> Completed: {{ completed_count }} / {{ total_count }}
+                    </span>
+                    <a href="{% url 'interviews:hub' %}" class="btn btn-outline-secondary rounded-pill btn-sm px-3 py-2">
+                        <i class="bi bi-arrow-left me-1"></i> Hub
+                    </a>
                 </div>
             </div>
-        </div>
-        {% empty %}
-        <div class="col-12 text-center py-5">
-            <p class="text-muted">No behavioral questions found. Run `python manage.py seed_interviews` first.</p>
-        </div>
-        {% endfor %}
+
+            <!-- Behavioral Questions Grid -->
+            <div class="row g-3">
+                {% for question in questions %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="interview-track-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge {% if question.difficulty == 'Easy' %}bg-success-subtle text-success{% elif question.difficulty == 'Medium' %}bg-warning-subtle text-warning{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill px-2 py-1" style="font-size: 0.725rem;">
+                                {{ question.difficulty }}
+                            </span>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if question.id in completed_question_ids %}
+                                    <span class="badge bg-success text-white rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Evaluated
+                                    </span>
+                                {% endif %}
+                                <span class="text-muted small"><i class="bi bi-star me-1"></i> STAR</span>
+                            </div>
+                        </div>
+
+                        <h2 class="interview-track-title">{{ question.title }}</h2>
+                        <p class="interview-track-desc">{{ question.content|truncatewords:22 }}</p>
+
+                        <div class="interview-track-footer">
+                            <span class="text-muted small">
+                                <i class="bi bi-card-checklist me-1 text-primary"></i> 4 Sections
+                            </span>
+                            <a href="{% url 'interviews:behavioral_detail' question.id %}" class="btn {% if question.id in completed_question_ids %}btn-outline-primary{% else %}btn-primary{% endif %} rounded-pill btn-sm px-3">
+                                {% if question.id in completed_question_ids %}Review Response{% else %}Draft Response{% endif %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="interview-empty-state">
+                        <i class="bi bi-chat-quote interview-empty-icon"></i>
+                        <h5 class="fw-bold mb-1">No Questions Available</h5>
+                        <p class="small text-muted mb-3">Behavioral questions will appear here once seeded.</p>
+                        <a href="{% url 'interviews:hub' %}" class="btn btn-primary rounded-pill btn-sm px-4">Back to Hub</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </main>
     </div>
 </div>
+{% endblock %}
 
-<style>
-    .hover-lift {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('dashSidebarClose');
+    const sidebar = document.getElementById('dashSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
     }
-    .hover-lift:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
     }
-</style>
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+});
+</script>
 {% endblock %}

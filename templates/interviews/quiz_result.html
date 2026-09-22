@@ -1,50 +1,122 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Assessment Result - Career Catalyst{% endblock %}
+{% block title %}Assessment Result — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5 mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
-                <div class="rounded-circle bg-success bg-opacity-10 p-3 mx-auto mb-4 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                    <i class="bi bi-patch-check fs-1 text-success"></i>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/interviews.css' %}?v=1.0">
+{% endblock %}
+
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="interview-page-header mb-4">
+                <div class="interview-breadcrumb">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <a href="{% url 'interviews:hub' %}">Interview Prep</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>Assessment Result</span>
                 </div>
-                
-                <h2 class="fw-bold mb-2">Quiz Completed!</h2>
-                <p class="text-muted">Your answers have been graded and recorded successfully.</p>
-                
-                <hr class="my-4">
-                
-                <div class="mb-4">
-                    <h6 class="text-uppercase text-muted fw-bold small">Your Score</h6>
-                    <div class="display-3 fw-bold {% if attempt.score >= 70 %}text-success{% elif attempt.score >= 55 %}text-warning{% else %}text-danger{% endif %}">
-                        {{ attempt.score }}%
-                    </div>
-                    <p class="text-muted mt-2">
-                        You answered <span class="fw-bold">{{ correct_count }}</span> out of <span class="fw-bold">{{ total }}</span> questions correctly.
-                    </p>
+            </div>
+
+            <!-- Scorecard Container -->
+            <div class="interview-result-card">
+                <div class="interview-track-icon-wrapper mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.75rem; background: var(--dash-success-subtle); color: var(--dash-success); border-color: var(--dash-success-border);">
+                    <i class="bi bi-patch-check-fill"></i>
                 </div>
 
-                <div class="mb-4 bg-light p-3 rounded-4">
+                <h2 class="fw-bold mb-1 text-secondary">Assessment Completed</h2>
+                <p class="text-muted small mb-3">Your answers have been graded and recorded in your performance history.</p>
+
+                <div class="interview-score-display {% if attempt.score >= 70 %}high{% elif attempt.score >= 50 %}medium{% else %}low{% endif %}">
+                    {{ attempt.score }}%
+                </div>
+
+                <p class="text-muted mb-4">
+                    Correct Answers: <strong class="text-secondary">{{ correct_count }}</strong> of <strong class="text-secondary">{{ total }}</strong> questions.
+                </p>
+
+                <div class="p-3 rounded-3 mb-4 mx-auto" style="max-width: 400px; background: var(--dash-surface-muted); border: 1px solid var(--dash-border); font-size: 0.8125rem;">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted small">Proctor Flags Detected:</span>
-                        <span class="badge {% if attempt.proctor_violations_count == 0 %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
-                            {{ attempt.proctor_violations_count }} warnings
+                        <span class="text-muted"><i class="bi bi-shield-check me-1"></i> Proctor Integrity:</span>
+                        <span class="badge {% if attempt.proctor_violations_count == 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill px-3 py-1">
+                            {{ attempt.proctor_violations_count }} Warning{{ attempt.proctor_violations_count|pluralize }}
                         </span>
                     </div>
                 </div>
 
-                <div class="d-flex gap-3 justify-content-center">
-                    <a href="{% url 'interviews:hub' %}" class="btn btn-primary-custom px-4 py-2 rounded-pill">
-                        Back to Hub
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="{% url 'interviews:hub' %}" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
+                        <i class="bi bi-arrow-repeat me-1"></i> Practice More
                     </a>
-                    <a href="{% url 'interviews:reports' %}" class="btn btn-outline-primary px-4 py-2 rounded-pill">
-                        View Detailed Reports
+                    <a href="{% url 'interviews:reports' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                        <i class="bi bi-graph-up-arrow me-1"></i> View All Reports
                     </a>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('dashSidebarClose');
+    const sidebar = document.getElementById('dashSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+});
+</script>
 {% endblock %}

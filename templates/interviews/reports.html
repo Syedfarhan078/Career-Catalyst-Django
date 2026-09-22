@@ -1,158 +1,283 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Performance Reports - Career Catalyst{% endblock %}
+{% block title %}Performance & Proctoring Reports — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5 mt-5">
-    <div class="mb-5">
-        <a href="{% url 'interviews:hub' %}" class="btn btn-outline-secondary btn-sm rounded-pill mb-3">
-            <i class="bi bi-arrow-left"></i> Hub Dashboard
-        </a>
-        <h1 class="fw-bold mb-1">Performance & Proctoring Reports</h1>
-        <p class="text-muted">Review your test historical scores and audit logged proctoring metrics.</p>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/interviews.css' %}?v=1.0">
+{% endblock %}
 
-    <!-- Navigation Tabs -->
-    <ul class="nav nav-pills mb-4 gap-2 bg-light p-2 rounded-4" id="reportTabs" role="tablist" style="width: fit-content;">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active rounded-pill px-4 fw-semibold" id="quizzes-tab" data-bs-toggle="tab" data-bs-target="#quizzes" type="button" role="tab" aria-controls="quizzes" aria-selected="true">
-                <i class="bi bi-patch-question"></i> Quiz Attempts
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
             </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link rounded-pill px-4 fw-semibold" id="mocks-tab" data-bs-toggle="tab" data-bs-target="#mocks" type="button" role="tab" aria-controls="mocks" aria-selected="false">
-                <i class="bi bi-robot"></i> Mock Interviews
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link rounded-pill px-4 fw-semibold" id="proctor-tab" data-bs-toggle="tab" data-bs-target="#proctor" type="button" role="tab" aria-controls="proctor" aria-selected="false">
-                <i class="bi bi-shield-alert"></i> Proctor Audit Log
-            </button>
-        </li>
-    </ul>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
 
-    <!-- Tab Content -->
-    <div class="tab-content" id="reportTabsContent">
-        <!-- Quizzes Tab -->
-        <div class="tab-pane fade show active" id="quizzes" role="tabpanel" aria-labelledby="quizzes-tab">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h4 class="fw-bold mb-4 text-secondary">Aptitude & Technical MCQ Quizzes</h4>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead>
-                            <tr class="table-light">
-                                <th class="ps-3 py-3">Category</th>
-                                <th class="py-3">Attempted At</th>
-                                <th class="py-3">Proctor Warnings</th>
-                                <th class="py-3 pe-3 text-end">Score</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for attempt in attempts %}
-                            <tr>
-                                <td class="ps-3 py-3 fw-bold text-secondary">{{ attempt.category.name }}</td>
-                                <td class="py-3 text-muted">{{ attempt.attempted_at|date:"M d, Y - h:i A" }}</td>
-                                <td class="py-3">
-                                    <span class="badge {% if attempt.proctor_violations_count == 0 %}bg-success{% else %}bg-danger{% endif %} rounded-pill px-3">
-                                        {{ attempt.proctor_violations_count }} warnings
-                                    </span>
-                                </td>
-                                <td class="py-3 pe-3 text-end fw-bold fs-5 {% if attempt.score >= 70 %}text-success{% elif attempt.score >= 55 %}text-warning{% else %}text-danger{% endif %}">
-                                    {{ attempt.score }}%
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" class="text-center py-5 text-muted">No quiz attempts logged yet.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="interview-page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="interview-breadcrumb">
+                        <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <a href="{% url 'interviews:hub' %}">Interview Prep</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <span>Reports & Audit</span>
+                    </div>
+                    <h1 class="interview-page-title">Performance & Proctoring Reports</h1>
+                    <p class="interview-page-subtitle">
+                        Historical evaluation scores, behavioral attempts, and focus integrity audit logs.
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{% url 'interviews:hub' %}" class="btn btn-outline-secondary rounded-pill btn-sm px-3 py-2">
+                        <i class="bi bi-arrow-left me-1"></i> Hub Dashboard
+                    </a>
                 </div>
             </div>
-        </div>
 
-        <!-- Mocks Tab -->
-        <div class="tab-pane fade" id="mocks" role="tabpanel" aria-labelledby="mocks-tab">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h4 class="fw-bold mb-4 text-secondary">AI Mock Interview Sessions</h4>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead>
-                            <tr class="table-light">
-                                <th class="ps-3 py-3">Target Role</th>
-                                <th class="py-3">Started At</th>
-                                <th class="py-3">Proctor Warnings</th>
-                                <th class="py-3">Status</th>
-                                <th class="py-3 pe-3 text-end">Overall Score</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for mock in mocks %}
-                            <tr>
-                                <td class="ps-3 py-3 fw-bold text-secondary">
-                                    {{ mock.role }}
-                                    {% if mock.is_completed %}
-                                    <div class="small mt-1"><a href="{% url 'interviews:mock_report' mock.id %}" class="text-decoration-none">View Details</a></div>
-                                    {% endif %}
-                                </td>
-                                <td class="py-3 text-muted">{{ mock.started_at|date:"M d, Y - h:i A" }}</td>
-                                <td class="py-3">
-                                    <span class="badge {% if mock.proctor_violations_count == 0 %}bg-success{% else %}bg-danger{% endif %} rounded-pill px-3">
-                                        {{ mock.proctor_violations_count }} warnings
-                                    </span>
-                                </td>
-                                <td class="py-3">
-                                    <span class="badge bg-success rounded-pill px-3">Completed</span>
-                                </td>
-                                <td class="py-3 pe-3 text-end fw-bold fs-5 {% if mock.overall_score >= 70 %}text-success{% elif mock.overall_score >= 55 %}text-warning{% else %}text-danger{% endif %}">
-                                    {{ mock.overall_score }}%
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center py-5 text-muted">No mock interviews completed yet.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <!-- Tab Navigation -->
+            <div class="interview-tabs" role="tablist">
+                <button class="interview-tab-btn active" id="quizzes-tab" data-bs-toggle="tab" data-bs-target="#quizzes-pane" type="button" role="tab" aria-controls="quizzes-pane" aria-selected="true">
+                    <i class="bi bi-patch-check"></i>
+                    <span>Quiz Attempts</span>
+                    <span class="badge bg-secondary-subtle text-secondary rounded-pill ms-1" style="font-size: 0.7rem;">{{ attempts|length }}</span>
+                </button>
+                <button class="interview-tab-btn" id="mocks-tab" data-bs-toggle="tab" data-bs-target="#mocks-pane" type="button" role="tab" aria-controls="mocks-pane" aria-selected="false">
+                    <i class="bi bi-robot"></i>
+                    <span>Mock Interviews</span>
+                    <span class="badge bg-secondary-subtle text-secondary rounded-pill ms-1" style="font-size: 0.7rem;">{{ mocks|length }}</span>
+                </button>
+                <button class="interview-tab-btn" id="proctor-tab" data-bs-toggle="tab" data-bs-target="#proctor-pane" type="button" role="tab" aria-controls="proctor-pane" aria-selected="false">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Proctor Audit Log</span>
+                    <span class="badge bg-secondary-subtle text-secondary rounded-pill ms-1" style="font-size: 0.7rem;">{{ violations|length }}</span>
+                </button>
+            </div>
+
+            <!-- Tab Content Panes -->
+            <div class="tab-content">
+                <!-- Quizzes Pane -->
+                <div class="tab-pane fade show active" id="quizzes-pane" role="tabpanel" aria-labelledby="quizzes-tab">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background: var(--dash-surface); border: 1px solid var(--dash-border) !important;">
+                        <div class="table-responsive">
+                            <table class="interview-table">
+                                <thead>
+                                    <tr>
+                                        <th>Evaluation Track</th>
+                                        <th>Attempted At</th>
+                                        <th>Integrity Flags</th>
+                                        <th class="text-end">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attempt in attempts %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-semibold text-secondary">{{ attempt.category.name }}</span>
+                                        </td>
+                                        <td class="text-muted small">
+                                            {{ attempt.attempted_at|date:"M d, Y · h:i A" }}
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if attempt.proctor_violations_count == 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                                                {{ attempt.proctor_violations_count }} warning{{ attempt.proctor_violations_count|pluralize }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge {% if attempt.score >= 70 %}bg-success-subtle text-success{% elif attempt.score >= 50 %}bg-warning-subtle text-warning{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill px-3 py-1 fw-bold fs-6">
+                                                {{ attempt.score }}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4">
+                                            <div class="interview-empty-state">
+                                                <i class="bi bi-patch-question interview-empty-icon"></i>
+                                                <h6 class="fw-bold mb-1">No Quiz Attempts Recorded</h6>
+                                                <p class="small text-muted mb-3">Practice aptitude and technical quizzes to populate your record.</p>
+                                                <a href="{% url 'interviews:hub' %}" class="btn btn-primary rounded-pill btn-sm px-4">Go to Hub</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mock Interviews Pane -->
+                <div class="tab-pane fade" id="mocks-pane" role="tabpanel" aria-labelledby="mocks-tab">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background: var(--dash-surface); border: 1px solid var(--dash-border) !important;">
+                        <div class="table-responsive">
+                            <table class="interview-table">
+                                <thead>
+                                    <tr>
+                                        <th>Target Role</th>
+                                        <th>Started At</th>
+                                        <th>Integrity Flags</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for mock in mocks %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-semibold text-secondary">{{ mock.role }}</span>
+                                            {% if mock.is_completed %}
+                                            <div class="small">
+                                                <a href="{% url 'interviews:mock_report' mock.id %}" class="text-primary text-decoration-none" style="font-size: 0.75rem;">
+                                                    View Scorecard <i class="bi bi-arrow-right"></i>
+                                                </a>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-muted small">
+                                            {{ mock.started_at|date:"M d, Y · h:i A" }}
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if mock.proctor_violations_count == 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                                                {{ mock.proctor_violations_count }} warning{{ mock.proctor_violations_count|pluralize }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if mock.is_completed %}
+                                                <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1" style="font-size: 0.75rem;">Completed</span>
+                                            {% else %}
+                                                <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1" style="font-size: 0.75rem;">In Progress</span>
+                                                <a href="{% url 'interviews:mock_session' mock.id %}" class="small text-decoration-none ms-1" style="font-size: 0.75rem;">Resume</a>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            {% if mock.is_completed %}
+                                                <span class="badge {% if mock.overall_score >= 70 %}bg-success-subtle text-success{% elif mock.overall_score >= 50 %}bg-warning-subtle text-warning{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill px-3 py-1 fw-bold fs-6">
+                                                    {{ mock.overall_score }}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted small">—</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5">
+                                            <div class="interview-empty-state">
+                                                <i class="bi bi-robot interview-empty-icon"></i>
+                                                <h6 class="fw-bold mb-1">No Mock Sessions Recorded</h6>
+                                                <p class="small text-muted mb-3">Launch the AI simulator to run your first session.</p>
+                                                <a href="{% url 'interviews:mock_list' %}" class="btn btn-primary rounded-pill btn-sm px-4">Open Simulator</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proctor Audit Log Pane -->
+                <div class="tab-pane fade" id="proctor-pane" role="tabpanel" aria-labelledby="proctor-tab">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background: var(--dash-surface); border: 1px solid var(--dash-border) !important;">
+                        <div class="table-responsive">
+                            <table class="interview-table">
+                                <thead>
+                                    <tr>
+                                        <th>Detected Event</th>
+                                        <th>Assessment Track</th>
+                                        <th>Session ID</th>
+                                        <th class="text-end">Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for v in violations %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1 me-1" style="font-size: 0.75rem;">
+                                                <i class="bi bi-flag-fill me-1"></i> {{ v.violation_type }}
+                                            </span>
+                                        </td>
+                                        <td class="text-secondary small">{{ v.session_type }}</td>
+                                        <td class="text-muted small">#{{ v.session_id }}</td>
+                                        <td class="text-end text-muted small">{{ v.timestamp|date:"M d, Y · h:i:s A" }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4">
+                                            <div class="interview-empty-state">
+                                                <i class="bi bi-shield-check interview-empty-icon" style="color: var(--dash-success);"></i>
+                                                <h6 class="fw-bold mb-1 text-secondary">Clean Proctoring Record</h6>
+                                                <p class="small text-muted mb-0">No window blurs, tab changes, or focus violations have been flagged.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Proctor Tab -->
-        <div class="tab-pane fade" id="proctor" role="tabpanel" aria-labelledby="proctor-tab">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h4 class="fw-bold mb-4 text-danger"><i class="bi bi-shield-alert"></i> System Security Violation Logs</h4>
-                <p class="text-muted small">Automatic logs recorded via Page Visibility, Window Focus Loss, or Fullscreen change API listeners.</p>
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover align-middle">
-                        <thead>
-                            <tr class="table-danger">
-                                <th class="ps-3 py-3">Violation Event</th>
-                                <th class="py-3">Assessment Type</th>
-                                <th class="py-3">Logged Timestamp</th>
-                                <th class="py-3 pe-3">Action Taken</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for log in proctor_logs %}
-                            <tr>
-                                <td class="ps-3 py-3 fw-bold text-danger">{{ log.violation_type }}</td>
-                                <td class="py-3">{{ log.session_type }}</td>
-                                <td class="py-3 text-muted">{{ log.timestamp|date:"M d, Y - h:i:s A" }}</td>
-                                <td class="py-3 pe-3 text-secondary">Warning displayed, violations counter updated</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4" class="text-center py-5 text-success"><i class="bi bi-shield-check"></i> No proctoring violations logged! Your session audit is completely clean.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('dashSidebarClose');
+    const sidebar = document.getElementById('dashSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+});
+</script>
 {% endblock %}

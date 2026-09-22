@@ -1,83 +1,191 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}AI Mock Interview Simulator - Career Catalyst{% endblock %}
+{% block title %}AI Mock Interview Simulator — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'interviews:hub' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Interview Hub
-        </a>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/interviews.css' %}?v=1.0">
+{% endblock %}
 
-    <div class="mb-5 text-center">
-        <h1 class="fw-bold mb-2">AI Mock Interview Simulator</h1>
-        <p class="text-muted fs-5">Practice live technical and behavioral Q&A conversations. Includes active focus proctoring.</p>
-    </div>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-    <div class="row g-4 justify-content-center">
-        <!-- New Session Form Card -->
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 h-100">
-                <h4 class="fw-bold mb-3"><i class="bi bi-play-circle text-primary"></i> Start New Interview</h4>
-                <p class="text-muted small">Select your target career track to tailor the interviewer's technical questions.</p>
-                
-                <form method="POST" action="{% url 'interviews:start_mock' %}">
-                    {% csrf_token %}
-                    
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold text-secondary">Target Role</label>
-                        <select name="role" class="form-select rounded-pill px-3 py-2">
-                            <option value="Software Developer">Software Developer (Full Stack / Web)</option>
-                            <option value="Data Scientist">Data Scientist / Analyst</option>
-                            <option value="ML Engineer">Machine Learning Engineer</option>
-                            <option value="DevOps Engineer">DevOps & Cloud Engineer</option>
-                            <option value="Product Manager">Product Manager</option>
-                        </select>
-                    </div>
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
 
-                    <div class="alert alert-warning border-0 rounded-4 small mb-4">
-                        <i class="bi bi-info-circle-fill"></i> Fullscreen mode and tab focus monitors will be enabled once the interview begins.
-                    </div>
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
-                    <button type="submit" class="btn btn-primary-custom w-100 rounded-pill py-2 fw-bold">
-                        Begin Interview Session
-                    </button>
-                </form>
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
             </div>
-        </div>
+        </header>
 
-        <!-- History List Card -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                <h4 class="fw-bold mb-3"><i class="bi bi-history text-secondary"></i> Past Sessions</h4>
-                
-                <div class="overflow-auto" style="max-height: 380px;">
-                    {% for session in sessions %}
-                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
-                        <div>
-                            <h6 class="fw-bold mb-0 text-secondary">{{ session.role }}</h6>
-                            <small class="text-muted">{{ session.started_at|date:"M d, Y" }}</small>
-                        </div>
-                        <div class="text-end">
-                            {% if session.is_completed %}
-                                <span class="badge bg-success rounded-pill px-3">Grade: {{ session.overall_score }}%</span>
-                                <div class="mt-1"><a href="{% url 'interviews:mock_report' session.id %}" class="small text-decoration-none">View Report</a></div>
-                            {% else %}
-                                <span class="badge bg-warning text-dark rounded-pill px-3">Incomplete</span>
-                                <div class="mt-1"><a href="{% url 'interviews:mock_session' session.id %}" class="small text-decoration-none">Resume</a></div>
-                            {% endif %}
-                        </div>
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="interview-page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="interview-breadcrumb">
+                        <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <a href="{% url 'interviews:hub' %}">Interview Prep</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <span>Mock Simulator</span>
                     </div>
-                    {% empty %}
-                    <div class="text-center py-5 text-muted">
-                        No mock interviews attempted yet.
-                    </div>
-                    {% endfor %}
+                    <h1 class="interview-page-title">AI Mock Interview Simulator</h1>
+                    <p class="interview-page-subtitle">
+                        Simulate end-to-end technical conversations with real-time question adaptation and proctor tracking.
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{% url 'interviews:hub' %}" class="btn btn-outline-secondary rounded-pill btn-sm px-3 py-2">
+                        <i class="bi bi-arrow-left me-1"></i> Hub
+                    </a>
                 </div>
             </div>
-        </div>
+
+            <div class="row g-4">
+                <!-- Start New Session Form -->
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-sm rounded-4 p-4" style="background: var(--dash-surface); border: 1px solid var(--dash-border) !important;">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <div class="interview-track-icon-wrapper mb-0" style="width: 36px; height: 36px; font-size: 1rem;">
+                                <i class="bi bi-play-circle-fill"></i>
+                            </div>
+                            <h5 class="fw-bold mb-0 text-secondary">Start New Session</h5>
+                        </div>
+                        <p class="text-muted small mb-3">
+                            Select your targeted industry role to initiate customized technical scenarios and behavioral evaluation.
+                        </p>
+
+                        <form method="POST" action="{% url 'interviews:start_mock' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-secondary">Target Career Track</label>
+                                <select name="role" class="form-select rounded-3 py-2" style="background: var(--dash-surface-muted); border-color: var(--dash-border); color: var(--dash-text); font-size: 0.875rem;">
+                                    {% for r in roles %}
+                                    <option value="{{ r }}" {% if r == selected_role %}selected{% endif %}>{{ r }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="p-3 rounded-3 mb-3" style="background: var(--dash-surface-muted); border: 1px solid var(--dash-border); font-size: 0.8125rem;">
+                                <div class="fw-semibold text-secondary mb-1"><i class="bi bi-info-circle me-1 text-primary"></i> 3-Stage Evaluation Flow:</div>
+                                <ul class="text-muted ps-3 mb-0" style="line-height: 1.5;">
+                                    <li>1. Professional Introduction & Background</li>
+                                    <li>2. Role-specific Technical & Architectural Query</li>
+                                    <li>3. Conflict Resolution & Teamwork Scenario</li>
+                                </ul>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-semibold">
+                                <i class="bi bi-robot me-1"></i> Begin Mock Session
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Past Sessions History -->
+                <div class="col-lg-7">
+                    <div class="card border-0 shadow-sm rounded-4 p-4" style="background: var(--dash-surface); border: 1px solid var(--dash-border) !important;">
+                        <h5 class="fw-bold mb-3 text-secondary d-flex align-items-center justify-content-between">
+                            <span><i class="bi bi-clock-history me-2 text-primary"></i> Past Interview Sessions</span>
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                                {{ sessions|length }} Total
+                            </span>
+                        </h5>
+
+                        <div class="overflow-auto" style="max-height: 420px;">
+                            {% for s in sessions %}
+                            <div class="d-flex justify-content-between align-items-center p-3 border-bottom" style="border-color: var(--dash-border) !important;">
+                                <div>
+                                    <h6 class="fw-bold mb-1 text-secondary" style="font-size: 0.9375rem;">{{ s.role }}</h6>
+                                    <div class="text-muted small">
+                                        <i class="bi bi-calendar3 me-1"></i> {{ s.started_at|date:"M d, Y · h:i A" }}
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    {% if s.is_completed %}
+                                        <span class="badge {% if s.overall_score >= 70 %}bg-success-subtle text-success{% elif s.overall_score >= 50 %}bg-warning-subtle text-warning{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill px-3 py-1 fw-semibold mb-1 d-inline-block">
+                                            Score: {{ s.overall_score }}%
+                                        </span>
+                                        <div>
+                                            <a href="{% url 'interviews:mock_report' s.id %}" class="small text-primary text-decoration-none fw-medium">
+                                                View Scorecard <i class="bi bi-arrow-right"></i>
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning rounded-pill px-3 py-1 fw-semibold mb-1 d-inline-block">
+                                            Incomplete
+                                        </span>
+                                        <div>
+                                            <a href="{% url 'interviews:mock_session' s.id %}" class="small text-primary text-decoration-none fw-medium">
+                                                Resume Session <i class="bi bi-arrow-right"></i>
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="interview-empty-state">
+                                <i class="bi bi-chat-left-dots interview-empty-icon"></i>
+                                <h6 class="fw-bold mb-1">No Past Sessions</h6>
+                                <p class="small text-muted mb-0">Start a session on the left to begin practicing.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('dashSidebarClose');
+    const sidebar = document.getElementById('dashSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+});
+</script>
 {% endblock %}

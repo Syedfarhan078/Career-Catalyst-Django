@@ -1,132 +1,200 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}{{ challenge.title }} - Coding Challenge - Career Catalyst{% endblock %}
+{% block title %}{{ challenge.title }} — Coding Workspace — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container-fluid py-5 mt-5 px-md-5">
-    <!-- Proctoring Alert overlay -->
-    <div id="proctorOverlay" class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-none justify-content-center align-items-center" style="z-index: 9999;">
-        <div class="card border-0 shadow rounded-4 p-5 text-center max-width-500 bg-white">
-            <i class="bi bi-exclamation-triangle-fill text-danger display-3 mb-3"></i>
-            <h3 class="fw-bold text-danger">Proctor Warning!</h3>
-            <p class="text-muted fs-5 mb-4">You switched tabs or lost window focus during this coding challenge. This violation is logged.</p>
-            <button id="resumeTestBtn" class="btn btn-primary-custom px-4 py-2 rounded-pill">Resume Workspace</button>
-        </div>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/interviews.css' %}?v=1.0">
+{% endblock %}
 
-    {% csrf_token %}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <div class="mb-2">
-                <a href="{% url 'interviews:coding_list' %}" class="btn-back">
-                    <i class="bi bi-arrow-left"></i> Back to Challenges
-                </a>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
             </div>
-            <h2 class="fw-bold mb-0">{{ challenge.title }}</h2>
-        </div>
-        <div class="text-end">
-            <span class="badge bg-danger rounded-pill px-3 py-2" id="violationBadge">
-                Proctor Warnings: 0
-            </span>
-        </div>
-    </div>
+        </header>
 
-    <div class="row g-4">
-        <!-- Left Column: Description & Test Cases -->
-        <div class="col-xl-4 col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                <h4 class="fw-bold text-secondary mb-3">Problem Description</h4>
-                <div class="problem-content mb-4 bg-light p-3 rounded-4 overflow-auto fs-6">
-                    {{ challenge.content|linebreaks }}
-                </div>
-
-                <h5 class="fw-bold text-secondary mb-3">Test Cases</h5>
-                <div class="table-responsive">
-                    <table class="table table-borderless bg-light rounded-4 overflow-hidden align-middle">
-                        <thead>
-                            <tr class="table-secondary">
-                                <th class="ps-3 py-3">Case</th>
-                                <th class="py-3">Function Input</th>
-                                <th class="py-3 pe-3">Expected Output</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for case in challenge.test_cases %}
-                            <tr>
-                                <td class="ps-3 py-2 fw-semibold">{{ forloop.counter }}</td>
-                                <td class="py-2"><code class="text-primary">{{ case.input }}</code></td>
-                                <td class="py-2 pe-3"><code class="text-success">{{ case.expected }}</code></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Middle Column: Code Editor & Console Output -->
-        <div class="col-xl-5 col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 p-4 d-flex flex-column h-100">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="fw-bold text-secondary mb-0">Code Workspace (Python)</h4>
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            {% csrf_token %}
+            <!-- Header & Breadcrumbs -->
+            <div class="interview-page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="interview-breadcrumb">
+                        <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <a href="{% url 'interviews:hub' %}">Interview Prep</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <a href="{% url 'interviews:coding_list' %}">Coding Challenges</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <span>{{ challenge.title }}</span>
+                    </div>
                     <div class="d-flex align-items-center gap-2">
-                        <label for="themeSelect" class="small text-muted mb-0 d-none d-sm-inline">IDE Theme:</label>
-                        <select id="themeSelect" class="form-select form-select-sm rounded-pill py-1 px-3 border" style="width: auto; font-size: 0.8rem;">
-                            <option value="vs-dark">VS Dark</option>
-                            <option value="monokai">Monokai</option>
-                            <option value="github-light">GitHub Light</option>
-                            <option value="solarized-dark">Solarized Dark</option>
-                        </select>
+                        <h1 class="interview-page-title mb-0">{{ challenge.title }}</h1>
+                        <span class="badge {% if challenge.difficulty == 'Easy' %}bg-success-subtle text-success{% elif challenge.difficulty == 'Medium' %}bg-warning-subtle text-warning{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                            {{ challenge.difficulty }}
+                        </span>
                     </div>
                 </div>
-                
-                <textarea id="codeEditor" class="form-control font-monospace p-3 border-0 rounded-4 flex-grow-1" style="height: 350px; font-size: 0.95rem; resize: none;" placeholder="# Write your python code here..."></textarea>
-                
-                <div class="d-flex gap-3 justify-content-end mt-3 mb-4">
-                    <button id="resetCodeBtn" class="btn btn-outline-secondary rounded-pill px-4 btn-sm">Reset template</button>
-                    <button id="submitCodeBtn" class="btn btn-primary-custom rounded-pill px-5 btn-sm fw-bold">
-                        <i class="bi bi-play-fill"></i> Submit & Run Tests
-                    </button>
-                </div>
-
-                <!-- Execution Output Console -->
-                <div id="outputConsole" class="d-none bg-light p-4 border border-secondary border-opacity-10 rounded-4">
-                    <h5 class="fw-bold text-secondary mb-3" id="consoleStatus">Console Output</h5>
-                    
-                    <div id="runtimeErrorAlert" class="alert alert-danger border-0 rounded-4 d-none">
-                        <strong>Compilation / Runtime Error:</strong>
-                        <pre class="mb-0 mt-2 font-monospace text-wrap" id="errorMsg"></pre>
-                    </div>
-
-                    <div id="testCasesList" class="d-flex flex-column gap-2">
-                        <!-- Filled dynamically -->
-                    </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2 fw-semibold" id="violationBadge" style="font-size: 0.8125rem;">
+                        Warnings: 0
+                    </span>
+                    <a href="{% url 'interviews:coding_list' %}" class="btn btn-outline-secondary rounded-pill btn-sm px-3 py-2">
+                        <i class="bi bi-arrow-left me-1"></i> Challenges
+                    </a>
                 </div>
             </div>
-        </div>
 
-        <!-- Right Column: Reusable Proctoring Stream -->
-        <div class="col-xl-3 col-lg-12" style="position: sticky; top: 90px; align-self: start;">
-            {% include 'interviews/partials/proctor_stream.html' with session_type='Coding' session_id=challenge.id %}
-        </div>
+            <!-- 3-Column / Responsive Split Layout -->
+            <div class="coding-layout">
+                <!-- Left: Problem Description & Test Cases -->
+                <div>
+                    <div class="coding-card mb-3">
+                        <h6 class="fw-bold text-secondary mb-3 d-flex align-items-center gap-2">
+                            <i class="bi bi-file-text text-primary"></i> Problem Description
+                        </h6>
+                        <div class="coding-problem-text">
+                            {{ challenge.content|linebreaks }}
+                        </div>
+
+                        <h6 class="fw-bold text-secondary mb-2 d-flex align-items-center gap-2">
+                            <i class="bi bi-list-check text-primary"></i> Sample Test Cases
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="coding-table">
+                                <thead>
+                                    <tr>
+                                        <th>Case</th>
+                                        <th>Input</th>
+                                        <th>Expected</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for case in challenge.test_cases %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ forloop.counter }}</td>
+                                        <td><code>{{ case.input }}</code></td>
+                                        <td><code>{{ case.expected }}</code></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle: Code Editor & Console Output -->
+                <div>
+                    <div class="coding-card">
+                        <div class="coding-editor-toolbar">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-filetype-py text-primary"></i>
+                                <span class="fw-bold text-secondary small">Python 3 Workspace</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="themeSelect" class="text-muted small mb-0 d-none d-sm-inline">Theme:</label>
+                                <select id="themeSelect" class="form-select form-select-sm rounded-pill py-0 px-2" style="width: auto; font-size: 0.75rem; background: var(--dash-surface); border-color: var(--dash-border); color: var(--dash-text);">
+                                    <option value="vs-dark">VS Dark</option>
+                                    <option value="github-light">GitHub Light</option>
+                                    <option value="monokai">Monokai</option>
+                                    <option value="solarized-dark">Solarized Dark</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <textarea id="codeEditor" class="coding-textarea" spellcheck="false" placeholder="# Complete your Python implementation here..."></textarea>
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <button type="button" id="resetCodeBtn" class="btn btn-outline-secondary rounded-pill btn-sm px-3">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Code
+                            </button>
+                            <button type="button" id="submitCodeBtn" class="btn btn-primary rounded-pill btn-sm px-4 py-2 fw-semibold">
+                                <i class="bi bi-play-fill me-1"></i> Run Tests & Submit
+                            </button>
+                        </div>
+
+                        <!-- Dynamic Console Output -->
+                        <div id="outputConsole" class="coding-console d-none">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h6 class="fw-bold text-secondary mb-0 small" id="consoleStatus">Execution Console</h6>
+                            </div>
+
+                            <div id="runtimeErrorAlert" class="alert alert-danger rounded-3 d-none mb-3 p-3" style="background: var(--interview-danger-subtle); border: 1px solid var(--interview-danger-border); color: var(--interview-danger);">
+                                <strong class="d-block mb-1 small"><i class="bi bi-x-circle-fill me-1"></i> Runtime / Syntax Error:</strong>
+                                <pre class="mb-0 small font-monospace text-wrap" id="errorMsg" style="font-family: var(--interview-mono);"></pre>
+                            </div>
+
+                            <div id="testCasesList" class="d-flex flex-column gap-2">
+                                <!-- Test case items inserted dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Compact Proctoring Stream -->
+                <div class="coding-proctor-col" style="position: sticky; top: 1rem;">
+                    {% include 'interviews/partials/proctor_stream.html' with session_type='Coding' session_id=challenge.id %}
+                </div>
+            </div>
+        </main>
     </div>
 </div>
+{% endblock %}
 
-<style>
-    .font-monospace {
-        font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-    }
-    .max-width-500 {
-        max-width: 500px;
-    }
-    textarea:focus {
-        outline: none !important;
-        box-shadow: none !important;
-    }
-</style>
-
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Sidebar drawer toggle
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('dashSidebarClose');
+    const sidebar = document.getElementById('dashSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+
+    // Editor Starter Templates
     const defaultTemplates = {
         "Two Sum": "def two_sum(nums, target):\n    # Write your solution here\n    pass\n",
         "Integer Factorial": "def factorial(n):\n    # Write your solution here\n    pass\n",
@@ -135,51 +203,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const challengeTitle = "{{ challenge.title }}";
     const editor = document.getElementById('codeEditor');
-    
-    // --- Editor Theme Switcher ---
+
+    // Theme Switcher
     const themeSelect = document.getElementById('themeSelect');
     const applyEditorTheme = (themeName) => {
         if (!editor) return;
-        
-        // Reset base styles
-        editor.removeAttribute('style');
-        editor.style.height = '350px';
-        editor.style.fontSize = '0.95rem';
-        editor.style.resize = 'none';
-        
         if (themeName === 'monokai') {
             editor.style.backgroundColor = '#272822';
-            editor.style.color = '#f8f8f2';
+            editor.style.color = '#F8F8F2';
         } else if (themeName === 'github-light') {
-            editor.style.backgroundColor = '#ffffff';
-            editor.style.color = '#24292e';
-            editor.style.border = '1px solid #e2e8f0';
+            editor.style.backgroundColor = '#FFFFFF';
+            editor.style.color = '#24292E';
+            editor.style.borderColor = '#E2E8F0';
         } else if (themeName === 'solarized-dark') {
-            editor.style.backgroundColor = '#002b36';
+            editor.style.backgroundColor = '#002B36';
             editor.style.color = '#839496';
         } else {
             // Default VS Dark
-            editor.style.backgroundColor = '#1e1e1e';
-            editor.style.color = '#d4d4d4';
+            editor.style.backgroundColor = '#1E1E1E';
+            editor.style.color = '#D4D4D4';
         }
     };
 
     if (themeSelect) {
-        const savedEditorTheme = localStorage.getItem('editor-theme') || 'vs-dark';
-        themeSelect.value = savedEditorTheme;
-        applyEditorTheme(savedEditorTheme);
+        const savedTheme = localStorage.getItem('editor-theme') || 'vs-dark';
+        themeSelect.value = savedTheme;
+        applyEditorTheme(savedTheme);
 
         themeSelect.addEventListener('change', function() {
-            const selected = this.value;
-            applyEditorTheme(selected);
-            localStorage.setItem('editor-theme', selected);
+            applyEditorTheme(this.value);
+            localStorage.setItem('editor-theme', this.value);
         });
     }
 
-    // Set starting template
-    editor.value = defaultTemplates[challengeTitle] || "# Complete the implementation\n";
+    editor.value = defaultTemplates[challengeTitle] || "# Complete your Python implementation here\n";
 
-    // Smart Auto-Indentation & Tab handling inside plain textarea
+    // Tab indentation & Enter key handling
     editor.addEventListener('keydown', function(e) {
         if (e.key === 'Tab') {
             e.preventDefault();
@@ -192,83 +251,28 @@ document.addEventListener('DOMContentLoaded', function() {
             const start = this.selectionStart;
             const end = this.selectionEnd;
             const val = this.value;
-            
             const beforeCursor = val.substring(0, start);
             const afterCursor = val.substring(end);
-            
             const lines = beforeCursor.split('\n');
             const currentLine = lines[lines.length - 1];
-            
             const match = currentLine.match(/^(\s*)/);
             let indent = match ? match[1] : '';
-            
             if (currentLine.trim().endsWith(':')) {
                 indent += '    ';
             }
-            
             const insertText = '\n' + indent;
             this.value = beforeCursor + insertText + afterCursor;
             this.selectionStart = this.selectionEnd = start + insertText.length;
         }
     });
 
-    // 1. Reset templates
     document.getElementById('resetCodeBtn').addEventListener('click', function() {
-        if(confirm('Are you sure you want to reset your workspace?')) {
-            editor.value = defaultTemplates[challengeTitle] || "";
+        if (confirm('Reset your solution to starting template?')) {
+            editor.value = defaultTemplates[challengeTitle] || "# Complete your Python implementation here\n";
         }
     });
 
-    // AI Proctoring
-    let violationCount = 0;
-    const badge = document.getElementById('violationBadge');
-    const overlay = document.getElementById('proctorOverlay');
-    const resumeBtn = document.getElementById('resumeTestBtn');
-
-    // Disable Right Click
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        triggerProctorViolation('Right-Click Blocked');
-    });
-
-    // Disable copy-paste key combinations
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
-            e.preventDefault();
-            triggerProctorViolation('Copy-Paste Attempted');
-        }
-    });
-
-    // Tab switch focus checks
-    let isWindowFocused = true;
-    window.addEventListener('blur', function() {
-        if (isWindowFocused) {
-            isWindowFocused = false;
-            triggerProctorViolation('Tab Switched / Focus Lost');
-        }
-    });
-    window.addEventListener('focus', function() {
-        isWindowFocused = true;
-    });
-
-    document.addEventListener('visibilitychange', function() {
-        if (document.hidden) {
-            triggerProctorViolation('Tab Switched (Hidden)');
-        }
-    });
-
-    function triggerProctorViolation(type) {
-        if (typeof window.triggerProctorViolation === 'function') {
-            window.triggerProctorViolation(type);
-        }
-    }
-
-    resumeBtn.addEventListener('click', function() {
-        overlay.classList.add('d-none');
-        overlay.classList.remove('d-flex');
-    });
-
-    // Submission Handler
+    // Run & Submit Handler
     const submitBtn = document.getElementById('submitCodeBtn');
     const consoleBox = document.getElementById('outputConsole');
     const consoleStatus = document.getElementById('consoleStatus');
@@ -278,65 +282,70 @@ document.addEventListener('DOMContentLoaded', function() {
 
     submitBtn.addEventListener('click', function() {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Executing...';
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Running Tests...';
+
+        const violations = parseInt(document.getElementById('proctorViolationsInput')?.value || '0', 10);
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         fetch("{% url 'interviews:submit_code' challenge.id %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify({
                 code: editor.value,
-                proctor_violations: violationCount
+                proctor_violations: violations
             })
         })
         .then(res => res.json())
         .then(data => {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-play-fill"></i> Submit & Run Tests';
+            submitBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i> Run Tests & Submit';
 
             consoleBox.classList.remove('d-none');
             testCasesList.innerHTML = '';
             errorAlert.classList.add('d-none');
 
             if (data.error) {
-                consoleStatus.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle-fill"></i> Compilation Failed</span>';
+                consoleStatus.innerHTML = '<span class="text-danger fw-bold"><i class="bi bi-x-circle-fill me-1"></i> Execution Failed</span>';
                 errorAlert.classList.remove('d-none');
                 errorMsg.textContent = data.error;
             } else if (data.success) {
-                consoleStatus.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> All Test Cases Passed!</span>';
+                consoleStatus.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> All Test Cases Passed!</span>';
                 renderTestCases(data.results);
             } else {
-                consoleStatus.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-circle-fill"></i> Some Test Cases Failed</span>';
+                consoleStatus.innerHTML = '<span class="text-warning fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Partial Test Cases Passed</span>';
                 renderTestCases(data.results);
             }
         })
         .catch(err => {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-play-fill"></i> Submit & Run Tests';
-            alert('Submission failed: ' + err);
+            submitBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i> Run Tests & Submit';
+            alert('Execution error: ' + err);
         });
     });
 
     function renderTestCases(results) {
+        if (!results) return;
         results.forEach(res => {
             const item = document.createElement('div');
-            item.className = `d-flex justify-content-between align-items-center p-3 rounded-3 ${res.passed ? 'bg-success bg-opacity-10 border border-success border-opacity-25' : 'bg-danger bg-opacity-10 border border-danger border-opacity-25'}`;
-            
-            const icon = res.passed ? '<i class="bi bi-check-circle-fill text-success fs-5"></i>' : '<i class="bi bi-x-circle-fill text-danger fs-5"></i>';
-            
+            item.className = `testcase-item ${res.passed ? 'passed' : 'failed'}`;
+            const icon = res.passed
+                ? '<i class="bi bi-check-circle-fill text-success fs-6"></i>'
+                : '<i class="bi bi-x-circle-fill text-danger fs-6"></i>';
+
             item.innerHTML = `
-                <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
                     ${icon}
                     <div>
-                        <span class="fw-bold">Test Case ${res.case}</span>
-                        <div class="text-muted small mt-1">Expected: <code>${JSON.stringify(res.expected)}</code></div>
+                        <span class="fw-semibold">Test Case ${res.case}</span>
+                        <div class="text-muted small">Expected: <code class="font-monospace">${JSON.stringify(res.expected)}</code></div>
                     </div>
                 </div>
                 <div class="text-end">
-                    <span class="badge ${res.passed ? 'bg-success' : 'bg-danger'} rounded-pill px-3">${res.passed ? 'Passed' : 'Failed'}</span>
-                    <div class="text-muted small mt-1">Output: <code>${JSON.stringify(res.output)}</code></div>
+                    <span class="badge ${res.passed ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill px-2 py-1">${res.passed ? 'Passed' : 'Failed'}</span>
+                    <div class="text-muted small">Output: <code class="font-monospace">${JSON.stringify(res.output)}</code></div>
                 </div>
             `;
             testCasesList.appendChild(item);
