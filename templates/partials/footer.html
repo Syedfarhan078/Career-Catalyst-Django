@@ -1,47 +1,51 @@
 {% load static %}
-<footer class="footer-section">
+<footer class="footer-section" id="site-footer">
     <div class="container">
-        <div class="row">
-            <!-- Brand & Description -->
-            <div class="col-lg-7 mb-4 mb-lg-0">
-                <div class="footer-brand d-flex align-items-center mb-3">
-                    <img src="{% static 'images/favicon.png' %}" alt="Career Catalyst Logo" class="me-2" style="height: 32px; width: 32px; border-radius: 6px;">
+        <div class="row g-4 justify-content-between">
+            <!-- Column 1 — Brand -->
+            <div class="col-lg-5 col-md-12">
+                <a class="footer-brand d-inline-flex align-items-center mb-3 text-decoration-none" href="{% url 'home' %}">
+                    <img src="{% static 'images/favicon.png' %}" alt="Career Catalyst Logo" class="me-2" width="28" height="28" style="border-radius: 6px;">
                     <span>Career<span class="brand-accent">Catalyst</span></span>
-                </div>
-                <p class="mb-0 text-white-50" style="max-width: 460px; line-height: 1.7;">Empowering students and professionals to discover their paths, build standout resumes, and accelerate their careers with cutting-edge AI guidance.</p>
+                </a>
+                <p class="footer-desc mb-0">A structured platform for career guidance, learning roadmaps, resume preparation, interview practice, and job tracking.</p>
             </div>
             
-            {% if not user.is_authenticated %}
-            <!-- Quick Links (Only for Unauthenticated Users) -->
-            <div class="col-6 col-lg-4 offset-lg-1 mb-4 mb-lg-0">
-                <h5>Quick Links</h5>
+            <!-- Column 2 — Explore -->
+            <div class="col-6 col-md-3 col-lg-3">
+                <h5 class="footer-heading">Explore</h5>
                 <ul class="footer-links">
                     <li><a href="{% url 'home' %}#hero">Home</a></li>
                     <li><a href="{% url 'home' %}#features">Features</a></li>
                     <li><a href="{% url 'home' %}#how-it-works">How It Works</a></li>
+                    <li><a href="{% url 'home' %}#journey">Career Journey</a></li>
                     <li><a href="{% url 'home' %}#faq">FAQ</a></li>
                 </ul>
             </div>
-            {% else %}
-            <!-- Contact Info (Only for Authenticated Users) -->
-            <div class="col-6 col-lg-4 offset-lg-1 mb-4 mb-lg-0">
-                <h5>Contact</h5>
-                <ul class="footer-links text-white-50">
-                    <li class="mb-2"><i class="bi bi-envelope me-2 text-primary"></i>devfarhan7890@gmail.com</li>
-                    <li class="mb-2"><i class="bi bi-geo-alt me-2 text-primary"></i>Bengaluru, India</li>
+            
+            <!-- Column 3 — Account -->
+            <div class="col-6 col-md-3 col-lg-3">
+                <h5 class="footer-heading">Account</h5>
+                <ul class="footer-links">
+                    {% if not user.is_authenticated %}
+                    <li><a href="{% url 'login' %}">Login</a></li>
+                    <li><a href="{% url 'register' %}">Get Started</a></li>
+                    {% else %}
+                    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li><a href="{% url 'roadmaps:path_list' %}">Roadmaps</a></li>
+                    {% endif %}
                 </ul>
             </div>
-            {% endif %}
         </div>
         
         <!-- Bottom Bar -->
         <div class="footer-bottom">
             <div class="row align-items-center">
                 <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
-                    <p class="mb-0">&copy; 2026 Career Catalyst. All rights reserved.</p>
+                    <p class="mb-0">&copy; 2026 CareerCatalyst. All rights reserved.</p>
                 </div>
                 <div class="col-md-6 text-center text-md-end">
-                    <p class="mb-0">Made with <i class="bi bi-heart-fill text-danger mx-1"></i> by Career Catalyst Team</p>
+                    <p class="mb-0 footer-secondary-note">Career Development Platform</p>
                 </div>
             </div>
         </div>

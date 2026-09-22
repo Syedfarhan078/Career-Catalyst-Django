@@ -1,60 +1,168 @@
 {% load static %}
-<section class="how-it-works-section section-padding" id="how-it-works">
+<section class="showcase-section section-padding" id="how-it-works">
     <div class="container">
-        <!-- Section Header -->
-        <div class="text-center mb-5">
-            <h2 class="section-title animate-on-scroll">How It <span class="text-gradient">Works</span></h2>
-            <p class="section-subtitle mx-auto animate-on-scroll animate-delay-1">A structured 5-step journey from setting your career goals to landing your target job.</p>
-        </div>
-        
-        <!-- Steps -->
-        <div class="row g-4 justify-content-center">
-            <!-- Step 1 -->
-            <div class="col-md col-sm-6">
-                <div class="process-step animate-on-scroll animate-delay-1 h-100">
-                    <div class="step-number">1</div>
-                    <h3 class="step-title">Complete Profile</h3>
-                    <p class="step-description">Add your academic background, technical skills, and target domain</p>
-                    <div class="process-connector"></div>
+        <div class="row align-items-center g-5">
+            <!-- Left Column: Editorial Narrative -->
+            <div class="col-lg-5">
+                <div class="showcase-content">
+                    <div class="section-eyebrow animate-on-scroll">Showcase 01 &bull; Roadmaps</div>
+                    <h2 class="section-title animate-on-scroll animate-delay-1">
+                        Week-by-week roadmaps with real milestone projects.
+                    </h2>
+                    <p class="section-subtitle mb-4 animate-on-scroll animate-delay-2">
+                        No more wondering what to study next or getting lost in tutorial hell. Each of CareerCatalyst's 15 career paths provides a structured syllabus with weekly milestones, documentation references, and hands-on portfolio deliverables.
+                    </p>
+
+                    <div class="showcase-features-list animate-on-scroll animate-delay-3">
+                        <div class="showcase-feature-item">
+                            <div class="showcase-feature-icon">
+                                <i class="bi bi-check2"></i>
+                            </div>
+                            <div>
+                                <h4 class="showcase-feature-title">Verified Topic Checklists</h4>
+                                <p class="showcase-feature-desc">Track progress item-by-item across core computer science concepts, tools, and best practices.</p>
+                            </div>
+                        </div>
+
+                        <div class="showcase-feature-item">
+                            <div class="showcase-feature-icon">
+                                <i class="bi bi-check2"></i>
+                            </div>
+                            <div>
+                                <h4 class="showcase-feature-title">Curated Documentation</h4>
+                                <p class="showcase-feature-desc">Learn from official docs, high-yield articles, and vetted resources chosen for depth.</p>
+                            </div>
+                        </div>
+
+                        <div class="showcase-feature-item">
+                            <div class="showcase-feature-icon">
+                                <i class="bi bi-check2"></i>
+                            </div>
+                            <div>
+                                <h4 class="showcase-feature-title">Portfolio Milestone Deliverables</h4>
+                                <p class="showcase-feature-desc">Build concrete software projects at each milestone to prove your competence to recruiters.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-2 animate-on-scroll animate-delay-4">
+                        <a href="{% url 'register' %}" class="btn-cc btn-cc-primary">
+                            <span>Explore Roadmaps</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Step 2 -->
-            <div class="col-md col-sm-6">
-                <div class="process-step animate-on-scroll animate-delay-2 h-100">
-                    <div class="step-number">2</div>
-                    <h3 class="step-title">AI Career Guidance</h3>
-                    <p class="step-description">Scan readiness and pinpoint missing industry skills</p>
-                    <div class="process-connector"></div>
-                </div>
-            </div>
-            
-            <!-- Step 3 -->
-            <div class="col-md col-sm-6">
-                <div class="process-step animate-on-scroll animate-delay-3 h-100">
-                    <div class="step-number">3</div>
-                    <h3 class="step-title">Follow Roadmaps</h3>
-                    <p class="step-description">Master curated weekly learning tracks and milestones</p>
-                    <div class="process-connector"></div>
-                </div>
-            </div>
-            
-            <!-- Step 4 -->
-            <div class="col-md col-sm-6">
-                <div class="process-step animate-on-scroll animate-delay-4 h-100">
-                    <div class="step-number">4</div>
-                    <h3 class="step-title">Build & Scan Resume</h3>
-                    <p class="step-description">Create and verify ATS-optimized resumes against job descriptions</p>
-                    <div class="process-connector"></div>
-                </div>
-            </div>
-            
-            <!-- Step 5 -->
-            <div class="col-md col-sm-6">
-                <div class="process-step animate-on-scroll animate-delay-5 h-100">
-                    <div class="step-number">5</div>
-                    <h3 class="step-title">Track & Land Job</h3>
-                    <p class="step-description">Organize applications on your Kanban CRM, beat ghosting with auto follow-ups, and land offers</p>
+
+            <!-- Right Column: Realistic Roadmap Syllabus Mockup -->
+            <div class="col-lg-7">
+                <div class="showcase-mockup animate-on-scroll animate-delay-2">
+                    <div class="mockup-frame" aria-label="Roadmap Curriculum Preview">
+                        <!-- Mockup Topbar -->
+                        <div class="mockup-frame-bar">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="mockup-dot"></span>
+                                <span class="mockup-dot"></span>
+                                <span class="mockup-dot"></span>
+                            </div>
+                            <span class="mockup-frame-title">Roadmap &bull; Backend Developer Track</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary small fw-semibold px-2 py-0.5 rounded">12 Weeks</span>
+                        </div>
+
+                        <!-- Mockup Frame Content -->
+                        <div class="mockup-frame-body">
+                            <!-- Track Progress Header -->
+                            <div class="mockup-track-header">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-semibold text-secondary">Track Progress: Week 4 of 12</span>
+                                    <span class="text-primary fw-bold small">33% Complete</span>
+                                </div>
+                                <div class="mockup-bar">
+                                    <div class="mockup-bar-fill" style="width: 33%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Milestone List -->
+                            <div class="mockup-milestones-list">
+                                <!-- Milestone 1 (Complete) -->
+                                <div class="mockup-milestone-item completed">
+                                    <div class="milestone-status-icon">
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    </div>
+                                    <div class="milestone-info">
+                                        <div class="milestone-week">Week 1 &bull; Completed</div>
+                                        <div class="milestone-name">HTTP Protocol, REST Standards &amp; API Design</div>
+                                    </div>
+                                    <span class="milestone-tag">4 Topics</span>
+                                </div>
+
+                                <!-- Milestone 2 (Complete) -->
+                                <div class="mockup-milestone-item completed">
+                                    <div class="milestone-status-icon">
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    </div>
+                                    <div class="milestone-info">
+                                        <div class="milestone-week">Week 2 &bull; Completed</div>
+                                        <div class="milestone-name">Relational Data Modeling &amp; PostgreSQL Optimization</div>
+                                    </div>
+                                    <span class="milestone-tag">5 Topics</span>
+                                </div>
+
+                                <!-- Milestone 3 (Complete) -->
+                                <div class="mockup-milestone-item completed">
+                                    <div class="milestone-status-icon">
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    </div>
+                                    <div class="milestone-info">
+                                        <div class="milestone-week">Week 3 &bull; Completed</div>
+                                        <div class="milestone-name">Authentication, JWT, OAuth2 &amp; Session Security</div>
+                                    </div>
+                                    <span class="milestone-tag">4 Topics</span>
+                                </div>
+
+                                <!-- Milestone 4 (Active / Expanded) -->
+                                <div class="mockup-milestone-item active">
+                                    <div class="milestone-status-icon">
+                                        <i class="bi bi-record-circle-fill text-primary"></i>
+                                    </div>
+                                    <div class="milestone-info">
+                                        <div class="milestone-week text-primary fw-semibold">Week 4 &bull; Current Milestone</div>
+                                        <div class="milestone-name fw-bold">RESTful Service Architecture &amp; Automated Testing</div>
+                                        
+                                        <!-- Nested Topic Checklist -->
+                                        <div class="milestone-topics-checklist mt-2">
+                                            <div class="checklist-item done">
+                                                <i class="bi bi-check-square-fill text-primary me-2"></i>
+                                                <span>Unit Testing Frameworks &amp; Test Runners</span>
+                                            </div>
+                                            <div class="checklist-item done">
+                                                <i class="bi bi-check-square-fill text-primary me-2"></i>
+                                                <span>Database Fixtures, Test DB Isolation &amp; Factories</span>
+                                            </div>
+                                            <div class="checklist-item current">
+                                                <i class="bi bi-square me-2 text-muted"></i>
+                                                <span class="fw-semibold text-secondary">Mocking External Services &amp; Mock Patching</span>
+                                            </div>
+                                            <div class="checklist-item pending">
+                                                <i class="bi bi-square me-2 text-muted"></i>
+                                                <span class="text-muted">Integration Test Suites &amp; Code Coverage (85%+)</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="milestone-deliverable-badge mt-2">
+                                            <i class="bi bi-folder-check text-primary me-1"></i>
+                                            <span>Deliverable: Test-Driven REST API with 90% Code Coverage</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mockup Footer Caption -->
+                        <div class="mockup-frame-footer">
+                            <span class="text-muted small">Static illustrative UI preview based on CareerCatalyst curriculum structure.</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

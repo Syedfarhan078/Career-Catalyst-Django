@@ -1,16 +1,25 @@
 {% load static %}
-<section class="cta-section" id="cta">
-    <div class="container text-center">
-        <div class="animate-on-scroll">
-            <h2>Ready to Take the Next Step in Your <span>Career?</span></h2>
-            <p>Accelerate your professional growth with AI-powered career roadmaps, ATS resume reviews, and mock assessments.</p>
-            <div class="cta-buttons">
-                <a href="{% url 'register' %}" class="btn-cta-primary">
-                    Get Started Free <i class="bi bi-arrow-right"></i>
-                </a>
-                <a href="mailto:devfarhan7890@gmail.com" class="btn-cta-secondary">
-                    Contact Us <i class="bi bi-envelope"></i>
-                </a>
+<section class="cta-section section-padding" id="cta">
+    <div class="container">
+        <div class="cta-panel animate-on-scroll">
+            <div class="row align-items-center justify-content-between g-4">
+                <div class="col-lg-8">
+                    <h2 class="cta-headline">Build a clearer path to your next role.</h2>
+                    <p class="cta-subheadline mb-0">
+                        Start with your profile, identify what to work on, and follow a structured path toward your career goals. 100% free and open access for all developers.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <div class="cta-button-group">
+                        <a href="{% url 'register' %}" class="btn-cc btn-cc-primary btn-cc-lg">
+                            <span>Get Started Free</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                        <a href="#how-it-works" class="btn-cc btn-cc-secondary btn-cc-lg">
+                            <span>Explore Roadmaps</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

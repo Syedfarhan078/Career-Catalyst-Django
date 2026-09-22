@@ -1,10 +1,10 @@
 {% load static %}
 <nav class="navbar navbar-expand-lg sticky-top navbar-custom" id="main-navbar">
-    <div class="container py-2">
-        <!-- Logo with Icon -->
+    <div class="container">
+        <!-- Brand Logo & Name -->
         <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
-            <img src="{% static 'images/favicon.png' %}" alt="Career Catalyst Logo" class="me-2" style="height: 32px; width: 32px; border-radius: 6px;">
-            <span>Career<span class="brand-accent">Catalyst</span></span>
+            <img src="{% static 'images/favicon.png' %}" alt="Career Catalyst Logo" class="brand-logo me-2" width="28" height="28" style="border-radius: 6px;">
+            <span class="brand-text">Career<span class="brand-accent">Catalyst</span></span>
         </a>
         
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,7 +39,7 @@
                         <a class="nav-link" href="#how-it-works">How It Works</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#inspiration">Inspiration</a>
+                        <a class="nav-link" href="#journey">Career Journey</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#faq">FAQ</a>
@@ -47,7 +47,7 @@
                 {% endif %}
             </ul>
             
-            <ul class="navbar-nav ms-auto align-items-center gap-3">
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-2 gap-lg-3 mt-3 mt-lg-0">
                 {% if user.is_authenticated %}
                     <!-- Notifications Dropdown -->
                     <li class="nav-item dropdown notifications-dropdown">
@@ -165,16 +165,16 @@
                     </li>
 
                 {% else %}
-                    <li class="nav-item">
-                        <button class="btn btn-link nav-link p-0 border-0" id="theme-toggle" aria-label="Toggle theme" onclick="window.toggleAppTheme(event)" style="font-size: 1.2rem;">
-                            <i class="bi bi-moon-stars-fill text-secondary" id="theme-icon"></i>
+                    <li class="nav-item d-flex align-items-center">
+                        <button class="btn btn-link nav-link p-0 border-0 d-inline-flex align-items-center justify-content-center theme-toggle-btn" id="theme-toggle" aria-label="Toggle theme" onclick="window.toggleAppTheme(event)">
+                            <i class="bi bi-moon-stars-fill" id="theme-icon"></i>
                         </button>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Login</a>
+                        <a class="nav-link nav-link-login" href="{% url 'login' %}">Login</a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'register' %}" class="btn-primary-custom py-2 px-4 fs-6">Get Started</a>
+                        <a href="{% url 'register' %}" class="btn-nav-primary btn-primary-custom">Get Started</a>
                     </li>
                 {% endif %}
             </ul>

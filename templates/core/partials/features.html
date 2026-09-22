@@ -2,107 +2,165 @@
 <section class="features-section section-padding" id="features">
     <div class="container">
         <!-- Section Header -->
-        <div class="text-center mb-5">
-            <h2 class="section-title animate-on-scroll">A Unified Platform for Your <span class="text-gradient">Career Trajectory</span></h2>
-            <p class="section-subtitle mx-auto animate-on-scroll animate-delay-1">Built around intelligent career guidance and step-by-step roadmaps, supported by a complete suite of resume, interview, tracking, and mentorship tools.</p>
+        <div class="section-header text-center mb-5">
+            <div class="section-eyebrow animate-on-scroll">Platform Capabilities</div>
+            <h2 class="section-title animate-on-scroll animate-delay-1">
+                Everything engineered into one career workspace.
+            </h2>
+            <p class="section-subtitle mx-auto animate-on-scroll animate-delay-2">
+                Six integrated capabilities designed to replace fragmented spreadsheets, tutorial chaos, and disconnected tracking tools.
+            </p>
         </div>
-        
-        <!-- Features Grid -->
-        <div class="row g-4">
-            <!-- Feature 1: Core Hero Feature -->
-            <div class="col-md-6 col-lg-4">
-                <div class="feature-card animate-on-scroll animate-delay-1 d-flex flex-column h-100 position-relative">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="icon-wrapper mb-0">
-                            <i class="bi bi-robot"></i>
+
+        <!-- 1. Major Capability Spotlights (2 Columns, High Information Density) -->
+        <div class="row g-4 mb-4">
+            <!-- Spotlight 1: Guidance -->
+            <div class="col-lg-6">
+                <div class="spotlight-card animate-on-scroll animate-delay-1 h-100">
+                    <div class="spotlight-header">
+                        <div class="spotlight-icon">
+                            <i class="bi bi-compass"></i>
                         </div>
-                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 fw-semibold small">Core Feature</span>
+                        <span class="spotlight-badge">Core Capability 01</span>
                     </div>
-                    <h3>AI Career Guidance</h3>
-                    <p>Evaluate your profile readiness, detect missing skill gaps for your target engineering domain, and receive personalized career advice.</p>
-                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Get Guidance <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Feature 2: Core Hero Feature -->
-            <div class="col-md-6 col-lg-4">
-                <div class="feature-card animate-on-scroll animate-delay-2 d-flex flex-column h-100 position-relative">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="icon-wrapper mb-0" style="background: rgba(20,184,166,0.1); color: var(--accent, #14b8a6);">
-                            <i class="bi bi-map"></i>
+                    <div class="spotlight-body">
+                        <h3 class="spotlight-title">Career Guidance &amp; Skill Gap Diagnostics</h3>
+                        <p class="spotlight-desc">
+                            Assess your engineering readiness before investing months in preparation. The guidance engine analyzes your verified skills against company hiring tiers, calculating readiness percentages and pinpointing high-yield missing topics for your target role.
+                        </p>
+                        <div class="spotlight-bullets">
+                            <div class="bullet-item">
+                                <i class="bi bi-check2 text-primary me-2"></i>
+                                <span>Profile calibration against Product vs. Service company cutoffs</span>
+                            </div>
+                            <div class="bullet-item">
+                                <i class="bi bi-check2 text-primary me-2"></i>
+                                <span>Deterministic skill gap detection with priority topic recommendations</span>
+                            </div>
+                            <div class="bullet-item">
+                                <i class="bi bi-check2 text-primary me-2"></i>
+                                <span>Actionable next-step suggestions based on current progress</span>
+                            </div>
                         </div>
-                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-semibold small">Core Feature</span>
                     </div>
-                    <h3>Career Roadmaps</h3>
-                    <p>Follow structured 12-week learning roadmaps tailored for modern tech roles with curated documentation, practice topics, and milestone projects.</p>
-                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Explore Roadmaps <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
+                    <div class="spotlight-footer mt-auto pt-3">
+                        <a href="{% url 'register' %}" class="spotlight-link">
+                            <span>Get Career Guidance</span>
+                            <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <!-- Feature 3: Job Application Tracker CRM -->
-            <div class="col-md-6 col-lg-4">
-                <div class="feature-card animate-on-scroll animate-delay-3 d-flex flex-column h-100 position-relative">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="icon-wrapper mb-0" style="background: rgba(37,99,235,0.1); color: var(--primary);">
-                            <i class="bi bi-kanban"></i>
+            <!-- Spotlight 2: Roadmaps -->
+            <div class="col-lg-6">
+                <div class="spotlight-card animate-on-scroll animate-delay-2 h-100">
+                    <div class="spotlight-header">
+                        <div class="spotlight-icon">
+                            <i class="bi bi-signpost-2"></i>
                         </div>
-                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 fw-semibold small">New</span>
+                        <span class="spotlight-badge">Core Capability 02</span>
                     </div>
-                    <h3>Job Tracker & CRM</h3>
-                    <p>Track applications on a drag-and-drop Kanban board, auto-fill from job URLs, get 5-day follow-up alerts, and generate recruiter emails.</p>
-                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Track Applications <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
+                    <div class="spotlight-body">
+                        <h3 class="spotlight-title">Curated Technical Learning Roadmaps</h3>
+                        <p class="spotlight-desc">
+                            15 curated engineering career tracks broken down into structured, week-by-week milestones. Track individual topic completion, consult vetted external documentation, and build portfolio projects that demonstrate real-world competence.
+                        </p>
+                        <div class="spotlight-bullets">
+                            <div class="bullet-item">
+                                <i class="bi bi-check2 text-primary me-2"></i>
+                                <span>15 structured tracks covering Backend, Frontend, DevOps, ML &amp; Systems</span>
+                            </div>
+                            <div class="bullet-item">
+                                <i class="bi bi-check2 text-primary me-2"></i>
+                                <span>100+ curriculum milestones and 270+ concrete syllabus topics</span>
+                            </div>
+                            <div class="bullet-item">
+                                <i class="bi bi-check2 text-primary me-2"></i>
+                                <span>Practical milestone project requirements for your public portfolio</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="spotlight-footer mt-auto pt-3">
+                        <a href="{% url 'register' %}" class="spotlight-link">
+                            <span>Explore Roadmaps</span>
+                            <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Feature 4: Supporting Feature -->
-            <div class="col-md-6 col-lg-4">
-                <div class="feature-card animate-on-scroll animate-delay-4 d-flex flex-column h-100">
-                    <div class="icon-wrapper">
+        </div>
+
+        <!-- 2. Supporting Capabilities (4 Columns, Structured & Disciplined) -->
+        <div class="row g-4">
+            <!-- Supporting 1: ATS Resume -->
+            <div class="col-md-6 col-lg-3">
+                <div class="supporting-card animate-on-scroll animate-delay-1 h-100 d-flex flex-column">
+                    <div class="supporting-icon">
                         <i class="bi bi-shield-check"></i>
                     </div>
-                    <h3>ATS Resume Analyzer</h3>
-                    <p>Scan and score your resume against real job descriptions to pinpoint missing industry keywords and improve parseability.</p>
-                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Scan Resume <i class="bi bi-arrow-right ms-1"></i>
+                    <h4 class="supporting-title">ATS Resume Diagnostics</h4>
+                    <p class="supporting-desc">
+                        Measure keyword density against real job postings, inspect formatting parseability, and check bullet phrasing.
+                    </p>
+                    <a href="{% url 'register' %}" class="supporting-link mt-auto pt-2">
+                        <span>Scan Resume</span>
+                        <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
 
-            
-            <!-- Feature 6: Supporting Feature -->
-            <div class="col-md-6 col-lg-4">
-                <div class="feature-card animate-on-scroll animate-delay-6 d-flex flex-column h-100">
-                    <div class="icon-wrapper">
+            <!-- Supporting 2: Interview Prep -->
+            <div class="col-md-6 col-lg-3">
+                <div class="supporting-card animate-on-scroll animate-delay-2 h-100 d-flex flex-column">
+                    <div class="supporting-icon">
                         <i class="bi bi-mortarboard"></i>
                     </div>
-                    <h3>Interview Prep Hub</h3>
-                    <p>Practice technical MCQs, coding challenges, and mock technical interviews with proctored evaluation feedback.</p>
-                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Practice Interviews <i class="bi bi-arrow-right ms-1"></i>
+                    <h4 class="supporting-title">Interview Practice Hub</h4>
+                    <p class="supporting-desc">
+                        Practice timed MCQs in core CS fundamentals, solve domain coding questions, and review mock evaluations.
+                    </p>
+                    <a href="{% url 'register' %}" class="supporting-link mt-auto pt-2">
+                        <span>Practice Interviews</span>
+                        <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
-            
-            <!-- Feature 7: Supporting Feature -->
-            <div class="col-md-6 col-lg-4">
-                <div class="feature-card animate-on-scroll animate-delay-1 d-flex flex-column h-100">
-                    <div class="icon-wrapper">
+
+            <!-- Supporting 3: Job Tracker -->
+            <div class="col-md-6 col-lg-3">
+                <div class="supporting-card animate-on-scroll animate-delay-3 h-100 d-flex flex-column">
+                    <div class="supporting-icon">
+                        <i class="bi bi-kanban"></i>
+                    </div>
+                    <h4 class="supporting-title">Job Tracker &amp; CRM</h4>
+                    <p class="supporting-desc">
+                        Monitor applications in a drag-and-drop pipeline with automated 5-day follow-up alerts and outreach templates.
+                    </p>
+                    <a href="{% url 'register' %}" class="supporting-link mt-auto pt-2">
+                        <span>Track Applications</span>
+                        <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Supporting 4: Mentorship & Community -->
+            <div class="col-md-6 col-lg-4 col-lg-3">
+                <div class="supporting-card animate-on-scroll animate-delay-4 h-100 d-flex flex-column">
+                    <div class="supporting-icon">
                         <i class="bi bi-people"></i>
                     </div>
-                    <h3>Community & Mentorship</h3>
-                    <p>Connect with peers, participate in student developer forums, and book 1-on-1 mentorship sessions with verified professionals.</p>
-                    <a href="{% url 'register' %}" class="feature-link mt-auto pt-3 d-inline-flex align-items-center">
-                        Join Community <i class="bi bi-arrow-right ms-1"></i>
+                    <h4 class="supporting-title">Community &amp; Mentors</h4>
+                    <p class="supporting-desc">
+                        Collaborate in peer student forums, showcase open projects, and schedule 1-on-1 sessions with verified mentors.
+                    </p>
+                    <a href="{% url 'register' %}" class="supporting-link mt-auto pt-2">
+                        <span>Join Community</span>
+                        <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
         </div>
+
     </div>
 </section>
-

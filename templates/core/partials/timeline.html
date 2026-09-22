@@ -1,81 +1,169 @@
 {% load static %}
-<section class="timeline-section section-padding" id="timeline">
+<section class="showcase-section section-padding" id="showcase">
     <div class="container">
-        <!-- Section Header -->
-        <div class="text-center mb-5">
-            <h2 class="section-title animate-on-scroll">Your Career <span class="text-gradient">Journey</span></h2>
-            <p class="section-subtitle mx-auto animate-on-scroll animate-delay-1">See how Career Catalyst supports you at every stage of your professional development.</p>
-        </div>
-        
-        <!-- Timeline -->
-        <div class="timeline">
-            <!-- Item 1 -->
-            <div class="timeline-item animate-on-scroll">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="timeline-icon"><i class="bi bi-person-plus"></i></div>
-                    <h4>Register</h4>
-                    <p>Create your free account and join the Career Catalyst community.</p>
+        <div class="row align-items-center g-5 flex-lg-row-reverse">
+            <!-- Right Column: Editorial Narrative -->
+            <div class="col-lg-5">
+                <div class="showcase-content">
+                    <div class="section-eyebrow animate-on-scroll">Showcase 02 &bull; Diagnostics &amp; Outreach</div>
+                    <h2 class="section-title animate-on-scroll animate-delay-1">
+                        Objective ATS diagnostics and a dedicated Job CRM.
+                    </h2>
+                    <p class="section-subtitle mb-4 animate-on-scroll animate-delay-2">
+                        Applying to jobs shouldn't be guesswork. Benchmark your resume against target job descriptions to identify missing technical keywords, and manage your outreach pipeline with proactive follow-up reminders.
+                    </p>
+
+                    <div class="showcase-features-list animate-on-scroll animate-delay-3">
+                        <div class="showcase-feature-item">
+                            <div class="showcase-feature-icon">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <div>
+                                <h4 class="showcase-feature-title">Keyword Coverage &amp; Parseability Checks</h4>
+                                <p class="showcase-feature-desc">Scan resumes for technical keyword density, formatting parseability, and action-verb phrasing without false hiring claims.</p>
+                            </div>
+                        </div>
+
+                        <div class="showcase-feature-item">
+                            <div class="showcase-feature-icon">
+                                <i class="bi bi-kanban"></i>
+                            </div>
+                            <div>
+                                <h4 class="showcase-feature-title">Kanban Application Pipeline</h4>
+                                <p class="showcase-feature-desc">Organize applications across Applied, Assessment, Interview, and Offer stages in a drag-and-drop board.</p>
+                            </div>
+                        </div>
+
+                        <div class="showcase-feature-item">
+                            <div class="showcase-feature-icon">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div>
+                                <h4 class="showcase-feature-title">5-Day Follow-Up Reminders</h4>
+                                <p class="showcase-feature-desc">Automatic alerts identify stale applications and provide customizable recruiter email follow-up templates.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-2 animate-on-scroll animate-delay-4">
+                        <a href="{% url 'register' %}" class="btn-cc btn-cc-primary">
+                            <span>Benchmark Your Resume</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Item 2 -->
-            <div class="timeline-item animate-on-scroll">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="timeline-icon"><i class="bi bi-person-badge"></i></div>
-                    <h4>Profile Setup</h4>
-                    <p>Complete your profile with education, experience, and interests.</p>
-                </div>
-            </div>
-            
-            <!-- Item 3 -->
-            <div class="timeline-item animate-on-scroll">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="timeline-icon"><i class="bi bi-clipboard-check"></i></div>
-                    <h4>Skill Assessment</h4>
-                    <p>Take assessments to identify your strengths and growth areas.</p>
-                </div>
-            </div>
-            
-            <!-- Item 4 -->
-            <div class="timeline-item animate-on-scroll">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="timeline-icon"><i class="bi bi-file-earmark-text"></i></div>
-                    <h4>Resume Creation</h4>
-                    <p>Build a professional, ATS-optimized resume with AI assistance.</p>
-                </div>
-            </div>
-            
-            <!-- Item 5 -->
-            <div class="timeline-item animate-on-scroll">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="timeline-icon"><i class="bi bi-compass"></i></div>
-                    <h4>Career Roadmap</h4>
-                    <p>Get a personalized step-by-step plan for your career goals.</p>
-                </div>
-            </div>
-            
-            <!-- Item 6 -->
-            <div class="timeline-item animate-on-scroll">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="timeline-icon"><i class="bi bi-camera-video"></i></div>
-                    <h4>Interview Prep</h4>
-                    <p>Practice with mock interviews and get AI-powered feedback.</p>
-                </div>
-            </div>
-            
-            <!-- Item 7 -->
-            <div class="timeline-item animate-on-scroll">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="timeline-icon"><i class="bi bi-rocket-takeoff"></i></div>
-                    <h4>Job Applications</h4>
-                    <p>Apply to matched positions and land your dream role.</p>
+
+            <!-- Left Column: Realistic Dual Mockup (ATS Analyzer + Job Tracker) -->
+            <div class="col-lg-7">
+                <div class="showcase-mockup animate-on-scroll animate-delay-2">
+                    
+                    <!-- 1. ATS Analyzer Mini Mockup -->
+                    <div class="mockup-frame mb-4" aria-label="ATS Analyzer Preview">
+                        <div class="mockup-frame-bar">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="mockup-dot"></span>
+                                <span class="mockup-dot"></span>
+                                <span class="mockup-dot"></span>
+                            </div>
+                            <span class="mockup-frame-title">ATS Resume Analyzer &bull; Diagnostics Preview</span>
+                            <span class="badge bg-success bg-opacity-10 text-success small fw-semibold px-2 py-0.5 rounded">Scan Complete</span>
+                        </div>
+                        <div class="mockup-frame-body">
+                            <div class="row align-items-center g-3">
+                                <div class="col-sm-4 text-center border-end">
+                                    <div class="ats-score-display">84%</div>
+                                    <div class="ats-score-label">ATS Keyword Match</div>
+                                    <span class="badge bg-success bg-opacity-10 text-success small fw-semibold mt-1">High Compatibility</span>
+                                </div>
+                                <div class="col-sm-8">
+                                    <div class="mb-2">
+                                        <div class="text-secondary small fw-semibold mb-1">Detected Technical Keywords:</div>
+                                        <div class="ats-chips-wrapper">
+                                            <span class="ats-chip matched"><i class="bi bi-check2"></i> Python</span>
+                                            <span class="ats-chip matched"><i class="bi bi-check2"></i> Django</span>
+                                            <span class="ats-chip matched"><i class="bi bi-check2"></i> REST APIs</span>
+                                            <span class="ats-chip matched"><i class="bi bi-check2"></i> SQL</span>
+                                            <span class="ats-chip missing"><i class="bi bi-x"></i> Docker</span>
+                                            <span class="ats-chip missing"><i class="bi bi-x"></i> CI/CD</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-muted small">
+                                        <i class="bi bi-check2-circle text-success me-1"></i> Single-column format parsed cleanly &bull; Contact info verified
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Kanban Job Tracker Mini Mockup -->
+                    <div class="mockup-frame" aria-label="Job Tracker Preview">
+                        <div class="mockup-frame-bar">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="mockup-dot"></span>
+                                <span class="mockup-dot"></span>
+                                <span class="mockup-dot"></span>
+                            </div>
+                            <span class="mockup-frame-title">Job Application Pipeline &bull; Kanban CRM</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary small fw-semibold px-2 py-0.5 rounded">Active Search</span>
+                        </div>
+                        <div class="mockup-frame-body p-2">
+                            <div class="row g-2 text-start">
+                                <!-- Col 1: Applied -->
+                                <div class="col-4">
+                                    <div class="kanban-col-preview">
+                                        <div class="kanban-col-header">
+                                            <span>Applied</span>
+                                            <span class="count-pill">2</span>
+                                        </div>
+                                        <div class="kanban-card-preview">
+                                            <div class="company-name">Stripe</div>
+                                            <div class="role-title">Backend Engineer</div>
+                                            <div class="meta-date">Applied 2d ago</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Col 2: Interview -->
+                                <div class="col-4">
+                                    <div class="kanban-col-preview active-col">
+                                        <div class="kanban-col-header">
+                                            <span>Interview</span>
+                                            <span class="count-pill">1</span>
+                                        </div>
+                                        <div class="kanban-card-preview border-primary">
+                                            <div class="company-name">Linear</div>
+                                            <div class="role-title">Software Engineer</div>
+                                            <div class="alert-pill-mini mt-1">
+                                                <i class="bi bi-bell-fill"></i> Follow-up Due: 5d
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Col 3: Offer -->
+                                <div class="col-4">
+                                    <div class="kanban-col-preview">
+                                        <div class="kanban-col-header">
+                                            <span>Offer</span>
+                                            <span class="count-pill">1</span>
+                                        </div>
+                                        <div class="kanban-card-preview border-success">
+                                            <div class="company-name">Vercel</div>
+                                            <div class="role-title">Systems Engineer</div>
+                                            <div class="offer-pill-mini mt-1">
+                                                <i class="bi bi-check-circle-fill"></i> Offer Stage
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mockup-frame-footer">
+                            <span class="text-muted small">Static illustrative preview showing ATS diagnostics and Kanban CRM features.</span>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>

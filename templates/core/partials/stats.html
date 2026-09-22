@@ -1,41 +1,130 @@
 {% load static %}
-<section class="stats-section" id="stats">
+<section class="journey-section section-padding" id="journey">
     <div class="container">
-        <div class="row g-4 justify-content-center">
-            <!-- Stat Card 1 -->
-            <div class="col-6 col-lg-3">
-                <div class="stat-card animate-on-scroll animate-delay-1">
-                    <div class="stat-icon"><i class="bi bi-robot"></i></div>
-                    <div class="stat-number">Guidance</div>
-                    <div class="stat-label">AI Readiness & Skill Gaps</div>
+        <!-- Section Header -->
+        <div class="section-header text-center mb-5">
+            <div class="section-eyebrow animate-on-scroll">The Career Journey</div>
+            <h2 class="section-title animate-on-scroll animate-delay-1">
+                From learning to landing your target role.
+            </h2>
+            <p class="section-subtitle mx-auto animate-on-scroll animate-delay-2">
+                CareerCatalyst eliminates preparation guesswork through a structured, end-to-end progression model.
+            </p>
+        </div>
+
+        <!-- Editorial Progression Track -->
+        <div class="journey-track-wrapper animate-on-scroll animate-delay-2">
+            <div class="journey-timeline">
+                
+                <!-- Stage 01 -->
+                <div class="journey-step-item">
+                    <div class="step-indicator-col">
+                        <div class="step-num-badge">01</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content-card">
+                        <div class="step-meta">
+                            <span class="step-tag">Phase 1 &bull; Direction</span>
+                            <span class="step-status-tag">Readiness Assessment</span>
+                        </div>
+                        <h3 class="step-title">Discover Your Direction</h3>
+                        <p class="step-desc">
+                            Document your academic background, current technical competencies, and target engineering domain. The career guidance engine benchmarks your profile against company cutoffs and identifies concrete missing skill gaps before you start studying.
+                        </p>
+                        <div class="step-deliverable">
+                            <i class="bi bi-arrow-right-short text-primary"></i>
+                            <span><strong>Deliverable:</strong> Calibrated readiness score and customized target role gap report.</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Stat Card 2 -->
-            <div class="col-6 col-lg-3">
-                <div class="stat-card animate-on-scroll animate-delay-2">
-                    <div class="stat-icon"><i class="bi bi-signpost-2"></i></div>
-                    <div class="stat-number"><span class="counter" data-target="15">0</span>+ Paths</div>
-                    <div class="stat-label">Curated Career Roadmaps</div>
+
+                <!-- Stage 02 -->
+                <div class="journey-step-item">
+                    <div class="step-indicator-col">
+                        <div class="step-num-badge">02</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content-card">
+                        <div class="step-meta">
+                            <span class="step-tag">Phase 2 &bull; Curriculum</span>
+                            <span class="step-status-tag">Structured Roadmaps</span>
+                        </div>
+                        <h3 class="step-title">Build Through Structured Roadmaps</h3>
+                        <p class="step-desc">
+                            Enroll in structured, week-by-week learning roadmaps tailored for modern tech roles. Progress topic by topic through curated documentation, code practice, and milestone deliverables instead of jumping across random tutorials.
+                        </p>
+                        <div class="step-deliverable">
+                            <i class="bi bi-arrow-right-short text-primary"></i>
+                            <span><strong>Deliverable:</strong> 100% verified topic checklist, weekly project milestones, and deep conceptual grasp.</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Stat Card 3 -->
-            <div class="col-6 col-lg-3">
-                <div class="stat-card animate-on-scroll animate-delay-3">
-                    <div class="stat-icon"><i class="bi bi-kanban"></i></div>
-                    <div class="stat-number">Job Tracker</div>
-                    <div class="stat-label">Kanban CRM & Ghosting Alerts</div>
+
+                <!-- Stage 03 -->
+                <div class="journey-step-item">
+                    <div class="step-indicator-col">
+                        <div class="step-num-badge">03</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content-card">
+                        <div class="step-meta">
+                            <span class="step-tag">Phase 3 &bull; Validation</span>
+                            <span class="step-status-tag">Resume &amp; Assessment</span>
+                        </div>
+                        <h3 class="step-title">Prepare Resumes &amp; Interviews</h3>
+                        <p class="step-desc">
+                            Generate standardized, single-column technical resumes and run deterministic ATS keyword diagnostics against target job descriptions. Practice timed computer science MCQs, domain challenges, and mock technical assessments with instant feedback.
+                        </p>
+                        <div class="step-deliverable">
+                            <i class="bi bi-arrow-right-short text-primary"></i>
+                            <span><strong>Deliverable:</strong> ATS-optimized resume benchmarked for keywords and timed screening interview confidence.</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Stat Card 4 -->
-            <div class="col-6 col-lg-3">
-                <div class="stat-card animate-on-scroll animate-delay-4">
-                    <div class="stat-icon"><i class="bi bi-people"></i></div>
-                    <div class="stat-number">1-on-1</div>
-                    <div class="stat-label">Industry Mentorship & Support</div>
+
+                <!-- Stage 04 -->
+                <div class="journey-step-item">
+                    <div class="step-indicator-col">
+                        <div class="step-num-badge">04</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content-card">
+                        <div class="step-meta">
+                            <span class="step-tag">Phase 4 &bull; Outreach</span>
+                            <span class="step-status-tag">Kanban CRM</span>
+                        </div>
+                        <h3 class="step-title">Apply &amp; Track Applications</h3>
+                        <p class="step-desc">
+                            Organize your job hunt on a drag-and-drop Kanban pipeline spanning Applied, Assessment, Interview, and Offer stages. Receive proactive 5-day follow-up reminders and use tailored outreach templates to keep applications moving forward.
+                        </p>
+                        <div class="step-deliverable">
+                            <i class="bi bi-arrow-right-short text-primary"></i>
+                            <span><strong>Deliverable:</strong> Centralized outreach pipeline, scheduled follow-ups, and organized interview schedules.</span>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Stage 05 -->
+                <div class="journey-step-item">
+                    <div class="step-indicator-col">
+                        <div class="step-num-badge">05</div>
+                    </div>
+                    <div class="step-content-card">
+                        <div class="step-meta">
+                            <span class="step-tag">Phase 5 &bull; Network</span>
+                            <span class="step-status-tag">Mentorship &amp; Peer Hub</span>
+                        </div>
+                        <h3 class="step-title">Grow with Mentorship &amp; Community</h3>
+                        <p class="step-desc">
+                            Connect with fellow student developers in peer discussion forums, showcase completed projects for community review, and book 1-on-1 mentorship sessions with verified engineering professionals for career advice and mock reviews.
+                        </p>
+                        <div class="step-deliverable">
+                            <i class="bi bi-arrow-right-short text-primary"></i>
+                            <span><strong>Deliverable:</strong> Direct access to experienced mentors, project feedback, and career launch.</span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

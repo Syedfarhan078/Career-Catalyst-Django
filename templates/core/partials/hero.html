@@ -1,59 +1,178 @@
 {% load static %}
 <section class="hero-section" id="hero">
     <div class="container">
-        <div class="row align-items-center">
-            <!-- Hero Content -->
-            <div class="col-lg-6 hero-content text-start">
-                <div class="hero-badge animate-on-scroll">
-                    <i class="bi bi-compass"></i>
-                    AI Career Guidance & Roadmap Platform
-                </div>
-                <h1 class="hero-title animate-on-scroll animate-delay-1">
-                    Navigate Your Tech Career with <span class="highlight text-gradient">Clarity & Direction</span>
-                </h1>
-                <p class="hero-description animate-on-scroll animate-delay-2">
-                    Evaluate your career readiness, master step-by-step learning roadmaps, and organize applications with our Kanban Job CRM with automated recruiter follow-ups — all in one unified platform.
-                </p>
-                <div class="hero-buttons animate-on-scroll animate-delay-3">
-                    <a href="{% url 'register' %}" class="btn-primary-custom">
-                        Get Started Free <i class="bi bi-arrow-right"></i>
-                    </a>
-                    <a href="#features" class="btn-secondary-custom">
-                        Explore Platform
-                    </a>
-                </div>
+        <!-- Hero Editorial Content -->
+        <div class="hero-intro text-center mx-auto">
+            <div class="hero-eyebrow animate-on-scroll">
+                <span class="hero-eyebrow-badge">Platform Overview</span>
+                <span class="hero-eyebrow-text">Structured Career Preparation for Engineers</span>
             </div>
             
-            <!-- Hero Image / Illustration inside Premium Card -->
-            <div class="col-lg-6 mt-5 mt-lg-0">
-                <div class="hero-image-card animate-on-scroll animate-delay-2">
-                    <div class="hero-image-wrapper">
-                        <img src="{% static 'images/hero/hero-illustration.jpg' %}" alt="Career Catalyst platform illustration showing career growth and professional development" class="img-fluid rounded-4">
-                        
-                        <!-- Floating Card 1 -->
-                        <div class="hero-float-card card-1">
-                            <div class="float-icon green">
-                                <i class="bi bi-compass"></i>
-                            </div>
-                            <span class="float-text">Personalized Roadmaps</span>
-                        </div>
-                        
-                        <!-- Floating Card 2 -->
-                        <div class="hero-float-card card-2">
-                            <div class="float-icon yellow">
-                                <i class="bi bi-robot"></i>
-                            </div>
-                            <span class="float-text">AI Career Guidance</span>
-                        </div>
+            <h1 class="hero-title animate-on-scroll animate-delay-1">
+                Stop guessing what to learn next.
+            </h1>
+            
+            <p class="hero-lead animate-on-scroll animate-delay-2">
+                CareerCatalyst unifies career direction, structured week-by-week learning roadmaps, ATS resume diagnostics, technical interview prep, and job application tracking into one focused workspace.
+            </p>
+            
+            <div class="hero-actions animate-on-scroll animate-delay-3">
+                <a href="{% url 'register' %}" class="btn-cc btn-cc-primary btn-cc-lg">
+                    <span>Get Started Free</span>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                <a href="#features" class="btn-cc btn-cc-secondary btn-cc-lg">
+                    <span>Explore Platform</span>
+                </a>
+            </div>
 
-                        <!-- Floating Card 3 -->
-                        <div class="hero-float-card card-3">
-                            <div class="float-icon blue">
-                                <i class="bi bi-kanban"></i>
+            <div class="hero-trust-row animate-on-scroll animate-delay-4">
+                <div class="hero-trust-item">
+                    <i class="bi bi-check2 text-primary"></i>
+                    <span>Structured syllabus roadmaps</span>
+                </div>
+                <div class="hero-trust-item">
+                    <i class="bi bi-check2 text-primary"></i>
+                    <span>Deterministic ATS diagnostics</span>
+                </div>
+                <div class="hero-trust-item">
+                    <i class="bi bi-check2 text-primary"></i>
+                    <span>100% free open platform</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Realistic Product UI Mockup (Authenticated Workspace Preview) -->
+        <div class="hero-mockup-wrapper animate-on-scroll animate-delay-2">
+            <div class="product-window" aria-label="CareerCatalyst Workspace Preview">
+                <!-- Window Chrome / Header -->
+                <div class="window-header">
+                    <div class="window-controls">
+                        <span class="control-dot"></span>
+                        <span class="control-dot"></span>
+                        <span class="control-dot"></span>
+                    </div>
+                    <div class="window-breadcrumbs">
+                        <span class="window-crumb-app">CareerCatalyst</span>
+                        <span class="crumb-separator">/</span>
+                        <span class="window-crumb-section">Workspace</span>
+                        <span class="crumb-separator">/</span>
+                        <span class="window-crumb-active">Software Engineer Track</span>
+                    </div>
+                    <div class="window-user">
+                        <span class="window-status-pill">
+                            <span class="status-dot"></span> Enrolled
+                        </span>
+                        <div class="window-avatar">SF</div>
+                    </div>
+                </div>
+
+                <!-- Window Content Area -->
+                <div class="window-body">
+                    <!-- Top Notification / Next Step Card -->
+                    <div class="mockup-next-step">
+                        <div class="mockup-step-header">
+                            <div class="mockup-step-tag">
+                                <i class="bi bi-compass"></i>
+                                <span>Your Next Step &bull; Week 6 Milestone</span>
                             </div>
-                            <span class="float-text">Job CRM & Tracker</span>
+                            <div class="mockup-step-progress">
+                                <div class="mockup-mini-bar">
+                                    <div class="mockup-mini-fill" style="width: 68%;"></div>
+                                </div>
+                                <span class="mockup-progress-val">68% Syllabus</span>
+                            </div>
+                        </div>
+                        <div class="mockup-step-main">
+                            <div>
+                                <h3 class="mockup-step-title">Binary Search Trees &amp; Tree Balancing</h3>
+                                <p class="mockup-step-desc mb-0">Milestone: Core Data Structures &bull; Algorithmic Complexity</p>
+                            </div>
+                            <div class="mockup-step-action">
+                                <span class="mockup-fake-btn">
+                                    Continue Learning <i class="bi bi-arrow-right ms-1"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="mockup-step-footer">
+                            <i class="bi bi-info-circle me-1 text-primary"></i>
+                            <span><strong>Why this matters:</strong> Fundamental technical interview requirement for backend &amp; systems engineering roles.</span>
                         </div>
                     </div>
+
+                    <!-- Split Panels Grid -->
+                    <div class="mockup-grid">
+                        <!-- Panel 1: Current Roadmap -->
+                        <div class="mockup-card">
+                            <div class="mockup-card-header">
+                                <div class="mockup-card-title">
+                                    <i class="bi bi-map text-primary me-2"></i>
+                                    <span>Current Roadmap</span>
+                                </div>
+                                <span class="mockup-badge-primary">Software Engineer</span>
+                            </div>
+                            <div class="mockup-card-body">
+                                <div class="mockup-metric-line">
+                                    <span class="text-secondary fw-semibold">8 of 12 Milestones Completed</span>
+                                    <span class="text-muted">68%</span>
+                                </div>
+                                <div class="mockup-bar mb-3">
+                                    <div class="mockup-bar-fill" style="width: 68%;"></div>
+                                </div>
+
+                                <div class="mockup-milestone-box">
+                                    <div class="mockup-box-label">Current Milestone &bull; Week 6</div>
+                                    <div class="mockup-box-title">Core Data Structures &amp; Complexity</div>
+                                    <div class="mockup-box-sub">Next topic: <strong>Self-Balancing Trees (AVL &amp; Red-Black)</strong></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel 2: Career Readiness -->
+                        <div class="mockup-card">
+                            <div class="mockup-card-header">
+                                <div class="mockup-card-title">
+                                    <i class="bi bi-speedometer2 text-primary me-2"></i>
+                                    <span>Career Readiness</span>
+                                </div>
+                                <span class="mockup-badge-calibrated">Calibrated</span>
+                            </div>
+                            <div class="mockup-card-body">
+                                <div class="mockup-readiness-row">
+                                    <div class="mockup-readiness-score">78%</div>
+                                    <div class="mockup-readiness-context">
+                                        <div class="fw-semibold text-secondary">Target: Software Engineer</div>
+                                        <div class="text-muted small">Profile calibrated against engineering cutoffs</div>
+                                    </div>
+                                </div>
+
+                                <div class="mockup-breakdown">
+                                    <div class="mockup-breakdown-row">
+                                        <span>Technical Skills</span>
+                                        <span class="text-secondary fw-medium">72% &bull; 14 Verified</span>
+                                    </div>
+                                    <div class="mockup-breakdown-row">
+                                        <span>Roadmap Completion</span>
+                                        <span class="text-secondary fw-medium">68% &bull; Week 6/12</span>
+                                    </div>
+                                    <div class="mockup-breakdown-row">
+                                        <span>ATS Resume Benchmark</span>
+                                        <span class="text-secondary fw-medium">84% &bull; Strong Match</span>
+                                    </div>
+                                    <div class="mockup-breakdown-row">
+                                        <span>Interview Practice</span>
+                                        <span class="text-secondary fw-medium">65% &bull; 8 Sessions</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Window Caption -->
+                <div class="window-caption">
+                    <i class="bi bi-display me-1"></i>
+                    <span>Static illustrative preview of the CareerCatalyst authenticated workspace interface.</span>
                 </div>
             </div>
         </div>
