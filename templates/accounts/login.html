@@ -1,138 +1,80 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load crispy_forms_tags %}
 
-{% block title %}Login | Career Catalyst{% endblock %}
+{% block title %}Log In — CareerCatalyst{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}?v=1.0">
+{% endblock %}
 
 {% block content %}
-<div class="container d-flex align-items-center justify-content-center" style="min-height: 75vh; padding: 2.5rem 0;">
-    <div class="row justify-content-center w-100">
-        <div class="col-lg-10 col-xl-9">
-            <div class="card shadow-sm border-0 rounded-4 overflow-hidden" style="border: 1px solid var(--border) !important; background: var(--card-bg, #ffffff);">
-                <div class="row g-0">
-                    
-                    <!-- Left Column: Branded Value Context -->
-                    <div class="col-lg-5 p-4 p-md-5 d-flex flex-column justify-content-between border-end" style="background: var(--welcome-bg, #f8fafc); border-color: var(--border) !important;">
-                        <div>
-                            <!-- Brand -->
-                            <div class="d-flex align-items-center mb-4">
-                                <img src="{% static 'images/favicon.png' %}" alt="Career Catalyst Logo" class="me-2" style="height: 32px; width: 32px; border-radius: 6px;">
-                                <span class="fw-bold fs-5 text-secondary">Career<span class="brand-accent text-primary">Catalyst</span></span>
-                            </div>
+<div class="auth-page-wrapper">
+    <div class="auth-card auth-card-sm">
+        <!-- Brand Header -->
+        <a href="{% url 'home' %}" class="auth-brand">
+            <img src="{% static 'images/favicon.png' %}" alt="Career Catalyst Logo">
+            <span>Career<span class="brand-accent">Catalyst</span></span>
+        </a>
 
-                            <!-- Value Headline -->
-                            <h4 class="fw-bold text-secondary mb-2">Navigate your tech career with clarity.</h4>
-                            <p class="text-muted small mb-4" style="line-height: 1.6;">
-                                Sign in to access your personalized career roadmaps, AI guidance reports, and ATS resume tools.
-                            </p>
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-subtitle">Enter your credentials to access your account.</p>
 
-                            <!-- Feature Points -->
-                            <div class="d-flex flex-column gap-3 mb-4">
-                                <div class="d-flex align-items-start gap-3">
-                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
-                                        <i class="bi bi-compass"></i>
-                                    </div>
-                                    <div class="small">
-                                        <span class="fw-semibold text-secondary d-block">Career Roadmaps</span>
-                                        <span class="text-muted">Structured 12-week learning milestones</span>
-                                    </div>
-                                </div>
-
-                                <div class="d-flex align-items-start gap-3">
-                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
-                                        <i class="bi bi-robot"></i>
-                                    </div>
-                                    <div class="small">
-                                        <span class="fw-semibold text-secondary d-block">AI Career Guidance</span>
-                                        <span class="text-muted">Readiness scoring & missing skill detection</span>
-                                    </div>
-                                </div>
-
-                                <div class="d-flex align-items-start gap-3">
-                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
-                                        <i class="bi bi-shield-check"></i>
-                                    </div>
-                                    <div class="small">
-                                        <span class="fw-semibold text-secondary d-block">ATS Resume & Interviews</span>
-                                        <span class="text-muted">Job keyword matching & mock prep</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Footer Trust Badge -->
-                        <div class="pt-3 border-top mt-auto" style="border-color: var(--border) !important;">
-                            <div class="d-flex align-items-center gap-2 text-muted small">
-                                <i class="bi bi-check2-circle text-success"></i>
-                                <span>Trusted by engineering students & fresh grads</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right Column: Login Form -->
-                    <div class="col-lg-7 p-4 p-md-5 d-flex flex-column justify-content-center">
-                        <div class="mb-4">
-                            <h3 class="fw-bold text-secondary mb-1">Welcome back</h3>
-                            <p class="text-muted small mb-0">Enter your credentials to access your student dashboard.</p>
-                        </div>
-
-                        <form method="POST" novalidate>
-                            {% csrf_token %}
-                            
-                            <div class="mb-3">
-                                <label for="id_username" class="form-label fw-semibold text-secondary small">Username</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--border);">
-                                        <i class="bi bi-person"></i>
-                                    </span>
-                                    <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" class="form-control border-start-0 ps-0" required id="id_username" placeholder="Enter your username" value="{{ form.username.value|default:'' }}">
-                                </div>
-                                {% if form.username.errors %}
-                                    <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <label for="id_password" class="form-label fw-semibold text-secondary small mb-0">Password</label>
-                                    <a href="{% url 'password_reset' %}" class="small text-primary text-decoration-none fw-semibold">Forgot password?</a>
-                                </div>
-                                <div class="input-group position-relative password-toggle-wrapper">
-                                    <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--border);">
-                                        <i class="bi bi-lock"></i>
-                                    </span>
-                                    <input type="password" name="password" autocomplete="current-password" class="form-control border-start-0 ps-0 pe-5" required id="id_password" placeholder="Enter your password">
-                                    <button type="button" class="btn position-absolute end-0 top-50 translate-middle-y border-0 bg-transparent text-muted password-toggle-btn me-2" onclick="togglePasswordVisibility('id_password', this)" style="z-index: 5;" aria-label="Toggle password visibility">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                </div>
-                                {% if form.password.errors %}
-                                    <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            {% if form.non_field_errors %}
-                                <div class="alert alert-danger py-2 small mb-3">
-                                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-
-                            <div class="d-grid gap-2 mt-4">
-                                <button type="submit" class="btn-primary-custom w-100 py-3 text-center d-flex justify-content-center align-items-center shadow-sm">
-                                    Login to Account <i class="bi bi-arrow-right ms-2"></i>
-                                </button>
-                            </div>
-                        </form>
-
-                        <div class="text-center mt-4 pt-2 border-top" style="border-color: var(--border) !important;">
-                            <p class="mb-0 small text-muted">
-                                Don't have an account? <a href="{% url 'register' %}" class="fw-semibold text-primary text-decoration-none">Create free account</a>
-                            </p>
-                        </div>
-                    </div>
-
+        <!-- Server Validation Non-Field Errors -->
+        {% if form.non_field_errors %}
+            <div class="auth-alert auth-alert-danger" role="alert">
+                <i class="bi bi-exclamation-circle-fill flex-shrink-0 mt-1"></i>
+                <div>
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
                 </div>
             </div>
+        {% endif %}
+
+        <form method="POST" novalidate>
+            {% csrf_token %}
+            
+            <!-- Username Field -->
+            <div class="auth-form-group">
+                <label for="id_username" class="auth-label">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" class="form-control" required id="id_username" placeholder="Enter your username" value="{{ form.username.value|default:'' }}">
+                </div>
+                {% if form.username.errors %}
+                    <div class="auth-field-error">{{ form.username.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Password Field -->
+            <div class="auth-form-group">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="id_password" class="auth-label mb-0">Password</label>
+                    <a href="{% url 'password_reset' %}" class="small text-primary text-decoration-none fw-semibold">Forgot password?</a>
+                </div>
+                <div class="input-group password-toggle-wrapper">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password" name="password" autocomplete="current-password" class="form-control" required id="id_password" placeholder="Enter your password">
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('id_password', this)" aria-label="Toggle password visibility">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                {% if form.password.errors %}
+                    <div class="auth-field-error">{{ form.password.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Primary Action -->
+            <div class="mt-4">
+                <button type="submit" class="btn-auth-primary">
+                    Log In
+                </button>
+            </div>
+        </form>
+
+        <!-- Footer Navigation Prompt -->
+        <div class="auth-footer-prompt">
+            Don't have an account? <a href="{% url 'register' %}">Create an account</a>
         </div>
     </div>
 </div>
