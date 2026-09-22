@@ -123,7 +123,7 @@
                                 Calibrates evaluation weights between Product (DSA, system design, projects) and Enterprise IT Services (Core CS, CGPA cutoff, aptitude).
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-primary-custom w-100 py-2.5 rounded-pill fw-semibold mt-2 shadow-sm">
+                        <button type="submit" class="dash-btn dash-btn-primary w-100 py-2.5 fw-semibold mt-2">
                             <i class="bi bi-play-circle-fill me-1"></i> Run Career Analysis
                         </button>
                     </form>
@@ -216,7 +216,7 @@
                         </button>
                         {% if matched_career_path %}
                             {% if is_enrolled_in_path %}
-                                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-sm btn-outline-success rounded-pill w-100 py-1.5 fw-semibold" style="font-size: 0.8125rem;">
+                                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="dash-btn dash-btn-outline dash-btn-sm w-100 fw-semibold">
                                     {% if is_path_completed %}
                                         <i class="bi bi-check2-all me-1"></i> Review Track
                                     {% else %}
@@ -224,7 +224,7 @@
                                     {% endif %}
                                 </a>
                             {% else %}
-                                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-sm btn-outline-secondary rounded-pill w-100 py-1.5" style="font-size: 0.8125rem;">
+                                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="dash-btn dash-btn-outline dash-btn-sm w-100">
                                     <i class="bi bi-eye me-1"></i> Preview Curriculum
                                 </a>
                             {% endif %}
@@ -247,7 +247,7 @@
                                 {{ form.company_tier }}
                             </div>
                             <div class="col-md-3">
-                                <button type="submit" class="btn btn-primary-custom w-100 rounded-pill py-2 fw-semibold shadow-sm" style="font-size: 0.8125rem;">
+                                <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm w-100 fw-semibold">
                                     <i class="bi bi-check2-circle me-1"></i> Apply & Recalibrate
                                 </button>
                             </div>
@@ -444,19 +444,19 @@
                 <div class="transition-actions">
                     {% if is_enrolled_in_path %}
                         {% if is_path_completed %}
-                            <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-outline-success px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" style="font-size: 0.8125rem;">
+                            <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="dash-btn dash-btn-outline dash-btn-sm d-inline-flex align-items-center gap-2 fw-semibold">
                                 <i class="bi bi-check2-all"></i> Review Roadmap
                             </a>
-                            <a href="{% url 'interviews:hub' %}" class="btn btn-primary-custom px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" style="font-size: 0.8125rem;">
+                            <a href="{% url 'interviews:hub' %}" class="dash-btn dash-btn-primary dash-btn-sm d-inline-flex align-items-center gap-2 fw-semibold">
                                 <i class="bi bi-mortarboard-fill"></i> Open Interview Prep
                             </a>
                         {% else %}
-                            <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-primary-custom px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" style="font-size: 0.8125rem;">
+                            <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="dash-btn dash-btn-primary dash-btn-sm d-inline-flex align-items-center gap-2 fw-semibold">
                                 <i class="bi bi-play-circle-fill"></i> Continue Learning (Week {{ next_active_week }})
                             </a>
                             <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3 py-2 fw-semibold" title="Re-sync newly added profile skills with roadmap milestones">
+                                <button type="submit" class="dash-btn dash-btn-outline dash-btn-sm fw-semibold" title="Re-sync newly added profile skills with roadmap milestones">
                                     <i class="bi bi-arrow-repeat me-1"></i> Re-Sync
                                 </button>
                             </form>
@@ -464,12 +464,12 @@
                     {% else %}
                         <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-primary-custom px-4 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-2 fw-semibold" style="font-size: 0.8125rem;">
+                            <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm d-inline-flex align-items-center gap-2 fw-semibold">
                                 <i class="bi bi-lightning-charge-fill"></i> Activate & Auto-Sync Roadmap
                             </button>
                         </form>
                         {% if matched_career_path %}
-                        <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-2">
+                        <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="dash-btn dash-btn-outline dash-btn-sm">
                             <i class="bi bi-eye me-1"></i> Preview
                         </a>
                         {% endif %}
@@ -541,7 +541,7 @@
                         {% endfor %}
                     </ul>
                     <div class="mt-auto pt-3 border-top border-light">
-                        <a href="{% url 'interviews:hub' %}" class="btn btn-sm btn-outline-warning rounded-pill w-100 py-1.5 fw-semibold" style="font-size: 0.8125rem;">
+                        <a href="{% url 'interviews:hub' %}" class="dash-btn dash-btn-outline dash-btn-sm w-100 fw-semibold">
                             <i class="bi bi-mortarboard me-1"></i> Open Interview Prep Hub
                         </a>
                     </div>
@@ -561,7 +561,7 @@
                                 ATS Score: {{ analysis.ats_resume_score }}%
                             </span>
                         {% else %}
-                            <a href="{% url 'ai_resume:analyze' %}" class="btn btn-sm btn-primary-custom rounded-pill px-3 py-1" style="font-size: 0.8125rem;">
+                            <a href="{% url 'ai_resume:analyze' %}" class="dash-btn dash-btn-primary dash-btn-sm">
                                 <i class="bi bi-upload me-1"></i> Scan Resume
                             </a>
                         {% endif %}

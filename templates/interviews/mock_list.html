@@ -43,6 +43,12 @@
 
         <!-- Main Content Area -->
         <main class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'interviews:hub' %}" class="dash-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Interview Hub</span>
+            </a>
+
             <!-- Header & Breadcrumbs -->
             <div class="interview-page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <div>
@@ -57,11 +63,6 @@
                     <p class="interview-page-subtitle">
                         Simulate end-to-end technical conversations with real-time question adaptation and proctor tracking.
                     </p>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <a href="{% url 'interviews:hub' %}" class="btn btn-outline-secondary rounded-pill btn-sm px-3 py-2">
-                        <i class="bi bi-arrow-left me-1"></i> Hub
-                    </a>
                 </div>
             </div>
 
@@ -99,7 +100,7 @@
                                 </ul>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-semibold">
+                            <button type="submit" class="dash-btn dash-btn-primary w-100 py-2">
                                 <i class="bi bi-robot me-1"></i> Begin Mock Session
                             </button>
                         </form>

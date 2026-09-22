@@ -1,220 +1,320 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}{{ profile.user.get_full_name|default:profile.user.username }}'s Profile | Career Catalyst{% endblock %}
+{% block title %}{{ profile.user.get_full_name|default:profile.user.username }}'s Profile — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5">
-    <!-- Top Header -->
-    <div class="row mb-4 justify-content-center">
-        <div class="col-lg-10">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                <div>
-                    <h1 class="fw-bold mb-1 text-gradient">Student Profile</h1>
-                    <p class="text-muted mb-0">Overview of your onboarding profile data.</p>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/settings.css' %}?v=1.0">
+{% endblock %}
+
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ profile.user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none; font-size: 0.7rem;">{{ user_initials }}</span>
+                {% elif user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="{{ profile.user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none; font-size: 0.7rem;">{{ user_initials }}</span>
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.7rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Scroll Area -->
+        <main class="dash-content">
+            <a href="{% url 'profile_edit' %}" class="dash-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Settings</span>
+            </a>
+
+            <!-- Header & Breadcrumbs -->
+            <div class="settings-header">
+                <nav class="settings-breadcrumbs" aria-label="Breadcrumb">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-house-door"></i> Dashboard</a>
+                    <span>/</span>
+                    <a href="{% url 'profile_edit' %}">Settings</a>
+                    <span>/</span>
+                    <span>Student Profile</span>
+                </nav>
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                    <div>
+                        <h1 class="settings-title">Student Profile</h1>
+                        <p class="settings-subtitle">Comprehensive overview of your verified academic and career placement record.</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="{% url 'profile_edit' %}" class="settings-btn-primary d-inline-flex align-items-center gap-2 text-decoration-none">
+                            <i class="bi bi-pencil-square"></i>
+                            <span>Edit Settings</span>
+                        </a>
+                    </div>
                 </div>
-                <div class="d-flex gap-2">
-                    <a href="{% url 'dashboard' %}" class="btn btn-light rounded-pill px-4">
-                        <i class="bi bi-speedometer2 me-1"></i> Dashboard
-                    </a>
-                    <a href="{% url 'profile_edit' %}" class="btn-primary-custom px-4 py-2">
-                        <i class="bi bi-pencil me-1"></i> Edit Profile
+            </div>
+
+            <!-- Profile Completion Progress Bar -->
+            {% if completion_percentage is not None %}
+            <div class="profile-completion-box">
+                <div class="d-flex align-items-center gap-3 w-100 flex-wrap flex-sm-nowrap">
+                    <div class="d-flex align-items-center gap-2" style="min-width: 170px;">
+                        <i class="bi bi-speedometer2 text-primary fs-5"></i>
+                        <div>
+                            <div class="small fw-semibold text-body">Profile Strength</div>
+                            <div class="small text-muted">{{ completion_percentage }}% Completed</div>
+                        </div>
+                    </div>
+                    <div class="profile-completion-bar">
+                        <div class="profile-completion-fill" style="width: {{ completion_percentage }}%;"></div>
+                    </div>
+                    <a href="{% url 'profile_edit' %}?tab=profile" class="text-primary small text-nowrap fw-semibold text-decoration-none">
+                        Improve score &rarr;
                     </a>
                 </div>
             </div>
-        </div>
-    </div>
+            {% endif %}
 
-    <!-- Main Layout -->
-    <div class="row g-4 justify-content-center">
-        <!-- Left Summary Card -->
-        <div class="col-lg-4 col-10">
-            <div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4">
-                <div class="bg-primary bg-opacity-10 py-5 text-center position-relative" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(20, 184, 166, 0.05));">
-                    <!-- Profile Picture -->
-                    <div class="mb-3">
-                        {% if profile.profile_picture %}
-                            <img src="{{ profile.profile_picture.url }}" alt="{{ profile.user.username }}" class="rounded-circle border border-4 border-white shadow-sm object-fit-cover" style="width: 120px; height: 120px;">
-                        {% else %}
-                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle border border-4 border-white shadow-sm text-white fw-bold fs-1" style="width: 120px; height: 120px; background: linear-gradient(135deg, var(--primary), var(--accent));">
-                                {{ profile.user.first_name|slice:":1"|upper }}{{ profile.user.last_name|slice:":1"|upper }}
+            <!-- Main Profile Grid -->
+            <div class="row g-4">
+                <!-- Left Column: Summary Card -->
+                <div class="col-lg-4">
+                    <div class="settings-card text-center">
+                        <div class="mb-3 d-flex justify-content-center">
+                            {% if profile.profile_picture %}
+                                <img src="{{ profile.profile_picture.url }}" alt="{{ profile.user.username }}" class="settings-avatar-preview" style="width: 110px; height: 110px;">
+                            {% elif profile.user.profile_picture %}
+                                <img src="{{ profile.user.profile_picture.url }}" alt="{{ profile.user.username }}" class="settings-avatar-preview" style="width: 110px; height: 110px;">
+                            {% else %}
+                                <div class="settings-avatar-initials" style="width: 110px; height: 110px; font-size: 2rem;">
+                                    {{ user_initials }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <h2 class="h5 fw-bold text-body mb-1">{{ profile.user.get_full_name|default:profile.user.username }}</h2>
+                        <p class="text-muted small mb-2">{{ profile.user.email }}</p>
+
+                        {% if profile.career_goal %}
+                            <div class="mb-3">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill small">
+                                    <i class="bi bi-bullseye me-1"></i> {{ profile.career_goal }}
+                                </span>
                             </div>
                         {% endif %}
-                    </div>
-                    <h3 class="fw-bold text-secondary mb-1">{{ profile.user.first_name }} {{ profile.user.last_name }}</h3>
-                    <p class="text-muted mb-2">{{ profile.user.email }}</p>
-                    {% if profile.career_goal %}
-                        <span class="badge bg-primary px-3 py-2 rounded-pill fs-7 fw-semibold shadow-sm">
-                            <i class="bi bi-bullseye me-1"></i> {{ profile.career_goal }}
-                        </span>
-                    {% endif %}
-                </div>
 
-                <div class="card-body p-4">
-                    <!-- Quick Stats Badges -->
-                    <div class="row g-2 mb-4 text-center">
-                        <div class="col-6">
-                            <div class="p-3 bg-light rounded-4 border">
-                                <span class="d-block text-muted small">Skill Level</span>
-                                <span class="fw-bold text-secondary">{{ profile.current_skill_level|default:"Beginner" }}</span>
+                        <div class="row g-2 text-center pt-3 border-top border-subtle mb-3">
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-light border">
+                                    <div class="small text-muted" style="font-size: 0.75rem;">Level</div>
+                                    <div class="fw-bold text-body small">{{ profile.current_skill_level|default:"Beginner" }}</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-light border">
+                                    <div class="small text-muted" style="font-size: 0.75rem;">Grad Year</div>
+                                    <div class="fw-bold text-body small">{{ profile.graduation_year|default:"N/A" }}</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-6">
-                            <div class="p-3 bg-light rounded-4 border">
-                                <span class="d-block text-muted small">Completion</span>
-                                <span class="fw-bold text-primary">{{ profile.calculate_completion_percentage }}%</span>
+
+                        <!-- Bio / Career Objective -->
+                        <div class="text-start mb-4">
+                            <label class="settings-label">Professional Summary</label>
+                            <p class="small text-muted mb-0 lh-base">
+                                {{ profile.bio|default:"No career objective specified yet. Update your profile to share your background with recruiters." }}
+                            </p>
+                        </div>
+
+                        <!-- Social / External Links -->
+                        <div class="text-start pt-3 border-top border-subtle">
+                            <label class="settings-label mb-2">Connected Links</label>
+                            <div class="d-flex flex-column gap-2">
+                                {% if profile.github %}
+                                    <a href="{{ profile.github }}" target="_blank" rel="noopener noreferrer" class="settings-btn-outline d-flex align-items-center justify-content-between text-decoration-none py-2 px-3 small">
+                                        <span><i class="bi bi-github me-2"></i> GitHub</span>
+                                        <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                                    </a>
+                                {% endif %}
+                                {% if profile.linkedin %}
+                                    <a href="{{ profile.linkedin }}" target="_blank" rel="noopener noreferrer" class="settings-btn-outline d-flex align-items-center justify-content-between text-decoration-none py-2 px-3 small">
+                                        <span><i class="bi bi-linkedin me-2 text-primary"></i> LinkedIn</span>
+                                        <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                                    </a>
+                                {% endif %}
+                                {% if profile.portfolio %}
+                                    <a href="{{ profile.portfolio }}" target="_blank" rel="noopener noreferrer" class="settings-btn-outline d-flex align-items-center justify-content-between text-decoration-none py-2 px-3 small">
+                                        <span><i class="bi bi-globe me-2 text-info"></i> Portfolio</span>
+                                        <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                                    </a>
+                                {% endif %}
+                                {% if profile.leetcode %}
+                                    <a href="{{ profile.leetcode }}" target="_blank" rel="noopener noreferrer" class="settings-btn-outline d-flex align-items-center justify-content-between text-decoration-none py-2 px-3 small">
+                                        <span><i class="bi bi-code-slash me-2 text-warning"></i> LeetCode</span>
+                                        <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                                    </a>
+                                {% endif %}
+                                {% if profile.hackerrank %}
+                                    <a href="{{ profile.hackerrank }}" target="_blank" rel="noopener noreferrer" class="settings-btn-outline d-flex align-items-center justify-content-between text-decoration-none py-2 px-3 small">
+                                        <span><i class="bi bi-trophy me-2 text-success"></i> HackerRank</span>
+                                        <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                                    </a>
+                                {% endif %}
+                                {% if not profile.github and not profile.linkedin and not profile.portfolio and not profile.leetcode and not profile.hackerrank %}
+                                    <div class="text-muted small">No links provided yet.</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Detailed Sections -->
+                <div class="col-lg-8">
+                    <!-- Academic Credentials -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-mortarboard text-primary"></i>
+                                Academic Qualifications
+                            </h3>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="small text-muted">College / Institution</div>
+                                <div class="fw-semibold text-body">{{ profile.college|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="small text-muted">University</div>
+                                <div class="fw-semibold text-body">{{ profile.university|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Degree</div>
+                                <div class="fw-semibold text-body">{{ profile.degree|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Branch</div>
+                                <div class="fw-semibold text-body">{{ profile.branch|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Semester</div>
+                                <div class="fw-semibold text-body">
+                                    {% if profile.semester %}Semester {{ profile.semester }}{% else %}Not specified{% endif %}
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="small text-muted">Graduation Year</div>
+                                <div class="fw-semibold text-body">{{ profile.graduation_year|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="small text-muted">CGPA</div>
+                                <div class="fw-bold text-primary fs-6">{{ profile.cgpa|default:"0.00" }} / 10.0</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Personal Bio -->
-                    <div class="mb-4">
-                        <h6 class="fw-bold text-secondary mb-2">About</h6>
-                        <p class="text-muted small mb-0 lh-base">
-                            {{ profile.bio|default:"No bio provided yet. Click 'Edit Profile' to add a short professional summary." }}
-                        </p>
-                    </div>
-
-                    <hr class="text-muted opacity-25">
-
-                    <!-- Social / Dev Profiles -->
-                    <div>
-                        <h6 class="fw-bold text-secondary mb-3">Links & Profiles</h6>
-                        <div class="d-flex flex-column gap-2">
-                            {% if profile.github %}
-                                <a href="{{ profile.github }}" target="_blank" class="btn btn-outline-dark btn-sm rounded-pill text-start px-3 py-2 d-flex align-items-center justify-content-between">
-                                    <span><i class="bi bi-github me-2"></i> GitHub</span>
-                                    <i class="bi bi-box-arrow-up-right small"></i>
-                                </a>
-                            {% endif %}
-                            {% if profile.linkedin %}
-                                <a href="{{ profile.linkedin }}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill text-start px-3 py-2 d-flex align-items-center justify-content-between">
-                                    <span><i class="bi bi-linkedin me-2"></i> LinkedIn</span>
-                                    <i class="bi bi-box-arrow-up-right small"></i>
-                                </a>
-                            {% endif %}
-                            {% if profile.portfolio %}
-                                <a href="{{ profile.portfolio }}" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill text-start px-3 py-2 d-flex align-items-center justify-content-between">
-                                    <span><i class="bi bi-globe me-2"></i> Portfolio</span>
-                                    <i class="bi bi-box-arrow-up-right small"></i>
-                                </a>
-                            {% endif %}
-                            {% if profile.leetcode %}
-                                <a href="{{ profile.leetcode }}" target="_blank" class="btn btn-outline-warning btn-sm rounded-pill text-start px-3 py-2 d-flex align-items-center justify-content-between text-dark">
-                                    <span><i class="bi bi-code-slash me-2"></i> LeetCode</span>
-                                    <i class="bi bi-box-arrow-up-right small"></i>
-                                </a>
-                            {% endif %}
-                            {% if profile.hackerrank %}
-                                <a href="{{ profile.hackerrank }}" target="_blank" class="btn btn-outline-success btn-sm rounded-pill text-start px-3 py-2 d-flex align-items-center justify-content-between">
-                                    <span><i class="bi bi-trophy me-2"></i> HackerRank</span>
-                                    <i class="bi bi-box-arrow-up-right small"></i>
-                                </a>
-                            {% endif %}
-                            {% if not profile.github and not profile.linkedin and not profile.portfolio and not profile.leetcode and not profile.hackerrank %}
-                                <span class="text-muted small">No social or coding links linked yet.</span>
-                            {% endif %}
+                    <!-- Career Preferences -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-compass text-primary"></i>
+                                Career Preferences
+                            </h3>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="small text-muted">Target Career Goal</div>
+                                <div class="fw-semibold text-body">{{ profile.career_goal|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="small text-muted">Self-Reported Skill Level</div>
+                                <div class="fw-semibold text-body">{{ profile.current_skill_level|default:"Beginner" }}</div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Preferred Domain</div>
+                                <div class="fw-semibold text-body">{{ profile.preferred_domain|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Expected Salary</div>
+                                <div class="fw-semibold text-body">
+                                    {% if profile.expected_salary %}INR {{ profile.expected_salary|floatformat:2 }}{% else %}Not specified{% endif %}
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Preferred Location</div>
+                                <div class="fw-semibold text-body">{{ profile.preferred_location|default:"Not specified" }}</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Right Content Cards -->
-        <div class="col-lg-6 col-10">
-            <!-- Academic Information -->
-            <div class="card shadow-sm border-0 rounded-4 mb-4">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold text-secondary mb-4">
-                        <i class="bi bi-mortarboard text-primary me-2"></i> Academic Achievements
-                    </h5>
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <span class="text-muted small d-block">College</span>
-                            <span class="fw-bold text-secondary">{{ profile.college|default:"Not specified" }}</span>
+                    <!-- Core Technical Skills -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-cpu text-primary"></i>
+                                Verified Technical Skills
+                            </h3>
                         </div>
-                        <div class="col-md-6">
-                            <span class="text-muted small d-block">University</span>
-                            <span class="fw-bold text-secondary">{{ profile.university|default:"Not specified" }}</span>
-                        </div>
-                        <div class="col-md-4 col-6">
-                            <span class="text-muted small d-block">Degree / Course</span>
-                            <span class="fw-semibold text-secondary">{{ profile.degree|default:"Not specified" }}</span>
-                        </div>
-                        <div class="col-md-4 col-6">
-                            <span class="text-muted small d-block">Branch / Discipline</span>
-                            <span class="fw-semibold text-secondary">{{ profile.branch|default:"Not specified" }}</span>
-                        </div>
-                        <div class="col-md-4 col-6">
-                            <span class="text-muted small d-block">Semester</span>
-                            <span class="fw-semibold text-secondary">
-                                {% if profile.semester %}Semester {{ profile.semester }}{% else %}Not specified{% endif %}
-                            </span>
-                        </div>
-                        <div class="col-6 col-md-6">
-                            <span class="text-muted small d-block">Graduation Year</span>
-                            <span class="fw-bold text-secondary">{{ profile.graduation_year|default:"Not specified" }}</span>
-                        </div>
-                        <div class="col-6 col-md-6">
-                            <span class="text-muted small d-block">CGPA Score</span>
-                            <span class="fw-bold text-primary fs-5">{{ profile.cgpa|default:"0.00" }} / 10.0</span>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for skill in profile.get_skills_list %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill small">
+                                    {{ skill }}
+                                </span>
+                            {% empty %}
+                                <div class="text-muted small">No technical skills added yet. Add them in Settings to power your resume generation.</div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Career Preferences -->
-            <div class="card shadow-sm border-0 rounded-4 mb-4">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold text-secondary mb-4">
-                        <i class="bi bi-compass text-primary me-2"></i> Career Ambition & Preferences
-                    </h5>
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <span class="text-muted small d-block">Primary Career Goal</span>
-                            <span class="fw-bold text-secondary">{{ profile.career_goal|default:"Not specified" }}</span>
-                        </div>
-                        <div class="col-md-6">
-                            <span class="text-muted small d-block">Current Skill Level</span>
-                            <span class="badge {% if profile.current_skill_level == 'Advanced' %}bg-success{% elif profile.current_skill_level == 'Intermediate' %}bg-warning text-dark{% else %}bg-info{% endif %} px-3 py-2 rounded-pill fs-7 mt-1">
-                                {{ profile.current_skill_level|default:"Beginner" }}
-                            </span>
-                        </div>
-                        <div class="col-md-4 col-6">
-                            <span class="text-muted small d-block">Preferred Domain</span>
-                            <span class="fw-semibold text-secondary">{{ profile.preferred_domain|default:"Not specified" }}</span>
-                        </div>
-                        <div class="col-md-4 col-6">
-                            <span class="text-muted small d-block">Expected Salary</span>
-                            <span class="fw-semibold text-secondary">
-                                {% if profile.expected_salary %}INR {{ profile.expected_salary|floatformat:2 }}{% else %}Not specified{% endif %}
-                            </span>
-                        </div>
-                        <div class="col-md-4 col-6">
-                            <span class="text-muted small d-block">Preferred Location</span>
-                            <span class="fw-semibold text-secondary">{{ profile.preferred_location|default:"Not specified" }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Technical Skills Badges -->
-            <div class="card shadow-sm border-0 rounded-4">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold text-secondary mb-3">
-                        <i class="bi bi-cpu text-primary me-2"></i> Core Skill Set
-                    </h5>
-                    <div class="d-flex flex-wrap gap-2">
-                        {% for skill in profile.get_skills_list %}
-                            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fs-7 fw-semibold border border-primary border-opacity-10">
-                                {{ skill }}
-                            </span>
-                        {% empty %}
-                            <span class="text-muted small">No technical skills added yet. Click edit to list them!</span>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('sidebarCloseBtn');
+    const sidebar = document.getElementById('dashboardSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('open');
+        if (overlay) overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+})();
+</script>
 {% endblock %}

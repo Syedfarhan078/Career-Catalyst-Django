@@ -43,6 +43,12 @@
 
         <!-- Main Content Area -->
         <main class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'interviews:behavioral_list' %}" class="dash-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Behavioral Questions</span>
+            </a>
+
             <!-- Header & Breadcrumbs -->
             <div class="interview-page-header mb-4">
                 <div class="interview-breadcrumb">
@@ -59,30 +65,30 @@
             <!-- Scorecard Container -->
             <div class="interview-result-card">
                 <div class="interview-track-icon-wrapper mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.75rem; background: var(--dash-primary-subtle); color: var(--dash-primary); border-color: var(--dash-primary-border);">
-                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-award-fill"></i>
                 </div>
 
-                <h2 class="fw-bold mb-1 text-secondary">Behavioral Response Graded</h2>
-                <p class="text-muted small mb-3">{{ question.title }}</p>
+                <h1 class="h3 fw-bold mb-1 text-body">STAR Response Evaluation</h1>
+                <p class="text-muted small mb-4">Comprehensive structural and qualitative score for your behavioral answer.</p>
 
-                <div class="interview-score-display {% if score >= 75 %}high{% elif score >= 50 %}medium{% else %}low{% endif %}">
+                <div class="interview-score-display mb-3 mx-auto {% if score >= 70 %}high{% elif score >= 50 %}medium{% else %}low{% endif %}">
                     {{ score }}%
                 </div>
 
                 <div class="p-3 rounded-3 mb-4 mx-auto text-start" style="max-width: 480px; background: var(--dash-surface-muted); border: 1px solid var(--dash-border);">
                     <div class="small fw-semibold text-secondary mb-1">
-                        <i class="bi bi-info-circle me-1 text-primary"></i> Structural Completeness:
+                        <i class="bi bi-chat-left-quote text-primary me-1"></i> Evaluation Feedback:
                     </div>
-                    <p class="small text-muted mb-0" style="line-height: 1.55;">
+                    <div class="small text-body lh-base">
                         {{ feedback }}
-                    </p>
+                    </div>
                 </div>
 
                 <div class="d-flex gap-3 justify-content-center flex-wrap">
-                    <a href="{% url 'interviews:behavioral_list' %}" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
+                    <a href="{% url 'interviews:behavioral_list' %}" class="dash-btn dash-btn-primary px-4 py-2">
                         <i class="bi bi-arrow-repeat me-1"></i> Practice More Questions
                     </a>
-                    <a href="{% url 'interviews:reports' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                    <a href="{% url 'interviews:reports' %}" class="dash-btn dash-btn-secondary px-4 py-2">
                         <i class="bi bi-graph-up-arrow me-1"></i> View Reports
                     </a>
                 </div>

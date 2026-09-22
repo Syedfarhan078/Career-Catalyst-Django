@@ -1,85 +1,175 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Delete Account | Career Catalyst{% endblock %}
+{% block title %}Delete Account — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-6 col-md-8">
-            <!-- Breadcrumb / Back Link -->
-            <div class="mb-4">
-                <a href="{% url 'profile_edit' %}" class="text-decoration-none text-muted">
-                    <i class="bi bi-arrow-left me-1"></i> Back to Profile Settings
-                </a>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/settings.css' %}?v=1.0">
+{% endblock %}
+
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none; font-size: 0.7rem;">{{ user_initials }}</span>
+                {% elif user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none; font-size: 0.7rem;">{{ user_initials }}</span>
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.7rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Scroll Area -->
+        <main class="dash-content">
+            <a href="{% url 'profile_edit' %}?tab=danger" class="dash-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Settings</span>
+            </a>
+
+            <!-- Header & Breadcrumbs -->
+            <div class="settings-header">
+                <nav class="settings-breadcrumbs" aria-label="Breadcrumb">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-house-door"></i> Dashboard</a>
+                    <span>/</span>
+                    <a href="{% url 'profile_edit' %}">Settings</a>
+                    <span>/</span>
+                    <span class="text-danger">Delete Account</span>
+                </nav>
             </div>
 
-            <!-- Danger Zone Card -->
-            <div class="card border-danger border-opacity-50 shadow-lg rounded-4 overflow-hidden">
-                <!-- Header Banner -->
-                <div class="card-header bg-danger bg-opacity-10 border-bottom border-danger border-opacity-25 p-4 text-center">
-                    <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-circle mb-3" style="width: 64px; height: 64px;">
-                        <i class="bi bi-exclamation-triangle-fill fs-2"></i>
-                    </div>
-                    <h2 class="fw-bold text-danger mb-1">Delete Account</h2>
-                    <p class="text-muted small mb-0">This action is permanent and cannot be undone.</p>
-                </div>
-
-                <div class="card-body p-4 p-md-5">
-                    <!-- Warning Details -->
-                    <div class="alert alert-danger border-danger border-opacity-25 rounded-3 mb-4 small" role="alert">
-                        <h6 class="fw-bold text-danger mb-2"><i class="bi bi-shield-x me-1"></i> Unexpected bad things will happen if you don't read this!</h6>
-                        <ul class="mb-0 ps-3">
-                            <li>All your profile information and contact details will be deleted.</li>
-                            <li>Your saved ATS resumes and interview scores will be permanently lost.</li>
-                            <li>Your roadmap milestones, progress tracking, and mentorship chats will be purged.</li>
-                        </ul>
-                    </div>
-
-                    <form method="POST" id="deleteAccountForm">
-                        {% csrf_token %}
-
-                        <div class="mb-4">
-                            <label for="confirm_username" class="form-label fw-semibold text-secondary">
-                                Please type <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1 user-select-all">{{ user.username }}</span> to confirm:
-                            </label>
-                            <input 
-                                type="text" 
-                                class="form-control form-control-lg border-danger border-opacity-50" 
-                                id="confirm_username" 
-                                name="confirm_username" 
-                                placeholder="Type your username here" 
-                                autocomplete="off" 
-                                required
-                            >
-                            <div class="form-text text-muted small mt-2">
-                                Case-sensitive verification required for account deletion.
+            <!-- Django Messages -->
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show border-0 shadow-sm rounded-3 py-2 px-3 small d-flex align-items-center justify-content-between" role="alert">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill text-success{% elif message.tags == 'error' or message.tags == 'danger' %}bi-exclamation-triangle-fill text-danger{% else %}bi-info-circle-fill text-primary{% endif %}"></i>
+                                <span>{{ message }}</span>
                             </div>
+                            <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.5rem;"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="row justify-content-center">
+                <div class="col-lg-8 col-xl-7">
+                    <div class="settings-danger-card shadow-sm">
+                        <div class="settings-danger-header mb-3">
+                            <i class="bi bi-exclamation-triangle-fill fs-3 text-danger"></i>
+                            <h2 class="h5 fw-bold text-danger mb-0">Confirm Account Deletion</h2>
+                        </div>
+                        <p class="text-muted small mb-4">
+                            You are about to permanently delete your CareerCatalyst account (<span class="fw-semibold text-body">@{{ user.username }}</span>). This action cannot be reversed or undone.
+                        </p>
+
+                        <div class="alert alert-danger border-danger border-opacity-25 rounded-3 mb-4 small">
+                            <div class="fw-bold mb-2"><i class="bi bi-shield-x me-1"></i> Data that will be immediately wiped:</div>
+                            <ul class="mb-0 ps-3">
+                                <li>All your resumes, ATS scores, and tailored templates.</li>
+                                <li>All career roadmaps, milestones, and tracked certifications.</li>
+                                <li>Your job application tracker kanban cards and notes.</li>
+                                <li>Mock interview sessions, audio answers, and AI feedback reports.</li>
+                                <li>Community discussions, likes, and mentor booking records.</li>
+                            </ul>
                         </div>
 
-                        <!-- Action Buttons -->
-                        <div class="d-grid gap-2">
-                            <button 
-                                type="submit" 
-                                class="btn btn-danger py-3 fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" 
-                                id="deleteSubmitBtn" 
-                                disabled
-                            >
-                                <i class="bi bi-trash3-fill"></i>
-                                I understand the consequences, delete my account
-                            </button>
-                            <a href="{% url 'profile_edit' %}" class="btn btn-light py-2 text-muted mt-2 rounded-3">
-                                Cancel, keep my account
-                            </a>
-                        </div>
-                    </form>
+                        <form method="POST" id="deleteAccountForm">
+                            {% csrf_token %}
+
+                            <div class="settings-form-group mb-4">
+                                <label for="confirm_username" class="settings-label">
+                                    To confirm, please type your username <code class="user-select-all fw-bold text-danger bg-danger-subtle px-2 py-1 rounded">{{ user.username }}</code> below:
+                                </label>
+                                <input 
+                                    type="text" 
+                                    class="form-control form-control-lg border-danger" 
+                                    id="confirm_username" 
+                                    name="confirm_username" 
+                                    placeholder="Type @{{ user.username }} without @"
+                                    autocomplete="off" 
+                                    required
+                                >
+                                <div class="settings-helper text-muted">
+                                    Exact case-sensitive match is required to unlock deletion.
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-column flex-sm-row align-items-center justify-content-end gap-3 pt-3 border-top border-subtle">
+                                <a href="{% url 'profile_edit' %}?tab=danger" class="settings-btn-outline w-100 w-sm-auto text-center text-decoration-none">
+                                    Cancel, keep my account
+                                </a>
+                                <button 
+                                    type="submit" 
+                                    class="settings-btn-danger w-100 w-sm-auto d-inline-flex align-items-center justify-content-center gap-2" 
+                                    id="deleteSubmitBtn" 
+                                    disabled
+                                >
+                                    <i class="bi bi-trash3-fill"></i>
+                                    <span>Permanently Delete My Account</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+(function() {
+    // 1. Mobile Sidebar Toggle
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('sidebarCloseBtn');
+    const sidebar = document.getElementById('dashboardSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('open');
+        if (overlay) overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+
+    // 2. Delete Confirmation Button Unlock
     const expectedUsername = "{{ user.username|escapejs }}";
     const input = document.getElementById('confirm_username');
     const deleteBtn = document.getElementById('deleteSubmitBtn');
@@ -88,13 +178,15 @@ document.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('input', () => {
             if (input.value.trim() === expectedUsername) {
                 deleteBtn.removeAttribute('disabled');
-                deleteBtn.classList.remove('opacity-50');
+                deleteBtn.style.opacity = '1';
+                deleteBtn.style.cursor = 'pointer';
             } else {
                 deleteBtn.setAttribute('disabled', 'true');
-                deleteBtn.classList.add('opacity-50');
+                deleteBtn.style.opacity = '0.5';
+                deleteBtn.style.cursor = 'not-allowed';
             }
         });
     }
-});
+})();
 </script>
 {% endblock %}

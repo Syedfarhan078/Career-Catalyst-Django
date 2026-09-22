@@ -59,7 +59,7 @@
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addApplicationModal">
+                    <button type="button" class="dash-btn dash-btn-primary dash-btn-sm" data-bs-toggle="modal" data-bs-target="#addApplicationModal">
                         <i class="bi bi-plus-lg me-1"></i> Add Application
                     </button>
                 </div>
@@ -184,7 +184,7 @@
                         <p class="tracker-empty-desc">
                             No applications matched your search criteria. Try clearing your filters or search keywords.
                         </p>
-                        <a href="{% url 'tracker:kanban' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                        <a href="{% url 'tracker:kanban' %}" class="dash-btn dash-btn-outline dash-btn-sm px-4">
                             <i class="bi bi-x-circle me-1"></i> Clear Filters
                         </a>
                     </div>
@@ -198,7 +198,7 @@
                         <p class="tracker-empty-desc">
                             Track and organize your applications from bookmark to offer. Paste a job link or add an application to stay on top of your interviews and recruiter follow-ups.
                         </p>
-                        <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addApplicationModal">
+                        <button type="button" class="dash-btn dash-btn-primary dash-btn-sm px-4" data-bs-toggle="modal" data-bs-target="#addApplicationModal">
                             <i class="bi bi-plus-lg me-1"></i> Add Your First Application
                         </button>
                     </div>
@@ -296,7 +296,7 @@
                                     <span class="fw-semibold">
                                         <i class="bi bi-alarm-fill me-1"></i> Follow-up Due ({{ app.days_since_applied }}d)
                                     </span>
-                                    <button type="button" class="btn btn-warning btn-sm py-0 px-2 rounded-pill fw-semibold" onclick="openFollowUpModal({{ app.id }})" style="font-size: 0.7rem;">
+                                    <button type="button" class="btn btn-warning btn-sm py-0 px-2 fw-semibold" onclick="openFollowUpModal({{ app.id }})" style="font-size: 0.7rem; border-radius: var(--dash-radius-sm, 6px);">
                                         Email &rarr;
                                     </button>
                                 </div>
@@ -352,7 +352,7 @@
                                         </td>
                                         <td>
                                             <div class="dropdown">
-                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-pill px-2 py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.775rem;">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle px-2 py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.775rem;">
                                                     {{ app.get_status_display }}
                                                 </button>
                                                 <ul class="dropdown-menu shadow-sm small">
@@ -521,8 +521,8 @@
                 </div>
 
                 <div class="modal-footer tracker-modal-footer">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">Save Application</button>
+                    <button type="button" class="dash-btn dash-btn-outline dash-btn-sm px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm px-4">Save Application</button>
                 </div>
             </form>
         </div>
@@ -605,8 +605,8 @@
                 </div>
 
                 <div class="modal-footer tracker-modal-footer">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">Save Changes</button>
+                    <button type="button" class="dash-btn dash-btn-outline dash-btn-sm px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm px-4">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -652,10 +652,10 @@
             </div>
 
             <div class="modal-footer tracker-modal-footer d-flex justify-content-between">
-                <button type="button" class="btn btn-outline-primary rounded-pill px-3" onclick="copyTextToClipboard('followUpBody', this)">
+                <button type="button" class="dash-btn dash-btn-outline dash-btn-sm px-3" onclick="copyTextToClipboard('followUpBody', this)">
                     <i class="bi bi-clipboard me-1"></i> Copy Email Draft
                 </button>
-                <a id="followUpMailtoBtn" href="#" class="btn btn-primary rounded-pill px-4 shadow-sm" target="_blank">
+                <a id="followUpMailtoBtn" href="#" class="dash-btn dash-btn-primary dash-btn-sm px-4" target="_blank">
                     <i class="bi bi-envelope-at me-1"></i> Open in Email Client
                 </a>
             </div>

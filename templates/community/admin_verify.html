@@ -43,6 +43,12 @@
 
         <!-- Main Content Area -->
         <main class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'community:mentor_list' %}" class="dash-back-link mb-3">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Mentors Directory</span>
+            </a>
+
             <!-- Header & Breadcrumbs -->
             <div class="community-header mb-4">
                 <div class="community-breadcrumbs">
@@ -127,13 +133,13 @@
                                     <div class="d-inline-flex gap-1">
                                         <form method="POST" action="{% url 'community:admin_action' p.id 'approve' %}" class="d-inline">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-success btn-sm px-3 fw-medium">
+                                            <button type="submit" class="dash-btn dash-btn-success dash-btn-sm">
                                                 <i class="bi bi-check-lg me-1"></i> Approve
                                             </button>
                                         </form>
                                         <form method="POST" action="{% url 'community:admin_action' p.id 'reject' %}" class="d-inline">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-outline-danger btn-sm px-3">
+                                            <button type="submit" class="dash-btn dash-btn-danger dash-btn-sm">
                                                 <i class="bi bi-x-lg me-1"></i> Reject
                                             </button>
                                         </form>
@@ -208,14 +214,14 @@
                                         {% if p.status == 'Approved' %}
                                         <form method="POST" action="{% url 'community:admin_action' p.id 'block' %}" class="d-inline">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-outline-danger btn-sm px-3">
+                                            <button type="submit" class="dash-btn dash-btn-danger dash-btn-sm">
                                                 Block Access
                                             </button>
                                         </form>
                                         {% else %}
                                         <form method="POST" action="{% url 'community:admin_action' p.id 'approve' %}" class="d-inline">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-outline-success btn-sm px-3">
+                                            <button type="submit" class="dash-btn dash-btn-outline dash-btn-sm">
                                                 Re-activate
                                             </button>
                                         </form>

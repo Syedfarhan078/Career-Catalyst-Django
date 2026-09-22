@@ -43,6 +43,12 @@
 
         <!-- Main Content Area -->
         <main class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'interviews:mock_list' %}" class="dash-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Mock Simulator</span>
+            </a>
+
             <!-- Header & Breadcrumbs -->
             <div class="interview-page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <div>
@@ -59,11 +65,6 @@
                     <p class="interview-page-subtitle">
                         Comprehensive evaluation report for <strong>{{ session.role }}</strong> role simulation.
                     </p>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <a href="{% url 'interviews:mock_list' %}" class="btn btn-outline-secondary rounded-pill btn-sm px-3 py-2">
-                        <i class="bi bi-arrow-left me-1"></i> Simulator
-                    </a>
                 </div>
             </div>
 
@@ -176,10 +177,10 @@
 
             <!-- Navigation Controls -->
             <div class="d-flex gap-3 justify-content-end mb-5">
-                <a href="{% url 'interviews:mock_list' %}" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
+                <a href="{% url 'interviews:mock_list' %}" class="dash-btn dash-btn-primary px-4 py-2">
                     <i class="bi bi-plus-circle me-1"></i> Start Another Session
                 </a>
-                <a href="{% url 'interviews:reports' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                <a href="{% url 'interviews:reports' %}" class="dash-btn dash-btn-secondary px-4 py-2">
                     <i class="bi bi-graph-up-arrow me-1"></i> Performance Reports
                 </a>
             </div>

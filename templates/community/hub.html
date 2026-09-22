@@ -57,10 +57,10 @@
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <a href="{% url 'community:create_thread' %}" class="btn btn-outline-primary btn-sm px-3 py-2 fw-medium">
+                    <a href="{% url 'community:create_thread' %}" class="dash-btn dash-btn-outline dash-btn-sm">
                         <i class="bi bi-plus-circle me-1"></i> Start Discussion
                     </a>
-                    <a href="{% url 'community:mentor_list' %}" class="btn btn-primary btn-sm px-3 py-2 fw-medium">
+                    <a href="{% url 'community:mentor_list' %}" class="dash-btn dash-btn-primary dash-btn-sm">
                         <i class="bi bi-person-workspace me-1"></i> Find a Mentor
                     </a>
                 </div>
@@ -163,7 +163,7 @@
                             <div class="text-center py-4 text-muted">
                                 <i class="bi bi-chat-dots fs-3 d-block mb-2"></i>
                                 <p class="mb-2">No discussion threads started yet.</p>
-                                <a href="{% url 'community:create_thread' %}" class="btn btn-sm btn-outline-primary">Start First Discussion</a>
+                                <a href="{% url 'community:create_thread' %}" class="dash-btn dash-btn-outline dash-btn-sm">Start First Discussion</a>
                             </div>
                             {% endfor %}
                         </div>
@@ -211,7 +211,7 @@
                             <div class="text-center py-4 text-muted">
                                 <i class="bi bi-folder2-open fs-3 d-block mb-2"></i>
                                 <p class="mb-2">No projects shared yet.</p>
-                                <a href="{% url 'community:share_project' %}" class="btn btn-sm btn-outline-primary">Share Your Project</a>
+                                <a href="{% url 'community:share_project' %}" class="dash-btn dash-btn-outline dash-btn-sm">Share Your Project</a>
                             </div>
                             {% endfor %}
                         </div>
@@ -248,7 +248,7 @@
                                         <small class="text-muted d-block">{{ mentor.designation }} at {{ mentor.company }}</small>
                                     </div>
                                 </div>
-                                <a href="{% url 'community:mentor_detail' mentor.id %}" class="btn btn-sm btn-outline-primary">
+                                <a href="{% url 'community:mentor_detail' mentor.id %}" class="dash-btn dash-btn-outline dash-btn-sm">
                                     View
                                 </a>
                             </div>

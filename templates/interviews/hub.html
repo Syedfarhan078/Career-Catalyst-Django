@@ -57,7 +57,7 @@
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <a href="{% url 'interviews:reports' %}" class="btn btn-outline-secondary rounded-pill btn-sm px-3 py-2">
+                    <a href="{% url 'interviews:reports' %}" class="dash-btn dash-btn-outline dash-btn-sm">
                         <i class="bi bi-graph-up-arrow me-1"></i> Performance Reports
                     </a>
                 </div>
@@ -153,15 +153,15 @@
                                     {% endif %}
                                 </span>
                                 {% if cat.slug == 'coding' %}
-                                    <a href="{% url 'interviews:coding_list' %}" class="btn btn-primary rounded-pill btn-sm px-3">
+                                    <a href="{% url 'interviews:coding_list' %}" class="dash-btn dash-btn-primary dash-btn-sm px-3">
                                         Open Track
                                     </a>
                                 {% elif cat.slug == 'behavioral' %}
-                                    <a href="{% url 'interviews:behavioral_list' %}" class="btn btn-primary rounded-pill btn-sm px-3">
+                                    <a href="{% url 'interviews:behavioral_list' %}" class="dash-btn dash-btn-primary dash-btn-sm px-3">
                                         Open Track
                                     </a>
                                 {% else %}
-                                    <a href="{% url 'interviews:start_quiz' cat.slug %}" class="btn btn-primary rounded-pill btn-sm px-3">
+                                    <a href="{% url 'interviews:start_quiz' cat.slug %}" class="dash-btn dash-btn-primary dash-btn-sm px-3">
                                         Start Quiz
                                     </a>
                                 {% endif %}
@@ -188,7 +188,7 @@
                                 <span class="text-muted small">
                                     <i class="bi bi-mic me-1"></i> Dialogue & AI
                                 </span>
-                                <a href="{% url 'interviews:mock_list' %}" class="btn btn-outline-primary rounded-pill btn-sm px-3">
+                                <a href="{% url 'interviews:mock_list' %}" class="dash-btn dash-btn-outline dash-btn-sm px-3">
                                     Simulator
                                 </a>
                             </div>

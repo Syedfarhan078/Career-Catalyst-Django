@@ -44,6 +44,12 @@
 
         <!-- Main Content Canvas -->
         <div class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'resume:list' %}" class="dash-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Resume Hub</span>
+            </a>
+
             <!-- Breadcrumbs & Header -->
             <div class="resume-page-header mb-4">
                 <nav class="resume-breadcrumb" aria-label="Breadcrumb">
@@ -73,10 +79,10 @@
                             {{ form|crispy }}
                             
                             <div class="d-flex gap-2 mt-4">
-                                <a href="{% url 'resume:list' %}" class="btn btn-outline-secondary rounded-pill w-50 py-2 fw-semibold" style="font-size: 0.8125rem;">
+                                <a href="{% url 'resume:list' %}" class="dash-btn dash-btn-secondary w-50 py-2">
                                     Cancel
                                 </a>
-                                <button type="submit" class="btn btn-primary-custom rounded-pill w-50 py-2 fw-semibold shadow-sm" style="font-size: 0.8125rem;">
+                                <button type="submit" class="dash-btn dash-btn-primary w-50 py-2">
                                     Launch Builder <i class="bi bi-arrow-right ms-1"></i>
                                 </button>
                             </div>

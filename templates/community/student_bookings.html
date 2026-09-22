@@ -44,6 +44,12 @@
 
         <!-- Main Content Area -->
         <main class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'community:hub' %}" class="dash-back-link mb-3">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Community Hub</span>
+            </a>
+
             <!-- Header & Breadcrumbs -->
             <div class="community-header d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <div>
@@ -60,7 +66,7 @@
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <a href="{% url 'community:mentor_list' %}" class="btn btn-primary btn-sm px-3 py-2 fw-medium">
+                    <a href="{% url 'community:mentor_list' %}" class="dash-btn dash-btn-primary dash-btn-sm">
                         <i class="bi bi-person-plus me-1"></i> Book Another Mentor
                     </a>
                 </div>
@@ -157,7 +163,7 @@
                         <!-- Action Buttons -->
                         <div class="d-flex align-items-center gap-2 flex-wrap pt-2">
                             {% if booking.status == 'Accepted' %}
-                            <a href="{% url 'community:mentor_chat' booking.mentor.user.id %}" class="btn btn-primary btn-sm px-3 fw-medium">
+                            <a href="{% url 'community:mentor_chat' booking.mentor.user.id %}" class="dash-btn dash-btn-primary dash-btn-sm">
                                 <i class="bi bi-chat-dots me-1"></i> Message Mentor
                             </a>
                             {% endif %}
@@ -165,14 +171,14 @@
                             {% if booking.status == 'Pending' or booking.status == 'Accepted' %}
                             <form method="POST" action="{% url 'community:cancel_booking' booking.id %}" onsubmit="return confirm('Are you sure you want to cancel this booking request?');" class="d-inline">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-danger btn-sm px-3">
+                                <button type="submit" class="dash-btn dash-btn-danger dash-btn-sm">
                                     Cancel Session
                                 </button>
                             </form>
                             {% endif %}
 
                             {% if booking.status == 'Completed' %}
-                            <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-medium" data-bs-toggle="modal" data-bs-target="#reviewModal"
+                            <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal"
                                     data-mentor-id="{{ booking.mentor.id }}">
                                 <i class="bi bi-star me-1"></i> Leave Feedback Review
                             </button>
@@ -184,7 +190,7 @@
                         <i class="bi bi-calendar-x display-4 mb-3 d-block text-body-tertiary"></i>
                         <h3 class="h6 fw-semibold text-body">No mentorship sessions booked yet</h3>
                         <p class="small text-muted mb-3">Schedule a 1-on-1 resume review, code walkthrough, or mock interview with our mentors.</p>
-                        <a href="{% url 'community:mentor_list' %}" class="btn btn-primary btn-sm px-4 py-2">
+                        <a href="{% url 'community:mentor_list' %}" class="dash-btn dash-btn-primary dash-btn-sm">
                             <i class="bi bi-person-workspace me-1"></i> Browse Mentor Directory
                         </a>
                     </div>
@@ -211,8 +217,8 @@
                     {{ review_form|crispy }}
                 </div>
                 <div class="modal-footer border-top">
-                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-medium">Submit Review</button>
+                    <button type="button" class="dash-btn dash-btn-outline dash-btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm px-4 fw-medium">Submit Review</button>
                 </div>
             </form>
         </div>

@@ -69,10 +69,10 @@
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <a href="{% url 'ai_resume:analyze' %}" class="btn btn-outline-primary px-3 py-2 rounded-pill d-inline-flex align-items-center gap-1.5 fw-semibold" style="font-size: 0.8125rem;">
+                    <a href="{% url 'ai_resume:analyze' %}" class="dash-btn dash-btn-secondary dash-btn-sm d-inline-flex align-items-center gap-1.5">
                         <i class="bi bi-shield-check"></i> Run ATS Scan
                     </a>
-                    <a href="{% url 'resume:create' %}" class="btn btn-primary-custom px-3.5 py-2 rounded-pill shadow-sm d-inline-flex align-items-center gap-1.5 fw-semibold" style="font-size: 0.8125rem;">
+                    <a href="{% url 'resume:create' %}" class="dash-btn dash-btn-primary dash-btn-sm d-inline-flex align-items-center gap-1.5">
                         <i class="bi bi-plus-lg"></i> Create Resume
                     </a>
                 </div>
@@ -114,16 +114,16 @@
                                 </div>
                             </div>
                             <div class="default-resume-actions">
-                                <a href="{% url 'resume:builder' default_resume.pk %}" class="btn btn-sm btn-primary-custom px-3 py-1.5 rounded-pill fw-semibold" style="font-size: 0.8125rem;">
+                                <a href="{% url 'resume:builder' default_resume.pk %}" class="dash-btn dash-btn-primary dash-btn-sm">
                                     <i class="bi bi-pencil-square me-1"></i> Edit in Builder
                                 </a>
-                                <a href="{% url 'resume:download' default_resume.pk %}" class="btn btn-sm btn-outline-success px-3 py-1.5 rounded-pill fw-semibold" style="font-size: 0.8125rem;">
+                                <a href="{% url 'resume:download' default_resume.pk %}" class="dash-btn dash-btn-secondary dash-btn-sm">
                                     <i class="bi bi-download me-1"></i> Download PDF
                                 </a>
-                                <a href="{% url 'resume:preview' default_resume.pk %}" target="_blank" class="btn btn-sm btn-outline-secondary px-3 py-1.5 rounded-pill" style="font-size: 0.8125rem;">
+                                <a href="{% url 'resume:preview' default_resume.pk %}" target="_blank" class="dash-btn dash-btn-outline dash-btn-sm">
                                     <i class="bi bi-box-arrow-up-right me-1"></i> Preview
                                 </a>
-                                <a href="{% url 'ai_resume:analyze' %}?resume={{ default_resume.pk }}" class="btn btn-sm btn-outline-primary px-3 py-1.5 rounded-pill" style="font-size: 0.8125rem;" title="Scan this resume with ATS Analyzer">
+                                <a href="{% url 'ai_resume:analyze' %}?resume={{ default_resume.pk }}" class="dash-btn dash-btn-secondary dash-btn-sm" title="Scan this resume with ATS Analyzer">
                                     <i class="bi bi-shield-check me-1"></i> Scan ATS
                                 </a>
                             </div>
@@ -150,13 +150,13 @@
                                         <span class="text-capitalize">{{ r.template }} template</span> &bull; {{ r.updated_at|date:"M d" }}
                                     </div>
                                     <div class="d-flex align-items-center gap-1.5">
-                                        <a href="{% url 'resume:builder' r.pk %}" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-1" style="font-size: 0.75rem;">
+                                        <a href="{% url 'resume:builder' r.pk %}" class="dash-btn dash-btn-secondary dash-btn-xs">
                                             <i class="bi bi-pencil me-1"></i> Edit
                                         </a>
-                                        <a href="{% url 'resume:download' r.pk %}" class="btn btn-xs btn-outline-success rounded-pill px-2.5 py-1" style="font-size: 0.75rem;">
+                                        <a href="{% url 'resume:download' r.pk %}" class="dash-btn dash-btn-secondary dash-btn-xs">
                                             <i class="bi bi-download me-1"></i> PDF
                                         </a>
-                                        <a href="{% url 'resume:preview' r.pk %}" target="_blank" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                                        <a href="{% url 'resume:preview' r.pk %}" target="_blank" class="dash-btn dash-btn-outline dash-btn-xs" title="Preview">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                     </div>
@@ -175,7 +175,7 @@
                                 Create your first tailored resume using our live split-pane builder, or automatically import your verified academic details and technical skills from your Student Profile.
                             </p>
                             <div class="d-flex justify-content-center gap-2">
-                                <a href="{% url 'resume:create' %}" class="btn btn-primary-custom px-4 py-2 rounded-pill fw-semibold shadow-sm" style="font-size: 0.8125rem;">
+                                <a href="{% url 'resume:create' %}" class="dash-btn dash-btn-primary dash-btn-sm">
                                     <i class="bi bi-plus-lg me-1"></i> Create Resume
                                 </a>
                             </div>
@@ -212,7 +212,7 @@
                                         ATS Score: <strong>{{ latest_analysis.ats_score }}/100</strong> &bull; Scanned {{ latest_analysis.created_at|date:"M d, Y" }}
                                     </p>
                                     <div class="d-flex align-items-center gap-2">
-                                        <a href="{% url 'ai_resume:detail' latest_analysis.pk %}" class="btn btn-sm btn-primary-custom px-3 py-1.5 rounded-pill fw-semibold" style="font-size: 0.8125rem;">
+                                        <a href="{% url 'ai_resume:detail' latest_analysis.pk %}" class="dash-btn dash-btn-primary dash-btn-sm">
                                             <i class="bi bi-clipboard2-data me-1"></i> View Diagnostic Report
                                         </a>
                                     </div>
@@ -230,7 +230,7 @@
                                 <p class="hub-empty-desc">
                                     Scan your resume with real technical skill taxonomies and Google's XYZ achievement formula. Get transparent keyword gap analysis without PII leakage.
                                 </p>
-                                <a href="{% url 'ai_resume:analyze' %}" class="btn btn-primary-custom px-4 py-2 rounded-pill fw-semibold shadow-sm" style="font-size: 0.8125rem;">
+                                <a href="{% url 'ai_resume:analyze' %}" class="dash-btn dash-btn-primary dash-btn-sm">
                                     <i class="bi bi-play-circle-fill me-1"></i> Scan Your First Resume
                                 </a>
                             </div>
@@ -279,7 +279,7 @@
                                                 {{ item.created_at|date:"M d" }}
                                             </td>
                                             <td class="text-end">
-                                                <a href="{% url 'ai_resume:detail' item.pk %}" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-0.5" style="font-size: 0.72rem;">
+                                                <a href="{% url 'ai_resume:detail' item.pk %}" class="dash-btn dash-btn-secondary dash-btn-xs">
                                                     Report
                                                 </a>
                                             </td>

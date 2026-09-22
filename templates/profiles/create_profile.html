@@ -1,150 +1,300 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
+{% load static %}
 
-{% block title %}Complete Student Profile | Career Catalyst{% endblock %}
+{% block title %}Complete Student Profile — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <!-- Header Banner -->
-            <div class="card bg-gradient-primary text-white border-0 shadow-sm rounded-4 mb-4" style="background: linear-gradient(135deg, var(--primary), #1e40af);">
-                <div class="card-body p-5 text-center">
-                    <h1 class="fw-bold mb-2">Welcome to Career Catalyst!</h1>
-                    <p class="mb-0 opacity-90">Let's complete your student profile to customize your dashboard and unlock AI guidance.</p>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/settings.css' %}?v=1.0">
+{% endblock %}
+
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                <span class="dash-avatar-initials" style="font-size: 0.7rem;">{{ user_initials }}</span>
+            </div>
+        </header>
+
+        <!-- Main Content Scroll Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="settings-header">
+                <nav class="settings-breadcrumbs" aria-label="Breadcrumb">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-house-door"></i> Dashboard</a>
+                    <span>/</span>
+                    <span>Student Onboarding</span>
+                </nav>
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                    <div>
+                        <h1 class="settings-title">Complete Your Student Profile</h1>
+                        <p class="settings-subtitle">Set up your academic information, skills, and career preferences to unlock your personalized dashboard.</p>
+                    </div>
                 </div>
             </div>
 
-            <form method="POST" enctype="multipart/form-data" class="needs-validation">
+            <!-- Django Messages -->
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show border-0 shadow-sm rounded-3 py-2 px-3 small d-flex align-items-center justify-content-between" role="alert">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill text-success{% elif message.tags == 'error' or message.tags == 'danger' %}bi-exclamation-triangle-fill text-danger{% else %}bi-info-circle-fill text-primary{% endif %}"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                            <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.5rem;"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
-                
-                <!-- Section 1: Personal Details -->
-                <div class="card shadow-sm border-0 rounded-4 mb-4">
-                    <div class="card-body p-5">
-                        <h4 class="fw-bold text-secondary mb-4">
-                            <i class="bi bi-person-fill me-2 text-primary"></i> 1. Personal Information
-                        </h4>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                {{ form.profile_picture|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.phone_number|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.date_of_birth|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.gender|as_crispy_field }}
-                            </div>
-                            <div class="col-12">
-                                {{ form.bio|as_crispy_field }}
-                            </div>
+
+                <!-- Personal Information -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3 class="settings-card-title">
+                            <i class="bi bi-person text-primary"></i>
+                            1. Personal Information
+                        </h3>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6 settings-form-group">
+                            <label class="settings-label" for="{{ form.profile_picture.id_for_label }}">Student Avatar</label>
+                            <input type="file" name="{{ form.profile_picture.name }}" id="{{ form.profile_picture.id_for_label }}" class="form-control" accept="image/*">
+                            {% if form.profile_picture.errors %}
+                                <div class="text-danger small mt-1">{{ form.profile_picture.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 settings-form-group">
+                            <label class="settings-label" for="{{ form.phone_number.id_for_label }}">Phone Number</label>
+                            <input type="text" name="{{ form.phone_number.name }}" id="{{ form.phone_number.id_for_label }}" class="form-control" placeholder="10-15 digits" value="{{ form.phone_number.value|default:'' }}">
+                            {% if form.phone_number.errors %}
+                                <div class="text-danger small mt-1">{{ form.phone_number.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 settings-form-group">
+                            <label class="settings-label" for="{{ form.date_of_birth.id_for_label }}">Date of Birth</label>
+                            <input type="date" name="{{ form.date_of_birth.name }}" id="{{ form.date_of_birth.id_for_label }}" class="form-control" value="{{ form.date_of_birth.value|date:'Y-m-d'|default:'' }}">
+                            {% if form.date_of_birth.errors %}
+                                <div class="text-danger small mt-1">{{ form.date_of_birth.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 settings-form-group">
+                            <label class="settings-label" for="{{ form.gender.id_for_label }}">Gender</label>
+                            {{ form.gender }}
+                            {% if form.gender.errors %}
+                                <div class="text-danger small mt-1">{{ form.gender.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 settings-form-group">
+                            <label class="settings-label" for="{{ form.bio.id_for_label }}">Career Objective & Short Summary</label>
+                            <textarea name="{{ form.bio.name }}" id="{{ form.bio.id_for_label }}" class="form-control" rows="3" placeholder="Tell recruiters about your background, strengths, and career ambitions...">{{ form.bio.value|default:'' }}</textarea>
+                            {% if form.bio.errors %}
+                                <div class="text-danger small mt-1">{{ form.bio.errors.0 }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 2: Academic Details -->
-                <div class="card shadow-sm border-0 rounded-4 mb-4">
-                    <div class="card-body p-5">
-                        <h4 class="fw-bold text-secondary mb-4">
-                            <i class="bi bi-book-fill me-2 text-primary"></i> 2. Academic Details
-                        </h4>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                {{ form.college|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.university|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.degree|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.branch|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.semester|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.graduation_year|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.cgpa|as_crispy_field }}
-                            </div>
+                <!-- Academic Details -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3 class="settings-card-title">
+                            <i class="bi bi-mortarboard text-primary"></i>
+                            2. Academic Background
+                        </h3>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6 settings-form-group">
+                            <label class="settings-label" for="{{ form.college.id_for_label }}">College / University</label>
+                            <input type="text" name="{{ form.college.name }}" id="{{ form.college.id_for_label }}" class="form-control" value="{{ form.college.value|default:'' }}" placeholder="e.g. Stanford, IIT Delhi">
+                            {% if form.college.errors %}
+                                <div class="text-danger small mt-1">{{ form.college.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 settings-form-group">
+                            <label class="settings-label" for="{{ form.university.id_for_label }}">University Affiliation</label>
+                            <input type="text" name="{{ form.university.name }}" id="{{ form.university.id_for_label }}" class="form-control" value="{{ form.university.value|default:'' }}">
+                            {% if form.university.errors %}
+                                <div class="text-danger small mt-1">{{ form.university.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 settings-form-group">
+                            <label class="settings-label" for="{{ form.degree.id_for_label }}">Degree</label>
+                            <input type="text" name="{{ form.degree.name }}" id="{{ form.degree.id_for_label }}" class="form-control" value="{{ form.degree.value|default:'' }}" placeholder="e.g. B.Tech">
+                            {% if form.degree.errors %}
+                                <div class="text-danger small mt-1">{{ form.degree.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 settings-form-group">
+                            <label class="settings-label" for="{{ form.branch.id_for_label }}">Branch / Major</label>
+                            <input type="text" name="{{ form.branch.name }}" id="{{ form.branch.id_for_label }}" class="form-control" value="{{ form.branch.value|default:'' }}" placeholder="e.g. Computer Science">
+                            {% if form.branch.errors %}
+                                <div class="text-danger small mt-1">{{ form.branch.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 settings-form-group">
+                            <label class="settings-label" for="{{ form.semester.id_for_label }}">Semester</label>
+                            <input type="number" name="{{ form.semester.name }}" id="{{ form.semester.id_for_label }}" class="form-control" value="{{ form.semester.value|default:'' }}" min="1" max="12">
+                            {% if form.semester.errors %}
+                                <div class="text-danger small mt-1">{{ form.semester.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 settings-form-group">
+                            <label class="settings-label" for="{{ form.graduation_year.id_for_label }}">Expected Graduation Year</label>
+                            <input type="number" name="{{ form.graduation_year.name }}" id="{{ form.graduation_year.id_for_label }}" class="form-control" value="{{ form.graduation_year.value|default:'' }}" placeholder="e.g. 2026">
+                            {% if form.graduation_year.errors %}
+                                <div class="text-danger small mt-1">{{ form.graduation_year.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 settings-form-group">
+                            <label class="settings-label" for="{{ form.cgpa.id_for_label }}">CGPA Score (out of 10.0)</label>
+                            <input type="number" step="0.01" name="{{ form.cgpa.name }}" id="{{ form.cgpa.id_for_label }}" class="form-control" value="{{ form.cgpa.value|default:'' }}" placeholder="e.g. 8.50">
+                            {% if form.cgpa.errors %}
+                                <div class="text-danger small mt-1">{{ form.cgpa.errors.0 }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 3: Career Details -->
-                <div class="card shadow-sm border-0 rounded-4 mb-4">
-                    <div class="card-body p-5">
-                        <h4 class="fw-bold text-secondary mb-4">
-                            <i class="bi bi-briefcase-fill me-2 text-primary"></i> 3. Career Preferences
-                        </h4>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                {{ form.career_goal|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.current_skill_level|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.preferred_domain|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.expected_salary|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.preferred_location|as_crispy_field }}
-                            </div>
+                <!-- Career Preferences -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3 class="settings-card-title">
+                            <i class="bi bi-compass text-primary"></i>
+                            3. Career Preferences
+                        </h3>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6 settings-form-group">
+                            <label class="settings-label" for="{{ form.career_goal.id_for_label }}">Target Career Goal</label>
+                            <input type="text" name="{{ form.career_goal.name }}" id="{{ form.career_goal.id_for_label }}" class="form-control" value="{{ form.career_goal.value|default:'' }}" placeholder="e.g. Software Engineer">
+                            {% if form.career_goal.errors %}
+                                <div class="text-danger small mt-1">{{ form.career_goal.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 settings-form-group">
+                            <label class="settings-label" for="{{ form.current_skill_level.id_for_label }}">Current Skill Level</label>
+                            {{ form.current_skill_level }}
+                            {% if form.current_skill_level.errors %}
+                                <div class="text-danger small mt-1">{{ form.current_skill_level.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 settings-form-group">
+                            <label class="settings-label" for="{{ form.preferred_domain.id_for_label }}">Preferred Domain</label>
+                            <input type="text" name="{{ form.preferred_domain.name }}" id="{{ form.preferred_domain.id_for_label }}" class="form-control" value="{{ form.preferred_domain.value|default:'' }}" placeholder="e.g. Backend Development">
+                            {% if form.preferred_domain.errors %}
+                                <div class="text-danger small mt-1">{{ form.preferred_domain.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 settings-form-group">
+                            <label class="settings-label" for="{{ form.expected_salary.id_for_label }}">Expected Salary (INR)</label>
+                            <input type="number" step="0.01" name="{{ form.expected_salary.name }}" id="{{ form.expected_salary.id_for_label }}" class="form-control" value="{{ form.expected_salary.value|default:'' }}" placeholder="e.g. 1000000">
+                            {% if form.expected_salary.errors %}
+                                <div class="text-danger small mt-1">{{ form.expected_salary.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 settings-form-group">
+                            <label class="settings-label" for="{{ form.preferred_location.id_for_label }}">Preferred Location</label>
+                            <input type="text" name="{{ form.preferred_location.name }}" id="{{ form.preferred_location.id_for_label }}" class="form-control" value="{{ form.preferred_location.value|default:'' }}" placeholder="e.g. Remote, Bangalore">
+                            {% if form.preferred_location.errors %}
+                                <div class="text-danger small mt-1">{{ form.preferred_location.errors.0 }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 4: Skills -->
-                <div class="card shadow-sm border-0 rounded-4 mb-4">
-                    <div class="card-body p-5">
-                        <h4 class="fw-bold text-secondary mb-4">
-                            <i class="bi bi-cpu-fill me-2 text-primary"></i> 4. Technical Skills
-                        </h4>
-                        {{ form.skills|as_crispy_field }}
-                        <small class="text-muted d-block mt-1">Please enter your technical skills, listing each on a new line or separated by commas (e.g. Python, Django, SQL).</small>
+                <!-- Skills & Profiles -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3 class="settings-card-title">
+                            <i class="bi bi-cpu text-primary"></i>
+                            4. Skills & Online Profiles
+                        </h3>
                     </div>
-                </div>
-
-                <!-- Section 5: Social Links -->
-                <div class="card shadow-sm border-0 rounded-4 mb-4">
-                    <div class="card-body p-5">
-                        <h4 class="fw-bold text-secondary mb-4">
-                            <i class="bi bi-share-fill me-2 text-primary"></i> 5. Social & Professional Profiles
-                        </h4>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                {{ form.github|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.linkedin|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.portfolio|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.leetcode|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.hackerrank|as_crispy_field }}
-                            </div>
+                    <div class="settings-form-group mb-3">
+                        <label class="settings-label" for="{{ form.skills.id_for_label }}">Technical Skills (Separate by newlines or commas)</label>
+                        <textarea name="{{ form.skills.name }}" id="{{ form.skills.id_for_label }}" class="form-control" rows="3" placeholder="Python&#10;Django&#10;PostgreSQL&#10;React">{{ form.skills.value|default:'' }}</textarea>
+                        {% if form.skills.errors %}
+                            <div class="text-danger small mt-1">{{ form.skills.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6 settings-form-group">
+                            <label class="settings-label" for="{{ form.github.id_for_label }}"><i class="bi bi-github me-1"></i> GitHub URL</label>
+                            <input type="url" name="{{ form.github.name }}" id="{{ form.github.id_for_label }}" class="form-control" placeholder="https://github.com/..." value="{{ form.github.value|default:'' }}">
+                            {% if form.github.errors %}
+                                <div class="text-danger small mt-1">{{ form.github.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 settings-form-group">
+                            <label class="settings-label" for="{{ form.linkedin.id_for_label }}"><i class="bi bi-linkedin me-1 text-primary"></i> LinkedIn URL</label>
+                            <input type="url" name="{{ form.linkedin.name }}" id="{{ form.linkedin.id_for_label }}" class="form-control" placeholder="https://linkedin.com/in/..." value="{{ form.linkedin.value|default:'' }}">
+                            {% if form.linkedin.errors %}
+                                <div class="text-danger small mt-1">{{ form.linkedin.errors.0 }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
-                <!-- Submit Button -->
                 <div class="d-flex justify-content-end gap-3 mb-5">
-                    <button type="submit" class="btn-primary-custom px-5 py-3 fs-5">Save & Build Dashboard</button>
+                    <button type="submit" class="settings-btn-primary py-2 px-4">
+                        <span>Complete Profile & Enter Dashboard</span>
+                        <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
                 </div>
             </form>
-        </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('sidebarCloseBtn');
+    const sidebar = document.getElementById('dashboardSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('open');
+        if (overlay) overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+})();
+</script>
 {% endblock %}

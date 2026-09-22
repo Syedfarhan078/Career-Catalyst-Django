@@ -61,7 +61,7 @@
                 <!-- Builder Top Toolbar -->
                 <div class="builder-topbar">
                     <div class="d-flex align-items-center gap-2">
-                        <a href="{% url 'resume:list' %}" class="btn-back" style="font-size: 0.8125rem;">
+                        <a href="{% url 'resume:list' %}" class="dash-back-link mb-0" style="font-size: 0.8125rem;">
                             <i class="bi bi-arrow-left"></i> Resume Hub
                         </a>
                         <span class="text-muted d-none d-sm-inline">|</span>
@@ -75,13 +75,13 @@
 
                     <div class="d-flex align-items-center gap-2">
                         <!-- Mobile preview toggle button -->
-                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill d-lg-none px-3" id="mobilePreviewToggleBtn" onclick="toggleMobilePreview()">
+                        <button type="button" class="dash-btn dash-btn-outline dash-btn-sm d-lg-none" id="mobilePreviewToggleBtn" onclick="toggleMobilePreview()">
                             <i class="bi bi-eye me-1"></i> Preview
                         </button>
-                        <a href="{% url 'resume:preview' resume.pk %}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-none d-sm-inline-flex align-items-center gap-1" style="font-size: 0.8125rem;">
+                        <a href="{% url 'resume:preview' resume.pk %}" target="_blank" class="dash-btn dash-btn-outline dash-btn-sm d-none d-sm-inline-flex align-items-center gap-1">
                             <i class="bi bi-box-arrow-up-right"></i> Open Tab
                         </a>
-                        <a href="{% url 'resume:download' resume.pk %}" class="btn btn-sm btn-outline-success rounded-pill px-3 d-inline-flex align-items-center gap-1 fw-semibold" style="font-size: 0.8125rem;">
+                        <a href="{% url 'resume:download' resume.pk %}" class="dash-btn dash-btn-secondary dash-btn-sm d-inline-flex align-items-center gap-1">
                             <i class="bi bi-download"></i> PDF
                         </a>
                     </div>
@@ -92,7 +92,7 @@
                     <!-- LEFT PANE: Section Editor Accordions -->
                     <div class="builder-editor-pane" id="builderEditorPane">
                         <!-- Autofill Helper -->
-                        <button type="button" class="btn btn-primary-custom rounded-pill w-100 fw-semibold mb-3 py-2 shadow-sm d-flex align-items-center justify-content-center gap-2" style="font-size: 0.8125rem;" onclick="importFromProfile()">
+                        <button type="button" class="dash-btn dash-btn-primary w-100 mb-3 py-2 d-flex align-items-center justify-content-center gap-2" onclick="importFromProfile()">
                             <i class="bi bi-cloud-arrow-down-fill"></i> Autofill from Student Profile
                         </button>
 
@@ -109,7 +109,7 @@
                                         <form id="settingsForm" onsubmit="submitForm(event, 'settings', '{% url 'resume:api_update_settings' resume.pk %}')">
                                             {% csrf_token %}
                                             {{ resume_form|crispy }}
-                                            <button type="submit" class="btn btn-primary-custom btn-sm rounded-pill w-100 mt-2 fw-semibold">
+                                            <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm w-100 mt-2">
                                                 <i class="bi bi-check2 me-1"></i> Save Settings
                                             </button>
                                         </form>
@@ -142,7 +142,7 @@
                                         <form id="eduForm" onsubmit="submitForm(event, 'education', '{% url 'resume:api_add_section' resume.pk 'education' %}')">
                                             {% csrf_token %}
                                             {{ edu_form|crispy }}
-                                            <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill w-100 mt-2 fw-semibold">
+                                            <button type="submit" class="dash-btn dash-btn-secondary dash-btn-sm w-100 mt-2">
                                                 <i class="bi bi-plus-lg me-1"></i> Add Education
                                             </button>
                                         </form>
@@ -175,7 +175,7 @@
                                         <form id="expForm" onsubmit="submitForm(event, 'experience', '{% url 'resume:api_add_section' resume.pk 'experience' %}')">
                                             {% csrf_token %}
                                             {{ exp_form|crispy }}
-                                            <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill w-100 mt-2 fw-semibold">
+                                            <button type="submit" class="dash-btn dash-btn-secondary dash-btn-sm w-100 mt-2">
                                                 <i class="bi bi-plus-lg me-1"></i> Add Experience
                                             </button>
                                         </form>
@@ -208,7 +208,7 @@
                                         <form id="projForm" onsubmit="submitForm(event, 'project', '{% url 'resume:api_add_section' resume.pk 'project' %}')">
                                             {% csrf_token %}
                                             {{ proj_form|crispy }}
-                                            <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill w-100 mt-2 fw-semibold">
+                                            <button type="submit" class="dash-btn dash-btn-secondary dash-btn-sm w-100 mt-2">
                                                 <i class="bi bi-plus-lg me-1"></i> Add Project
                                             </button>
                                         </form>
@@ -236,7 +236,7 @@
                                         <form id="skillForm" onsubmit="submitForm(event, 'skill', '{% url 'resume:api_add_section' resume.pk 'skill' %}')">
                                             {% csrf_token %}
                                             {{ skill_form|crispy }}
-                                            <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill w-100 mt-2 fw-semibold">
+                                            <button type="submit" class="dash-btn dash-btn-secondary dash-btn-sm w-100 mt-2">
                                                 <i class="bi bi-plus-lg me-1"></i> Add Skill
                                             </button>
                                         </form>
@@ -269,7 +269,7 @@
                                         <form id="certForm" onsubmit="submitForm(event, 'certification', '{% url 'resume:api_add_section' resume.pk 'certification' %}')">
                                             {% csrf_token %}
                                             {{ cert_form|crispy }}
-                                            <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill w-100 mt-2 fw-semibold">
+                                            <button type="submit" class="dash-btn dash-btn-secondary dash-btn-sm w-100 mt-2">
                                                 <i class="bi bi-plus-lg me-1"></i> Add Certification
                                             </button>
                                         </form>
@@ -284,7 +284,7 @@
                         <div class="builder-preview-toolbar">
                             <span><i class="bi bi-eye text-primary me-1"></i> Live Rendered Preview</span>
                             <div class="d-flex align-items-center gap-2">
-                                <button type="button" class="btn btn-xs btn-outline-light rounded-pill px-2.5 py-0.5" style="font-size: 0.72rem;" onclick="refreshPreview()">
+                                <button type="button" class="dash-btn dash-btn-outline dash-btn-xs" onclick="refreshPreview()">
                                     <i class="bi bi-arrow-clockwise me-1"></i> Refresh
                                 </button>
                             </div>

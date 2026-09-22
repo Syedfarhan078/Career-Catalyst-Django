@@ -59,10 +59,10 @@
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <a href="{% url 'community:mentor_register' %}" class="btn btn-outline-primary btn-sm px-3 py-2 fw-medium">
+                    <a href="{% url 'community:mentor_register' %}" class="dash-btn dash-btn-outline dash-btn-sm">
                         <i class="bi bi-person-workspace me-1"></i> Apply as Mentor
                     </a>
-                    <a href="{% url 'community:student_bookings' %}" class="btn btn-primary btn-sm px-3 py-2 fw-medium">
+                    <a href="{% url 'community:student_bookings' %}" class="dash-btn dash-btn-primary dash-btn-sm">
                         <i class="bi bi-calendar-check me-1"></i> My Sessions
                     </a>
                 </div>
@@ -243,7 +243,7 @@
                                     <span><i class="bi bi-camera-video me-1"></i>{{ mentor.mentorship_type }}</span>
                                 </div>
 
-                                <a href="{% url 'community:mentor_detail' mentor.id %}" class="btn btn-outline-primary btn-sm w-100 fw-medium">
+                                <a href="{% url 'community:mentor_detail' mentor.id %}" class="dash-btn dash-btn-outline dash-btn-sm w-100 fw-medium">
                                     View Profile &amp; Book
                                 </a>
                             </div>
@@ -253,7 +253,7 @@
                             <i class="bi bi-people display-4 mb-3 d-block text-body-tertiary"></i>
                             <h5 class="fw-semibold text-body">No mentors match your search filters</h5>
                             <p class="text-muted mb-3">Try clearing some filter criteria to browse all available mentors.</p>
-                            <a href="{% url 'community:mentor_list' %}" class="btn btn-outline-primary btn-sm px-3 py-2">
+                            <a href="{% url 'community:mentor_list' %}" class="dash-btn dash-btn-outline dash-btn-sm px-3 py-2">
                                 Clear Filters
                             </a>
                         </div>

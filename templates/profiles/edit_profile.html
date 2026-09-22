@@ -1,174 +1,736 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
+{% load static %}
 
-{% block title %}Edit Student Profile | Career Catalyst{% endblock %}
+{% block title %}Settings & Profile — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h1 class="fw-bold mb-1 text-gradient">Edit Student Profile</h1>
-                    <p class="text-muted">Keep your academic achievements and career preferences up-to-date.</p>
-                </div>
-                <a href="{% url 'profile_detail' %}" class="btn btn-light rounded-pill px-4">
-                    <i class="bi bi-arrow-left me-1"></i> Back to Profile
-                </a>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/settings.css' %}?v=1.0">
+{% endblock %}
+
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none; font-size: 0.7rem;">{{ user_initials }}</span>
+                {% elif user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none; font-size: 0.7rem;">{{ user_initials }}</span>
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.7rem;">{{ user_initials }}</span>
+                {% endif %}
             </div>
+        </header>
 
-            <form method="POST" enctype="multipart/form-data" class="needs-validation">
-                {% csrf_token %}
-                
-                <!-- Section 1: Personal Details -->
-                <div class="card shadow-sm border-0 rounded-4 mb-4">
-                    <div class="card-body p-5">
-                        <h4 class="fw-bold text-secondary mb-4">
-                            <i class="bi bi-person me-2 text-primary"></i> 1. Personal Information
-                        </h4>
-                        <div class="row g-3">
-                            <div class="col-md-6 d-flex align-items-center gap-3 mb-2">
-                                {% if profile.profile_picture %}
-                                    <img src="{{ profile.profile_picture.url }}" alt="{{ profile.user.username }}" class="rounded-circle object-fit-cover border shadow-sm" style="width: 64px; height: 64px;">
-                                {% endif %}
-                                <div class="flex-grow-1">
-                                    {{ form.profile_picture|as_crispy_field }}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.phone_number|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.date_of_birth|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.gender|as_crispy_field }}
-                            </div>
-                            <div class="col-12">
-                                {{ form.bio|as_crispy_field }}
-                            </div>
-                        </div>
+        <!-- Main Content Scroll Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="settings-header">
+                <nav class="settings-breadcrumbs" aria-label="Breadcrumb">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-house-door"></i> Dashboard</a>
+                    <span>/</span>
+                    <span>Settings</span>
+                </nav>
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                    <div>
+                        <h1 class="settings-title">Settings & Profile</h1>
+                        <p class="settings-subtitle">Manage your account credentials, student placement profile, security, and preferences.</p>
                     </div>
-                </div>
-
-                <!-- Section 2: Academic Details -->
-                <div class="card shadow-sm border-0 rounded-4 mb-4">
-                    <div class="card-body p-5">
-                        <h4 class="fw-bold text-secondary mb-4">
-                            <i class="bi bi-book me-2 text-primary"></i> 2. Academic Details
-                        </h4>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                {{ form.college|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.university|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.degree|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.branch|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.semester|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.graduation_year|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.cgpa|as_crispy_field }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 3: Career Details -->
-                <div class="card shadow-sm border-0 rounded-4 mb-4">
-                    <div class="card-body p-5">
-                        <h4 class="fw-bold text-secondary mb-4">
-                            <i class="bi bi-briefcase me-2 text-primary"></i> 3. Career Preferences
-                        </h4>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                {{ form.career_goal|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.current_skill_level|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.preferred_domain|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.expected_salary|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.preferred_location|as_crispy_field }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 4: Skills -->
-                <div class="card shadow-sm border-0 rounded-4 mb-4">
-                    <div class="card-body p-5">
-                        <h4 class="fw-bold text-secondary mb-4">
-                            <i class="bi bi-cpu me-2 text-primary"></i> 4. Technical Skills
-                        </h4>
-                        {{ form.skills|as_crispy_field }}
-                        <small class="text-muted d-block mt-1">Please enter your technical skills, listing each on a new line or separated by commas (e.g. Python, Django, SQL).</small>
-                    </div>
-                </div>
-
-                <!-- Section 5: Social Links -->
-                <div class="card shadow-sm border-0 rounded-4 mb-4">
-                    <div class="card-body p-5">
-                        <h4 class="fw-bold text-secondary mb-4">
-                            <i class="bi bi-share me-2 text-primary"></i> 5. Social & Professional Profiles
-                        </h4>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                {{ form.github|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.linkedin|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.portfolio|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.leetcode|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4">
-                                {{ form.hackerrank|as_crispy_field }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Submit and Cancel Buttons -->
-                <div class="d-flex justify-content-end gap-3 mb-5">
-                    <a href="{% url 'profile_detail' %}" class="btn btn-light rounded-pill px-4 py-3">Cancel</a>
-                    <button type="submit" class="btn-primary-custom px-5 py-3 fs-5">Save Modifications</button>
-                </div>
-            </form>
-
-            <!-- Danger Zone Card -->
-            <div class="card border-danger border-opacity-50 shadow-sm rounded-4 mb-5">
-                <div class="card-body p-4 p-md-5">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                        <div>
-                            <h5 class="fw-bold text-danger mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i> Danger Zone</h5>
-                            <p class="text-muted small mb-0">Permanently delete your account, saved resumes, learning roadmaps, and profile data.</p>
-                        </div>
-                        <a href="{% url 'delete_account' %}" class="btn btn-outline-danger rounded-pill px-4 py-2 fw-semibold text-nowrap">
-                            <i class="bi bi-trash3-fill me-1"></i> Delete Account
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="{% url 'profile_detail' %}" class="settings-btn-outline d-inline-flex align-items-center gap-2 text-decoration-none">
+                            <i class="bi bi-eye"></i>
+                            <span>View Public Profile</span>
                         </a>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <!-- Django Messages -->
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show border-0 shadow-sm rounded-3 py-2 px-3 small d-flex align-items-center justify-content-between" role="alert">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill text-success{% elif message.tags == 'error' or message.tags == 'danger' %}bi-exclamation-triangle-fill text-danger{% else %}bi-info-circle-fill text-primary{% endif %}"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                            <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.5rem;"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Profile Completion Progress Bar -->
+            {% if completion_percentage is not None %}
+            <div class="profile-completion-box">
+                <div class="d-flex align-items-center gap-3 w-100 flex-wrap flex-sm-nowrap">
+                    <div class="d-flex align-items-center gap-2" style="min-width: 170px;">
+                        <i class="bi bi-speedometer2 text-primary fs-5"></i>
+                        <div>
+                            <div class="small fw-semibold text-body">Profile Strength</div>
+                            <div class="small text-muted">{{ completion_percentage }}% Completed</div>
+                        </div>
+                    </div>
+                    <div class="profile-completion-bar">
+                        <div class="profile-completion-fill" style="width: {{ completion_percentage }}%;"></div>
+                    </div>
+                    <a href="javascript:void(0)" onclick="switchSettingsTab('profile')" class="text-primary small text-nowrap fw-semibold text-decoration-none">
+                        Complete profile &rarr;
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Settings Tab Bar -->
+            <div class="settings-nav-tabs" role="tablist">
+                <button type="button" class="settings-nav-tab {% if active_tab == 'account' %}active{% endif %}" id="tab-btn-account" role="tab" aria-selected="{% if active_tab == 'account' %}true{% else %}false{% endif %}" onclick="switchSettingsTab('account')">
+                    <i class="bi bi-person-circle"></i>
+                    <span>Account Settings</span>
+                </button>
+                <button type="button" class="settings-nav-tab {% if active_tab == 'profile' %}active{% endif %}" id="tab-btn-profile" role="tab" aria-selected="{% if active_tab == 'profile' %}true{% else %}false{% endif %}" onclick="switchSettingsTab('profile')">
+                    <i class="bi bi-mortarboard-fill"></i>
+                    <span>Career & Profile</span>
+                </button>
+                <button type="button" class="settings-nav-tab {% if active_tab == 'security' %}active{% endif %}" id="tab-btn-security" role="tab" aria-selected="{% if active_tab == 'security' %}true{% else %}false{% endif %}" onclick="switchSettingsTab('security')">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    <span>Security & Password</span>
+                </button>
+                <button type="button" class="settings-nav-tab text-danger {% if active_tab == 'danger' %}active{% endif %}" id="tab-btn-danger" role="tab" aria-selected="{% if active_tab == 'danger' %}true{% else %}false{% endif %}" onclick="switchSettingsTab('danger')">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>Danger Zone</span>
+                </button>
+            </div>
+
+            <!-- ==========================================================
+                 TAB 1: ACCOUNT SETTINGS (User Model)
+                 ========================================================== -->
+            <div class="settings-tab-panel" id="panel-account" style="{% if active_tab != 'account' %}display: none;{% endif %}">
+                <form method="POST" action="{% url 'profile_edit' %}?tab=account" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_account">
+
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div>
+                                <h3 class="settings-card-title">
+                                    <i class="bi bi-person text-primary"></i>
+                                    Account Identity & Credentials
+                                </h3>
+                                <p class="settings-card-subtitle">These details belong to your primary login account (<span class="fw-semibold text-body">User model</span>).</p>
+                            </div>
+                        </div>
+
+                        <!-- Account Avatar Preview & Upload -->
+                        <div class="settings-avatar-row">
+                            <div class="position-relative">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" id="accountAvatarPreview" class="settings-avatar-preview">
+                                {% else %}
+                                    <div id="accountAvatarInitials" class="settings-avatar-initials">{{ user_initials }}</div>
+                                    <img src="" alt="Preview" id="accountAvatarPreview" class="settings-avatar-preview" style="display: none;">
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <label class="settings-label" for="{{ account_form.profile_picture.id_for_label }}">Account Avatar</label>
+                                <input type="file" name="{{ account_form.profile_picture.name }}" id="{{ account_form.profile_picture.id_for_label }}" class="form-control" accept="image/*" onchange="previewAccountAvatar(this)">
+                                <div class="settings-helper">JPG, PNG or WEBP. Max recommended size: 2MB.</div>
+                                {% if account_form.profile_picture.errors %}
+                                    <div class="text-danger small mt-1">{{ account_form.profile_picture.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <!-- Username (Read-Only) -->
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label">Username</label>
+                                <div class="settings-readonly-value d-flex align-items-center justify-content-between">
+                                    <span>@{{ user.username }}</span>
+                                    <span class="badge bg-secondary-subtle text-secondary small">Immutable</span>
+                                </div>
+                                <div class="settings-helper">Your unique system username used for authentication and mentions.</div>
+                            </div>
+
+                            <!-- Email Address -->
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ account_form.email.id_for_label }}">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" name="{{ account_form.email.name }}" id="{{ account_form.email.id_for_label }}" class="form-control" value="{{ account_form.email.value|default:'' }}" required>
+                                <div class="settings-helper">Primary email for security alerts, notifications, and verification.</div>
+                                {% if account_form.email.errors %}
+                                    <div class="text-danger small mt-1">{{ account_form.email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- First Name -->
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ account_form.first_name.id_for_label }}">First Name <span class="text-danger">*</span></label>
+                                <input type="text" name="{{ account_form.first_name.name }}" id="{{ account_form.first_name.id_for_label }}" class="form-control" value="{{ account_form.first_name.value|default:'' }}" required>
+                                {% if account_form.first_name.errors %}
+                                    <div class="text-danger small mt-1">{{ account_form.first_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Last Name -->
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ account_form.last_name.id_for_label }}">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" name="{{ account_form.last_name.name }}" id="{{ account_form.last_name.id_for_label }}" class="form-control" value="{{ account_form.last_name.value|default:'' }}" required>
+                                {% if account_form.last_name.errors %}
+                                    <div class="text-danger small mt-1">{{ account_form.last_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Bio -->
+                            <div class="col-12 settings-form-group">
+                                <label class="settings-label" for="{{ account_form.bio.id_for_label }}">Account Bio / Headline</label>
+                                <textarea name="{{ account_form.bio.name }}" id="{{ account_form.bio.id_for_label }}" class="form-control" rows="3" placeholder="Brief headline or bio about yourself...">{{ account_form.bio.value|default:'' }}</textarea>
+                                <div class="settings-helper">Displays on your user identity card and discussions.</div>
+                                {% if account_form.bio.errors %}
+                                    <div class="text-danger small mt-1">{{ account_form.bio.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Social Links -->
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ account_form.github.id_for_label }}">
+                                    <i class="bi bi-github me-1"></i> Account GitHub
+                                </label>
+                                <input type="url" name="{{ account_form.github.name }}" id="{{ account_form.github.id_for_label }}" class="form-control" placeholder="https://github.com/username" value="{{ account_form.github.value|default:'' }}">
+                                {% if account_form.github.errors %}
+                                    <div class="text-danger small mt-1">{{ account_form.github.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ account_form.linkedin.id_for_label }}">
+                                    <i class="bi bi-linkedin me-1 text-primary"></i> Account LinkedIn
+                                </label>
+                                <input type="url" name="{{ account_form.linkedin.name }}" id="{{ account_form.linkedin.id_for_label }}" class="form-control" placeholder="https://linkedin.com/in/username" value="{{ account_form.linkedin.value|default:'' }}">
+                                {% if account_form.linkedin.errors %}
+                                    <div class="text-danger small mt-1">{{ account_form.linkedin.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top border-subtle">
+                            <button type="submit" class="settings-btn-primary d-inline-flex align-items-center gap-2">
+                                <i class="bi bi-check2"></i>
+                                <span>Save Account Settings</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ==========================================================
+                 TAB 2: CAREER & STUDENT PROFILE (StudentProfile Model)
+                 ========================================================== -->
+            <div class="settings-tab-panel" id="panel-profile" style="{% if active_tab != 'profile' %}display: none;{% endif %}">
+                <form method="POST" action="{% url 'profile_edit' %}?tab=profile" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+
+                    <!-- Section 1: Placement & Academic Profile Image -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div>
+                                <h3 class="settings-card-title">
+                                    <i class="bi bi-mortarboard text-primary"></i>
+                                    Career & Student Placement Profile
+                                </h3>
+                                <p class="settings-card-subtitle">These details power your <span class="fw-semibold text-body">Resume Builder, AI Recommendations, and Roadmap generators</span>.</p>
+                            </div>
+                        </div>
+
+                        <div class="settings-avatar-row">
+                            <div class="position-relative">
+                                {% if profile.profile_picture %}
+                                    <img src="{{ profile.profile_picture.url }}" alt="{{ profile.user.username }}" id="studentAvatarPreview" class="settings-avatar-preview">
+                                {% else %}
+                                    <div id="studentAvatarInitials" class="settings-avatar-initials">{{ user_initials }}</div>
+                                    <img src="" alt="Preview" id="studentAvatarPreview" class="settings-avatar-preview" style="display: none;">
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <label class="settings-label" for="{{ profile_form.profile_picture.id_for_label }}">Student Profile Picture</label>
+                                <input type="file" name="{{ profile_form.profile_picture.name }}" id="{{ profile_form.profile_picture.id_for_label }}" class="form-control" accept="image/*" onchange="previewStudentAvatar(this)">
+                                <div class="settings-helper">Appears on your exported resumes, recruiter summaries, and student profile.</div>
+                                {% if profile_form.profile_picture.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.profile_picture.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.phone_number.id_for_label }}">Phone Number</label>
+                                <input type="text" name="{{ profile_form.phone_number.name }}" id="{{ profile_form.phone_number.id_for_label }}" class="form-control" placeholder="10-15 digits" value="{{ profile_form.phone_number.value|default:'' }}">
+                                {% if profile_form.phone_number.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.phone_number.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.date_of_birth.id_for_label }}">Date of Birth</label>
+                                <input type="date" name="{{ profile_form.date_of_birth.name }}" id="{{ profile_form.date_of_birth.id_for_label }}" class="form-control" value="{{ profile_form.date_of_birth.value|date:'Y-m-d'|default:'' }}">
+                                {% if profile_form.date_of_birth.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.date_of_birth.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.gender.id_for_label }}">Gender</label>
+                                {{ profile_form.gender }}
+                                {% if profile_form.gender.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.gender.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.bio.id_for_label }}">Career Summary & Objective</label>
+                                <textarea name="{{ profile_form.bio.name }}" id="{{ profile_form.bio.id_for_label }}" class="form-control" rows="3" placeholder="Tell recruiters about your academic focus and ambition...">{{ profile_form.bio.value|default:'' }}</textarea>
+                                <div class="settings-helper">Used as default professional summary in your ATS Resume generator.</div>
+                                {% if profile_form.bio.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.bio.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Academic Information -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-book text-primary"></i>
+                                Academic Credentials
+                            </h3>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.college.id_for_label }}">College / Institution</label>
+                                <input type="text" name="{{ profile_form.college.name }}" id="{{ profile_form.college.id_for_label }}" class="form-control" value="{{ profile_form.college.value|default:'' }}" placeholder="e.g. Stanford University, IIT Delhi">
+                                {% if profile_form.college.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.college.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.university.id_for_label }}">University / Affiliation</label>
+                                <input type="text" name="{{ profile_form.university.name }}" id="{{ profile_form.university.id_for_label }}" class="form-control" value="{{ profile_form.university.value|default:'' }}">
+                                {% if profile_form.university.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.university.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.degree.id_for_label }}">Degree</label>
+                                <input type="text" name="{{ profile_form.degree.name }}" id="{{ profile_form.degree.id_for_label }}" class="form-control" value="{{ profile_form.degree.value|default:'' }}" placeholder="e.g. B.Tech, B.S., M.S.">
+                                {% if profile_form.degree.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.degree.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.branch.id_for_label }}">Branch / Specialization</label>
+                                <input type="text" name="{{ profile_form.branch.name }}" id="{{ profile_form.branch.id_for_label }}" class="form-control" value="{{ profile_form.branch.value|default:'' }}" placeholder="e.g. Computer Science">
+                                {% if profile_form.branch.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.branch.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.semester.id_for_label }}">Current Semester</label>
+                                <input type="number" name="{{ profile_form.semester.name }}" id="{{ profile_form.semester.id_for_label }}" class="form-control" value="{{ profile_form.semester.value|default:'' }}" min="1" max="12">
+                                {% if profile_form.semester.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.semester.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.graduation_year.id_for_label }}">Expected Graduation Year</label>
+                                <input type="number" name="{{ profile_form.graduation_year.name }}" id="{{ profile_form.graduation_year.id_for_label }}" class="form-control" value="{{ profile_form.graduation_year.value|default:'' }}" placeholder="e.g. 2026">
+                                {% if profile_form.graduation_year.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.graduation_year.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.cgpa.id_for_label }}">Current CGPA (out of 10.0)</label>
+                                <input type="number" step="0.01" name="{{ profile_form.cgpa.name }}" id="{{ profile_form.cgpa.id_for_label }}" class="form-control" value="{{ profile_form.cgpa.value|default:'' }}" placeholder="e.g. 8.75">
+                                {% if profile_form.cgpa.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.cgpa.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Career Preferences -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-compass text-primary"></i>
+                                Career Preferences & Target Ambition
+                            </h3>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.career_goal.id_for_label }}">Primary Target Role / Career Goal</label>
+                                <input type="text" name="{{ profile_form.career_goal.name }}" id="{{ profile_form.career_goal.id_for_label }}" class="form-control" value="{{ profile_form.career_goal.value|default:'' }}" placeholder="e.g. Full-Stack Developer, AI Engineer">
+                                {% if profile_form.career_goal.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.career_goal.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.current_skill_level.id_for_label }}">Self-Assessed Skill Level</label>
+                                {{ profile_form.current_skill_level }}
+                                {% if profile_form.current_skill_level.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.current_skill_level.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.preferred_domain.id_for_label }}">Preferred Domain</label>
+                                <input type="text" name="{{ profile_form.preferred_domain.name }}" id="{{ profile_form.preferred_domain.id_for_label }}" class="form-control" value="{{ profile_form.preferred_domain.value|default:'' }}" placeholder="e.g. Web Development, Cloud">
+                                {% if profile_form.preferred_domain.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.preferred_domain.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.expected_salary.id_for_label }}">Expected Salary (LPA / INR)</label>
+                                <input type="number" step="0.01" name="{{ profile_form.expected_salary.name }}" id="{{ profile_form.expected_salary.id_for_label }}" class="form-control" value="{{ profile_form.expected_salary.value|default:'' }}" placeholder="e.g. 1200000">
+                                {% if profile_form.expected_salary.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.expected_salary.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.preferred_location.id_for_label }}">Preferred Work Location</label>
+                                <input type="text" name="{{ profile_form.preferred_location.name }}" id="{{ profile_form.preferred_location.id_for_label }}" class="form-control" value="{{ profile_form.preferred_location.value|default:'' }}" placeholder="e.g. Remote, Bangalore, London">
+                                {% if profile_form.preferred_location.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.preferred_location.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills & Tech Stack -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-cpu text-primary"></i>
+                                Core Technical Skills
+                            </h3>
+                        </div>
+                        <div class="settings-form-group">
+                            <label class="settings-label" for="{{ profile_form.skills.id_for_label }}">Technical Skills (Comma or newline separated)</label>
+                            <textarea name="{{ profile_form.skills.name }}" id="{{ profile_form.skills.id_for_label }}" class="form-control" rows="4" placeholder="Python&#10;Django&#10;PostgreSQL&#10;React&#10;Docker&#10;Data Structures">{{ profile_form.skills.value|default:'' }}</textarea>
+                            <div class="settings-helper">These skills are indexed to match you with matching job applications, interview quizzes, and roadmaps.</div>
+                            {% if profile_form.skills.errors %}
+                                <div class="text-danger small mt-1">{{ profile_form.skills.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Student Social & Coding Profiles -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-share text-primary"></i>
+                                Student Portfolio & Coding Profiles
+                            </h3>
+                            <p class="settings-card-subtitle">These links attach to your generated student resumes and project submissions.</p>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.github.id_for_label }}">
+                                    <i class="bi bi-github me-1"></i> Student GitHub (https://github.com/...)
+                                </label>
+                                <input type="url" name="{{ profile_form.github.name }}" id="{{ profile_form.github.id_for_label }}" class="form-control" placeholder="https://github.com/username" value="{{ profile_form.github.value|default:'' }}">
+                                {% if profile_form.github.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.github.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.linkedin.id_for_label }}">
+                                    <i class="bi bi-linkedin me-1 text-primary"></i> Student LinkedIn (https://linkedin.com/in/...)
+                                </label>
+                                <input type="url" name="{{ profile_form.linkedin.name }}" id="{{ profile_form.linkedin.id_for_label }}" class="form-control" placeholder="https://linkedin.com/in/username" value="{{ profile_form.linkedin.value|default:'' }}">
+                                {% if profile_form.linkedin.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.linkedin.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.portfolio.id_for_label }}">
+                                    <i class="bi bi-globe me-1"></i> Portfolio Website
+                                </label>
+                                <input type="url" name="{{ profile_form.portfolio.name }}" id="{{ profile_form.portfolio.id_for_label }}" class="form-control" placeholder="https://yourportfolio.dev" value="{{ profile_form.portfolio.value|default:'' }}">
+                                {% if profile_form.portfolio.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.portfolio.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.leetcode.id_for_label }}">
+                                    <i class="bi bi-code-slash me-1 text-warning"></i> LeetCode Profile
+                                </label>
+                                <input type="url" name="{{ profile_form.leetcode.name }}" id="{{ profile_form.leetcode.id_for_label }}" class="form-control" placeholder="https://leetcode.com/username" value="{{ profile_form.leetcode.value|default:'' }}">
+                                {% if profile_form.leetcode.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.leetcode.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 settings-form-group">
+                                <label class="settings-label" for="{{ profile_form.hackerrank.id_for_label }}">
+                                    <i class="bi bi-trophy me-1 text-success"></i> HackerRank Profile
+                                </label>
+                                <input type="url" name="{{ profile_form.hackerrank.name }}" id="{{ profile_form.hackerrank.id_for_label }}" class="form-control" placeholder="https://hackerrank.com/username" value="{{ profile_form.hackerrank.value|default:'' }}">
+                                {% if profile_form.hackerrank.errors %}
+                                    <div class="text-danger small mt-1">{{ profile_form.hackerrank.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top border-subtle">
+                            <button type="submit" class="settings-btn-primary d-inline-flex align-items-center gap-2">
+                                <i class="bi bi-check2"></i>
+                                <span>Save Career Profile</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ==========================================================
+                 TAB 3: SECURITY & PASSWORD (PasswordChangeForm)
+                 ========================================================== -->
+            <div class="settings-tab-panel" id="panel-security" style="{% if active_tab != 'security' %}display: none;{% endif %}">
+                <form method="POST" action="{% url 'profile_edit' %}?tab=security">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="change_password">
+
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div>
+                                <h3 class="settings-card-title">
+                                    <i class="bi bi-key text-primary"></i>
+                                    Change Password
+                                </h3>
+                                <p class="settings-card-subtitle">Ensure your account is protected with a strong, unpredictable password.</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12 settings-form-group">
+                                <label class="settings-label" for="{{ password_form.old_password.id_for_label }}">Current Password <span class="text-danger">*</span></label>
+                                <input type="password" name="{{ password_form.old_password.name }}" id="{{ password_form.old_password.id_for_label }}" class="form-control" autocomplete="current-password" required>
+                                {% if password_form.old_password.errors %}
+                                    <div class="text-danger small mt-1">{{ password_form.old_password.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ password_form.new_password1.id_for_label }}">New Password <span class="text-danger">*</span></label>
+                                <input type="password" name="{{ password_form.new_password1.name }}" id="{{ password_form.new_password1.id_for_label }}" class="form-control" autocomplete="new-password" required>
+                                {% if password_form.new_password1.errors %}
+                                    <div class="text-danger small mt-1">{{ password_form.new_password1.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 settings-form-group">
+                                <label class="settings-label" for="{{ password_form.new_password2.id_for_label }}">Confirm New Password <span class="text-danger">*</span></label>
+                                <input type="password" name="{{ password_form.new_password2.name }}" id="{{ password_form.new_password2.id_for_label }}" class="form-control" autocomplete="new-password" required>
+                                {% if password_form.new_password2.errors %}
+                                    <div class="text-danger small mt-1">{{ password_form.new_password2.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light border rounded-3 p-3 mt-3 small text-muted">
+                            <div class="fw-semibold text-secondary mb-1"><i class="bi bi-info-circle me-1 text-primary"></i> Password Guidelines:</div>
+                            <ul class="mb-0 ps-3">
+                                <li>Must be at least 8 characters long.</li>
+                                <li>Cannot be entirely numeric or too similar to your personal information.</li>
+                                <li>Cannot be a commonly used password.</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top border-subtle">
+                            <button type="submit" class="settings-btn-primary d-inline-flex align-items-center gap-2">
+                                <i class="bi bi-shield-check"></i>
+                                <span>Update Password</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Security Information Box -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3 class="settings-card-title">
+                            <i class="bi bi-shield-lock text-primary"></i>
+                            Two-Factor & Email Security
+                        </h3>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div>
+                            <div class="fw-semibold text-body">Email OTP Verification</div>
+                            <div class="small text-muted">Time-based one-time passwords are required during sensitive account changes and initial signup.</div>
+                        </div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                            <i class="bi bi-check-circle-fill me-1"></i> Active
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================================
+                 TAB 4: DANGER ZONE (Account Deletion)
+                 ========================================================== -->
+            <div class="settings-tab-panel" id="panel-danger" style="{% if active_tab != 'danger' %}display: none;{% endif %}">
+                <div class="settings-danger-card">
+                    <div class="settings-danger-header">
+                        <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                        <span>Irreversible Actions & Account Deletion</span>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        Deleting your account will permanently wipe all associated data from CareerCatalyst. Once initiated, this action cannot be reversed.
+                    </p>
+
+                    <div class="alert alert-danger border-danger border-opacity-25 rounded-3 mb-4 small">
+                        <div class="fw-bold mb-2"><i class="bi bi-shield-x me-1"></i> The following data will be permanently destroyed:</div>
+                        <ul class="mb-0 ps-3">
+                            <li>All saved resumes, tailored variants, and ATS match histories</li>
+                            <li>Personal career roadmaps, milestone progress, and skill assessments</li>
+                            <li>Job application tracker boards, saved jobs, and stage histories</li>
+                            <li>Mock interview recordings, STAR responses, and quiz scores</li>
+                            <li>Community forum threads, mentorship bookings, and chat records</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 pt-3 border-top border-danger border-opacity-25">
+                        <div>
+                            <div class="fw-semibold text-danger">Permanently Delete Account</div>
+                            <div class="small text-muted">You will be asked to confirm your username (@{{ user.username }}) before deletion.</div>
+                        </div>
+                        <a href="{% url 'delete_account' %}" class="settings-btn-danger text-decoration-none d-inline-flex align-items-center gap-2">
+                            <i class="bi bi-trash3-fill"></i>
+                            <span>Delete Account</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Vanilla JS for Tab Switching, Avatar Preview, and Mobile Sidebar Toggle -->
+<script>
+(function() {
+    // 1. Mobile Sidebar Toggle
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('sidebarCloseBtn');
+    const sidebar = document.getElementById('dashboardSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('open');
+        if (overlay) overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+})();
+
+// 2. Tab Switcher
+function switchSettingsTab(tabName) {
+    const tabs = ['account', 'profile', 'security', 'danger'];
+    if (!tabs.includes(tabName)) return;
+
+    tabs.forEach(t => {
+        const btn = document.getElementById('tab-btn-' + t);
+        const panel = document.getElementById('panel-' + t);
+        if (btn && panel) {
+            if (t === tabName) {
+                btn.classList.add('active');
+                btn.setAttribute('aria-selected', 'true');
+                panel.style.display = 'block';
+            } else {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-selected', 'false');
+                panel.style.display = 'none';
+            }
+        }
+    });
+
+    // Update URL query string without reloading page
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabName);
+    window.history.replaceState({}, '', url);
+}
+
+// 3. Avatar Previews
+function previewAccountAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('accountAvatarPreview');
+            const initials = document.getElementById('accountAvatarInitials');
+            if (preview) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            if (initials) {
+                initials.style.display = 'none';
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function previewStudentAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('studentAvatarPreview');
+            const initials = document.getElementById('studentAvatarInitials');
+            if (preview) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            if (initials) {
+                initials.style.display = 'none';
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// 4. Handle initial tab from URL if present
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab && ['account', 'profile', 'security', 'danger'].includes(tab)) {
+        switchSettingsTab(tab);
+    }
+});
+</script>
 {% endblock %}

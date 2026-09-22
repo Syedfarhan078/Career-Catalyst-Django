@@ -44,6 +44,12 @@
 
         <!-- Main Content Canvas -->
         <div class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'resume:list' %}" class="dash-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Resume Hub</span>
+            </a>
+
             <!-- Toast Notifications -->
             {% if messages %}
                 <div class="mb-4">
@@ -72,7 +78,7 @@
                             Evaluate your resume against verified skill taxonomies, TF-IDF term relevance, and Google's XYZ achievement formula.
                         </p>
                     </div>
-                    <a href="{% url 'ai_resume:history' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1.5 fw-semibold" style="font-size: 0.8125rem;">
+                    <a href="{% url 'ai_resume:history' %}" class="dash-btn dash-btn-secondary dash-btn-sm">
                         <i class="bi bi-clock-history me-1"></i> Scan History
                     </a>
                 </div>
@@ -179,10 +185,10 @@
 
                             <!-- Submit Action -->
                             <div class="d-flex align-items-center gap-2">
-                                <a href="{% url 'resume:list' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2.5 fw-semibold" style="font-size: 0.8125rem;">
+                                <a href="{% url 'resume:list' %}" class="dash-btn dash-btn-secondary px-4 py-2">
                                     Cancel
                                 </a>
-                                <button type="submit" class="btn btn-primary-custom flex-grow-1 py-2.5 rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center justify-content-center gap-2" style="font-size: 0.875rem;">
+                                <button type="submit" class="dash-btn dash-btn-primary flex-grow-1 py-2 d-inline-flex align-items-center justify-content-center gap-2">
                                     <i class="bi bi-play-circle-fill"></i> Run ATS Diagnostic
                                 </button>
                             </div>

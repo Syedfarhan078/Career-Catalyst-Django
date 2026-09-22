@@ -43,6 +43,12 @@
 
         <!-- Main Content Canvas -->
         <div class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'ai_resume:history' %}" class="dash-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Scan History</span>
+            </a>
+
             <!-- Toast Notifications -->
             {% if messages %}
                 <div class="mb-4">
@@ -97,14 +103,11 @@
                     </div>
 
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <a href="{% url 'ai_resume:history' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-                            <i class="bi bi-clock-history me-1"></i> History
-                        </a>
-                        <a href="{% url 'ai_resume:analyze' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                        <a href="{% url 'ai_resume:analyze' %}" class="dash-btn dash-btn-secondary dash-btn-sm">
                             <i class="bi bi-arrow-repeat me-1"></i> New Scan
                         </a>
                         {% if not analysis.ai_enhanced %}
-                        <button type="button" id="btnEnhanceAiTop" class="btn btn-primary-custom btn-sm rounded-pill px-3 shadow-sm" onclick="triggerAiEnhancement()">
+                        <button type="button" id="btnEnhanceAiTop" class="dash-btn dash-btn-primary dash-btn-sm" onclick="triggerAiEnhancement()">
                             <i class="bi bi-stars me-1"></i> ⚡ Enhance with AI
                         </button>
                         {% endif %}
@@ -244,7 +247,7 @@
                             Generate high-impact XYZ bullet point rewrites and semantic role alignment feedback. Your personal identifiable information (names, emails, phone numbers, external profile links) is automatically scrubbed locally before processing.
                         </p>
                     </div>
-                    <button type="button" id="btnEnhanceAi" class="btn btn-primary-custom rounded-pill px-4 py-2 fw-semibold shadow-sm text-nowrap" onclick="triggerAiEnhancement()">
+                    <button type="button" id="btnEnhanceAi" class="dash-btn dash-btn-primary px-4 py-2 text-nowrap" onclick="triggerAiEnhancement()">
                         <i class="bi bi-stars me-1"></i> ⚡ Enhance with AI
                     </button>
                 </div>
@@ -287,7 +290,7 @@
                                             <div class="text-primary small fw-bold">
                                                 <i class="bi bi-check-circle-fill text-success me-1"></i> High-Impact Rewrite:
                                             </div>
-                                            <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 rounded-pill small" style="font-size: 0.75rem;" onclick="copyRewrite(this, '{{ rewrite.improved|escapejs }}')">
+                                            <button type="button" class="dash-btn dash-btn-outline dash-btn-xs" style="font-size: 0.75rem;" onclick="copyRewrite(this, '{{ rewrite.improved|escapejs }}')">
                                                 <i class="bi bi-clipboard me-1"></i> Copy
                                             </button>
                                         </div>
@@ -465,11 +468,11 @@
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         {% if analysis.resume %}
-                        <a href="{% url 'resume:builder' analysis.resume.pk %}" class="btn btn-primary-custom rounded-pill px-4 py-2 fw-semibold shadow-sm text-nowrap">
+                        <a href="{% url 'resume:builder' analysis.resume.pk %}" class="dash-btn dash-btn-primary px-4 py-2 text-nowrap">
                             <i class="bi bi-pencil-square me-1"></i> Apply Fixes in Builder
                         </a>
                         {% else %}
-                        <a href="{% url 'resume:create' %}" class="btn btn-primary-custom rounded-pill px-4 py-2 fw-semibold shadow-sm text-nowrap">
+                        <a href="{% url 'resume:create' %}" class="dash-btn dash-btn-primary px-4 py-2 text-nowrap">
                             <i class="bi bi-plus-circle me-1"></i> Create in Builder
                         </a>
                         {% endif %}
@@ -534,7 +537,10 @@ function triggerAiEnhancement() {
         if (data.status === 'success') {
             setButtons('<i class="bi bi-check-circle-fill me-1"></i> Enhanced!', true);
             [btnTop, btnBanner].forEach(b => {
-                if (b) b.classList.replace('btn-primary-custom', 'btn-success');
+                if (b) {
+                    b.classList.remove('dash-btn-primary', 'btn-primary-custom');
+                    b.classList.add('dash-btn-success', 'btn-success');
+                }
             });
             
             const feedback = data.ai_feedback;
@@ -558,9 +564,9 @@ function triggerAiEnhancement() {
                                     <div class="col-md-7">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
                                             <div class="text-primary small fw-bold"><i class="bi bi-check-circle-fill text-success me-1"></i> High-Impact Rewrite:</div>
-                                            <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 rounded-pill small" style="font-size: 0.75rem;" onclick="copyRewrite(this, '${escapeQuotes(r.improved)}')">
-                                                <i class="bi bi-clipboard me-1"></i> Copy
-                                            </button>
+                                             <button type="button" class="dash-btn dash-btn-outline dash-btn-xs" style="font-size: 0.75rem;" onclick="copyRewrite(this, '${escapeQuotes(r.improved)}')">
+                                                 <i class="bi bi-clipboard me-1"></i> Copy
+                                             </button>
                                         </div>
                                         <div class="ai-rewrite-improved">${escapeHtml(r.improved)}</div>
                                         ${r.rationale ? `<small class="text-muted d-block mt-1" style="font-size: 0.74rem;"><strong>Why:</strong> ${escapeHtml(r.rationale)}</small>` : ''}

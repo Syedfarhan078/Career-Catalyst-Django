@@ -1,0 +1,438 @@
+/* ==========================================================================
+   CareerCatalyst — Settings & Profile Stylesheet
+   Built with --dash-* design tokens, full dark mode and accessibility.
+   ========================================================================== */
+
+:root {
+    --settings-bg: var(--dash-bg, #F7F8FA);
+    --settings-card-bg: var(--dash-surface, #FFFFFF);
+    --settings-border: var(--dash-border, #E5E7EB);
+    --settings-border-subtle: var(--dash-border-strong, #D1D5DB);
+    --settings-text: var(--dash-text, #111827);
+    --settings-text-muted: var(--dash-text-muted, #6B7280);
+    --settings-primary: var(--dash-primary, #2563EB);
+    --settings-primary-hover: var(--dash-primary-hover, #1D4ED8);
+    --settings-primary-subtle: var(--dash-primary-subtle, rgba(37, 99, 235, 0.08));
+    --settings-danger: #DC2626;
+    --settings-danger-subtle: rgba(220, 38, 38, 0.08);
+    --settings-success: var(--dash-success, #16A34A);
+    --settings-radius: var(--dash-radius, 8px);
+    --settings-shadow: var(--dash-shadow-card, 0 1px 3px 0 rgba(0, 0, 0, 0.04));
+}
+
+html[data-theme="dark"],
+[data-theme="dark"],
+[data-bs-theme="dark"] {
+    --settings-bg: var(--dash-bg, #09090B);
+    --settings-card-bg: var(--dash-surface, #111115);
+    --settings-border: var(--dash-border, #27272A);
+    --settings-border-subtle: var(--dash-surface-muted, #18181C);
+    --settings-text: var(--dash-text, #FAFAFA);
+    --settings-text-muted: var(--dash-text-muted, #A1A1AA);
+    --settings-primary: var(--dash-primary, #6366F1);
+    --settings-primary-hover: var(--dash-primary-hover, #4F46E5);
+    --settings-primary-subtle: var(--dash-primary-subtle, rgba(99, 102, 241, 0.12));
+    --settings-danger: #EF4444;
+    --settings-danger-subtle: rgba(239, 68, 68, 0.12);
+    --settings-shadow: var(--dash-shadow-card, 0 2px 4px 0 rgba(0, 0, 0, 0.4));
+}
+
+/* Header & Breadcrumbs */
+.settings-header {
+    margin-bottom: 1.5rem;
+}
+
+.settings-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--settings-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.settings-breadcrumbs a {
+    color: var(--settings-text-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.settings-breadcrumbs a:hover {
+    color: var(--settings-primary);
+}
+
+.settings-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--settings-text);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.02em;
+}
+
+.settings-subtitle {
+    font-size: 0.875rem;
+    color: var(--settings-text-muted);
+    margin-bottom: 0;
+}
+
+/* Tab Navigation — Native Refined Workspace Controls */
+.settings-nav-tabs {
+    display: flex;
+    gap: 0.35rem;
+    border-bottom: 1px solid var(--settings-border);
+    margin-bottom: 1.75rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0;
+}
+
+.settings-nav-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.settings-nav-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--settings-text-muted);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: var(--dash-radius-sm, 6px) var(--dash-radius-sm, 6px) 0 0;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.settings-nav-tab:hover {
+    color: var(--settings-text);
+    background-color: var(--dash-surface-hover, rgba(255, 255, 255, 0.04));
+}
+
+.settings-nav-tab.active {
+    color: var(--settings-primary);
+    background-color: var(--dash-primary-subtle);
+    border-bottom: 2px solid var(--settings-primary);
+    font-weight: 600;
+}
+
+.settings-nav-tab.text-danger:hover {
+    color: var(--settings-danger) !important;
+    background-color: var(--settings-danger-subtle);
+}
+
+.settings-nav-tab.text-danger.active {
+    color: var(--settings-danger) !important;
+    background-color: var(--settings-danger-subtle);
+    border-bottom-color: var(--settings-danger);
+}
+
+.settings-nav-tab i {
+    font-size: 1rem;
+}
+
+/* Cards & Section Containers */
+.settings-card {
+    background: var(--settings-card-bg);
+    border: 1px solid var(--settings-border);
+    border-radius: var(--settings-radius);
+    padding: 1.75rem;
+    box-shadow: var(--settings-shadow);
+    margin-bottom: 1.5rem;
+    transition: border-color 0.15s ease;
+}
+
+.settings-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--settings-border);
+}
+
+.settings-card-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--settings-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.settings-card-subtitle {
+    font-size: 0.8125rem;
+    color: var(--settings-text-muted);
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+}
+
+/* Form Groups & Controls */
+.settings-form-group {
+    margin-bottom: 1.25rem;
+}
+
+.settings-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--settings-text);
+    margin-bottom: 0.35rem;
+}
+
+.settings-helper {
+    font-size: 0.75rem;
+    color: var(--settings-text-muted);
+    margin-top: 0.35rem;
+}
+
+/* Theming Inputs */
+.settings-card .form-control,
+.settings-card .form-select {
+    background-color: var(--settings-card-bg);
+    border: 1px solid var(--settings-border);
+    color: var(--settings-text);
+    font-size: 0.875rem;
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.settings-card .form-control:focus,
+.settings-card .form-select:focus {
+    border-color: var(--settings-primary);
+    box-shadow: 0 0 0 3px var(--settings-primary-subtle);
+    outline: none;
+}
+
+.settings-card .form-control::placeholder {
+    color: var(--settings-text-muted);
+    opacity: 0.7;
+}
+
+.settings-card .input-group-text {
+    background-color: var(--settings-bg);
+    border: 1px solid var(--settings-border);
+    color: var(--settings-text-muted);
+    font-size: 0.875rem;
+}
+
+/* Avatar Preview Block */
+.settings-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--settings-border);
+}
+
+.settings-avatar-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--settings-border);
+    flex-shrink: 0;
+}
+
+.settings-avatar-initials {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--settings-primary);
+    color: #ffffff;
+    font-size: 1.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--settings-border);
+    flex-shrink: 0;
+}
+
+/* Read-Only Badge */
+.settings-readonly-value {
+    padding: 0.6rem 0.85rem;
+    background: var(--settings-bg);
+    border: 1px solid var(--settings-border);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: var(--settings-text-muted);
+    font-family: monospace;
+}
+
+/* Completion Bar */
+.profile-completion-box {
+    background: var(--settings-bg);
+    border: 1px solid var(--settings-border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.profile-completion-bar {
+    height: 8px;
+    background: var(--settings-border);
+    border-radius: 4px;
+    overflow: hidden;
+    flex-grow: 1;
+}
+
+.profile-completion-fill {
+    height: 100%;
+    background: var(--settings-primary);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Danger Zone */
+.settings-danger-card {
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    background: var(--settings-card-bg);
+    border-radius: var(--settings-radius);
+    padding: 1.75rem;
+}
+
+.settings-danger-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--settings-danger);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+/* Sidebar Settings active link styling */
+.dash-settings-link {
+    text-decoration: none;
+    color: var(--settings-text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.dash-settings-link:hover {
+    color: var(--settings-text);
+    background: var(--settings-primary-subtle);
+}
+
+.dash-settings-link.active {
+    color: var(--settings-primary) !important;
+    background: var(--settings-primary-subtle) !important;
+    font-weight: 600;
+}
+
+/* Action Buttons */
+.settings-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    background: var(--settings-primary);
+    color: #ffffff !important;
+    border: 1px solid transparent;
+    font-size: 0.845rem;
+    font-weight: 600;
+    padding: 0.5rem 1.15rem;
+    border-radius: var(--dash-radius-sm, 6px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.settings-btn-primary:hover {
+    background: var(--settings-primary-hover);
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+}
+
+.settings-btn-primary:active {
+    transform: translateY(0);
+}
+
+.settings-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    background: transparent;
+    color: var(--settings-text);
+    border: 1px solid var(--settings-border);
+    font-size: 0.845rem;
+    font-weight: 500;
+    padding: 0.5rem 1.15rem;
+    border-radius: var(--dash-radius-sm, 6px);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.settings-btn-outline:hover {
+    background: var(--dash-surface-hover, var(--settings-bg));
+    border-color: var(--dash-border-strong, var(--settings-border));
+    color: var(--settings-text);
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.settings-btn-outline:active {
+    transform: translateY(0);
+}
+
+.settings-btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    background: var(--settings-danger);
+    color: #ffffff !important;
+    border: 1px solid transparent;
+    font-size: 0.845rem;
+    font-weight: 600;
+    padding: 0.5rem 1.15rem;
+    border-radius: var(--dash-radius-sm, 6px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.settings-btn-danger:hover {
+    opacity: 0.92;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.settings-btn-danger:active {
+    transform: translateY(0);
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

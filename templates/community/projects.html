@@ -59,7 +59,7 @@
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <a href="{% url 'community:share_project' %}" class="btn btn-primary btn-sm px-3 py-2 fw-medium">
+                    <a href="{% url 'community:share_project' %}" class="dash-btn dash-btn-primary dash-btn-sm">
                         <i class="bi bi-cloud-arrow-up me-1"></i> Share Your Project
                     </a>
                 </div>
@@ -122,12 +122,12 @@
 
                         <div class="d-flex gap-2">
                             {% if project.github_link %}
-                            <a href="{{ project.github_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm flex-grow-1">
+                            <a href="{{ project.github_link }}" target="_blank" rel="noopener noreferrer" class="dash-btn dash-btn-outline dash-btn-sm flex-grow-1">
                                 <i class="bi bi-github me-1"></i> GitHub
                             </a>
                             {% endif %}
                             {% if project.live_link %}
-                            <a href="{{ project.live_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm flex-grow-1">
+                            <a href="{{ project.live_link }}" target="_blank" rel="noopener noreferrer" class="dash-btn dash-btn-outline dash-btn-sm flex-grow-1">
                                 <i class="bi bi-box-arrow-up-right me-1"></i> Demo
                             </a>
                             {% endif %}
@@ -139,7 +139,7 @@
                     <i class="bi bi-code-square display-4 mb-3 d-block text-body-tertiary"></i>
                     <h5 class="fw-semibold text-body">No projects shared yet</h5>
                     <p class="text-muted mb-3">Be the first to share your project or portfolio with the community!</p>
-                    <a href="{% url 'community:share_project' %}" class="btn btn-primary btn-sm px-4 py-2">
+                    <a href="{% url 'community:share_project' %}" class="dash-btn dash-btn-primary dash-btn-sm px-4 py-2">
                         <i class="bi bi-plus-circle me-1"></i> Share a Project
                     </a>
                 </div>

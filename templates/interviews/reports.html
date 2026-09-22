@@ -43,6 +43,12 @@
 
         <!-- Main Content Area -->
         <main class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'interviews:hub' %}" class="dash-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Interview Hub</span>
+            </a>
+
             <!-- Header & Breadcrumbs -->
             <div class="interview-page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <div>
@@ -57,11 +63,6 @@
                     <p class="interview-page-subtitle">
                         Historical evaluation scores, behavioral attempts, and focus integrity audit logs.
                     </p>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <a href="{% url 'interviews:hub' %}" class="btn btn-outline-secondary rounded-pill btn-sm px-3 py-2">
-                        <i class="bi bi-arrow-left me-1"></i> Hub Dashboard
-                    </a>
                 </div>
             </div>
 
@@ -126,7 +127,7 @@
                                                 <i class="bi bi-patch-question interview-empty-icon"></i>
                                                 <h6 class="fw-bold mb-1">No Quiz Attempts Recorded</h6>
                                                 <p class="small text-muted mb-3">Practice aptitude and technical quizzes to populate your record.</p>
-                                                <a href="{% url 'interviews:hub' %}" class="btn btn-primary rounded-pill btn-sm px-4">Go to Hub</a>
+                                                <a href="{% url 'interviews:hub' %}" class="dash-btn dash-btn-primary dash-btn-sm px-4">Go to Hub</a>
                                             </div>
                                         </td>
                                     </tr>
@@ -197,7 +198,7 @@
                                                 <i class="bi bi-robot interview-empty-icon"></i>
                                                 <h6 class="fw-bold mb-1">No Mock Sessions Recorded</h6>
                                                 <p class="small text-muted mb-3">Launch the AI simulator to run your first session.</p>
-                                                <a href="{% url 'interviews:mock_list' %}" class="btn btn-primary rounded-pill btn-sm px-4">Open Simulator</a>
+                                                <a href="{% url 'interviews:mock_list' %}" class="dash-btn dash-btn-primary dash-btn-sm px-4">Open Simulator</a>
                                             </div>
                                         </td>
                                     </tr>

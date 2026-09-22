@@ -43,6 +43,12 @@
 
         <!-- Main Content Area -->
         <main class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'community:mentor_list' %}" class="dash-back-link mb-3">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Mentors Directory</span>
+            </a>
+
             <!-- Header & Breadcrumbs -->
             <div class="community-header mb-4">
                 <div class="community-breadcrumbs">
@@ -51,11 +57,6 @@
                     <a href="{% url 'community:mentor_list' %}">Mentors</a>
                     <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
                     <span>{{ mentor.full_name }}</span>
-                </div>
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <a href="{% url 'community:mentor_list' %}" class="text-decoration-none small text-muted">
-                        <i class="bi bi-arrow-left me-1"></i> Back to Directory
-                    </a>
                 </div>
             </div>
 
@@ -206,25 +207,25 @@
                         </div>
 
                         {% if mentor.resume %}
-                        <a href="{{ mentor.resume.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm w-100 mb-3">
+                        <a href="{{ mentor.resume.url }}" target="_blank" rel="noopener noreferrer" class="dash-btn dash-btn-outline dash-btn-sm w-100 mb-3">
                             <i class="bi bi-file-earmark-pdf me-1"></i> View Resume PDF
                         </a>
                         {% endif %}
 
                         <!-- Booking Action Buttons -->
                         {% if mentor.user == request.user %}
-                        <button class="btn btn-outline-secondary btn-sm w-100" disabled>You cannot book with yourself</button>
+                        <button class="dash-btn dash-btn-outline dash-btn-sm w-100" disabled>You cannot book with yourself</button>
                         {% else %}
-                        <button class="btn btn-primary btn-sm w-100 py-2 fw-medium mb-2" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                        <button class="dash-btn dash-btn-primary dash-btn-sm w-100 py-2 fw-medium mb-2" data-bs-toggle="modal" data-bs-target="#bookingModal">
                             <i class="bi bi-calendar-plus me-1"></i> Request Mentorship Session
                         </button>
 
                         {% if has_accepted_booking %}
-                        <a href="{% url 'community:mentor_chat' mentor.user.id %}" class="btn btn-success btn-sm w-100 py-2 fw-medium">
+                        <a href="{% url 'community:mentor_chat' mentor.user.id %}" class="dash-btn dash-btn-success dash-btn-sm w-100 py-2 fw-medium">
                             <i class="bi bi-chat-dots me-1"></i> Open Direct Chat
                         </a>
                         {% else %}
-                        <button class="btn btn-outline-secondary btn-sm w-100 py-2 text-muted" disabled title="Messaging unlocks once the mentor accepts a booking request.">
+                        <button class="dash-btn dash-btn-outline dash-btn-sm w-100 py-2 text-muted" disabled title="Messaging unlocks once the mentor accepts a booking request.">
                             <i class="bi bi-lock-fill me-1"></i> Direct Chat (Locked until accepted)
                         </button>
                         {% endif %}
@@ -298,8 +299,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-top">
-                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-sm px-3 fw-medium">Submit Request</button>
+                    <button type="button" class="dash-btn dash-btn-outline dash-btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm px-3 fw-medium">Submit Request</button>
                 </div>
             </form>
         </div>

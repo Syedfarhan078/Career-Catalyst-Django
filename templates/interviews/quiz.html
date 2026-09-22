@@ -62,7 +62,7 @@
                     <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2 fw-semibold" id="violationBadge" style="font-size: 0.8125rem;">
                         Warnings: 0/3
                     </span>
-                    <a href="{% url 'interviews:hub' %}" class="btn btn-outline-secondary rounded-pill btn-sm px-3 py-2" onclick="return confirm('Exit this assessment? Unsaved progress will be lost.');">
+                    <a href="{% url 'interviews:hub' %}" class="dash-btn dash-btn-outline dash-btn-sm" onclick="return confirm('Exit this assessment? Unsaved progress will be lost.');">
                         <i class="bi bi-x-circle me-1"></i> Exit
                     </a>
                 </div>
@@ -104,13 +104,13 @@
                             <i class="bi bi-patch-question interview-empty-icon"></i>
                             <h5 class="fw-bold mb-1">No Questions Available</h5>
                             <p class="small text-muted mb-3">No active questions were found for this category.</p>
-                            <a href="{% url 'interviews:hub' %}" class="btn btn-primary rounded-pill btn-sm px-4">Back to Hub</a>
+                            <a href="{% url 'interviews:hub' %}" class="dash-btn dash-btn-primary dash-btn-sm px-4">Back to Hub</a>
                         </div>
                         {% endfor %}
 
                         {% if questions %}
                         <div class="d-flex justify-content-end gap-3 mt-4 mb-5">
-                            <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 fw-semibold">
+                            <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm px-5 py-2 fw-semibold">
                                 <i class="bi bi-send-check me-1"></i> Submit Assessment
                             </button>
                         </div>

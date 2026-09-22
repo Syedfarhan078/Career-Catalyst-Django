@@ -1,104 +1,180 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
+{% load static %}
 
-{% block title %}My Profile | Career Catalyst{% endblock %}
+{% block title %}Account Settings — CareerCatalyst{% endblock %}
 
-{% block content %}
-<div class="container py-4 mt-4">
-    <!-- Back Navigation -->
-    <div class="mb-4">
-        <a href="{% url 'dashboard' %}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Back to Dashboard
-        </a>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/settings.css' %}?v=1.0">
+{% endblock %}
 
-    <!-- Header -->
-    <div class="row mb-5">
-        <div class="col-10 mx-auto">
-            <h1 class="fw-bold mb-1 text-gradient">Account Settings</h1>
-            <p class="text-muted">Manage your profile information and social presence.</p>
-        </div>
-    </div>
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
 
-    <!-- Main Content -->
-    <div class="row g-4 justify-content-center">
-        <!-- Left Column: User Card -->
-        <div class="col-lg-4 col-10">
-            <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100">
-                <!-- Card Header Accent -->
-                <div class="bg-gradient-primary" style="height: 100px; background: linear-gradient(135deg, var(--primary), #1e40af);"></div>
-                
-                <!-- Card Body -->
-                <div class="card-body p-4 text-center" style="margin-top: -60px;">
-                    <!-- Profile Picture -->
-                    <div class="mb-3">
-                        {% if user.profile_picture %}
-                            <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle border border-4 border-white shadow-sm object-fit-cover" style="width: 110px; height: 110px;">
-                        {% else %}
-                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle border border-4 border-white shadow-sm bg-gradient text-white fw-bold fs-2" style="width: 110px; height: 110px; background: linear-gradient(135deg, var(--primary), var(--accent));">
-                                {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Left Navigation Sidebar -->
+    {% include "core/partials/dashboard_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none; font-size: 0.7rem;">{{ user_initials }}</span>
+                {% elif user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none; font-size: 0.7rem;">{{ user_initials }}</span>
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.7rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Scroll Area -->
+        <main class="dash-content">
+            <a href="{% url 'dashboard' %}" class="dash-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Dashboard</span>
+            </a>
+
+            <div class="settings-header">
+                <nav class="settings-breadcrumbs" aria-label="Breadcrumb">
+                    <a href="{% url 'dashboard' %}"><i class="bi bi-house-door"></i> Dashboard</a>
+                    <span>/</span>
+                    <span>Account Settings</span>
+                </nav>
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                    <div>
+                        <h1 class="settings-title">Account Details</h1>
+                        <p class="settings-subtitle">Manage your personal credentials and linked profiles.</p>
+                    </div>
+                    <a href="{% url 'profile_edit' %}?tab=account" class="settings-btn-primary d-inline-flex align-items-center gap-2 text-decoration-none">
+                        <i class="bi bi-gear"></i>
+                        <span>Open Unified Settings Hub</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show border-0 shadow-sm rounded-3 py-2 px-3 small d-flex align-items-center justify-content-between" role="alert">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill text-success{% elif message.tags == 'error' or message.tags == 'danger' %}bi-exclamation-triangle-fill text-danger{% else %}bi-info-circle-fill text-primary{% endif %}"></i>
+                                <span>{{ message }}</span>
                             </div>
-                        {% endif %}
-                    </div>
-                    
-                    <h3 class="fw-bold mb-1 text-secondary">{{ user.get_full_name }}</h3>
-                    <p class="text-muted small mb-3">@{{ user.username }}</p>
-                    
-                    {% if user.bio %}
-                        <p class="text-muted small px-3 mb-4 italic">"{{ user.bio }}"</p>
-                    {% else %}
-                        <p class="text-muted small px-3 mb-4 text-white-50">No bio written yet. Add one in settings!</p>
-                    {% endif %}
-                    
-                    <!-- Social Links -->
-                    <div class="d-flex justify-content-center gap-2 mb-4">
-                        {% if user.github %}
-                            <a href="{{ user.github }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" aria-label="GitHub">
-                                <i class="bi bi-github fs-5"></i>
-                            </a>
-                        {% endif %}
-                        {% if user.linkedin %}
-                            <a href="{{ user.linkedin }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" aria-label="LinkedIn">
-                                <i class="bi bi-linkedin fs-5"></i>
-                            </a>
-                        {% endif %}
-                    </div>
-                    
-                    <hr class="text-black-50 my-4">
-                    
-                    <!-- Meta Stats -->
-                    <div class="row text-start ps-3">
-                        <div class="col-12 mb-2">
-                            <span class="text-muted small d-block">Email address</span>
-                            <span class="fw-semibold text-secondary small">{{ user.email }}</span>
+                            <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.5rem;"></button>
                         </div>
-                        <div class="col-12">
-                            <span class="text-muted small d-block">Member since</span>
-                            <span class="fw-semibold text-secondary small">{{ user.created_at|date:"F Y" }}</span>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
-            </div>
-        </div>
+            {% endif %}
 
-        <!-- Right Column: Settings Form -->
-        <div class="col-lg-6 col-10">
-            <div class="card shadow-sm border-0 rounded-4 h-100">
-                <div class="card-body p-5">
-                    <h4 class="fw-bold mb-4 text-secondary">Edit Personal Details</h4>
-                    
-                    <form method="POST" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {{ form|crispy }}
-                        
-                        <div class="d-flex justify-content-end gap-2 mt-4">
-                            <a href="{% url 'dashboard' %}" class="btn btn-light rounded-pill px-4">Cancel</a>
-                            <button type="submit" class="btn-primary-custom px-4 py-2">Save Updates</button>
-                        </div>
-                    </form>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="settings-card">
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+
+                            <div class="settings-avatar-row">
+                                <div class="position-relative">
+                                    {% if user.profile_picture %}
+                                        <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="settings-avatar-preview">
+                                    {% else %}
+                                        <div class="settings-avatar-initials">{{ user_initials }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <label class="settings-label" for="{{ form.profile_picture.id_for_label }}">Account Avatar</label>
+                                    <input type="file" name="{{ form.profile_picture.name }}" id="{{ form.profile_picture.id_for_label }}" class="form-control" accept="image/*">
+                                    {% if form.profile_picture.errors %}
+                                        <div class="text-danger small mt-1">{{ form.profile_picture.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6 settings-form-group">
+                                    <label class="settings-label" for="{{ form.first_name.id_for_label }}">First Name</label>
+                                    <input type="text" name="{{ form.first_name.name }}" id="{{ form.first_name.id_for_label }}" class="form-control" value="{{ form.first_name.value|default:'' }}" required>
+                                </div>
+                                <div class="col-md-6 settings-form-group">
+                                    <label class="settings-label" for="{{ form.last_name.id_for_label }}">Last Name</label>
+                                    <input type="text" name="{{ form.last_name.name }}" id="{{ form.last_name.id_for_label }}" class="form-control" value="{{ form.last_name.value|default:'' }}" required>
+                                </div>
+                                <div class="col-12 settings-form-group">
+                                    <label class="settings-label" for="{{ form.email.id_for_label }}">Email</label>
+                                    <input type="email" name="{{ form.email.name }}" id="{{ form.email.id_for_label }}" class="form-control" value="{{ form.email.value|default:'' }}" required>
+                                </div>
+                                <div class="col-12 settings-form-group">
+                                    <label class="settings-label" for="{{ form.bio.id_for_label }}">Bio</label>
+                                    <textarea name="{{ form.bio.name }}" id="{{ form.bio.id_for_label }}" class="form-control" rows="3">{{ form.bio.value|default:'' }}</textarea>
+                                </div>
+                                <div class="col-md-6 settings-form-group">
+                                    <label class="settings-label" for="{{ form.github.id_for_label }}"><i class="bi bi-github me-1"></i> GitHub</label>
+                                    <input type="url" name="{{ form.github.name }}" id="{{ form.github.id_for_label }}" class="form-control" value="{{ form.github.value|default:'' }}">
+                                </div>
+                                <div class="col-md-6 settings-form-group">
+                                    <label class="settings-label" for="{{ form.linkedin.id_for_label }}"><i class="bi bi-linkedin me-1 text-primary"></i> LinkedIn</label>
+                                    <input type="url" name="{{ form.linkedin.name }}" id="{{ form.linkedin.id_for_label }}" class="form-control" value="{{ form.linkedin.value|default:'' }}">
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top border-subtle">
+                                <a href="{% url 'profile_edit' %}" class="settings-btn-outline text-decoration-none">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="settings-btn-primary">
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('sidebarCloseBtn');
+    const sidebar = document.getElementById('dashboardSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('open');
+        if (overlay) overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+})();
+</script>
 {% endblock %}

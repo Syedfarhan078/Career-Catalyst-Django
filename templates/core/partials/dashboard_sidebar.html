@@ -65,7 +65,7 @@
     <!-- Sidebar Bottom: Settings, Theme & User Card -->
     <div class="dash-sidebar-footer">
         <div class="d-flex align-items-center justify-content-between px-2 py-1">
-            <a href="{% url 'profile_edit' %}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-2 hover-text-dark">
+            <a href="{% url 'profile_edit' %}" class="dash-settings-link {% if 'community' not in request.path %}{% if 'profile' in request.path or 'accounts/profile' in request.path or 'accounts/delete-account' in request.path %}active{% endif %}{% endif %}">
                 <i class="bi bi-gear"></i>
                 <span>Settings</span>
             </a>

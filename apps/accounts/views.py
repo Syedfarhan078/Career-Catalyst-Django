@@ -100,12 +100,21 @@ def profile_view(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Your profile has been updated successfully!")
-            return redirect('profile')
+            return redirect(f"{reverse_lazy('profile_edit')}?tab=account")
         else:
             messages.error(request, "There was an error updating your profile. Please check the fields below.")
     else:
-        form = UserProfileForm(instance=request.user)
-    return render(request, 'accounts/profile.html', {'form': form})
+        return redirect(f"{reverse_lazy('profile_edit')}?tab=account")
+        
+    profile = getattr(request.user, 'studentprofile', None)
+    user_initials = f"{request.user.first_name[:1]}{request.user.last_name[:1]}".upper() or request.user.username[:2].upper()
+    target_career = profile.career_goal if profile and profile.career_goal else "Engineering Student"
+    return render(request, 'accounts/profile.html', {
+        'form': form,
+        'profile': profile,
+        'user_initials': user_initials,
+        'target_career': target_career,
+    })
 
 @login_required
 def delete_account_view(request):
@@ -120,7 +129,15 @@ def delete_account_view(request):
         else:
             messages.error(request, "The entered username does not match. Account deletion has been cancelled.")
             return redirect('delete_account')
-    return render(request, 'accounts/delete_account.html')
+            
+    profile = getattr(request.user, 'studentprofile', None)
+    user_initials = f"{request.user.first_name[:1]}{request.user.last_name[:1]}".upper() or request.user.username[:2].upper()
+    target_career = profile.career_goal if profile and profile.career_goal else "Engineering Student"
+    return render(request, 'accounts/delete_account.html', {
+        'profile': profile,
+        'user_initials': user_initials,
+        'target_career': target_career,
+    })
 
 class CustomPasswordResetView(SuccessMessageMixin, auth_views.PasswordResetView):
     form_class = CustomPasswordResetForm

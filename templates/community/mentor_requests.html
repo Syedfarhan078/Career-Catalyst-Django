@@ -43,6 +43,12 @@
 
         <!-- Main Content Area -->
         <main class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'community:mentor_dashboard' %}" class="dash-back-link mb-3">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Mentor Dashboard</span>
+            </a>
+
             <!-- Header & Breadcrumbs -->
             <div class="community-header mb-4">
                 <div class="community-breadcrumbs">
@@ -66,9 +72,6 @@
                     <span class="small fw-semibold text-body">
                         Total Requests ({{ requests.count }})
                     </span>
-                    <a href="{% url 'community:mentor_dashboard' %}" class="text-decoration-none small text-muted">
-                        <i class="bi bi-arrow-left me-1"></i> Mentor Dashboard
-                    </a>
                 </div>
 
                 <div class="p-3 p-md-4 d-flex flex-column gap-3">
@@ -134,19 +137,19 @@
                         <!-- Actions -->
                         <div class="d-flex align-items-center gap-2 flex-wrap pt-2">
                             {% if req.status == 'Pending' %}
-                            <button type="button" class="btn btn-success btn-sm px-3 fw-medium" data-bs-toggle="modal" data-bs-target="#actionModal"
+                            <button type="button" class="dash-btn dash-btn-success dash-btn-sm" data-bs-toggle="modal" data-bs-target="#actionModal"
                                     data-req-id="{{ req.id }}" data-action="accept">
                                 <i class="bi bi-check-lg me-1"></i> Accept Request
                             </button>
-                            <button type="button" class="btn btn-outline-danger btn-sm px-3" data-bs-toggle="modal" data-bs-target="#actionModal"
+                            <button type="button" class="dash-btn dash-btn-danger dash-btn-sm" data-bs-toggle="modal" data-bs-target="#actionModal"
                                     data-req-id="{{ req.id }}" data-action="reject">
                                 <i class="bi bi-x-lg me-1"></i> Decline
                             </button>
                             {% elif req.status == 'Accepted' %}
-                            <a href="{% url 'community:mentor_chat' req.student.id %}" class="btn btn-primary btn-sm px-3 fw-medium">
+                            <a href="{% url 'community:mentor_chat' req.student.id %}" class="dash-btn dash-btn-primary dash-btn-sm">
                                 <i class="bi bi-chat-dots me-1"></i> Direct Message Candidate
                             </a>
-                            <button type="button" class="btn btn-outline-success btn-sm px-3" data-bs-toggle="modal" data-bs-target="#actionModal"
+                            <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" data-bs-toggle="modal" data-bs-target="#actionModal"
                                     data-req-id="{{ req.id }}" data-action="complete">
                                 <i class="bi bi-check2-all me-1"></i> Mark as Completed
                             </button>
@@ -191,8 +194,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-top">
-                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-medium" id="submitBtn">Confirm Action</button>
+                    <button type="button" class="dash-btn dash-btn-outline dash-btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm px-4 fw-medium" id="submitBtn">Confirm Action</button>
                 </div>
             </form>
         </div>
