@@ -10,6 +10,7 @@ __pycache__/
 # Django
 db.sqlite3
 media/
+staticfiles/
 
 # Environment Variables
 .env

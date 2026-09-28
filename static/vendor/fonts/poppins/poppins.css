@@ -1,0 +1,37 @@
+/*!
+ * Poppins Font
+ * Copyright 2020 The Poppins Project Authors (https://github.com/itfoundry/Poppins)
+ * Licensed under the SIL Open Font License, Version 1.1 (https://scripts.sil.org/OFL)
+ */
+
+@font-face {
+    font-family: 'Poppins';
+    src: url('./Poppins-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Poppins';
+    src: url('./Poppins-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Poppins';
+    src: url('./Poppins-SemiBold.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Poppins';
+    src: url('./Poppins-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
