@@ -39,7 +39,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
     "https://*.onrender.com",
     "https://careercatalyst.dpdns.org",
-    "https://www.careercatalyst.dpdns.com",
+    "https://www.careercatalyst.dpdns.org",
 ]
 
 render_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME")
