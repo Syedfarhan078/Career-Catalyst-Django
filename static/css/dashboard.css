@@ -117,13 +117,14 @@ html[data-theme='dark'],
     position: sticky;
     top: 0;
     height: 100vh;
-    overflow-y: auto;
+    overflow: hidden;
     z-index: 1020;
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Brand Header */
 .dash-sidebar-header {
+    flex-shrink: 0;
     padding: 1.15rem 1.15rem 0.95rem 1.15rem;
     display: flex;
     align-items: center;
@@ -170,7 +171,10 @@ html[data-theme='dark'] .dash-brand img,
 
 /* Sidebar Nav Groups */
 .dash-sidebar-nav {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 0.85rem 0.75rem;
     display: flex;
     flex-direction: column;
@@ -239,6 +243,8 @@ html[data-theme='dark'] .dash-brand img,
 
 /* Sidebar Bottom Footer / Identity */
 .dash-sidebar-footer {
+    flex-shrink: 0;
+    background-color: var(--dash-surface);
     padding: 0.75rem 0.75rem;
     border-top: 1px solid var(--dash-border);
     display: flex;
@@ -328,6 +334,78 @@ html[data-theme='dark'] .dash-brand img,
     color: var(--dash-primary);
     background-color: var(--dash-primary-subtle);
     font-weight: 600;
+}
+
+/* Sidebar Sign Out Controls */
+.dash-logout-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--dash-radius-sm);
+    color: var(--dash-text-muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: color 0.15s ease, background-color 0.15s ease;
+    flex-shrink: 0;
+}
+
+.dash-logout-icon-btn:hover {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+html[data-theme='dark'] .dash-logout-icon-btn:hover,
+[data-bs-theme='dark'] .dash-logout-icon-btn:hover {
+    color: #f87171;
+    background-color: rgba(239, 68, 68, 0.18);
+}
+
+/* Dedicated Mobile Sign Out Link (hidden on desktop, visible on mobile) */
+.dash-logout-mobile-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    width: 100%;
+    min-height: 42px;
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--dash-radius-sm);
+    font-size: 0.845rem;
+    font-weight: 600;
+    text-decoration: none;
+    background-color: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.dash-logout-mobile-btn i {
+    font-size: 1rem;
+}
+
+.dash-logout-mobile-btn:hover,
+.dash-logout-mobile-btn:active {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #b91c1c;
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+html[data-theme='dark'] .dash-logout-mobile-btn,
+[data-bs-theme='dark'] .dash-logout-mobile-btn {
+    background-color: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.28);
+}
+
+html[data-theme='dark'] .dash-logout-mobile-btn:hover,
+[data-bs-theme='dark'] .dash-logout-mobile-btn:hover,
+html[data-theme='dark'] .dash-logout-mobile-btn:active,
+[data-bs-theme='dark'] .dash-logout-mobile-btn:active {
+    background-color: rgba(239, 68, 68, 0.22);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.45);
 }
 
 /* Mobile Header Bar */
@@ -1274,6 +1352,11 @@ html[data-theme='dark'] .dash-shell .btn-outline-danger:hover {
         top: 0;
         bottom: 0;
         height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
         transform: translateX(-100%);
         z-index: 1050;
         box-shadow: none;
@@ -1290,6 +1373,14 @@ html[data-theme='dark'] .dash-shell .btn-outline-danger:hover {
     
     .dash-sidebar-overlay.active {
         display: block;
+    }
+
+    .dash-sidebar-footer {
+        padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 0.85rem));
+    }
+
+    .dash-logout-mobile-btn {
+        display: flex;
     }
     
     .dash-mobile-header {

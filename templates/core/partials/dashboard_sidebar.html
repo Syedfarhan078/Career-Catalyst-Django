@@ -87,9 +87,15 @@
                 <div class="dash-user-name">{{ user.first_name|default:user.username }} {{ user.last_name }}</div>
                 <div class="dash-user-sub">{{ target_career|default:"Engineering Student" }}</div>
             </div>
-            <a href="{% url 'logout' %}" class="text-muted p-1" title="Sign out" aria-label="Sign out">
-                <i class="bi bi-box-arrow-right" style="font-size: 0.95rem;"></i>
+            <a href="{% url 'logout' %}" class="dash-logout-icon-btn" title="Sign out" aria-label="Sign out">
+                <i class="bi bi-box-arrow-right"></i>
             </a>
         </div>
+
+        <!-- Dedicated Mobile Sign Out Action -->
+        <a href="{% url 'logout' %}" class="dash-logout-mobile-btn" aria-label="Sign out">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+        </a>
     </div>
 </aside>
