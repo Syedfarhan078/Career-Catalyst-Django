@@ -564,6 +564,27 @@ html[data-theme="dark"] .auth-card .btn-primary-custom:hover {
     color: #FFFFFF !important;
 }
 
+/* --- Button Loading & Spinner State --- */
+.btn-auth-primary:disabled,
+.btn-auth-primary.is-loading {
+    opacity: 0.85 !important;
+    cursor: wait !important;
+    pointer-events: none !important;
+}
+
+.btn-auth-loading {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-auth-loading .spinner-border-sm {
+    width: 0.95rem;
+    height: 0.95rem;
+    border-width: 0.14em;
+}
+
 /* --- Card Footer --- */
 .auth-footer {
     margin-top: 1.5rem;

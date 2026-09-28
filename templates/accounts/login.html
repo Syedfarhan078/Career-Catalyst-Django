@@ -67,8 +67,12 @@
 
             <!-- Primary Action -->
             <div class="mt-4">
-                <button type="submit" class="btn-auth-primary">
-                    Sign In
+                <button type="submit" class="btn-auth-primary" id="loginSubmitBtn">
+                    <span class="btn-auth-text">Sign In</span>
+                    <span class="btn-auth-loading" style="display: none;">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span>Signing in...</span>
+                    </span>
                 </button>
             </div>
         </form>
@@ -79,4 +83,44 @@
         Don't have an account? <a href="{% url 'register' %}">Create an account</a>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.querySelector('form');
+    const submitBtn = document.getElementById('loginSubmitBtn');
+    if (loginForm && submitBtn) {
+        loginForm.addEventListener('submit', function(e) {
+            if (!loginForm.checkValidity()) {
+                return;
+            }
+            const textSpan = submitBtn.querySelector('.btn-auth-text');
+            const loadingSpan = submitBtn.querySelector('.btn-auth-loading');
+            if (textSpan && loadingSpan) {
+                textSpan.style.display = 'none';
+                loadingSpan.style.display = 'inline-flex';
+            }
+            submitBtn.classList.add('is-loading');
+            setTimeout(function() {
+                submitBtn.setAttribute('disabled', 'disabled');
+            }, 10);
+        });
+
+        // Reset state if returned via browser back button cache
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                submitBtn.removeAttribute('disabled');
+                submitBtn.classList.remove('is-loading');
+                const textSpan = submitBtn.querySelector('.btn-auth-text');
+                const loadingSpan = submitBtn.querySelector('.btn-auth-loading');
+                if (textSpan && loadingSpan) {
+                    textSpan.style.display = '';
+                    loadingSpan.style.display = 'none';
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
