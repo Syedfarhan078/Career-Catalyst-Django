@@ -28,15 +28,14 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "True"
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["127.0.0.1",
+                 "localhost", 
+                 '172.20.10.2',
+                 "careercatalyst.dpdns.org",
+                 "www.careercatalyst.dpdns.org"]
 
 if os.getenv("RENDER_EXTERNAL_HOSTNAME"):
     ALLOWED_HOSTS.append(os.getenv("RENDER_EXTERNAL_HOSTNAME"))
-
-ALLOWED_HOSTS.extend([
-    "https://careercatalyst.dpdns.org",
-    "https://www.careercatalyst.dpdns.org",
-])
 
 # CSRF Trusted Origins for HTTPS deployments & Render
 CSRF_TRUSTED_ORIGINS = [
