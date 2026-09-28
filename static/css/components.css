@@ -599,6 +599,20 @@ html[data-theme="dark"] .navbar-custom .navbar-brand .brand-accent {
     color: #3B82F6;
 }
 
+.navbar-custom .navbar-brand img,
+.footer-brand img,
+.brand-logo {
+    border-radius: 6px;
+    object-fit: contain;
+    transition: filter 150ms ease;
+}
+
+html[data-theme="dark"] .navbar-custom .navbar-brand img,
+html[data-theme="dark"] .footer-brand img,
+html[data-theme="dark"] .brand-logo {
+    content: url('../images/logo-dark.png');
+}
+
 .navbar-custom .nav-link {
     color: #4B5563;
     font-weight: var(--font-medium, 500);

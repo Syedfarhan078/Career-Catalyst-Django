@@ -89,6 +89,10 @@ html[data-theme="dark"] .auth-header-brand .brand-accent {
     color: #3B82F6;
 }
 
+html[data-theme="dark"] .auth-header-brand img {
+    content: url('../images/logo-dark.png');
+}
+
 .theme-toggle-btn {
     background: transparent;
     border: 1px solid #E5E7EB;
@@ -213,6 +217,10 @@ html[data-theme="dark"] .auth-brand span {
 
 html[data-theme="dark"] .auth-brand .brand-accent {
     color: #3B82F6;
+}
+
+html[data-theme="dark"] .auth-brand img {
+    content: url('../images/logo-dark.png');
 }
 
 /* --- Restrained Segmented Navigation Switcher --- */
