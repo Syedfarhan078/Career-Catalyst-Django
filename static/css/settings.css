@@ -27,11 +27,11 @@ html[data-theme="dark"],
     --settings-card-bg: var(--dash-surface, #111115);
     --settings-border: var(--dash-border, #27272A);
     --settings-border-subtle: var(--dash-surface-muted, #18181C);
-    --settings-text: var(--dash-text, #FAFAFA);
-    --settings-text-muted: var(--dash-text-muted, #A1A1AA);
-    --settings-primary: var(--dash-primary, #6366F1);
-    --settings-primary-hover: var(--dash-primary-hover, #4F46E5);
-    --settings-primary-subtle: var(--dash-primary-subtle, rgba(99, 102, 241, 0.12));
+    --settings-text: var(--dash-text, #F8FAFC);
+    --settings-text-muted: var(--dash-text-muted, #D1D5DB);
+    --settings-primary: var(--dash-primary, #3B82F6);
+    --settings-primary-hover: var(--dash-primary-hover, #2563EB);
+    --settings-primary-subtle: var(--dash-primary-subtle, rgba(59, 130, 246, 0.12));
     --settings-danger: #EF4444;
     --settings-danger-subtle: rgba(239, 68, 68, 0.12);
     --settings-shadow: var(--dash-shadow-card, 0 2px 4px 0 rgba(0, 0, 0, 0.4));
@@ -216,6 +216,38 @@ html[data-theme="dark"],
     opacity: 0.7;
 }
 
+.settings-card input[type="file"].form-control {
+    padding: 0.4rem 0.85rem;
+    cursor: pointer;
+}
+
+.settings-card input[type="file"].form-control::file-selector-button {
+    background-color: var(--settings-border, #E5E7EB);
+    color: var(--settings-text, #111827);
+    border: none;
+    border-inline-end: 1px solid var(--settings-border);
+    padding: 0.35rem 0.75rem;
+    margin: -0.4rem 0.85rem -0.4rem -0.85rem;
+    border-radius: 6px 0 0 6px;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+html[data-theme="dark"] .settings-card input[type="file"].form-control::file-selector-button,
+[data-bs-theme="dark"] .settings-card input[type="file"].form-control::file-selector-button {
+    background-color: var(--dash-surface-muted, #18181C) !important;
+    color: var(--dash-text, #F8FAFC) !important;
+    border-inline-end: 1px solid var(--dash-border-strong, #3F3F46) !important;
+}
+
+html[data-theme="dark"] .settings-card input[type="file"].form-control:hover::file-selector-button,
+[data-bs-theme="dark"] .settings-card input[type="file"].form-control:hover::file-selector-button {
+    background-color: var(--dash-surface-hover, #222228) !important;
+    color: #FFFFFF !important;
+}
+
 .settings-card .input-group-text {
     background-color: var(--settings-bg);
     border: 1px solid var(--settings-border);
@@ -270,7 +302,7 @@ html[data-theme="dark"],
 
 /* Completion Bar */
 .profile-completion-box {
-    background: var(--settings-bg);
+    background: var(--settings-card-bg);
     border: 1px solid var(--settings-border);
     border-radius: 10px;
     padding: 1rem 1.25rem;
@@ -283,7 +315,7 @@ html[data-theme="dark"],
 
 .profile-completion-bar {
     height: 8px;
-    background: var(--settings-border);
+    background: var(--settings-border-subtle);
     border-radius: 4px;
     overflow: hidden;
     flex-grow: 1;

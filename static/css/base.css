@@ -205,18 +205,43 @@ img {
    1.1. DARK MODE DEFINITION
    ------------------------------------------------------------ */
 html[data-theme="dark"] {
-    --bg:           #0F172A;
-    --card-bg:      #1E293B;
-    --text:         #E2E8F0;
-    --text-muted:   #94A3B8;
-    --secondary:    #F8FAFC;
-    --border:       #334155;
+    --bg:           #09090B;
+    --card-bg:      #111115;
+    --card-surface-muted: #151519;
+    --card-surface-elevated: #18181C;
+    --text:         #F8FAFC;
+    --text-muted:   #9CA3AF;
+    --secondary:    #D1D5DB;
+    --border:       #27272A;
+    --border-strong:#3F3F46;
+    --input-bg:     #111827;
     --primary:      #3B82F6;
-    --accent:       #2DD4BF;
-    --navbar-bg:    rgba(15, 23, 42, 0.95);
-    --welcome-bg:   linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    --primary-hover:#2563EB;
+    --accent:       #3B82F6;
+    --navbar-bg:    rgba(9, 9, 11, 0.95);
+    --welcome-bg:   linear-gradient(135deg, #111115 0%, #09090B 100%);
     --hover-bg:     rgba(255, 255, 255, 0.05);
     --completed-bg: rgba(34, 197, 94, 0.12);
+
+    /* Bootstrap 5 system variable mapping in dark mode */
+    --bs-body-color: #F8FAFC;
+    --bs-body-color-rgb: 248, 250, 252;
+    --bs-body-bg: #09090B;
+    --bs-body-bg-rgb: 9, 9, 11;
+    --bs-secondary-color: #D1D5DB;
+    --bs-secondary-color-rgb: 209, 213, 219;
+    --bs-tertiary-color: #9CA3AF;
+    --bs-tertiary-color-rgb: 156, 163, 175;
+    --bs-emphasis-color: #FFFFFF;
+    --bs-emphasis-color-rgb: 255, 255, 255;
+    --bs-border-color: #27272A;
+    --bs-border-color-translucent: rgba(255, 255, 255, 0.15);
+    --bs-secondary-bg: #151519;
+    --bs-secondary-bg-rgb: 21, 21, 25;
+    --bs-tertiary-bg: #18181C;
+    --bs-tertiary-bg-rgb: 24, 24, 28;
+    --bs-link-color: #3B82F6;
+    --bs-link-hover-color: #60A5FA;
 }
 
 html[data-theme="dark"] body {
@@ -235,7 +260,23 @@ html[data-theme="dark"] .bg-white {
 }
 
 html[data-theme="dark"] .bg-light {
-    background-color: rgba(255, 255, 255, 0.03) !important;
+    background-color: #151519 !important;
+}
+
+html[data-theme="dark"] .text-body {
+    color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .text-body-secondary {
+    color: #D1D5DB !important;
+}
+
+html[data-theme="dark"] .text-body-tertiary {
+    color: #9CA3AF !important;
+}
+
+html[data-theme="dark"] .text-body-emphasis {
+    color: #FFFFFF !important;
 }
 
 html[data-theme="dark"] .text-secondary {
@@ -248,6 +289,108 @@ html[data-theme="dark"] .text-muted {
 
 html[data-theme="dark"] .border {
     border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .border-subtle {
+    border-color: var(--border) !important;
+}
+
+/* Accessible High-Contrast Semantic Text in Dark Mode */
+html[data-theme="dark"] .text-primary {
+    color: #60A5FA !important;
+}
+
+html[data-theme="dark"] .text-success {
+    color: #4ADE80 !important;
+}
+
+html[data-theme="dark"] .text-warning {
+    color: #FBBF24 !important;
+}
+
+html[data-theme="dark"] .text-danger {
+    color: #F87171 !important;
+}
+
+html[data-theme="dark"] .text-info {
+    color: #38BDF8 !important;
+}
+
+/* Subtle Semantic Badges & Backgrounds in Dark Mode */
+html[data-theme="dark"] .bg-primary-subtle {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+html[data-theme="dark"] .bg-success-subtle {
+    background-color: rgba(34, 197, 94, 0.15) !important;
+}
+
+html[data-theme="dark"] .bg-warning-subtle {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+}
+
+html[data-theme="dark"] .bg-danger-subtle {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+html[data-theme="dark"] .bg-secondary-subtle {
+    background-color: rgba(156, 163, 175, 0.15) !important;
+}
+
+html[data-theme="dark"] .border-primary-subtle {
+    border-color: rgba(59, 130, 246, 0.28) !important;
+}
+
+html[data-theme="dark"] .border-success-subtle {
+    border-color: rgba(34, 197, 94, 0.28) !important;
+}
+
+html[data-theme="dark"] .border-warning-subtle {
+    border-color: rgba(245, 158, 11, 0.28) !important;
+}
+
+html[data-theme="dark"] .border-danger-subtle {
+    border-color: rgba(239, 68, 68, 0.28) !important;
+}
+
+/* Dark Mode Theme-Aware Alerts */
+html[data-theme="dark"] .alert-light {
+    background-color: #151519 !important;
+    border-color: #27272A !important;
+    color: #D1D5DB !important;
+}
+
+html[data-theme="dark"] .alert-light .text-secondary {
+    color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .alert-light ul,
+html[data-theme="dark"] .alert-light li {
+    color: #D1D5DB !important;
+}
+
+html[data-theme="dark"] .alert-info {
+    background-color: rgba(59, 130, 246, 0.12) !important;
+    border-color: rgba(59, 130, 246, 0.25) !important;
+    color: #93C5FD !important;
+}
+
+html[data-theme="dark"] .alert-success {
+    background-color: rgba(34, 197, 94, 0.12) !important;
+    border-color: rgba(34, 197, 94, 0.25) !important;
+    color: #86EFAC !important;
+}
+
+html[data-theme="dark"] .alert-warning {
+    background-color: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.25) !important;
+    color: #FDE68A !important;
+}
+
+html[data-theme="dark"] .alert-danger {
+    background-color: rgba(239, 68, 68, 0.12) !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+    color: #FCA5A5 !important;
 }
 
 /* Soft-Glow Badges in Dark Mode */
@@ -289,25 +432,25 @@ html[data-theme="dark"] .badge.bg-light {
 /* Buttons in Dark Mode */
 html[data-theme="dark"] .btn-back {
     background-color: rgba(255, 255, 255, 0.05);
-    border-color: #334155;
-    color: #e2e8f0;
+    border-color: #27272A;
+    color: #F8FAFC;
 }
 
 html[data-theme="dark"] .btn-back:hover {
     background-color: rgba(255, 255, 255, 0.1);
     color: #ffffff;
-    border-color: #475569;
+    border-color: #3F3F46;
 }
 
 html[data-theme="dark"] .keyword-chip {
-    background-color: #1e293b;
-    border-color: #334155;
-    color: #e2e8f0;
+    background-color: #151519;
+    border-color: #27272A;
+    color: #D1D5DB;
 }
 
 html[data-theme="dark"] .keyword-chip:hover {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
+    background-color: #3B82F6;
+    border-color: #3B82F6;
     color: #ffffff !important;
 }
 
@@ -383,8 +526,9 @@ html[data-theme="dark"] .table-light td,
 html[data-theme="dark"] .thead-light,
 html[data-theme="dark"] thead.table-light,
 html[data-theme="dark"] thead.table-light th {
-    background-color: #243042 !important;
-    color: var(--secondary) !important;
+    background-color: #151519 !important;
+    color: #F8FAFC !important;
+    border-color: #27272A !important;
 }
 
 html[data-theme="dark"] .table-hover tbody tr:hover {
@@ -393,26 +537,63 @@ html[data-theme="dark"] .table-hover tbody tr:hover {
 
 html[data-theme="dark"] .form-control,
 html[data-theme="dark"] .form-select {
-    background-color: #0F172A !important;
-    border-color: var(--border) !important;
-    color: var(--text) !important;
+    background-color: #111827 !important;
+    border-color: #3F3F46 !important;
+    color: #F8FAFC !important;
 }
 
 html[data-theme="dark"] .form-control::placeholder {
-    color: #64748b !important;
+    color: #9CA3AF !important;
+    opacity: 1 !important;
 }
 
 html[data-theme="dark"] .form-control:focus,
 html[data-theme="dark"] .form-select:focus {
-    background-color: #0F172A !important;
-    color: var(--text) !important;
-    border-color: var(--primary) !important;
+    background-color: #111827 !important;
+    color: #F8FAFC !important;
+    border-color: #3B82F6 !important;
     box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25) !important;
+}
+
+html[data-theme="dark"] .form-control:disabled,
+html[data-theme="dark"] .form-select:disabled {
+    background-color: #18181C !important;
+    border-color: #27272A !important;
+    color: #71717A !important;
 }
 
 html[data-theme="dark"] .form-label,
 html[data-theme="dark"] label {
-    color: var(--secondary) !important;
+    color: #D1D5DB !important;
+}
+
+/* Password Visibility Toggle Button in Dark Mode */
+html[data-theme="dark"] .password-toggle-btn {
+    color: #9CA3AF !important;
+}
+
+html[data-theme="dark"] .password-toggle-btn:hover {
+    color: #F8FAFC !important;
+}
+
+/* File Input & File Selector Button in Dark Mode */
+html[data-theme="dark"] .form-control::file-selector-button,
+html[data-theme="dark"] input[type="file"]::file-selector-button,
+html[data-theme="dark"] input[type="file"]::-webkit-file-upload-button {
+    background-color: #18181C !important;
+    color: #F8FAFC !important;
+    border-color: #3F3F46 !important;
+    border-inline-end-width: 1px !important;
+    border-inline-end-style: solid !important;
+    border-inline-end-color: #3F3F46 !important;
+}
+
+html[data-theme="dark"] .form-control:hover:not(:disabled):not([readonly])::file-selector-button,
+html[data-theme="dark"] input[type="file"]:hover:not(:disabled):not([readonly])::file-selector-button,
+html[data-theme="dark"] input[type="file"]:hover:not(:disabled):not([readonly])::-webkit-file-upload-button {
+    background-color: #222228 !important;
+    color: #FFFFFF !important;
+    border-color: #3F3F46 !important;
 }
 
 /* Global Dark Mode Contrast Fixes */

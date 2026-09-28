@@ -48,14 +48,14 @@ html[data-theme='dark'],
     --dash-surface-hover:  #222228;
     --dash-border:         #27272A;
     --dash-border-strong:  #3F3F46;
-    --dash-text:           #FAFAFA;
-    --dash-text-muted:     #A1A1AA;
-    --dash-text-subtle:    #71717A;
+    --dash-text:           #F8FAFC;
+    --dash-text-muted:     #D1D5DB;
+    --dash-text-subtle:    #9CA3AF;
     
-    --dash-primary:        #6366F1;
-    --dash-primary-hover:  #4F46E5;
-    --dash-primary-subtle: rgba(99, 102, 241, 0.12);
-    --dash-primary-border: rgba(99, 102, 241, 0.28);
+    --dash-primary:        #3B82F6;
+    --dash-primary-hover:  #2563EB;
+    --dash-primary-subtle: rgba(59, 130, 246, 0.12);
+    --dash-primary-border: rgba(59, 130, 246, 0.25);
     
     --dash-success:        #22C55E;
     --dash-success-subtle: rgba(34, 197, 94, 0.12);
@@ -146,6 +146,12 @@ html[data-theme='dark'],
     width: 28px;
     height: 28px;
     border-radius: 6px;
+    object-fit: contain;
+}
+
+html[data-theme='dark'] .dash-brand img,
+[data-bs-theme='dark'] .dash-brand img {
+    content: url('../images/logo-dark.png');
 }
 
 .dash-brand-accent {

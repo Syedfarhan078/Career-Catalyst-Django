@@ -609,7 +609,8 @@ html[data-theme="dark"] .navbar-custom .navbar-brand .brand-accent {
 
 html[data-theme="dark"] .navbar-custom .navbar-brand img,
 html[data-theme="dark"] .footer-brand img,
-html[data-theme="dark"] .brand-logo {
+html[data-theme="dark"] .brand-logo,
+html[data-theme="dark"] .dash-brand img {
     content: url('../images/logo-dark.png');
 }
 
