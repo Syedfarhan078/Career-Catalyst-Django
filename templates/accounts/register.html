@@ -1,22 +1,27 @@
-{% extends 'base.html' %}
+{% extends 'accounts/auth_base.html' %}
 {% load static %}
 
 {% block title %}Create Account — CareerCatalyst{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/auth.css' %}?v=1.0">
-{% endblock %}
-
 {% block content %}
-<div class="auth-page-wrapper">
-    <div class="auth-card auth-card-md">
-        <!-- Brand Header -->
+<div class="auth-card-unified">
+    <!-- Brand Header inside Card -->
+    <div class="auth-brand-wrap">
         <a href="{% url 'home' %}" class="auth-brand">
-            <img src="{% static 'images/favicon.png' %}" alt="Career Catalyst Logo">
+            <img src="{% static 'images/favicon.png' %}" alt="Career Catalyst Logo" width="28" height="28">
             <span>Career<span class="brand-accent">Catalyst</span></span>
         </a>
+    </div>
 
-        <h1 class="auth-title">Create your CareerCatalyst account</h1>
+    <!-- Restrained Segmented Navigation Switch -->
+    <nav class="auth-tabs-nav" aria-label="Authentication navigation">
+        <a href="{% url 'login' %}" class="auth-tab-btn">Sign In</a>
+        <a href="{% url 'register' %}" class="auth-tab-btn active" aria-current="page">Create Account</a>
+    </nav>
+
+    <!-- Main Auth Content -->
+    <div class="auth-content">
+        <h1 class="auth-title">Create your account</h1>
         <p class="auth-subtitle">Start building your structured career pathway.</p>
 
         <!-- Server Validation Non-Field Errors -->
@@ -34,10 +39,28 @@
         <form method="POST" novalidate>
             {% csrf_token %}
 
+            <!-- Name Fields (First Name & Last Name) -->
+            <div class="row g-2 mb-3">
+                <div class="col-sm-6">
+                    <label for="id_first_name" class="auth-label">First Name <span class="text-danger">*</span></label>
+                    <input type="text" name="first_name" autocomplete="given-name" maxlength="150" class="form-control auth-input" required id="id_first_name" placeholder="First name" value="{{ form.first_name.value|default:'' }}">
+                    {% if form.first_name.errors %}
+                        <div class="auth-field-error">{{ form.first_name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-sm-6">
+                    <label for="id_last_name" class="auth-label">Last Name <span class="text-danger">*</span></label>
+                    <input type="text" name="last_name" autocomplete="family-name" maxlength="150" class="form-control auth-input" required id="id_last_name" placeholder="Last name" value="{{ form.last_name.value|default:'' }}">
+                    {% if form.last_name.errors %}
+                        <div class="auth-field-error">{{ form.last_name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Username Field -->
             <div class="auth-form-group">
                 <label for="id_username" class="auth-label">Username <span class="text-danger">*</span></label>
-                <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" class="form-control" required id="id_username" placeholder="Choose a username" value="{{ form.username.value|default:'' }}">
+                <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" class="form-control auth-input" required id="id_username" placeholder="Choose a username" value="{{ form.username.value|default:'' }}">
                 {% if form.username.errors %}
                     <div class="auth-field-error">{{ form.username.errors.0 }}</div>
                 {% endif %}
@@ -49,35 +72,17 @@
             <!-- Email Field -->
             <div class="auth-form-group">
                 <label for="id_email" class="auth-label">Email Address <span class="text-danger">*</span></label>
-                <input type="email" name="email" autocomplete="email" maxlength="320" class="form-control" required id="id_email" placeholder="name@example.com" value="{{ form.email.value|default:'' }}">
+                <input type="email" name="email" autocomplete="email" maxlength="320" class="form-control auth-input" required id="id_email" placeholder="name@example.com" value="{{ form.email.value|default:'' }}">
                 {% if form.email.errors %}
                     <div class="auth-field-error">{{ form.email.errors.0 }}</div>
                 {% endif %}
             </div>
 
-            <!-- Name Fields (First Name & Last Name) -->
-            <div class="row g-2 mb-3">
-                <div class="col-sm-6">
-                    <label for="id_first_name" class="auth-label">First Name <span class="text-danger">*</span></label>
-                    <input type="text" name="first_name" autocomplete="given-name" maxlength="150" class="form-control" required id="id_first_name" placeholder="First name" value="{{ form.first_name.value|default:'' }}">
-                    {% if form.first_name.errors %}
-                        <div class="auth-field-error">{{ form.first_name.errors.0 }}</div>
-                    {% endif %}
-                </div>
-                <div class="col-sm-6">
-                    <label for="id_last_name" class="auth-label">Last Name <span class="text-danger">*</span></label>
-                    <input type="text" name="last_name" autocomplete="family-name" maxlength="150" class="form-control" required id="id_last_name" placeholder="Last name" value="{{ form.last_name.value|default:'' }}">
-                    {% if form.last_name.errors %}
-                        <div class="auth-field-error">{{ form.last_name.errors.0 }}</div>
-                    {% endif %}
-                </div>
-            </div>
-
             <!-- Password Field -->
             <div class="auth-form-group">
                 <label for="id_password1" class="auth-label">Password <span class="text-danger">*</span></label>
-                <div class="input-group password-toggle-wrapper">
-                    <input type="password" name="password1" autocomplete="new-password" class="form-control" required id="id_password1" placeholder="Create a strong password">
+                <div class="password-toggle-wrapper">
+                    <input type="password" name="password1" autocomplete="new-password" class="form-control auth-input" required id="id_password1" placeholder="Create a strong password">
                     <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('id_password1', this)" aria-label="Toggle password visibility">
                         <i class="bi bi-eye"></i>
                     </button>
@@ -90,11 +95,11 @@
                 {% endif %}
             </div>
 
-            <!-- Password Confirmation Field -->
+            <!-- Confirm Password Field -->
             <div class="auth-form-group">
                 <label for="id_password2" class="auth-label">Confirm Password <span class="text-danger">*</span></label>
-                <div class="input-group password-toggle-wrapper">
-                    <input type="password" name="password2" autocomplete="new-password" class="form-control" required id="id_password2" placeholder="Re-enter your password">
+                <div class="password-toggle-wrapper">
+                    <input type="password" name="password2" autocomplete="new-password" class="form-control auth-input" required id="id_password2" placeholder="Re-enter your password">
                     <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('id_password2', this)" aria-label="Toggle password visibility">
                         <i class="bi bi-eye"></i>
                     </button>
@@ -114,11 +119,11 @@
                 </button>
             </div>
         </form>
+    </div>
 
-        <!-- Footer Navigation Prompt -->
-        <div class="auth-footer-prompt">
-            Already have an account? <a href="{% url 'login' %}">Sign in</a>
-        </div>
+    <!-- Card Footer -->
+    <div class="auth-footer">
+        Already have an account? <a href="{% url 'login' %}">Sign in</a>
     </div>
 </div>
 {% endblock %}

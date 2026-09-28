@@ -1,5 +1,5 @@
 /* ============================================================
-   AUTH.CSS — CareerCatalyst Authentication Design System
+   AUTH.CSS — CareerCatalyst Dedicated Authentication Product Area
    ============================================================
    Applies to Login, Register, OTP Verification, and Password Reset.
    Matches the mature, industry-level CareerCatalyst design language:
@@ -7,32 +7,153 @@
    Dark:  #09090B / #111115 / #27272A / #F8FAFC / #3B82F6
    ============================================================ */
 
-/* --- Wrapper & Layout --- */
-.auth-page-wrapper {
-    min-height: calc(100vh - 68px - 220px);
+/* --- Document Body on Auth Pages --- */
+body.auth-page {
+    background-color: #F7F8FA !important;
+    color: #111827;
+    min-height: 100vh;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem 1rem;
-    width: 100%;
+    flex-direction: column;
 }
 
-@media (max-width: 767.98px) {
-    .auth-page-wrapper {
-        padding: 2rem 0.75rem;
-        min-height: auto;
+html[data-theme="dark"] body.auth-page {
+    background-color: #09090B !important;
+    color: #F8FAFC;
+}
+
+/* Ensure footer on auth pages belongs to the same clean dark theme */
+html[data-theme="dark"] body.auth-page .footer-section {
+    background-color: #09090B !important;
+    border-top-color: #27272A !important;
+}
+
+/* Hide floating chatbot on all authentication pages */
+body.auth-page #chatbot-launcher,
+body.auth-page #chatbot-window {
+    display: none !important;
+}
+
+/* --- Minimal Authentication Header --- */
+.auth-header {
+    width: 100%;
+    background-color: #FFFFFF;
+    border-bottom: 1px solid #E5E7EB;
+    padding: 0.75rem 2rem;
+    transition: background-color 150ms ease, border-color 150ms ease;
+    flex-shrink: 0;
+}
+
+html[data-theme="dark"] .auth-header {
+    background-color: #111115;
+    border-bottom: 1px solid #27272A;
+}
+
+.auth-header-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.auth-header-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.auth-header-brand img {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.auth-header-brand span {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.01em;
+}
+
+.auth-header-brand .brand-accent {
+    color: #2563EB;
+}
+
+html[data-theme="dark"] .auth-header-brand span {
+    color: #F8FAFC;
+}
+
+html[data-theme="dark"] .auth-header-brand .brand-accent {
+    color: #3B82F6;
+}
+
+.theme-toggle-btn {
+    background: transparent;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #6B7280;
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.theme-toggle-btn:hover {
+    color: #111827;
+    border-color: #D1D5DB;
+    background-color: #F9FAFB;
+}
+
+html[data-theme="dark"] .theme-toggle-btn {
+    border-color: #27272A;
+    color: #9CA3AF;
+}
+
+html[data-theme="dark"] .theme-toggle-btn:hover {
+    color: #F8FAFC;
+    border-color: #3F3F46;
+    background-color: #18181C;
+}
+
+@media (max-width: 575.98px) {
+    .auth-header {
+        padding: 0.65rem 1rem;
     }
 }
 
-/* --- Authentication Card --- */
+/* --- Authentication Shell & Positioning --- */
+.auth-shell {
+    width: 100%;
+    max-width: 100%;
+    padding: 48px 16px 64px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex: 1 0 auto;
+}
+
+@media (max-width: 575.98px) {
+    .auth-shell {
+        padding: 24px 12px 48px 12px;
+    }
+}
+
+/* --- Authentication Card Frame --- */
+.auth-card-unified,
 .auth-card {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
     background-color: #FFFFFF;
     border: 1px solid #E5E7EB;
     border-radius: 12px;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
-    padding: 2.5rem 2.25rem;
-    width: 100%;
-    margin: 0 auto;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    padding: 2.25rem 2rem;
     transition: background-color 150ms ease, border-color 150ms ease;
 }
 
@@ -40,30 +161,32 @@
     max-width: 440px;
 }
 
-.auth-card-md {
-    max-width: 520px;
+html[data-theme="dark"] .auth-card-unified,
+html[data-theme="dark"] .auth-card {
+    background-color: #111115;
+    border-color: #27272A;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
 }
 
 @media (max-width: 575.98px) {
+    .auth-card-unified,
     .auth-card {
         padding: 1.75rem 1.25rem;
         border-radius: 10px;
     }
 }
 
-html[data-theme="dark"] .auth-card {
-    background-color: #111115;
-    border-color: #27272A;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+/* --- Brand Header inside Card --- */
+.auth-brand-wrap {
+    text-align: center;
+    margin-bottom: 1.25rem;
 }
 
-/* --- Brand Header in Card --- */
 .auth-brand {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     text-decoration: none;
-    margin-bottom: 1.25rem;
 }
 
 .auth-brand img {
@@ -76,7 +199,7 @@ html[data-theme="dark"] .auth-card {
 .auth-brand span {
     font-size: 1.2rem;
     font-weight: 700;
-    color: #0F172A;
+    color: #111827;
     letter-spacing: -0.01em;
 }
 
@@ -85,16 +208,85 @@ html[data-theme="dark"] .auth-card {
 }
 
 html[data-theme="dark"] .auth-brand span {
-    color: #FAFAFA;
+    color: #F8FAFC;
 }
 
 html[data-theme="dark"] .auth-brand .brand-accent {
     color: #3B82F6;
 }
 
-/* --- Headings --- */
+/* --- Restrained Segmented Navigation Switcher --- */
+.auth-tabs-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    background-color: #F3F4F6;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    padding: 3px;
+    margin-bottom: 1.5rem;
+}
+
+html[data-theme="dark"] .auth-tabs-nav {
+    background-color: #18181B;
+    border-color: #27272A;
+}
+
+.auth-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6B7280;
+    text-decoration: none;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+    user-select: none;
+}
+
+.auth-tab-btn:hover {
+    color: #111827;
+    text-decoration: none;
+}
+
+html[data-theme="dark"] .auth-tab-btn {
+    color: #9CA3AF;
+}
+
+html[data-theme="dark"] .auth-tab-btn:hover {
+    color: #F8FAFC;
+}
+
+.auth-tab-btn.active {
+    background-color: #FFFFFF;
+    color: #111827;
+    font-weight: 600;
+    border-color: #E5E7EB;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+html[data-theme="dark"] .auth-tab-btn.active {
+    background-color: #27272A;
+    color: #F8FAFC;
+    border-color: #3F3F46;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.auth-tab-btn:focus-visible {
+    outline: 2px solid #2563EB;
+    outline-offset: 1px;
+}
+
+html[data-theme="dark"] .auth-tab-btn:focus-visible {
+    outline-color: #3B82F6;
+}
+
+/* --- Content Headings --- */
 .auth-title {
-    font-size: 1.45rem;
+    font-size: 1.35rem;
     font-weight: 700;
     color: #111827;
     letter-spacing: -0.02em;
@@ -107,17 +299,17 @@ html[data-theme="dark"] .auth-title {
 }
 
 .auth-subtitle {
-    font-size: 0.875rem;
+    font-size: 0.84rem;
     color: #6B7280;
-    line-height: 1.5;
-    margin-bottom: 1.5rem;
+    line-height: 1.45;
+    margin-bottom: 1.35rem;
 }
 
 html[data-theme="dark"] .auth-subtitle {
     color: #9CA3AF;
 }
 
-/* --- Back Link --- */
+/* --- Back Link (Password Reset / OTP) --- */
 .auth-back-link {
     display: inline-flex;
     align-items: center;
@@ -172,7 +364,6 @@ html[data-theme="dark"] .auth-badge-icon.danger {
 }
 
 /* --- Form Fields & Inputs --- */
-.auth-card .form-group,
 .auth-form-group {
     margin-bottom: 1.15rem;
 }
@@ -189,8 +380,10 @@ html[data-theme="dark"] .auth-label {
     color: #D1D5DB;
 }
 
+.auth-input,
+.auth-card-unified .form-control,
 .auth-card .form-control {
-    height: 42px;
+    height: 44px;
     font-size: 0.875rem;
     border-radius: 6px;
     background-color: #FFFFFF;
@@ -198,48 +391,46 @@ html[data-theme="dark"] .auth-label {
     color: #111827;
     padding: 0.5rem 0.85rem;
     transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+    width: 100%;
 }
 
+.auth-input::placeholder,
+.auth-card-unified .form-control::placeholder,
 .auth-card .form-control::placeholder {
     color: #9CA3AF;
 }
 
+.auth-input:focus,
+.auth-card-unified .form-control:focus,
 .auth-card .form-control:focus {
     border-color: #2563EB;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
     background-color: #FFFFFF;
     color: #111827;
+    outline: none;
 }
 
+html[data-theme="dark"] .auth-input,
+html[data-theme="dark"] .auth-card-unified .form-control,
 html[data-theme="dark"] .auth-card .form-control {
-    background-color: #18181C;
+    background-color: #111115;
     border-color: #27272A;
     color: #F8FAFC;
 }
 
+html[data-theme="dark"] .auth-input::placeholder,
+html[data-theme="dark"] .auth-card-unified .form-control::placeholder,
 html[data-theme="dark"] .auth-card .form-control::placeholder {
     color: #6B7280;
 }
 
+html[data-theme="dark"] .auth-input:focus,
+html[data-theme="dark"] .auth-card-unified .form-control:focus,
 html[data-theme="dark"] .auth-card .form-control:focus {
     border-color: #3B82F6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    background-color: #18181C;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    background-color: #111115;
     color: #F8FAFC;
-}
-
-.auth-card .input-group-text {
-    background-color: #F9FAFB;
-    border: 1px solid #E5E7EB;
-    color: #6B7280;
-    font-size: 0.95rem;
-    padding: 0 0.85rem;
-}
-
-html[data-theme="dark"] .auth-card .input-group-text {
-    background-color: #18181C;
-    border-color: #27272A;
-    color: #9CA3AF;
 }
 
 /* Password Toggle Wrapper & Button */
@@ -291,8 +482,29 @@ html[data-theme="dark"] .password-toggle-btn:focus-visible {
     outline-color: #3B82F6;
 }
 
-/* --- Submit Button --- */
+.auth-forgot-link {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #2563EB;
+    text-decoration: none;
+}
+
+.auth-forgot-link:hover {
+    text-decoration: underline;
+    color: #1D4ED8;
+}
+
+html[data-theme="dark"] .auth-forgot-link {
+    color: #3B82F6;
+}
+
+html[data-theme="dark"] .auth-forgot-link:hover {
+    color: #60A5FA;
+}
+
+/* --- Primary Button --- */
 .btn-auth-primary,
+.auth-card-unified .btn-primary-custom,
 .auth-card .btn-primary-custom {
     height: 44px;
     width: 100%;
@@ -313,6 +525,7 @@ html[data-theme="dark"] .password-toggle-btn:focus-visible {
 }
 
 .btn-auth-primary:hover,
+.auth-card-unified .btn-primary-custom:hover,
 .auth-card .btn-primary-custom:hover {
     background-color: #1D4ED8 !important;
     border-color: #1D4ED8 !important;
@@ -321,12 +534,14 @@ html[data-theme="dark"] .password-toggle-btn:focus-visible {
 }
 
 .btn-auth-primary:focus-visible,
+.auth-card-unified .btn-primary-custom:focus-visible,
 .auth-card .btn-primary-custom:focus-visible {
     outline: 2px solid #2563EB;
     outline-offset: 2px;
 }
 
 html[data-theme="dark"] .btn-auth-primary,
+html[data-theme="dark"] .auth-card-unified .btn-primary-custom,
 html[data-theme="dark"] .auth-card .btn-primary-custom {
     background-color: #3B82F6 !important;
     border-color: #3B82F6 !important;
@@ -334,42 +549,40 @@ html[data-theme="dark"] .auth-card .btn-primary-custom {
 }
 
 html[data-theme="dark"] .btn-auth-primary:hover,
+html[data-theme="dark"] .auth-card-unified .btn-primary-custom:hover,
 html[data-theme="dark"] .auth-card .btn-primary-custom:hover {
     background-color: #2563EB !important;
     border-color: #2563EB !important;
     color: #FFFFFF !important;
 }
 
-/* Secondary Actions / Outlines */
-.btn-auth-secondary {
-    height: 42px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background-color: transparent;
-    border: 1px solid #E5E7EB;
-    color: #374151;
-    font-size: 0.875rem;
-    font-weight: 500;
-    border-radius: 6px;
+/* --- Card Footer --- */
+.auth-footer {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #E5E7EB;
+    text-align: center;
+    font-size: 0.8125rem;
+    color: #6B7280;
+}
+
+html[data-theme="dark"] .auth-footer {
+    border-top-color: #27272A;
+    color: #9CA3AF;
+}
+
+.auth-footer a {
+    color: #2563EB;
+    font-weight: 600;
     text-decoration: none;
-    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
-    padding: 0 1.25rem;
 }
 
-.btn-auth-secondary:hover {
-    background-color: #F3F4F6;
-    color: #111827;
+.auth-footer a:hover {
+    text-decoration: underline;
 }
 
-html[data-theme="dark"] .btn-auth-secondary {
-    border-color: #27272A;
-    color: #D1D5DB;
-}
-
-html[data-theme="dark"] .btn-auth-secondary:hover {
-    background-color: #18181C;
-    color: #F8FAFC;
+html[data-theme="dark"] .auth-footer a {
+    color: #3B82F6;
 }
 
 /* --- Errors & Alerts --- */
@@ -440,41 +653,12 @@ html[data-theme="dark"] .auth-field-help {
     color: #9CA3AF;
 }
 
-/* --- Footer Prompt --- */
-.auth-footer-prompt {
-    margin-top: 1.5rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid #E5E7EB;
-    text-align: center;
-    font-size: 0.8125rem;
-    color: #6B7280;
-}
-
-html[data-theme="dark"] .auth-footer-prompt {
-    border-top-color: #27272A;
-    color: #9CA3AF;
-}
-
-.auth-footer-prompt a {
-    color: #2563EB;
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.auth-footer-prompt a:hover {
-    text-decoration: underline;
-}
-
-html[data-theme="dark"] .auth-footer-prompt a {
-    color: #3B82F6;
-}
-
 /* --- OTP Input Styling --- */
 .auth-otp-input {
     letter-spacing: 0.35em !important;
     font-size: 1.5rem !important;
     text-align: center !important;
     font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-    height: 52px !important;
+    height: 50px !important;
     font-weight: 700 !important;
 }

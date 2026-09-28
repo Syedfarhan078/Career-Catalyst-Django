@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body_class %}auth-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}?v=2.0">
+{% endblock %}
+
+{% block navbar %}
+<header class="auth-header">
+    <div class="auth-header-container">
+        <a href="{% url 'home' %}" class="auth-header-brand" aria-label="CareerCatalyst Home">
+            <img src="{% static 'images/favicon.png' %}" alt="Career Catalyst Logo" width="28" height="28">
+            <span>Career<span class="brand-accent">Catalyst</span></span>
+        </a>
+        <div class="auth-header-actions">
+            <button class="theme-toggle-btn" onclick="toggleAppTheme(event)" aria-label="Toggle dark/light mode" type="button" title="Toggle theme">
+                <i class="bi bi-moon-stars-fill" id="theme-icon"></i>
+            </button>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<main class="auth-shell">
+    {% block content %}{% endblock %}
+</main>
+{% endblock %}

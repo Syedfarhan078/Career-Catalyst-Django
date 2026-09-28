@@ -1,62 +1,56 @@
-{% extends 'base.html' %}
+{% extends 'accounts/auth_base.html' %}
 {% load static %}
 
 {% block title %}Verify Email — CareerCatalyst{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/auth.css' %}?v=1.0">
-{% endblock %}
-
 {% block content %}
-<div class="auth-page-wrapper">
-    <div class="auth-card auth-card-sm">
-        <!-- Back Navigation -->
-        <a href="{% url 'register' %}" class="auth-back-link">
-            <i class="bi bi-arrow-left"></i> Back to Register
-        </a>
+<div class="auth-card auth-card-sm">
+    <!-- Back Navigation -->
+    <a href="{% url 'register' %}" class="auth-back-link">
+        <i class="bi bi-arrow-left"></i> Back to Register
+    </a>
 
-        <!-- Badge Icon -->
-        <div class="auth-badge-icon">
-            <i class="bi bi-shield-check"></i>
+    <!-- Badge Icon -->
+    <div class="auth-badge-icon">
+        <i class="bi bi-shield-check"></i>
+    </div>
+
+    <h1 class="auth-title">Verify your email</h1>
+    <p class="auth-subtitle">Enter the 6-digit verification code sent to your registered email address to activate your account.</p>
+
+    <!-- Server Validation Non-Field Errors -->
+    {% if form.non_field_errors %}
+        <div class="auth-alert auth-alert-danger" role="alert">
+            <i class="bi bi-exclamation-circle-fill flex-shrink-0 mt-1"></i>
+            <div>
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <form method="POST" id="otpForm" novalidate>
+        {% csrf_token %}
+
+        <div class="auth-form-group text-center">
+            <label for="id_otp_code" class="auth-label mb-2">6-Digit Verification Code</label>
+            <input type="text" name="otp_code" id="id_otp_code" maxlength="6" class="form-control auth-otp-input" placeholder="······" required autocomplete="off" autofocus>
+            {% if form.otp_code.errors %}
+                <div class="auth-field-error text-center mt-2">{{ form.otp_code.errors.0 }}</div>
+            {% endif %}
         </div>
 
-        <h1 class="auth-title">Verify your email</h1>
-        <p class="auth-subtitle">Enter the 6-digit verification code sent to your registered email address to activate your account.</p>
-
-        <!-- Server Validation Non-Field Errors -->
-        {% if form.non_field_errors %}
-            <div class="auth-alert auth-alert-danger" role="alert">
-                <i class="bi bi-exclamation-circle-fill flex-shrink-0 mt-1"></i>
-                <div>
-                    {% for error in form.non_field_errors %}
-                        <div>{{ error }}</div>
-                    {% endfor %}
-                </div>
-            </div>
-        {% endif %}
-
-        <form method="POST" id="otpForm" novalidate>
-            {% csrf_token %}
-
-            <div class="auth-form-group text-center">
-                <label for="id_otp_code" class="auth-label mb-2">6-Digit Verification Code</label>
-                <input type="text" name="otp_code" id="id_otp_code" maxlength="6" class="form-control auth-otp-input" placeholder="······" required autocomplete="off" autofocus>
-                {% if form.otp_code.errors %}
-                    <div class="auth-field-error text-center mt-2">{{ form.otp_code.errors.0 }}</div>
-                {% endif %}
-            </div>
-
-            <div class="mt-4">
-                <button type="submit" id="verifyBtn" class="btn-auth-primary">
-                    Verify & Activate Account
-                </button>
-            </div>
-        </form>
-
-        <!-- Footer Navigation Prompt -->
-        <div class="auth-footer-prompt">
-            Didn't receive the verification code? <a href="{% url 'resend_otp' %}" id="resendBtn">Resend code</a>
+        <div class="mt-4">
+            <button type="submit" id="verifyBtn" class="btn-auth-primary">
+                Verify & Activate Account
+            </button>
         </div>
+    </form>
+
+    <!-- Footer Navigation Prompt -->
+    <div class="auth-footer">
+        Didn't receive the verification code? <a href="{% url 'resend_otp' %}" id="resendBtn">Resend code</a>
     </div>
 </div>
 
