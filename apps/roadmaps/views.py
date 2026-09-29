@@ -5,8 +5,10 @@ from django.views.generic import ListView, DetailView
 from django.http import JsonResponse
 from django.utils import timezone
 from django.contrib import messages
+from django.db import transaction
 
 from .models import CareerPath, Milestone, Topic, UserRoadmap, TopicProgress
+from .services import sync_topic_completion
 from apps.profiles.models import StudentProfile
 
 
@@ -317,14 +319,18 @@ def toggle_topic(request, topic_id):
             user=request.user,
             career_path=topic.milestone.career_path
         )
-        progress, created = TopicProgress.objects.get_or_create(
-            user_roadmap=user_roadmap,
-            topic=topic
-        )
-        # Toggle
-        progress.is_completed = not progress.is_completed
-        progress.completed_at = timezone.now() if progress.is_completed else None
-        progress.save()
+        with transaction.atomic():
+            progress, created = TopicProgress.objects.get_or_create(
+                user_roadmap=user_roadmap,
+                topic=topic
+            )
+            # Toggle
+            progress.is_completed = not progress.is_completed
+            progress.completed_at = timezone.now() if progress.is_completed else None
+            progress.save()
+
+            # Synchronize earned skills
+            sync_result = sync_topic_completion(request.user, topic, progress.is_completed)
 
         # Check if this specific week (milestone) is now completely finished
         milestone = topic.milestone
@@ -345,6 +351,9 @@ def toggle_topic(request, topic_id):
             'week_completed': week_completed,
             'week_number': milestone.week_number,
             'week_title': milestone.title,
+            'earned_skills': sync_result.get('newly_earned_skills', []),
+            'lost_skills': sync_result.get('lost_skills', []),
+            'all_earned_skills': sync_result.get('all_earned_skills', []),
         })
     return JsonResponse({'success': False}, status=405)
 

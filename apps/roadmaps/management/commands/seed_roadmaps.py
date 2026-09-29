@@ -10,6 +10,7 @@ class Command(BaseCommand):
         created_paths = 0
         created_milestones = 0
         created_topics = 0
+        updated_topics = 0
 
         for path_data in CAREER_PATHS:
             path, path_created = CareerPath.objects.get_or_create(
@@ -26,8 +27,7 @@ class Command(BaseCommand):
                 created_paths += 1
                 self.stdout.write(f"  + Created path: {path.name}")
             else:
-                self.stdout.write(f"  - Path already exists: {path.name}")
-                continue  # Skip creating milestones if path already exists
+                self.stdout.write(f"  * Syncing path: {path.name}")
 
             for ms_data in path_data.get('milestones', []):
                 milestone, ms_created = Milestone.objects.get_or_create(
@@ -43,7 +43,11 @@ class Command(BaseCommand):
                     created_milestones += 1
 
                 for idx, topic_data in enumerate(ms_data.get('topics', [])):
-                    _, t_created = Topic.objects.get_or_create(
+                    skills_val = topic_data.get('skills', '')
+                    if isinstance(skills_val, list):
+                        skills_val = ', '.join(skills_val)
+
+                    topic_obj, t_created = Topic.objects.get_or_create(
                         milestone=milestone,
                         title=topic_data['title'],
                         defaults={
@@ -51,13 +55,19 @@ class Command(BaseCommand):
                             'resource_url': topic_data.get('url', ''),
                             'resource_type': topic_data.get('type', 'Article'),
                             'estimated_hours': topic_data.get('hours', 2),
+                            'skills_taught': skills_val,
                             'order': idx,
                         }
                     )
                     if t_created:
                         created_topics += 1
+                    elif skills_val and topic_obj.skills_taught != skills_val:
+                        topic_obj.skills_taught = skills_val
+                        topic_obj.save(update_fields=['skills_taught'])
+                        updated_topics += 1
 
         self.stdout.write(self.style.SUCCESS(
             f"\nSeeding complete! Created {created_paths} paths, "
-            f"{created_milestones} milestones, {created_topics} topics."
+            f"{created_milestones} milestones, {created_topics} new topics, "
+            f"{updated_topics} topics updated with skills."
         ))

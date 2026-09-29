@@ -270,6 +270,9 @@ def career_dashboard(request):
 
     pillars = _calculate_pillars(analysis, request.user, profile, matched_career_path, user_roadmap)
 
+    from apps.roadmaps.services import get_user_earned_skills_set
+    roadmap_earned_skills = sorted(list(get_user_earned_skills_set(request.user)))
+
     context = {
         'analysis': analysis,
         'profile': profile,
@@ -287,6 +290,7 @@ def career_dashboard(request):
         'user_initials': user_initials,
         'target_career': target_career,
         'pillars': pillars,
+        'roadmap_earned_skills': roadmap_earned_skills,
     }
     return render(request, 'recommendation/dashboard.html', context)
 

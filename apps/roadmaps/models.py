@@ -61,6 +61,12 @@ class Topic(models.Model):
     resource_url = models.URLField(blank=True)
     resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPE_CHOICES, default='Article')
     estimated_hours = models.DecimalField(max_digits=4, decimal_places=1, default=2.0)
+    skills_taught = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        help_text="Comma-separated skills taught or demonstrated by this topic."
+    )
     order = models.IntegerField(default=0)
 
     class Meta:
@@ -68,6 +74,11 @@ class Topic(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_skills_list(self):
+        if not self.skills_taught:
+            return []
+        return [s.strip() for s in self.skills_taught.split(',') if s.strip()]
 
 
 class UserRoadmap(models.Model):

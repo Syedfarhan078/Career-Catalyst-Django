@@ -41,15 +41,18 @@ def check_user_resume_status(user):
 
 def extract_student_skills_set(user, profile, default_resume, latest_resume_analysis):
     """
-    Collects and normalizes all skill strings from profile and resume sources.
+    Collects and normalizes all skill strings from profile, resume, and completed roadmap sources.
     Returns (raw_skills_list, normalized_tokens_set)
     """
     raw_skills = []
     
-    # 1. Profile Skills
+    # 1. Profile Skills (Manual / Self-Reported)
     if profile and profile.skills:
         clean_raw = profile.skills.replace('\n', ',')
-        raw_skills.extend([s.strip() for s in clean_raw.split(',') if s.strip()])
+        for s in clean_raw.split(','):
+            clean_s = s.strip()
+            if clean_s and clean_s not in raw_skills:
+                raw_skills.append(clean_s)
         
     # 2. Built Resume Skills
     if default_resume:
@@ -58,12 +61,26 @@ def extract_student_skills_set(user, profile, default_resume, latest_resume_anal
                 raw_skills.append(sk.name)
         for proj in default_resume.projects.all():
             if proj.technologies_used:
-                raw_skills.extend([t.strip() for t in proj.technologies_used.split(',') if t.strip()])
+                for t in proj.technologies_used.split(','):
+                    clean_t = t.strip()
+                    if clean_t and clean_t not in raw_skills:
+                        raw_skills.append(clean_t)
                 
     # 3. Uploaded ATS Scan Skills
     if latest_resume_analysis and latest_resume_analysis.raw_text:
         # Check for matching words in raw text
         pass
+
+    # 4. Completed Roadmap Earned Skills
+    if user and getattr(user, 'is_authenticated', False):
+        try:
+            from apps.roadmaps.services import get_user_earned_skills_set
+            roadmap_earned_skills = get_user_earned_skills_set(user)
+            for r_skill in roadmap_earned_skills:
+                if r_skill and r_skill not in raw_skills:
+                    raw_skills.append(r_skill)
+        except Exception:
+            pass
 
     normalized_tokens = set()
     for s in raw_skills:
@@ -113,6 +130,17 @@ def evaluate_student_against_path(user, profile, career_path, has_resume, latest
     """
     raw_skills, student_tokens = extract_student_skills_set(user, profile, default_resume, latest_resume_analysis)
     
+    # Query user's completed topic IDs to treat them as authoritative ground truth
+    user_completed_topic_ids = set()
+    if user and getattr(user, 'is_authenticated', False):
+        from apps.roadmaps.models import TopicProgress
+        user_completed_topic_ids = set(
+            TopicProgress.objects.filter(
+                user_roadmap__user=user,
+                is_completed=True
+            ).values_list('topic_id', flat=True)
+        )
+    
     milestones = career_path.milestones.prefetch_related('topics').all()
     roadmap_steps = []
     learning_resources = []
@@ -133,7 +161,21 @@ def evaluate_student_against_path(user, profile, career_path, has_resume, latest
             step_topic_titles.append(topic.title)
             total_path_topics += 1
             
-            if topic_matches_skills(topic.title, student_tokens, raw_skills):
+            is_matched = False
+            if topic.id in user_completed_topic_ids:
+                is_matched = True
+            elif getattr(topic, 'skills_taught', None):
+                from apps.roadmaps.services import get_topic_skills
+                for t_skill in get_topic_skills(topic):
+                    t_norm = normalize_token(t_skill)
+                    if t_norm and t_norm in student_tokens:
+                        is_matched = True
+                        break
+            
+            if not is_matched:
+                is_matched = topic_matches_skills(topic.title, student_tokens, raw_skills)
+            
+            if is_matched:
                 matched_skills.append(topic.title)
                 ms_matched_titles.append(topic.title)
                 total_matched_topics += 1
@@ -684,7 +726,14 @@ def enroll_and_sync_roadmap(user, career_path_identifier, matched_topics_list=No
         is_matched = False
         if matched_topics_list and topic.title in matched_topics_list:
             is_matched = True
-        elif topic_matches_skills(topic.title, student_tokens, raw_skills):
+        elif getattr(topic, 'skills_taught', None):
+            from apps.roadmaps.services import get_topic_skills
+            for t_skill in get_topic_skills(topic):
+                t_norm = normalize_token(t_skill)
+                if t_norm and t_norm in student_tokens:
+                    is_matched = True
+                    break
+        if not is_matched and topic_matches_skills(topic.title, student_tokens, raw_skills):
             is_matched = True
 
         progress_obj, prog_created = TopicProgress.objects.get_or_create(

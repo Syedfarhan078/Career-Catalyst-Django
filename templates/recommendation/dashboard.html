@@ -236,6 +236,15 @@
                 <div class="collapse" id="recalibrateDrawer">
                     <div class="recalibrate-drawer">
                         <h6><i class="bi bi-sliders2 me-2"></i>Recalibrate Target Role & Company Tier</h6>
+                        {% if roadmap_earned_skills %}
+                        <div class="alert alert-info py-2 px-3 mb-3 small d-flex align-items-center gap-2 border-0 bg-primary-subtle text-primary">
+                            <i class="bi bi-mortarboard-fill"></i>
+                            <div>
+                                <strong>{{ roadmap_earned_skills|length }} Roadmap Skill{{ roadmap_earned_skills|length|pluralize }} Active:</strong>
+                                Recalibration will automatically evaluate your completed roadmap skills: {{ roadmap_earned_skills|slice:":5"|join:", " }}{% if roadmap_earned_skills|length > 5 %} and {{ roadmap_earned_skills|length|add:"-5" }} more{% endif %}.
+                            </div>
+                        </div>
+                        {% endif %}
                         <form action="{% url 'recommendation:analyze' %}" method="POST" class="row g-3 align-items-end">
                             {% csrf_token %}
                             <div class="col-md-5">

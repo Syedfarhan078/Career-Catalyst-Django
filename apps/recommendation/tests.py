@@ -309,3 +309,210 @@ class RecommendationTests(TestCase):
         self.assertContains(response, "Role Alignment:")
 
 
+class CareerRecalibrationDynamicTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='recalibrate_user',
+            email='recalibrate@example.com',
+            password='password123'
+        )
+        self.client.force_login(self.user)
+
+        # Profile with initial manual skills: Python, Git, SQL
+        self.profile = StudentProfile.objects.create(
+            user=self.user,
+            college='Engineering College',
+            degree='B.E.',
+            branch='Computer Science',
+            cgpa=8.5,
+            career_goal='Software Engineer',
+            skills='Python, Git, SQL'
+        )
+
+        # Create CareerPath: Software Engineer
+        self.path = CareerPath.objects.create(
+            name='Software Engineer',
+            slug='software-engineer',
+            description='Software Engineer Learning Path',
+            difficulty='Intermediate'
+        )
+        self.ms1 = Milestone.objects.create(
+            career_path=self.path,
+            week_number=1,
+            title='Core Languages',
+            level='Beginner',
+            order=1
+        )
+        self.ms2 = Milestone.objects.create(
+            career_path=self.path,
+            week_number=2,
+            title='Web Frameworks & Containers',
+            level='Intermediate',
+            order=2
+        )
+
+        self.t_python = Topic.objects.create(
+            milestone=self.ms1,
+            title='Python Fundamentals',
+            skills_taught='Python, Object-Oriented Programming'
+        )
+        self.t_django = Topic.objects.create(
+            milestone=self.ms2,
+            title='Django Web Framework',
+            skills_taught='Django, Python Web Development'
+        )
+        self.t_docker = Topic.objects.create(
+            milestone=self.ms2,
+            title='Docker & Containers',
+            skills_taught='Docker, Containerization'
+        )
+
+        from apps.roadmaps.models import UserRoadmap
+        self.user_roadmap = UserRoadmap.objects.create(
+            user=self.user,
+            career_path=self.path
+        )
+
+    def test_extract_student_skills_set_aggregates_all_four_sources(self):
+        from .services import extract_student_skills_set
+        from apps.roadmaps.models import TopicProgress
+
+        # 1. Profile has: Python, Git, SQL
+        # 2. Add Resume skill: Redis
+        resume = Resume.objects.create(user=self.user, title='Default Resume', is_default=True)
+        Skill.objects.create(resume=resume, name='Redis')
+
+        # 3. Add Resume project technology: PostgreSQL
+        Project.objects.create(
+            resume=resume,
+            title='E-commerce Backend',
+            description='Built scalable microservice',
+            technologies_used='PostgreSQL, Celery'
+        )
+
+        # 4. Complete roadmap topic: Docker & Containers (teaches Docker, Containerization)
+        TopicProgress.objects.create(
+            user_roadmap=self.user_roadmap,
+            topic=self.t_docker,
+            is_completed=True
+        )
+
+        raw_skills, tokens = extract_student_skills_set(self.user, self.profile, resume, None)
+
+        # Verify source 1 (Profile)
+        self.assertIn('Python', raw_skills)
+        self.assertIn('Git', raw_skills)
+        self.assertIn('SQL', raw_skills)
+
+        # Verify source 2 (Resume Skill)
+        self.assertIn('Redis', raw_skills)
+
+        # Verify source 3 (Resume Project tech)
+        self.assertIn('PostgreSQL', raw_skills)
+        self.assertIn('Celery', raw_skills)
+
+        # Verify source 4 (Completed Roadmap topic)
+        self.assertIn('Docker', raw_skills)
+        self.assertIn('Containerization', raw_skills)
+
+    def test_manually_entered_profile_skills_remain_independent_and_unmutated(self):
+        from apps.roadmaps.models import TopicProgress
+        initial_profile_skills = self.profile.skills
+
+        # Complete Django topic
+        TopicProgress.objects.create(
+            user_roadmap=self.user_roadmap,
+            topic=self.t_django,
+            is_completed=True
+        )
+
+        # Refresh profile from db
+        self.profile.refresh_from_db()
+        # StudentProfile.skills must NOT be mutated
+        self.assertEqual(self.profile.skills, initial_profile_skills)
+        self.assertNotIn('Django', self.profile.skills)
+
+    def test_manual_skill_persists_when_roadmap_topic_unchecked(self):
+        from .services import extract_student_skills_set
+        from apps.roadmaps.models import TopicProgress
+
+        # User has Python in self.profile.skills ('Python, Git, SQL')
+        # Complete Python topic
+        prog, _ = TopicProgress.objects.get_or_create(
+            user_roadmap=self.user_roadmap,
+            topic=self.t_python,
+            defaults={'is_completed': True}
+        )
+        prog.is_completed = True
+        prog.save()
+
+        # Uncomplete Python topic
+        prog.is_completed = False
+        prog.save()
+
+        raw_skills, _ = extract_student_skills_set(self.user, self.profile, None, None)
+        # Python MUST still be present because it is in profile.skills
+        self.assertIn('Python', raw_skills)
+
+    def test_recalibration_score_increases_dynamically_after_topic_completion(self):
+        from apps.roadmaps.models import TopicProgress
+
+        # 1. Initial diagnostic before completing roadmap topics
+        initial_analysis = generate_career_recommendation(self.user, 'Software Engineer', 'general')
+        initial_score = initial_analysis.career_readiness_score
+        initial_missing = list(initial_analysis.missing_skills)
+
+        # Django Web Framework and Docker & Containers must be missing
+        self.assertIn(self.t_django.title, initial_missing)
+        self.assertIn(self.t_docker.title, initial_missing)
+
+        # 2. User completes Django Web Framework topic
+        TopicProgress.objects.create(
+            user_roadmap=self.user_roadmap,
+            topic=self.t_django,
+            is_completed=True
+        )
+
+        # 3. User recalibrates (triggers POST /recommendation/analyze/)
+        response = self.client.post(reverse('recommendation:analyze'), {
+            'target_career': str(self.path.pk),
+            'company_tier': 'general'
+        })
+        self.assertEqual(response.status_code, 302)
+
+        # 4. Fetch the latest analysis created by recalibration
+        latest_analysis = CareerAnalysis.objects.filter(user=self.user).order_by('-created_at').first()
+        self.assertNotEqual(latest_analysis.pk, initial_analysis.pk)
+
+        # The new readiness score must be higher than initial score
+        self.assertGreater(latest_analysis.career_readiness_score, initial_score)
+
+        # Django Web Framework must NO LONGER be in missing_skills
+        self.assertNotIn(self.t_django.title, latest_analysis.missing_skills)
+        self.assertTrue(any(self.t_django.title in s for s in latest_analysis.strengths))
+
+        # Docker remains incomplete, so it should still be in missing_skills
+        self.assertIn(self.t_docker.title, latest_analysis.missing_skills)
+
+    def test_radar_chart_output_updates_through_recommendation_pipeline(self):
+        from apps.roadmaps.models import TopicProgress
+
+        # Initial analysis
+        analysis1 = generate_career_recommendation(self.user, 'Software Engineer', 'general')
+        radar1 = analysis1.radar_chart_json
+
+        # Complete both topics in Week 2
+        TopicProgress.objects.create(user_roadmap=self.user_roadmap, topic=self.t_django, is_completed=True)
+        TopicProgress.objects.create(user_roadmap=self.user_roadmap, topic=self.t_docker, is_completed=True)
+
+        # Recalibrate
+        analysis2 = generate_career_recommendation(self.user, 'Software Engineer', 'general')
+        radar2 = analysis2.radar_chart_json
+
+        # Radar score for Week 2 milestone should be higher in analysis2 than analysis1
+        ms2_score1 = next((item['user_score'] for item in radar1 if 'Frameworks' in item['name']), 0)
+        ms2_score2 = next((item['user_score'] for item in radar2 if 'Frameworks' in item['name']), 0)
+        self.assertGreater(ms2_score2, ms2_score1)
+
+
+

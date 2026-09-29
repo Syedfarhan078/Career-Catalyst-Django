@@ -122,9 +122,13 @@ def profile_detail_view(request):
     completion_percentage = profile.calculate_completion_percentage()
     user_initials = f"{request.user.first_name[:1]}{request.user.last_name[:1]}".upper() or request.user.username[:2].upper()
     target_career = profile.career_goal or "Engineering Student"
+
+    from apps.roadmaps.services import get_user_earned_skills_set
+    earned_skills = sorted(list(get_user_earned_skills_set(request.user)))
     
     context = {
         'profile': profile,
+        'earned_skills': earned_skills,
         'completion_percentage': completion_percentage,
         'user_initials': user_initials,
         'target_career': target_career,

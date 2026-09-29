@@ -226,3 +226,199 @@ class RoadmapsRedesignTests(TestCase):
         self.assertEqual(response.status_code, 200)
         # My Roadmap sidebar link should have the active class
         self.assertContains(response, 'class="dash-nav-link active">\n                <i class="bi bi-map"></i>\n                <span>My Roadmap</span>')
+
+
+class RoadmapEarnedSkillsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='skilluser',
+            email='skilluser@example.com',
+            password='password123'
+        )
+        self.other_user = User.objects.create_user(
+            username='otheruser',
+            email='other@example.com',
+            password='password123'
+        )
+        self.client.force_login(self.user)
+
+        self.path_backend = CareerPath.objects.create(
+            name='Backend Engineering',
+            slug='backend-eng',
+            description='Backend track',
+            estimated_weeks=4
+        )
+        self.ms_backend = Milestone.objects.create(
+            career_path=self.path_backend,
+            week_number=1,
+            title='Python & Django Basics'
+        )
+        self.topic_django = Topic.objects.create(
+            milestone=self.ms_backend,
+            title='Django Fundamentals',
+            skills_taught='Django, Python Web Development'
+        )
+        self.topic_rest = Topic.objects.create(
+            milestone=self.ms_backend,
+            title='Building REST APIs',
+            skills_taught='REST APIs, Django REST Framework'
+        )
+        self.topic_django_adv = Topic.objects.create(
+            milestone=self.ms_backend,
+            title='Advanced Django',
+            skills_taught='Django, ORM Optimization'
+        )
+        self.topic_empty_skills = Topic.objects.create(
+            milestone=self.ms_backend,
+            title='Generic Reading',
+            skills_taught=''
+        )
+        self.topic_malformed = Topic.objects.create(
+            milestone=self.ms_backend,
+            title='Malformed Test',
+            skills_taught=' Docker , , containerization, Docker '
+        )
+
+        self.path_devops = CareerPath.objects.create(
+            name='DevOps Track',
+            slug='devops-track',
+            description='DevOps track',
+            estimated_weeks=4
+        )
+        self.ms_devops = Milestone.objects.create(
+            career_path=self.path_devops,
+            week_number=1,
+            title='Containers'
+        )
+        self.topic_docker = Topic.objects.create(
+            milestone=self.ms_devops,
+            title='Docker Basics',
+            skills_taught='Docker, Containerization'
+        )
+
+        # Enrolls
+        self.enr_backend = UserRoadmap.objects.create(
+            user=self.user,
+            career_path=self.path_backend
+        )
+        self.enr_devops = UserRoadmap.objects.create(
+            user=self.user,
+            career_path=self.path_devops
+        )
+
+    def test_completing_topic_resolves_skills_taught(self):
+        from .services import get_topic_skills
+        skills = get_topic_skills(self.topic_django)
+        self.assertEqual(skills, ['Django', 'Python Web Development'])
+
+    def test_completing_topic_produces_roadmap_earned_skills(self):
+        from .services import get_user_earned_skills_set
+        # Initially 0
+        self.assertEqual(get_user_earned_skills_set(self.user), set())
+
+        # Complete Django topic
+        response = self.client.post(reverse('roadmaps:toggle_topic', args=[self.topic_django.id]))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertTrue(data['is_completed'])
+        self.assertIn('Django', data['earned_skills'])
+        self.assertIn('Python Web Development', data['earned_skills'])
+
+        # Check service output
+        earned = get_user_earned_skills_set(self.user)
+        self.assertIn('Django', earned)
+        self.assertIn('Python Web Development', earned)
+
+    def test_completing_same_topic_repeatedly_does_not_duplicate_skills(self):
+        from .services import get_user_earned_skills_set
+        prog, _ = TopicProgress.objects.get_or_create(
+            user_roadmap=self.enr_backend,
+            topic=self.topic_django,
+            defaults={'is_completed': True}
+        )
+        prog.is_completed = True
+        prog.save()
+
+        earned = get_user_earned_skills_set(self.user)
+        self.assertEqual(len([s for s in earned if s == 'Django']), 1)
+
+    def test_two_topics_teaching_same_skill_produce_one_normalized_skill(self):
+        from .services import get_user_earned_skills_set
+        # topic_django and topic_django_adv both teach 'Django'
+        TopicProgress.objects.create(user_roadmap=self.enr_backend, topic=self.topic_django, is_completed=True)
+        TopicProgress.objects.create(user_roadmap=self.enr_backend, topic=self.topic_django_adv, is_completed=True)
+
+        earned = get_user_earned_skills_set(self.user)
+        # 'Django' should only exist once in the set
+        django_skills = [s for s in earned if s.lower() == 'django']
+        self.assertEqual(len(django_skills), 1)
+
+    def test_uncompleting_topic_retains_skill_if_another_completed_topic_teaches_it(self):
+        from .services import get_user_earned_skills_set
+        TopicProgress.objects.create(user_roadmap=self.enr_backend, topic=self.topic_django, is_completed=True)
+        TopicProgress.objects.create(user_roadmap=self.enr_backend, topic=self.topic_django_adv, is_completed=True)
+
+        # Uncheck topic_django
+        response = self.client.post(reverse('roadmaps:toggle_topic', args=[self.topic_django.id]))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertFalse(data['is_completed'])
+        # 'Django' was NOT lost because topic_django_adv is still complete
+        self.assertNotIn('Django', data['lost_skills'])
+
+        earned = get_user_earned_skills_set(self.user)
+        self.assertIn('Django', earned)
+
+    def test_uncompleting_final_topic_removes_from_earned_skills(self):
+        from .services import get_user_earned_skills_set
+        # Complete only topic_rest
+        TopicProgress.objects.create(user_roadmap=self.enr_backend, topic=self.topic_rest, is_completed=True)
+        self.assertIn('REST APIs', get_user_earned_skills_set(self.user))
+
+        # Uncomplete topic_rest
+        response = self.client.post(reverse('roadmaps:toggle_topic', args=[self.topic_rest.id]))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertFalse(data['is_completed'])
+        self.assertIn('REST APIs', data['lost_skills'])
+
+        # Now REST APIs is gone from roadmap-earned skills
+        self.assertNotIn('REST APIs', get_user_earned_skills_set(self.user))
+
+    def test_empty_skills_taught_awards_no_skill(self):
+        from .services import get_topic_skills, get_user_earned_skills_set
+        self.assertEqual(get_topic_skills(self.topic_empty_skills), [])
+
+        response = self.client.post(reverse('roadmaps:toggle_topic', args=[self.topic_empty_skills.id]))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['earned_skills'], [])
+        self.assertEqual(get_user_earned_skills_set(self.user), set())
+
+    def test_malformed_and_duplicate_skills_taught_normalized(self):
+        from .services import get_topic_skills
+        skills = get_topic_skills(self.topic_malformed)
+        # ' Docker , , containerization, Docker ' -> ['Docker', 'containerization']
+        self.assertEqual(len(skills), 2)
+        self.assertIn('Docker', skills)
+        self.assertIn('containerization', skills)
+
+    def test_multiple_roadmaps_contribute_skills(self):
+        from .services import get_user_earned_skills_set
+        # Complete Django from backend roadmap
+        TopicProgress.objects.create(user_roadmap=self.enr_backend, topic=self.topic_django, is_completed=True)
+        # Complete Docker from devops roadmap
+        TopicProgress.objects.create(user_roadmap=self.enr_devops, topic=self.topic_docker, is_completed=True)
+
+        earned = get_user_earned_skills_set(self.user)
+        self.assertIn('Django', earned)
+        self.assertIn('Docker', earned)
+
+    def test_unauthorized_user_cannot_toggle_another_users_topic(self):
+        # other_user has no enrollment in backend path
+        self.client.force_login(self.other_user)
+        response = self.client.post(reverse('roadmaps:toggle_topic', args=[self.topic_django.id]))
+        # get_object_or_404 returns 404 because user_roadmap for other_user does not exist
+        self.assertEqual(response.status_code, 404)
+

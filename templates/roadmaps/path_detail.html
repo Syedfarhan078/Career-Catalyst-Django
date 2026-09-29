@@ -223,6 +223,18 @@
                                     {% if topic.description %}
                                     <p class="roadmap-topic-desc">{{ topic.description }}</p>
                                     {% endif %}
+                                    {% if topic.get_skills_list %}
+                                    <div class="roadmap-topic-skills d-flex align-items-center gap-1.5 flex-wrap mt-1">
+                                        <span class="text-muted" style="font-size: 0.72rem; font-weight: 500;">
+                                            <i class="bi bi-mortarboard me-1 text-primary"></i>Skills:
+                                        </span>
+                                        {% for s in topic.get_skills_list %}
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill" style="font-size: 0.7rem; font-weight: 500; padding: 0.15rem 0.5rem;">
+                                            {{ s }}
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
 
@@ -401,6 +413,13 @@
                                 modal.show();
                             }
                         }
+
+                        // Restrained notification for newly earned skills
+                        if (data.is_completed && data.earned_skills && data.earned_skills.length > 0) {
+                            showSkillToast(data.earned_skills);
+                        } else if (!data.is_completed && data.lost_skills && data.lost_skills.length > 0) {
+                            showSkillRemovedToast(data.lost_skills);
+                        }
                     }
                 })
                 .catch(err => {
@@ -408,6 +427,70 @@
                 });
             });
         });
+
+        function showSkillToast(skills) {
+            let container = document.getElementById('roadmapSkillToastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'roadmapSkillToastContainer';
+                container.style.cssText = 'position: fixed; bottom: 24px; right: 24px; z-index: 1090; display: flex; flex-direction: column; gap: 8px; max-width: 360px;';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = 'card border shadow-sm p-3 bg-body text-body';
+            toast.style.cssText = 'border-left: 4px solid #3B82F6 !important; font-size: 0.85rem; border-radius: 8px;';
+            toast.innerHTML = `
+                <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-mortarboard-fill text-primary mt-0.5" style="font-size: 1.1rem;"></i>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold text-body">Skill earned: ${skills.join(', ')}</div>
+                        <div class="text-muted small mt-0.5" style="font-size: 0.75rem;">
+                            Recalibrate Career Guidance to see your updated readiness.
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close ms-auto" aria-label="Close" style="font-size: 0.65rem;"></button>
+                </div>
+            `;
+            toast.querySelector('.btn-close').addEventListener('click', () => toast.remove());
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4500);
+        }
+
+        function showSkillRemovedToast(skills) {
+            let container = document.getElementById('roadmapSkillToastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'roadmapSkillToastContainer';
+                container.style.cssText = 'position: fixed; bottom: 24px; right: 24px; z-index: 1090; display: flex; flex-direction: column; gap: 8px; max-width: 360px;';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = 'card border shadow-sm p-3 bg-body text-body';
+            toast.style.cssText = 'border-left: 4px solid #6B7280 !important; font-size: 0.85rem; border-radius: 8px;';
+            toast.innerHTML = `
+                <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-info-circle-fill text-secondary mt-0.5" style="font-size: 1.1rem;"></i>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold text-body">Roadmap skill uncompleted: ${skills.join(', ')}</div>
+                        <div class="text-muted small mt-0.5" style="font-size: 0.75rem;">
+                            Profile/resume skills remain unaffected.
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close ms-auto" aria-label="Close" style="font-size: 0.65rem;"></button>
+                </div>
+            `;
+            toast.querySelector('.btn-close').addEventListener('click', () => toast.remove());
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
     })();
 </script>
 {% endblock %}
