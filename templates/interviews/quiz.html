@@ -82,6 +82,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="proctor_violations" id="proctorViolationsInput" value="0">
                         <input type="hidden" name="category_id" value="{{ category.id }}">
+                        <input type="hidden" name="session_uuid" value="{{ session_uuid }}">
 
                         {% for q in questions %}
                         <div class="quiz-question-card">

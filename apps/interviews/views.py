@@ -1,3 +1,5 @@
+import json
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -6,13 +8,22 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.utils import timezone
 from django.db.models import Avg, Count
 from django.urls import reverse
-import json
+from django.core.exceptions import ValidationError, PermissionDenied
 
 from .models import (
     QuestionCategory, Question, UserAttempt, UserAttemptDetail,
-    MockInterviewSession, MockInterviewChat, ProctorLog
+    MockInterviewSession, MockInterviewChat, ProctorLog,
+    QuizSession, InterviewCompetencyEvidence
 )
-from .runner import run_code
+from .services.code_execution import CodeExecutionService, run_code
+from .services.quiz_engine import QuizEngineService
+from .services.star_evaluator import STAREvaluatorService
+from .services.mock_engine import MockInterviewEngine, ROLE_QUESTION_BANKS
+from .services.proctoring import ProctorAuditService
+from .services.competency import CompetencyEvidenceService
+from .services.recommendations import InterviewRecommendationService
+
+logger = logging.getLogger(__name__)
 
 
 def get_user_sidebar_context(user):
@@ -47,7 +58,7 @@ class InterviewHubView(TemplateView):
         categories = QuestionCategory.objects.all()
         context["categories"] = categories
 
-        # Aggregate user stats (real numbers only)
+        # Aggregate user stats
         attempts = UserAttempt.objects.filter(user=user)
         context["total_attempts"] = attempts.count()
         context["avg_score"] = attempts.aggregate(Avg('score'))['score__avg'] or 0
@@ -64,9 +75,15 @@ class InterviewHubView(TemplateView):
         context["aptitude_count"] = Question.objects.filter(category__slug='aptitude', question_type='MCQ').count()
         context["technical_count"] = Question.objects.filter(category__slug='technical', question_type='MCQ').count()
 
-        # Recent activity (safe query optimization with select_related)
+        # Recent activity optimized with select_related
         context["recent_attempts"] = attempts.select_related('category').order_by('-attempted_at')[:4]
         context["recent_mocks"] = mocks.order_by('-started_at')[:3]
+
+        # Personalized recommendations derived from real performance
+        recommendations_data = InterviewRecommendationService.get_personalized_recommendations(user)
+        context["recommendations"] = recommendations_data.get("recommended_focus", [])
+        context["weak_categories"] = recommendations_data.get("weak_categories", [])
+        context["missing_skills"] = recommendations_data.get("missing_skills", [])
 
         return context
 
@@ -74,10 +91,15 @@ class InterviewHubView(TemplateView):
 @login_required
 def start_quiz(request, slug):
     category = get_object_or_404(QuestionCategory, slug=slug)
-    # Get 5 random MCQs from this category
-    questions = Question.objects.filter(category=category, question_type='MCQ').order_by('?')[:5]
     
-    if not questions.exists():
+    # Delegate to QuizEngineService for balanced selection and persistent QuizSession
+    quiz_session, questions, created = QuizEngineService.get_or_create_active_session(
+        user=request.user,
+        category=category,
+        count=5
+    )
+    
+    if not questions:
         # If no MCQs (like coding or behavioral categories), redirect
         if category.slug == 'coding':
             return redirect('interviews:coding_list')
@@ -85,13 +107,17 @@ def start_quiz(request, slug):
             return redirect('interviews:behavioral_list')
         return redirect('interviews:hub')
 
-    # Store question IDs in session so they don't change on refresh
+    # Store backward-compatible session keys alongside persistent QuizSession UUID
+    request.session['quiz_active_uuid'] = str(quiz_session.session_uuid)
     request.session['quiz_question_ids'] = [q.id for q in questions]
     request.session['quiz_category_id'] = category.id
-    
+
     context = {
         "category": category,
         "questions": questions,
+        "quiz_session": quiz_session,
+        "session_uuid": str(quiz_session.session_uuid),
+        "remaining_seconds": quiz_session.remaining_seconds,
     }
     context.update(get_user_sidebar_context(request.user))
     return render(request, "interviews/quiz.html", context)
@@ -102,58 +128,37 @@ def submit_quiz(request):
     if request.method != 'POST':
         return redirect('interviews:hub')
 
-    category_id = request.session.get('quiz_category_id')
-    question_ids = request.session.get('quiz_question_ids')
-    violations = int(request.POST.get('proctor_violations', 0))
+    session_uuid = request.POST.get('session_uuid') or request.session.get('quiz_active_uuid')
+    category_id = request.POST.get('category_id') or request.session.get('quiz_category_id')
 
-    if not category_id or not question_ids:
+    try:
+        violations = int(request.POST.get('proctor_violations', 0))
+    except (ValueError, TypeError):
+        violations = 0
+
+    try:
+        result = QuizEngineService.submit_quiz_session(
+            user=request.user,
+            session_uuid_str=session_uuid,
+            category_id=category_id,
+            answers_dict=request.POST,
+            client_violations_count=violations
+        )
+    except (ValidationError, PermissionDenied) as e:
+        logger.warning(f"Quiz submission rejected: {str(e)}")
         return redirect('interviews:hub')
 
-    category = get_object_or_404(QuestionCategory, pk=category_id)
-    questions = Question.objects.filter(pk__in=question_ids)
-
-    # Calculate score
-    correct_count = 0
-    total_questions = len(question_ids)
-    details_to_create = []
-
-    # Create the attempt first
-    attempt = UserAttempt.objects.create(
-        user=request.user,
-        category=category,
-        proctor_violations_count=violations
-    )
-
-    for q in questions:
-        user_ans = request.POST.get(f"question_{q.id}", "").strip()
-        is_correct = (user_ans == q.correct_option)
-        if is_correct:
-            correct_count += 1
-            
-        details_to_create.append(
-            UserAttemptDetail(
-                attempt=attempt,
-                question=q,
-                user_answer=user_ans,
-                is_correct=is_correct
-            )
-        )
-
-    UserAttemptDetail.objects.bulk_create(details_to_create)
-
-    # Update score
-    attempt.score = int((correct_count / total_questions) * 100) if total_questions > 0 else 0
-    attempt.save()
-
-    # Clear session keys
+    # Clean up legacy session keys
     request.session.pop('quiz_category_id', None)
     request.session.pop('quiz_question_ids', None)
+    request.session.pop('quiz_active_uuid', None)
 
     context = {
-        "attempt": attempt,
-        "category": category,
-        "correct_count": correct_count,
-        "total": total_questions,
+        "attempt": result["attempt"],
+        "category": result["category"],
+        "correct_count": result["correct_count"],
+        "total": result["total"],
+        "is_expired": result.get("is_expired", False),
     }
     context.update(get_user_sidebar_context(request.user))
     return render(request, "interviews/quiz_result.html", context)
@@ -174,7 +179,6 @@ class CodingListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_user_sidebar_context(self.request.user))
-        # Solved challenge IDs for visual checkmark
         solved_ids = set(
             UserAttemptDetail.objects.filter(
                 attempt__user=self.request.user,
@@ -199,7 +203,6 @@ class CodingDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_user_sidebar_context(self.request.user))
-        # Fetch past attempts for this coding challenge with select_related to fix N+1
         context["attempts"] = UserAttemptDetail.objects.filter(
             attempt__user=self.request.user,
             question=self.object
@@ -216,16 +219,56 @@ def submit_code(request, pk):
     try:
         data = json.loads(request.body)
     except Exception:
-        data = {}
-        
-    code = data.get("code", "")
-    violations = int(data.get("proctor_violations", 0))
+        return JsonResponse({"error": "Invalid JSON payload in request."}, status=400)
 
-    if not code.strip():
+    code = data.get("code", "")
+    try:
+        violations = int(data.get("proctor_violations", 0))
+    except (ValueError, TypeError):
+        violations = 0
+
+    if not code or not code.strip():
         return JsonResponse({"success": False, "error": "Code cannot be empty."})
 
-    # Run the code via sandbox runner
-    result = run_code(code, question.test_cases)
+    # Execute code via isolated CodeExecutionService
+    timeout_sec = (question.time_limit_ms / 1000.0) if question.time_limit_ms else 2.0
+    mem_limit = question.memory_limit_mb or 128
+    
+    # Combine public test cases and hidden test cases for execution
+    all_tests = list(question.test_cases or [])
+    hidden_tests = list(getattr(question, 'hidden_test_cases', []) or [])
+    full_test_suite = all_tests + hidden_tests
+
+    exec_result = CodeExecutionService.execute(
+        code_str=code,
+        test_cases=full_test_suite if full_test_suite else all_tests,
+        timeout_seconds=timeout_sec,
+        memory_limit_mb=mem_limit
+    )
+
+    passed_count = exec_result.get("passed_tests", 0)
+    total_count = exec_result.get("total_tests", len(full_test_suite) if full_test_suite else 1)
+    
+    # Partial scoring: score = passed / total * 100
+    score = int(round((passed_count / total_count) * 100)) if total_count > 0 else 0
+    is_correct = (score == 100) or exec_result.get("success", False)
+
+    # Filter out hidden test details from client response to prevent leaking test cases
+    public_results = []
+    for r in exec_result.get("results", []):
+        case_idx = r.get("case", 0)
+        if case_idx <= len(all_tests):
+            public_results.append(r)
+        else:
+            # Mask hidden test case output
+            public_results.append({
+                "case": case_idx,
+                "passed": r.get("passed", False),
+                "output": "[Hidden Test]",
+                "expected": "[Hidden Test]",
+                "duration_ms": r.get("duration_ms", 0),
+                "error": None if r.get("passed") else "Failed hidden test"
+            })
 
     # Save attempt
     category = QuestionCategory.objects.filter(slug='coding').first()
@@ -235,20 +278,36 @@ def submit_code(request, pk):
     attempt = UserAttempt.objects.create(
         user=request.user,
         category=category,
-        score=100 if result.get("success", False) else 0,
-        proctor_violations_count=violations
+        score=score,
+        proctor_violations_count=max(0, violations)
     )
+
     UserAttemptDetail.objects.create(
         attempt=attempt,
         question=question,
         user_answer=code,
-        is_correct=result.get("success", False)
+        is_correct=is_correct,
+        execution_time_ms=exec_result.get("execution_time_ms"),
+        memory_used_kb=exec_result.get("memory_used_kb"),
+        passed_tests=passed_count,
+        total_tests=total_count,
+        test_results=public_results,
+        execution_status=exec_result.get("status", "")
     )
 
+    # Record interview competency evidence if score >= 80%
+    if score >= 80:
+        CompetencyEvidenceService.record_coding_evidence(request.user, question, score)
+
     return JsonResponse({
-        "success": result.get("success", False),
-        "results": result.get("results", []),
-        "error": result.get("error", "")
+        "success": exec_result.get("success", False),
+        "score": score,
+        "passed_tests": passed_count,
+        "total_tests": total_count,
+        "results": public_results,
+        "error": exec_result.get("error", ""),
+        "execution_time_ms": exec_result.get("execution_time_ms", 0.0),
+        "status": exec_result.get("status", "")
     })
 
 
@@ -291,7 +350,6 @@ class HRBehavioralDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_user_sidebar_context(self.request.user))
-        # Fetch past attempts with select_related to fix N+1
         context["attempts"] = UserAttemptDetail.objects.filter(
             attempt__user=self.request.user,
             question=self.object
@@ -310,34 +368,10 @@ def submit_star(request, pk):
     action = request.POST.get("action", "").strip()
     result = request.POST.get("result", "").strip()
 
-    # Grading algorithm: 25% weight for each STAR section completed with >= 40 chars
-    score = 0
-    feedback_parts = []
-
-    if len(situation) >= 40:
-        score += 25
-    else:
-        feedback_parts.append("Flesh out the 'Situation' block with more context on the conflict/role.")
-        
-    if len(task) >= 40:
-        score += 25
-    else:
-        feedback_parts.append("Add more details to the 'Task' block regarding target deliverables.")
-        
-    if len(action) >= 40:
-        score += 25
-    else:
-        feedback_parts.append("Expand the 'Action' block to specify what communication or technical steps you took.")
-        
-    if len(result) >= 40:
-        score += 25
-    else:
-        feedback_parts.append("Enhance the 'Result' block by demonstrating measurable impact and lessons learned.")
-
-    if score == 100:
-        feedback = "Excellent! You followed the STAR structure perfectly with deep descriptive answers."
-    else:
-        feedback = "STAR Structure feedback: " + " ".join(feedback_parts)
+    # Evaluate via STAREvaluatorService
+    eval_result = STAREvaluatorService.evaluate(situation, task, action, result)
+    score = eval_result["score"]
+    feedback = " ".join(eval_result["overall_feedback"])
 
     category = QuestionCategory.objects.filter(slug='behavioral').first()
     if not category:
@@ -349,7 +383,7 @@ def submit_star(request, pk):
         score=score,
         proctor_violations_count=0
     )
-    
+
     combined_answer = json.dumps({
         "Situation": situation,
         "Task": task,
@@ -364,11 +398,15 @@ def submit_star(request, pk):
         is_correct=(score >= 75)
     )
 
+    if score >= 75:
+        CompetencyEvidenceService.record_star_evidence(request.user, question, score)
+
     context = {
         "question": question,
         "score": score,
         "feedback": feedback,
         "attempt": attempt,
+        "star_sections": eval_result.get("sections", {})
     }
     context.update(get_user_sidebar_context(request.user))
     return render(request, "interviews/star_result.html", context)
@@ -386,21 +424,18 @@ class MockInterviewListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_user_sidebar_context(self.request.user))
-        
-        # Suggested role derived from StudentProfile.career_goal where available
         profile = context.get('profile')
         suggested_role = ""
         if profile and profile.career_goal:
             suggested_role = profile.career_goal.strip()
         context["suggested_role"] = suggested_role
-        
-        # Standard role choices
         context["default_roles"] = [
             "Software Developer",
+            "Frontend Developer",
+            "Backend Developer",
             "Data Scientist",
             "ML Engineer",
-            "DevOps Engineer",
-            "Product Manager"
+            "DevOps Engineer"
         ]
         return context
 
@@ -410,28 +445,25 @@ def start_mock(request):
     if request.method == 'POST':
         role = request.POST.get("role", "").strip()
         if not role:
-            # Fall back to student profile career_goal if present, otherwise default
             profile = getattr(request.user, 'studentprofile', None)
             if profile and profile.career_goal:
                 role = profile.career_goal.strip()
             else:
                 role = "Software Developer"
-            
+
         session = MockInterviewSession.objects.create(
             user=request.user,
-            role=role
+            role=role,
+            current_phase='INTRODUCTION',
+            current_turn=0
         )
-        
-        # Interviewer's opening prompt
-        initial_msg = (
-            f"Hello! Welcome to your simulated technical interview for the {role} role. "
-            f"Let's begin. Can you start by introducing yourself, walking me through your background, "
-            f"and mentioning your key tech stack?"
-        )
+
+        initial_msg = MockInterviewEngine.get_initial_greeting(role)
         MockInterviewChat.objects.create(
             session=session,
             sender='Interviewer',
-            message=initial_msg
+            message=initial_msg,
+            phase='INTRODUCTION'
         )
         return redirect('interviews:mock_session', pk=session.id)
     return redirect('interviews:mock_list')
@@ -454,112 +486,42 @@ def chat_reply(request, pk):
 
     session = get_object_or_404(MockInterviewSession, pk=pk, user=request.user)
     if session.is_completed:
-        return JsonResponse({"completed": True})
+        return JsonResponse({
+            "completed": True,
+            "message": "Session already completed.",
+            "redirect_url": reverse('interviews:mock_report', args=[session.id])
+        })
 
     try:
         data = json.loads(request.body)
     except Exception:
-        data = {}
+        return JsonResponse({"error": "Invalid JSON format."}, status=400)
 
     candidate_msg = data.get("message", "").strip()
-    violations = int(data.get("proctor_violations", 0))
+    try:
+        violations = int(data.get("proctor_violations", 0))
+    except (ValueError, TypeError):
+        violations = 0
 
     if not candidate_msg:
         return JsonResponse({"error": "Message cannot be empty."}, status=400)
 
-    # Update violations count on session if increased
-    if violations > session.proctor_violations_count:
-        session.proctor_violations_count = violations
-        session.save(update_fields=['proctor_violations_count'])
-
-    # Save Candidate message
-    MockInterviewChat.objects.create(
+    # Process turn via MockInterviewEngine state machine
+    result = MockInterviewEngine.process_candidate_turn(
         session=session,
-        sender='Candidate',
-        message=candidate_msg
+        candidate_msg=candidate_msg,
+        proctor_violations_count=violations
     )
 
-    # Fetch candidate replies once to prevent duplicate queries
-    candidate_chats = list(MockInterviewChat.objects.filter(session=session, sender='Candidate'))
-    replies = len(candidate_chats)
-
-    # Interviewer Dynamic Dialog System
-    # Stage 1: Candidate intro -> Ask Technical scenario
-    # Stage 2: Candidate tech scenario -> Ask STAR conflict/project
-    # Stage 3: Candidate conflict -> End & Evaluate
-    interviewer_msg = ""
-    is_done = False
-
-    role_lower = session.role.lower()
-
-    if replies == 1:
-        if "data" in role_lower or "science" in role_lower or "ml" in role_lower:
-            interviewer_msg = "Excellent. In data science, managing noisy datasets is a common challenge. Can you explain how you handle missing values, anomalies, and feature scaling in your typical preprocessing pipeline?"
-        else:
-            interviewer_msg = "Great intro. Let's move to a technical design scenario. How would you design a scalable notification system that pushes alerts to millions of users globally in real-time, and what database/caching layer would you choose?"
-    elif replies == 2:
-        interviewer_msg = "Understood, nice structural reasoning. Let's pivot to team dynamics. Tell me about a time you faced a heavy technical disagreement or conflict within a project group. How did you resolve it, and what did you learn?"
-    else:
-        is_done = True
-        interviewer_msg = "Thank you! That concludes our mock interview. I will now analyze your communication metrics, answer structure, and keyword completeness to prepare your scorecard."
-
-    # Save Interviewer reply
-    MockInterviewChat.objects.create(
-        session=session,
-        sender='Interviewer',
-        message=interviewer_msg
-    )
-
-    if is_done:
-        # Grade session local deterministic rules
-        total_score = 0
-        feedback_notes = []
-
-        # Rule 1: Check total answer lengths (max 40 pts)
-        total_len = sum(len(c.message) for c in candidate_chats)
-        if total_len > 600:
-            total_score += 40
-            feedback_notes.append("Excellent communication volume and detail levels.")
-        elif total_len > 300:
-            total_score += 25
-            feedback_notes.append("Satisfactory answer length, but try providing more descriptive examples.")
-        else:
-            total_score += 10
-            feedback_notes.append("Your answers were too short. Elaborate with projects and specific actions next time.")
-
-        # Rule 2: Keyword match for role (max 40 pts)
-        keywords = ["django", "python", "sql", "cache", "redis", "postgres", "star", "result", "team", "model", "scikit", "pandas", "numpy", "git", "scale", "index", "design"]
-        matched_words = []
-        for chat in candidate_chats:
-            text = chat.message.lower()
-            for kw in keywords:
-                if kw in text and kw not in matched_words:
-                    matched_words.append(kw)
-        
-        keyword_score = min(len(matched_words) * 6, 40)
-        total_score += keyword_score
-        
-        if len(matched_words) >= 5:
-            feedback_notes.append(f"Strong industry jargon keyword presence: {', '.join(matched_words)}.")
-        else:
-            feedback_notes.append("Consider integrating more technical terms and tool names in your responses.")
-
-        # Rule 3: Proctor violation penalty (max 20 pt impact)
-        proctor_penalty = min(session.proctor_violations_count * 10, 20)
-        total_score = max(total_score + (20 - proctor_penalty), 0)
-        
-        if proctor_penalty > 0:
-            feedback_notes.append(f"Penalized {proctor_penalty} points due to focus/fullscreen switches detected by proctoring.")
-
-        session.is_completed = True
-        session.overall_score = min(total_score, 100)
-        session.feedback = " ".join(feedback_notes)
-        session.save()
+    if "error" in result:
+        return JsonResponse({"error": result["error"]}, status=400)
 
     return JsonResponse({
-        "message": interviewer_msg,
-        "completed": is_done,
-        "redirect_url": reverse('interviews:mock_report', args=[session.id]) if is_done else ""
+        "message": result["message"],
+        "completed": result["completed"],
+        "phase": result.get("phase", ""),
+        "turn": result.get("turn", 0),
+        "redirect_url": reverse('interviews:mock_report', args=[session.id]) if result.get("completed") else ""
     })
 
 
@@ -569,34 +531,23 @@ def mock_report(request, pk):
     if not session.is_completed:
         return redirect('interviews:mock_session', pk=session.id)
 
-    # Compute actual breakdown scores directly from session data (no fake numbers, no broken multiply filter)
     candidate_chats = list(MockInterviewChat.objects.filter(session=session, sender='Candidate'))
     total_len = sum(len(c.message) for c in candidate_chats)
-    
-    # 1. Communication volume (max 40 pts -> percentage of 40)
-    if total_len > 600:
-        comm_pts = 40
-    elif total_len > 300:
-        comm_pts = 25
-    else:
-        comm_pts = 10
-    comm_pct = int(round((comm_pts / 40) * 100))
 
-    # 2. Keywords presence (max 40 pts -> percentage of 40)
-    keywords = ["django", "python", "sql", "cache", "redis", "postgres", "star", "result", "team", "model", "scikit", "pandas", "numpy", "git", "scale", "index", "design"]
-    matched_words = []
-    for chat in candidate_chats:
-        text = chat.message.lower()
-        for kw in keywords:
-            if kw in text and kw not in matched_words:
-                matched_words.append(kw)
-    keyword_pts = min(len(matched_words) * 6, 40)
-    keyword_pct = int(round((keyword_pts / 40) * 100))
+    # Retrieve dimension breakdown
+    dims = session.dimension_scores or {}
+    comm_pct = dims.get('communication', {}).get('percentage', 50)
+    keyword_pct = dims.get('technical_depth', {}).get('percentage', 50)
 
-    # 3. Proctor score (base 20 pts minus penalty -> percentage of 20)
-    proctor_penalty = min(session.proctor_violations_count * 10, 20)
-    proctor_pts = max(20 - proctor_penalty, 0)
-    proctor_pct = int(round((proctor_pts / 20) * 100))
+    # Recognized keywords
+    all_text = " ".join(c.message.lower() for c in candidate_chats)
+    track_key = MockInterviewEngine.match_role_track(session.role)
+    track_keywords = ROLE_QUESTION_BANKS.get(track_key, {}).get('keywords', set())
+    matched_words = [kw for kw in track_keywords if kw in all_text]
+
+    # Audit proctoring report (does not dock score)
+    integrity_report = ProctorAuditService.get_session_integrity_report(request.user, 'MockInterview', session.id)
+    proctor_pct = 100 if session.proctor_violations_count == 0 else max(100 - (session.proctor_violations_count * 10), 40)
 
     context = {
         "session": session,
@@ -606,6 +557,8 @@ def mock_report(request, pk):
         "matched_words": matched_words,
         "proctor_pct": proctor_pct,
         "candidate_chats_count": len(candidate_chats),
+        "integrity_report": integrity_report,
+        "dimension_scores": dims
     }
     context.update(get_user_sidebar_context(request.user))
     return render(request, "interviews/mock_report.html", context)
@@ -615,25 +568,28 @@ def mock_report(request, pk):
 def log_proctor_violation(request):
     if request.method != 'POST':
         return JsonResponse({"error": "POST method required"}, status=405)
-    
+
     try:
         data = json.loads(request.body)
-        session_type = data.get("session_type")
-        session_id = data.get("session_id")
-        violation_type = data.get("violation_type")
-        
-        if not session_type or not session_id or not violation_type:
-            return JsonResponse({"error": "Missing params"}, status=400)
-            
-        ProctorLog.objects.create(
-            user=request.user,
-            session_type=session_type,
-            session_id=session_id,
-            violation_type=violation_type
-        )
-        return JsonResponse({"success": True})
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    except Exception:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    session_type = data.get("session_type")
+    session_id = data.get("session_id")
+    violation_type = data.get("violation_type")
+
+    success, msg = ProctorAuditService.record_violation(
+        user=request.user,
+        session_type=session_type,
+        session_id=session_id,
+        violation_type=violation_type,
+        source='CLIENT_REPORTED'
+    )
+
+    if not success:
+        return JsonResponse({"error": msg}, status=400 if "Invalid" in msg else 429)
+
+    return JsonResponse({"success": True, "message": msg})
 
 
 @method_decorator(login_required, name='dispatch')
@@ -644,14 +600,13 @@ class PerformanceReportView(TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         context.update(get_user_sidebar_context(user))
-        
-        # Attempts history with select_related to fix N+1 on category
+
+        # Query optimization with select_related
         context["attempts"] = UserAttempt.objects.filter(user=user).select_related('category').order_by('-attempted_at')
-        # Mock interviews history
         context["mocks"] = MockInterviewSession.objects.filter(user=user, is_completed=True).order_by('-started_at')
-        # Proctor violations history
         violations_qs = ProctorLog.objects.filter(user=user).order_by('-timestamp')
         context["violations"] = violations_qs
         context["proctor_logs"] = violations_qs
-        
+        context["evidence"] = InterviewCompetencyEvidence.objects.filter(user=user).order_by('-created_at')
+
         return context

@@ -337,3 +337,404 @@ class InterviewPrepTests(TestCase):
         self.assertEqual(len(response.context['violations']), 1)
         self.assertIn('mocks', response.context)
         self.assertIn('user_initials', response.context)
+
+
+class InterviewSecurityTests(TestCase):
+    """
+    Exhaustive security and sandbox verification tests.
+    Asserts rejection of dangerous imports, filesystem/eval exploits,
+    environment leakage, memory/loop DOS, and output flooding.
+    """
+
+    def test_dangerous_module_import_rejected(self):
+        dangerous_snippets = [
+            "import os\ndef solution(): return os.getcwd()",
+            "import sys\ndef solution(): return sys.executable",
+            "import subprocess\ndef solution(): return subprocess.run(['ls'])",
+            "import socket\ndef solution(): return socket.gethostname()",
+            "import shutil\ndef solution(): return shutil.rmtree('/')",
+            "import ctypes\ndef solution(): return ctypes.CDLL(None)",
+            "import urllib.request\ndef solution(): return 'pwned'",
+        ]
+        test_cases = [{"input": "", "expected": "", "function": "solution"}]
+        for snippet in dangerous_snippets:
+            result = run_code(snippet, test_cases)
+            self.assertFalse(result.get("success"), f"Snippet should have failed: {snippet}")
+            self.assertEqual(result.get("status"), "sandbox_error")
+            self.assertIn("Security Violation", result.get("error", ""))
+
+    def test_filesystem_open_call_rejected(self):
+        code = "def read_db():\n    with open('db.sqlite3', 'r') as f:\n        return f.read()\n"
+        test_cases = [{"input": "", "expected": "", "function": "read_db"}]
+        result = run_code(code, test_cases)
+        self.assertFalse(result.get("success"))
+        self.assertEqual(result.get("status"), "sandbox_error")
+
+    def test_eval_and_exec_builtins_rejected(self):
+        code = "def exploit():\n    return eval('2 + 2')\n"
+        test_cases = [{"input": "", "expected": 4, "function": "exploit"}]
+        result = run_code(code, test_cases)
+        self.assertFalse(result.get("success"))
+        self.assertEqual(result.get("status"), "sandbox_error")
+
+    def test_reflection_attributes_rejected(self):
+        code = "def exploit():\n    return ().__class__.__subclasses__()\n"
+        test_cases = [{"input": "", "expected": "", "function": "exploit"}]
+        result = run_code(code, test_cases)
+        self.assertFalse(result.get("success"))
+        self.assertEqual(result.get("status"), "sandbox_error")
+
+    def test_infinite_loop_timeout_deterministic(self):
+        code = "def infinite_fn():\n    while True:\n        x = 1\n"
+        test_cases = [{"input": "", "expected": "", "function": "infinite_fn"}]
+        result = run_code(code, test_cases)
+        self.assertFalse(result.get("success"))
+        self.assertEqual(result.get("status"), "timeout")
+        self.assertIn("Timeout", result.get("error", ""))
+
+    def test_excessive_stdout_truncated(self):
+        code = "def flood():\n    print('A' * 100000)\n    return 42\n"
+        test_cases = [{"input": "", "expected": 42, "function": "flood"}]
+        result = run_code(code, test_cases)
+        self.assertTrue(result.get("success"))
+        self.assertLessEqual(len(result.get("stdout", "")), 65536)
+
+
+class QuizSessionTests(TestCase):
+    """
+    Persistent server-managed QuizSession tests.
+    Verifies multi-tab isolation, server-side countdown timestamps,
+    anti-clash session tracking, and idempotent atomic submissions.
+    """
+
+    def setUp(self):
+        self.user_a = User.objects.create_user(username='cand_a', email='cand_a@example.com', password='password123')
+        self.user_b = User.objects.create_user(username='cand_b', email='cand_b@example.com', password='password123')
+        self.client.force_login(self.user_a)
+
+        self.category = QuestionCategory.objects.create(name='Computer Architecture', slug='comp-arch')
+        for i in range(8):
+            Question.objects.create(
+                category=self.category,
+                title=f'Arch Q{i}',
+                content=f'Question content {i}',
+                question_type='MCQ',
+                difficulty='Easy' if i < 3 else ('Medium' if i < 6 else 'Hard'),
+                options=['A1', 'B2', 'C3', 'D4'],
+                correct_option='A'
+            )
+
+    def test_quiz_session_created_and_resumed(self):
+        from apps.interviews.services.quiz_engine import QuizEngineService
+        from apps.interviews.models import QuizSession
+
+        session1, questions1, created1 = QuizEngineService.get_or_create_active_session(
+            user=self.user_a, category=self.category, count=5
+        )
+        self.assertTrue(created1)
+        self.assertEqual(len(questions1), 5)
+        self.assertFalse(session1.is_submitted)
+
+        # Calling again should resume the active session without regenerating questions
+        session2, questions2, created2 = QuizEngineService.get_or_create_active_session(
+            user=self.user_a, category=self.category, count=5
+        )
+        self.assertFalse(created2)
+        self.assertEqual(session1.id, session2.id)
+        self.assertEqual([q.id for q in questions1], [q.id for q in questions2])
+
+    def test_multi_tab_isolation_distinct_categories(self):
+        from apps.interviews.services.quiz_engine import QuizEngineService
+
+        cat2 = QuestionCategory.objects.create(name='Operating Systems', slug='os')
+        for i in range(5):
+            Question.objects.create(
+                category=cat2,
+                title=f'OS Q{i}',
+                content=f'OS Content {i}',
+                question_type='MCQ',
+                options=['A', 'B', 'C', 'D'],
+                correct_option='B'
+            )
+
+        session_arch, _, _ = QuizEngineService.get_or_create_active_session(self.user_a, self.category)
+        session_os, _, _ = QuizEngineService.get_or_create_active_session(self.user_a, cat2)
+
+        # Both sessions coexist independently with distinct UUIDs and question sets
+        self.assertNotEqual(session_arch.session_uuid, session_os.session_uuid)
+        self.assertNotEqual(session_arch.category_id, session_os.category_id)
+
+    def test_duplicate_submission_idempotency(self):
+        from apps.interviews.services.quiz_engine import QuizEngineService
+
+        session, questions, _ = QuizEngineService.get_or_create_active_session(self.user_a, self.category)
+        answers = {f'question_{q.id}': 'A' for q in questions}
+
+        # First submission
+        res1 = QuizEngineService.submit_quiz_session(
+            user=self.user_a,
+            session_uuid_str=str(session.session_uuid),
+            category_id=self.category.id,
+            answers_dict=answers
+        )
+        self.assertFalse(res1['already_submitted'])
+        self.assertEqual(res1['score'], 100)
+
+        # Second submission of the same session must return existing attempt without creating new records
+        attempt_count_before = UserAttempt.objects.filter(user=self.user_a).count()
+        res2 = QuizEngineService.submit_quiz_session(
+            user=self.user_a,
+            session_uuid_str=str(session.session_uuid),
+            category_id=self.category.id,
+            answers_dict=answers
+        )
+        self.assertTrue(res2['already_submitted'])
+        self.assertEqual(res2['score'], 100)
+        self.assertEqual(UserAttempt.objects.filter(user=self.user_a).count(), attempt_count_before)
+
+    def test_unauthorized_user_cannot_submit_others_quiz(self):
+        from apps.interviews.services.quiz_engine import QuizEngineService
+        from django.core.exceptions import PermissionDenied
+
+        session, questions, _ = QuizEngineService.get_or_create_active_session(self.user_a, self.category)
+        answers = {f'question_{q.id}': 'A' for q in questions}
+
+        # User B attempts to submit User A's session
+        with self.assertRaises(PermissionDenied):
+            QuizEngineService.submit_quiz_session(
+                user=self.user_b,
+                session_uuid_str=str(session.session_uuid),
+                category_id=self.category.id,
+                answers_dict=answers
+            )
+
+
+class CodingEngineTests(TestCase):
+    """
+    Modernized Coding Challenge evaluation tests.
+    Tests partial test scoring, hidden test protection, runtime errors, and competency evidence.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='coder1', email='coder1@example.com', password='password123')
+        self.client.force_login(self.user)
+        self.category = QuestionCategory.objects.create(name='Algorithms', slug='algorithms')
+        self.challenge = Question.objects.create(
+            category=self.category,
+            title='Two Sum',
+            content='Find indices of elements that sum to target.',
+            question_type='Coding',
+            difficulty='Easy',
+            test_cases=[
+                {"input": "[2, 7, 11, 15], 9", "expected": "[0, 1]", "function": "two_sum"},
+                {"input": "[3, 2, 4], 6", "expected": "[1, 2]", "function": "two_sum"}
+            ],
+            hidden_test_cases=[
+                {"input": "[3, 3], 6", "expected": "[0, 1]", "function": "two_sum"}
+            ],
+            skills_evaluated='Algorithms, Python, Data Structures'
+        )
+
+    def test_partial_test_scoring(self):
+        # Passes test 1 and hidden test, fails test 2
+        code = """
+def two_sum(nums, target):
+    if nums == [2, 7, 11, 15]:
+        return [0, 1]
+    if nums == [3, 3]:
+        return [0, 1]
+    return [-1, -1]
+"""
+        url = reverse('interviews:submit_code', args=[self.challenge.id])
+        resp = self.client.post(url, data=json.dumps({"code": code}), content_type='application/json', HTTP_HOST='127.0.0.1')
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        # 2 of 3 tests passed -> 67%
+        self.assertEqual(data['passed_tests'], 2)
+        self.assertEqual(data['total_tests'], 3)
+        self.assertEqual(data['score'], 67)
+        self.assertFalse(data['success'])
+
+    def test_hidden_test_case_masked_in_client_response(self):
+        code = "def two_sum(nums, target): return [0, 1]"
+        url = reverse('interviews:submit_code', args=[self.challenge.id])
+        resp = self.client.post(url, data=json.dumps({"code": code}), content_type='application/json', HTTP_HOST='127.0.0.1')
+        data = resp.json()
+        # Case 3 is the hidden test case, verify its output and expected values are masked
+        hidden_res = next((r for r in data['results'] if r.get('case') == 3), None)
+        self.assertIsNotNone(hidden_res)
+        self.assertEqual(hidden_res['output'], '[Hidden Test]')
+        self.assertEqual(hidden_res['expected'], '[Hidden Test]')
+
+    def test_malformed_json_submission_rejected(self):
+        url = reverse('interviews:submit_code', args=[self.challenge.id])
+        resp = self.client.post(url, data="NOT_JSON", content_type='application/json', HTTP_HOST='127.0.0.1')
+        self.assertEqual(resp.status_code, 400)
+
+    def test_empty_code_submission_rejected(self):
+        url = reverse('interviews:submit_code', args=[self.challenge.id])
+        resp = self.client.post(url, data=json.dumps({"code": "   "}), content_type='application/json', HTTP_HOST='127.0.0.1')
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.json()['success'])
+
+
+class STARBehavioralTests(TestCase):
+    """
+    STAR Behavioral Evaluator tests.
+    Verifies rubric scoring, anti-gaming detection, and feedback generation.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='star_cand', email='star_cand@example.com', password='password123')
+        self.client.force_login(self.user)
+        self.category = QuestionCategory.objects.create(name='Behavioral', slug='behavioral')
+        self.question = Question.objects.create(
+            category=self.category,
+            title='Leadership Under Pressure',
+            content='Tell me about leading a project under high stakes.',
+            question_type='STAR',
+            skills_evaluated='Leadership, Communication'
+        )
+
+    def test_star_repetitive_characters_rejected(self):
+        from apps.interviews.services.star_evaluator import STAREvaluatorService
+        res = STAREvaluatorService.evaluate(
+            situation="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            task="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            action="cccccccccccccccccccccccccccccccccccccccc",
+            result="dddddddddddddddddddddddddddddddddddddddd"
+        )
+        self.assertEqual(res['score'], 0)
+        self.assertIn("repeated characters", res['sections']['situation']['feedback'][0])
+
+    def test_star_repeated_word_spam_rejected(self):
+        from apps.interviews.services.star_evaluator import STAREvaluatorService
+        res = STAREvaluatorService.evaluate(
+            situation="project project project project project project project",
+            task="task task task task task task task task",
+            action="action action action action action action action",
+            result="result result result result result result result"
+        )
+        self.assertEqual(res['score'], 0)
+        self.assertIn("vocabulary diversity", res['sections']['situation']['feedback'][0])
+
+    def test_star_weak_result_section_penalized(self):
+        from apps.interviews.services.star_evaluator import STAREvaluatorService
+        res = STAREvaluatorService.evaluate(
+            situation="During our final semester, the e-commerce client had a major production database outage.",
+            task="My responsibility was to investigate database deadlocks and restore system reliability.",
+            action="I analyzed query execution plans, refactored queries, and configured connection pooling.",
+            result="Everything was okay afterwards."  # Weak result lacking metrics
+        )
+        # Result section should not get full 25 points due to missing measurable impact
+        self.assertLess(res['sections']['result']['score'], 25)
+        self.assertTrue(any("Quantify results" in fb for fb in res['sections']['result']['feedback']))
+
+
+class MockInterviewStateEngineTests(TestCase):
+    """
+    Mock Interview State Machine & Role Awareness tests.
+    Verifies state transitions, role-track question banks, and multi-dimensional rubrics.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='mock_user', email='mock_user@example.com', password='password123')
+        self.client.force_login(self.user)
+
+    def test_role_track_matching_canonical(self):
+        from apps.interviews.services.mock_engine import MockInterviewEngine
+        self.assertEqual(MockInterviewEngine.match_role_track("React Frontend Engineer"), "frontend")
+        self.assertEqual(MockInterviewEngine.match_role_track("Django Backend Developer"), "backend")
+        self.assertEqual(MockInterviewEngine.match_role_track("Data Scientist & Analyst"), "data")
+        self.assertEqual(MockInterviewEngine.match_role_track("Machine Learning Engineer"), "ml")
+        self.assertEqual(MockInterviewEngine.match_role_track("DevOps & Cloud Specialist"), "devops")
+        self.assertEqual(MockInterviewEngine.match_role_track("Full Stack Developer"), "backend")
+
+    def test_empty_candidate_reply_rejected(self):
+        session = MockInterviewSession.objects.create(user=self.user, role="Software Engineer")
+        url = reverse('interviews:chat_reply', args=[session.id])
+        resp = self.client.post(url, data=json.dumps({"message": "   "}), content_type='application/json', HTTP_HOST='127.0.0.1')
+        self.assertEqual(resp.status_code, 400)
+
+    def test_proctor_violations_do_not_dock_mock_score(self):
+        session = MockInterviewSession.objects.create(user=self.user, role="Backend Developer")
+        url = reverse('interviews:chat_reply', args=[session.id])
+
+        # Candidate turns with focus violations reported
+        turns = [
+            "Hi, I am a backend developer experienced with Django, PostgreSQL, Redis, and building high-scale REST APIs.",
+            "For high throughput, I configure connection pooling, use Redis caching with LRU eviction, and optimize database indexing because query latency directly impacts system throughput.",
+            "During a release conflict, I organized a design review with stakeholders to evaluate latency vs. storage tradeoffs, ensuring our team maintained zero downtime."
+        ]
+        for msg in turns:
+            resp = self.client.post(
+                url,
+                data=json.dumps({"message": msg, "proctor_violations": 4}),
+                content_type='application/json',
+                HTTP_HOST='127.0.0.1'
+            )
+            self.assertEqual(resp.status_code, 200)
+
+        session.refresh_from_db()
+        self.assertTrue(session.is_completed)
+        # Score is evaluated from rubric and NOT docked by 40 points
+        self.assertGreaterEqual(session.overall_score, 70)
+
+
+class ProctorAuditTests(TestCase):
+    """
+    Proctoring audit & rate-limiting tests.
+    Verifies that proctoring functions as an integrity audit stream rather than direct score deduction.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='proctor_user', email='proctor_user@example.com', password='password123')
+        self.client.force_login(self.user)
+
+    def test_proctor_logging_valid(self):
+        url = reverse('interviews:log_proctor_violation')
+        data = {"session_type": "Quiz", "session_id": 1, "violation_type": "Window Blur"}
+        resp = self.client.post(url, data=json.dumps(data), content_type='application/json', HTTP_HOST='127.0.0.1')
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json()['success'])
+
+    def test_proctor_invalid_session_type_rejected(self):
+        url = reverse('interviews:log_proctor_violation')
+        data = {"session_type": "HackingAttempt", "session_id": 1, "violation_type": "Tab Switch"}
+        resp = self.client.post(url, data=json.dumps(data), content_type='application/json', HTTP_HOST='127.0.0.1')
+        self.assertEqual(resp.status_code, 400)
+
+
+class CareerIntegrationAndRecommendationTests(TestCase):
+    """
+    Integration tests linking Interview Prep to CareerCatalyst's skill and recommendation ecosystem.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='career_user', email='career_user@example.com', password='password123')
+        self.client.force_login(self.user)
+        self.profile = StudentProfile.objects.create(
+            user=self.user,
+            career_goal='Backend Developer',
+            skills='Python, SQL'
+        )
+
+    def test_competency_evidence_recorded_and_retrieved(self):
+        from apps.interviews.services.competency import CompetencyEvidenceService
+
+        CompetencyEvidenceService.record_evidence(
+            user=self.user,
+            skill_name='Django',
+            source_type='TECHNICAL_QUIZ',
+            score=90
+        )
+        skills = CompetencyEvidenceService.get_user_verified_interview_skills(self.user)
+        self.assertIn('Django', skills)
+
+    def test_hub_recommendations_generation(self):
+        from apps.interviews.services.recommendations import InterviewRecommendationService
+
+        recs = InterviewRecommendationService.get_personalized_recommendations(self.user)
+        self.assertEqual(recs['target_career'], 'Backend Developer')
+        self.assertIsInstance(recs['recommended_focus'], list)
+
