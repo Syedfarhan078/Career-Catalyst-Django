@@ -6,6 +6,18 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
 <link rel="stylesheet" href="{% static 'css/roadmaps.css' %}?v=1.0">
+<style>
+    @keyframes floatBounce {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-8px) scale(1.08); }
+    }
+    .celebration-emoji {
+        animation: floatBounce 2s ease-in-out infinite;
+        display: inline-block;
+        font-size: 3.25rem;
+        line-height: 1;
+    }
+</style>
 {% endblock %}
 
 {# Override public navbar, footer, and floating chatbot for workspace application shell #}
@@ -128,9 +140,9 @@
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div class="d-flex align-items-center gap-2 flex-wrap" id="trackActionsContainer">
                     {% if is_roadmap_completed %}
-                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1.5 fw-semibold">
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1.5 fw-semibold" id="trackMasteredBadge">
                         <i class="bi bi-check-circle-fill me-1"></i> Track Fully Mastered
                     </span>
                     {% if certificate %}
@@ -275,27 +287,29 @@
     </div>
 </div>
 
-<!-- Restrained & Professional Week Completion Modal -->
+<!-- Celebration & Week/Track Completion Modal -->
 <div class="modal fade" id="weekCompletedModal" tabindex="-1" aria-labelledby="weekCompletedTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content roadmap-modal-content">
+        <div class="modal-content roadmap-modal-content text-center p-4">
             <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
             
-            <div class="roadmap-modal-icon">
-                <i class="bi bi-award-fill"></i>
+            <div class="mb-3 text-center">
+                <span class="celebration-emoji" id="weekCompletedEmoji">🎉</span>
             </div>
             
-            <div class="d-inline-flex align-items-center justify-content-center gap-1 mb-1">
-                <span class="text-primary small fw-semibold text-uppercase" style="letter-spacing: 0.08em;">Milestone Mastered</span>
+            <div class="d-inline-flex align-items-center justify-content-center gap-1 mb-2">
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1.5 small fw-semibold" id="weekCompletedBadge">
+                    ✨ Congratulations! ✨
+                </span>
             </div>
             
-            <h2 class="roadmap-modal-title" id="weekCompletedTitle">Week Completed!</h2>
+            <h2 class="roadmap-modal-title mb-2" id="weekCompletedTitle">Week Completed!</h2>
             
-            <p class="roadmap-modal-text">
+            <p class="roadmap-modal-text text-muted mb-4" id="weekCompletedText">
                 Great job completing all lessons in this milestone. Your progress is saved and your profile readiness has been updated.
             </p>
             
-            <div class="d-flex justify-content-center">
+            <div class="d-flex justify-content-center gap-2 flex-wrap" id="weekCompletedActions">
                 <button type="button" class="dash-btn-primary px-4" data-bs-dismiss="modal">
                     <i class="bi bi-check-lg"></i>
                     <span>Continue Roadmap</span>
@@ -304,9 +318,10 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-
 <script>
     (function() {
         // Mobile Sidebar Drawer
@@ -331,16 +346,45 @@
         if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
         if (overlay) overlay.addEventListener('click', closeSidebar);
 
-        // Week Confetti (Respects prefers-reduced-motion)
-        function triggerWeekConfetti() {
+        // Confetti Celebration with Accessible Reduced Motion Support
+        function triggerWeekConfetti(isGrandCelebration) {
             const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             if (prefersReducedMotion) return;
 
-            if (typeof confetti === 'function') {
+            if (typeof confetti !== 'function') return;
+
+            if (isGrandCelebration) {
+                // Grand celebration: multi-angle confetti cannons firing across 2.5s
+                const duration = 2500;
+                const end = Date.now() + duration;
+
+                (function frame() {
+                    confetti({
+                        particleCount: 5,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0, y: 0.7 },
+                        zIndex: 1100
+                    });
+                    confetti({
+                        particleCount: 5,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1, y: 0.7 },
+                        zIndex: 1100
+                    });
+
+                    if (Date.now() < end) {
+                        requestAnimationFrame(frame);
+                    }
+                }());
+            } else {
+                // Milestone single blast
                 confetti({
-                    particleCount: 50,
-                    spread: 60,
-                    origin: { y: 0.6 }
+                    particleCount: 75,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    zIndex: 1100
                 });
             }
         }
@@ -374,10 +418,19 @@
 
                         // Update global progress bar & text
                         const progressBar = document.getElementById('progressBar');
-                        if (progressBar) progressBar.style.width = data.progress_percentage + '%';
+                        if (progressBar) {
+                            progressBar.style.width = data.progress_percentage + '%';
+                            if (data.progress_percentage === 100) {
+                                progressBar.classList.add('bg-success');
+                            }
+                        }
                         const progressText = document.getElementById('progressText');
                         if (progressText) {
                             progressText.textContent = `${data.completed_count}/${data.total_topics} lessons (${data.progress_percentage}%)`;
+                            if (data.progress_percentage === 100) {
+                                progressText.classList.remove('text-primary');
+                                progressText.classList.add('text-success');
+                            }
                         }
 
                         // Update Milestone Block Status
@@ -404,14 +457,99 @@
                             }
                         }
 
-                        // Milestone Completed Celebration
-                        if (data.week_completed) {
-                            const titleEl = document.getElementById('weekCompletedTitle');
-                            if (titleEl) {
-                                titleEl.textContent = `Week ${data.week_number} Completed!`;
-                            }
+                        // Track Mastery & Completion Status
+                        const isTrackMastered = (data.progress_percentage === 100) || data.certificate_awarded;
 
-                            triggerWeekConfetti();
+                        // Dynamically update Focus Bar if track is mastered
+                        if (isTrackMastered) {
+                            const actionsContainer = document.getElementById('trackActionsContainer');
+                            if (actionsContainer) {
+                                const jumpBtn = document.getElementById('jumpToCurrentBtn');
+                                if (jumpBtn) jumpBtn.remove();
+
+                                if (!document.getElementById('trackMasteredBadge')) {
+                                    const badge = document.createElement('span');
+                                    badge.id = 'trackMasteredBadge';
+                                    badge.className = 'badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1.5 fw-semibold';
+                                    badge.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Track Fully Mastered';
+                                    actionsContainer.prepend(badge);
+                                }
+
+                                const certUrl = data.certificate_url || (data.certificate_id ? `/roadmaps/certificate/${data.certificate_id}/` : null);
+                                if (certUrl && !document.getElementById('certificateBtn')) {
+                                    const certLink = document.createElement('a');
+                                    certLink.id = 'certificateBtn';
+                                    certLink.href = certUrl;
+                                    certLink.className = 'dash-btn-primary dash-btn-sm';
+                                    certLink.innerHTML = '<i class="bi bi-award-fill"></i> <span>View Certificate</span>';
+                                    actionsContainer.appendChild(certLink);
+                                }
+                            }
+                        }
+
+                        // Milestone / Final Week Completed Celebration Modal
+                        if (data.week_completed || isTrackMastered) {
+                            const emojiEl = document.getElementById('weekCompletedEmoji');
+                            const badgeEl = document.getElementById('weekCompletedBadge');
+                            const titleEl = document.getElementById('weekCompletedTitle');
+                            const textEl = document.getElementById('weekCompletedText');
+                            const actionsEl = document.getElementById('weekCompletedActions');
+
+                            if (isTrackMastered) {
+                                if (emojiEl) emojiEl.textContent = '🏆';
+                                if (badgeEl) {
+                                    badgeEl.className = 'badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1.5 small fw-semibold';
+                                    badgeEl.innerHTML = '✨ Track Mastered & Certified! ✨';
+                                }
+                                if (titleEl) titleEl.textContent = 'Curriculum Completed!';
+                                if (textEl) {
+                                    textEl.textContent = 'Outstanding achievement! You have mastered all lessons in this roadmap track. Your official Certificate of Completion has been issued!';
+                                }
+                                if (actionsEl) {
+                                    const certUrl = data.certificate_url || (data.certificate_id ? `/roadmaps/certificate/${data.certificate_id}/` : null);
+                                    if (certUrl) {
+                                        actionsEl.innerHTML = `
+                                            <a href="${certUrl}" class="dash-btn-primary px-4">
+                                                <i class="bi bi-award-fill"></i>
+                                                <span>View Certificate</span>
+                                            </a>
+                                            <button type="button" class="dash-btn-secondary px-3" data-bs-dismiss="modal">
+                                                <span>Close</span>
+                                            </button>
+                                        `;
+                                    } else {
+                                        actionsEl.innerHTML = `
+                                            <button type="button" class="dash-btn-primary px-4" data-bs-dismiss="modal">
+                                                <i class="bi bi-check-lg"></i>
+                                                <span>Continue Roadmap</span>
+                                            </button>
+                                        `;
+                                    }
+                                }
+                                triggerWeekConfetti(true);
+                            } else {
+                                if (emojiEl) emojiEl.textContent = '🎉';
+                                if (badgeEl) {
+                                    badgeEl.className = 'badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1.5 small fw-semibold';
+                                    badgeEl.innerHTML = '✨ Congratulations! ✨';
+                                }
+                                if (titleEl) {
+                                    titleEl.textContent = `Week ${data.week_number} Completed!`;
+                                }
+                                if (textEl) {
+                                    const weekLabel = data.week_title ? ` (${data.week_title})` : '';
+                                    textEl.textContent = `Great job completing all lessons in Week ${data.week_number}${weekLabel}. Your progress is saved and your profile readiness has been updated.`;
+                                }
+                                if (actionsEl) {
+                                    actionsEl.innerHTML = `
+                                        <button type="button" class="dash-btn-primary px-4" data-bs-dismiss="modal">
+                                            <i class="bi bi-check-lg"></i>
+                                            <span>Continue Roadmap</span>
+                                        </button>
+                                    `;
+                                }
+                                triggerWeekConfetti(false);
+                            }
 
                             const modalEl = document.getElementById('weekCompletedModal');
                             if (modalEl && window.bootstrap) {
@@ -420,7 +558,7 @@
                             }
                         }
 
-                        // Restrained notification for newly earned skills
+                        // Notifications for newly earned or lost skills
                         if (data.is_completed && data.earned_skills && data.earned_skills.length > 0) {
                             showSkillToast(data.earned_skills);
                         } else if (!data.is_completed && data.lost_skills && data.lost_skills.length > 0) {
