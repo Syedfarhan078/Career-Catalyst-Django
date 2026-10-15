@@ -644,6 +644,49 @@ class UnifiedPortfolioRecommendationTests(TestCase):
         self.assertTrue('react' in lower_skills or 'reactjs' in lower_skills)
         self.assertTrue('kubernetes' in lower_skills or 'k8s' in lower_skills)
 
+    def test_roadmap_certificate_counted_and_deduplicated_in_diagnostics(self):
+        from apps.roadmaps.models import RoadmapCertificate
+        from apps.resume.models import Certification
+
+        # 1. Initially no certs
+        _, cert_count, _, _ = get_unified_portfolio_diagnostics(self.user)
+        self.assertEqual(cert_count, 0)
+
+        # 2. Add valid RoadmapCertificate
+        rc = RoadmapCertificate.objects.create(
+            certificate_id='CC-2026-DIAGTEST123',
+            user=self.user,
+            career_path=self.path,
+            total_topics_completed=2,
+            skills_summary='Python, Docker',
+            is_valid=True
+        )
+        _, cert_count, _, cert_skills = get_unified_portfolio_diagnostics(self.user)
+        self.assertEqual(cert_count, 1)
+        lower_cert_skills = {s.lower() for s in cert_skills}
+        self.assertIn('python', lower_cert_skills)
+
+        # 3. Import or mirror into resume certifications
+        resume = Resume.objects.create(user=self.user, title='Test Resume', is_default=True)
+        Certification.objects.create(
+            resume=resume,
+            name=f"{self.path.name} Track Mastery",
+            organization="CareerCatalyst",
+            credential_url=f"http://testserver/verify/{rc.certificate_id}/"
+        )
+
+        # 4. Diagnostics must deduplicate: still 1 unique cert
+        _, cert_count_dedup, _, _ = get_unified_portfolio_diagnostics(self.user, resume)
+        self.assertEqual(cert_count_dedup, 1)
+
+        # 5. Revoked certificate should not be counted
+        rc.is_valid = False
+        rc.save()
+        resume.certifications.all().delete()
+        _, cert_count_revoked, _, _ = get_unified_portfolio_diagnostics(self.user)
+        self.assertEqual(cert_count_revoked, 0)
+
+
 
 
 

@@ -1,14 +1,19 @@
+import io
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.contrib import messages
 from django.db import transaction
+from xhtml2pdf import pisa
 
-from .models import CareerPath, Milestone, Topic, UserRoadmap, TopicProgress
-from .services import sync_topic_completion
+from .models import CareerPath, Milestone, Topic, UserRoadmap, TopicProgress, RoadmapCertificate
+from .services import sync_topic_completion, check_and_award_roadmap_certificate, get_roadmap_certificate
+from .utils import generate_qr_code_base64, is_rate_limited
 from apps.profiles.models import StudentProfile
 
 
@@ -71,6 +76,11 @@ class CareerPathListView(ListView):
             context['progress_map'] = progress_map
             context['completed_path_ids'] = [e.career_path_id for e in completed_enrollments]
             context['in_progress_path_ids'] = [e.career_path_id for e in in_progress_enrollments]
+
+            # Certificates map
+            certs = RoadmapCertificate.objects.filter(user=self.request.user, is_valid=True)
+            certificates_map = {c.career_path_id: c for c in certs}
+            context['certificates_map'] = certificates_map
 
             # Deterministic Primary Active Roadmap Selection
             # 1. Match StudentProfile career_goal to an enrolled CareerPath
@@ -155,6 +165,7 @@ class CareerPathListView(ListView):
                 secondary_enrollments = [e for e in enrollments if e.id != primary_enrollment.id]
 
             context['primary_enrollment'] = primary_enrollment
+            context['primary_certificate'] = certificates_map.get(primary_enrollment.career_path_id) if primary_enrollment else None
             context['roadmap_progress'] = roadmap_progress
             context['roadmap_completed_count'] = roadmap_completed_count
             context['roadmap_total_topics'] = roadmap_total_topics
@@ -282,6 +293,7 @@ class RoadmapDetailView(DetailView):
         context['current_milestone'] = current_milestone
         context['current_topic'] = current_topic
         context['is_roadmap_completed'] = is_roadmap_completed
+        context['certificate'] = get_roadmap_certificate(self.request.user, path)
 
         return context
 
@@ -340,7 +352,16 @@ def toggle_topic(request, topic_id):
             topic_id__in=milestone_topic_ids,
             is_completed=True
         ).count()
-        week_completed = (completed_milestone_topics_count == len(milestone_topic_ids)) and progress.is_completed
+        week_completed = (completed_milestone_topics_count == len(milestone_topic_ids)) if milestone_topic_ids else False
+
+        # Check if entire roadmap is completed and award certificate idempotently
+        cert = None
+        newly_awarded = False
+        if progress.is_completed:
+            cert, newly_awarded = check_and_award_roadmap_certificate(request.user, user_roadmap.career_path)
+
+        cert_url = reverse('roadmaps:certificate_view', args=[cert.certificate_id]) if (cert and cert.is_valid) else None
+        pdf_url = reverse('roadmaps:certificate_pdf', args=[cert.certificate_id]) if (cert and cert.is_valid) else None
 
         return JsonResponse({
             'success': True,
@@ -354,6 +375,11 @@ def toggle_topic(request, topic_id):
             'earned_skills': sync_result.get('newly_earned_skills', []),
             'lost_skills': sync_result.get('lost_skills', []),
             'all_earned_skills': sync_result.get('all_earned_skills', []),
+            'certificate_awarded': bool(cert is not None and cert.is_valid),
+            'newly_awarded': newly_awarded,
+            'certificate_id': cert.certificate_id if cert else None,
+            'certificate_url': cert_url,
+            'pdf_url': pdf_url,
         })
     return JsonResponse({'success': False}, status=405)
 
@@ -373,3 +399,110 @@ class MyRoadmapView(ListView):
         context = super().get_context_data(**kwargs)
         context.update(_get_user_display_context(self.request.user))
         return context
+
+
+@login_required
+def certificate_view(request, certificate_id):
+    """
+    Authenticated in-app certificate viewer for the owning student.
+    Renders the certificate details, verification QR code, and download/share actions.
+    """
+    cert = get_object_or_404(
+        RoadmapCertificate.objects.select_related('career_path', 'user', 'user_roadmap'),
+        certificate_id=certificate_id,
+        user=request.user
+    )
+    user_ctx = _get_user_display_context(request.user)
+    verification_url = request.build_absolute_uri(reverse('roadmaps:verify_certificate', args=[cert.certificate_id]))
+    qr_code_base64 = generate_qr_code_base64(verification_url)
+    recipient_name = cert.user.get_full_name() or cert.user.username
+
+    context = {
+        'cert': cert,
+        'recipient_name': recipient_name,
+        'verification_url': verification_url,
+        'qr_code_base64': qr_code_base64,
+        'skills_list': cert.get_skills_list(),
+    }
+    context.update(user_ctx)
+    return render(request, 'roadmaps/certificate_detail.html', context)
+
+
+@login_required
+def certificate_pdf(request, certificate_id):
+    """
+    Generates and streams a professional landscape PDF certificate on-demand.
+    Restricted to the certificate owner.
+    """
+    cert = get_object_or_404(
+        RoadmapCertificate.objects.select_related('career_path', 'user'),
+        certificate_id=certificate_id,
+        user=request.user
+    )
+    verification_url = request.build_absolute_uri(reverse('roadmaps:verify_certificate', args=[cert.certificate_id]))
+    qr_code_base64 = generate_qr_code_base64(verification_url)
+    recipient_name = cert.user.get_full_name() or cert.user.username
+
+    html_string = render_to_string('roadmaps/certificate_pdf.html', {
+        'cert': cert,
+        'recipient_name': recipient_name,
+        'verification_url': verification_url,
+        'qr_code_base64': qr_code_base64,
+        'skills_list': cert.get_skills_list(),
+    })
+
+    buffer = io.BytesIO()
+    pisa_status = pisa.CreatePDF(html_string, dest=buffer)
+    if pisa_status.err:
+        return HttpResponse('Error generating certificate PDF', status=500)
+
+    buffer.seek(0)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    filename = f"CareerCatalyst_Certificate_{cert.certificate_id}.pdf"
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response
+
+
+def verify_certificate(request, certificate_id):
+    """
+    Public verification endpoint for employers, recruiters, and credential checkers.
+    No login required. Rate-limited and privacy-conscious (no private student PII exposed).
+    """
+    if is_rate_limited(request, key_prefix="cert_verify", max_requests=30, window_seconds=60):
+        return HttpResponse("Too many verification attempts. Please try again in a few moments.", status=429)
+
+    cert = RoadmapCertificate.objects.filter(certificate_id=certificate_id).select_related('career_path', 'user').first()
+
+    if not cert:
+        context = {
+            'status': 'not_found',
+            'certificate_id': certificate_id,
+        }
+        return render(request, 'roadmaps/verify_certificate.html', context, status=404)
+
+    recipient_name = cert.user.get_full_name() or cert.user.username
+    verification_url = request.build_absolute_uri(reverse('roadmaps:verify_certificate', args=[cert.certificate_id]))
+    qr_code_base64 = generate_qr_code_base64(verification_url)
+
+    if not cert.is_valid:
+        context = {
+            'status': 'revoked',
+            'cert': cert,
+            'certificate_id': certificate_id,
+            'recipient_name': recipient_name,
+            'revocation_reason': cert.revocation_reason or "Revoked by administration",
+            'revoked_at': cert.revoked_at or cert.updated_at,
+        }
+        return render(request, 'roadmaps/verify_certificate.html', context)
+
+    context = {
+        'status': 'valid',
+        'cert': cert,
+        'certificate_id': certificate_id,
+        'recipient_name': recipient_name,
+        'verification_url': verification_url,
+        'qr_code_base64': qr_code_base64,
+        'skills_list': cert.get_skills_list(),
+    }
+    return render(request, 'roadmaps/verify_certificate.html', context)
+

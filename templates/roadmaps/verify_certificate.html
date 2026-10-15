@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+{% if status == 'valid' %}
+Verified Credential: {{ cert.career_path.name }} — CareerCatalyst
+{% elif status == 'revoked' %}
+Revoked Credential — CareerCatalyst
+{% else %}
+Credential Not Found — CareerCatalyst
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 760px;">
+    <!-- Brand Header -->
+    <div class="text-center mb-4">
+        <a href="/" class="text-decoration-none d-inline-flex align-items-center gap-2 mb-2">
+            <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="32" height="32">
+            <span class="fs-4 fw-bold text-body">Career<span class="text-primary">Catalyst</span></span>
+        </a>
+        <div class="small text-muted">Public Credential Verification Registry</div>
+    </div>
+
+    {% if status == 'valid' %}
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <!-- Verification Banner -->
+        <div class="p-3 text-center bg-success bg-opacity-10 border-bottom border-success border-opacity-25">
+            <span class="badge bg-success rounded-pill px-3 py-1.5 fs-6 fw-semibold">
+                <i class="bi bi-shield-fill-check me-1"></i> Official Verified Credential
+            </span>
+            <div class="small text-success fw-semibold mt-1">This certificate is authentic and recorded in the CareerCatalyst public registry.</div>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4 pb-3 border-bottom">
+                <div class="text-uppercase small fw-bold text-muted tracking-wider mb-1" style="letter-spacing: 1px;">Recipient</div>
+                <h1 class="h2 fw-bold text-body mb-2">{{ recipient_name }}</h1>
+                <div class="text-muted small">has successfully mastered all curriculum lessons and demonstrated competency in</div>
+                <h2 class="h4 fw-bold text-primary mt-2 mb-0">{{ cert.career_path.name }}</h2>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-3 bg-light border">
+                        <div class="small text-muted mb-1">Certificate Identifier</div>
+                        <div class="fw-bold font-monospace text-primary fs-6">{{ cert.certificate_id }}</div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-3 bg-light border">
+                        <div class="small text-muted mb-1">Issue Date</div>
+                        <div class="fw-bold text-body fs-6">{{ cert.issued_at|date:"F d, Y" }}</div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-3 bg-light border">
+                        <div class="small text-muted mb-1">Issuing Authority</div>
+                        <div class="fw-bold text-body fs-6">CareerCatalyst Education</div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-3 bg-light border">
+                        <div class="small text-muted mb-1">Curriculum Scope</div>
+                        <div class="fw-bold text-body fs-6">{{ cert.total_topics_completed }} Required Lessons Completed</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if skills_list %}
+            <div class="mb-4">
+                <div class="small fw-semibold text-secondary mb-2">
+                    <i class="bi bi-check2-circle text-success me-1"></i> Validated Competencies & Skills
+                </div>
+                <div class="d-flex flex-wrap gap-1.5">
+                    {% for skill in skills_list %}
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill small">
+                        {{ skill }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="d-flex align-items-center justify-content-between pt-3 border-top border-subtle flex-wrap gap-3">
+                <div class="small text-muted">
+                    <i class="bi bi-lock-fill text-muted me-1"></i> Tamper-proof cryptographic record verified.
+                </div>
+                {% if qr_code_base64 %}
+                <div>
+                    <img src="{{ qr_code_base64 }}" alt="Verification QR Code" width="64" height="64" class="rounded border p-1 bg-white">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% elif status == 'revoked' %}
+    <div class="card shadow-sm border-danger border-2 rounded-4 overflow-hidden">
+        <div class="p-3 text-center bg-danger bg-opacity-10 border-bottom border-danger border-opacity-25">
+            <span class="badge bg-danger rounded-pill px-3 py-1.5 fs-6 fw-semibold">
+                <i class="bi bi-shield-fill-x me-1"></i> Credential Revoked
+            </span>
+            <div class="small text-danger fw-semibold mt-1">This certificate has been revoked and is no longer valid.</div>
+        </div>
+
+        <div class="card-body p-4 p-md-5 text-center">
+            <div class="mb-3 text-danger fs-1">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <h2 class="h4 fw-bold text-body mb-2">Certificate Revocation Notice</h2>
+            <p class="text-muted small mb-4">
+                Certificate ID <code class="fw-bold">{{ certificate_id }}</code> originally issued to <strong>{{ recipient_name }}</strong> for <strong>{{ cert.career_path.name }}</strong> is currently revoked.
+            </p>
+
+            <div class="p-3 rounded bg-light border text-start mb-3">
+                <div class="small text-muted mb-1">Reason for Revocation</div>
+                <div class="fw-semibold text-danger">{{ revocation_reason }}</div>
+                {% if revoked_at %}
+                <div class="small text-muted mt-2">Revocation Date</div>
+                <div class="small text-body">{{ revoked_at|date:"F d, Y" }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="card shadow-sm border-warning border-2 rounded-4 overflow-hidden">
+        <div class="p-3 text-center bg-warning bg-opacity-10 border-bottom border-warning border-opacity-25">
+            <span class="badge bg-warning text-dark rounded-pill px-3 py-1.5 fs-6 fw-semibold">
+                <i class="bi bi-question-circle-fill me-1"></i> Credential Not Found
+            </span>
+        </div>
+
+        <div class="card-body p-4 p-md-5 text-center">
+            <div class="mb-3 text-warning fs-1">
+                <i class="bi bi-search"></i>
+            </div>
+            <h2 class="h4 fw-bold text-body mb-2">Certificate ID Not Recognized</h2>
+            <p class="text-muted small mb-4">
+                The identifier <code class="fw-bold">{{ certificate_id }}</code> does not match any certificate in the CareerCatalyst official registry.
+            </p>
+            <p class="small text-muted">
+                Please verify that the full certificate identifier was entered correctly, including the prefix (e.g. <code>CC-2026-XXXXXXXXXXXX</code>).
+            </p>
+            <a href="/" class="btn btn-outline-primary btn-sm mt-2">
+                <i class="bi bi-house me-1"></i> Return to CareerCatalyst
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

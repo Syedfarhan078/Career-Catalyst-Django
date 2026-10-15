@@ -660,6 +660,44 @@
                     {% endif %}
                 </div>
 
+                {% if roadmap_certificates %}
+                <!-- Verified Roadmap Certificates (Platform-Issued) -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-patch-check-fill text-primary"></i>
+                                Verified Course Certificates
+                            </h3>
+                            <p class="settings-card-subtitle">Official credentials awarded upon verified completion of full curriculum tracks. These credentials are authenticated cryptographically and managed automatically.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column gap-3">
+                        {% for rcert in roadmap_certificates %}
+                            <div class="p-3 rounded bg-light border border-primary-subtle" style="border-left: 4px solid #4f46e5 !important;">
+                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-1">
+                                    <div>
+                                        <h4 class="h6 fw-bold mb-0 text-body">{{ rcert.career_path.name }} Track Mastery</h4>
+                                        <div class="small text-muted">
+                                            Issued {{ rcert.issued_at|date:"F d, Y" }} &middot; Credential ID: <code class="text-body fw-bold">{{ rcert.certificate_id }}</code> &middot; {{ rcert.total_topics_completed }} Lessons Mastered
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <a href="{% url 'roadmaps:certificate_view' rcert.certificate_id %}" class="btn btn-sm btn-outline-primary py-1 px-2.5">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                        <a href="{% url 'roadmaps:certificate_pdf' rcert.certificate_id %}" class="btn btn-sm btn-outline-secondary py-1 px-2.5">
+                                            <i class="bi bi-download"></i> PDF
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Section 2: Industry Certifications -->
                 <div class="settings-card">
                     <div class="settings-card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">

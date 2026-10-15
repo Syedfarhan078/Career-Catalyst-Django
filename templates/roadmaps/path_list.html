@@ -149,13 +149,24 @@
                 <!-- CTAs -->
                 <div class="roadmap-hero-actions">
                     {% if is_roadmap_completed %}
+                    {% if primary_certificate %}
+                    <a href="{% url 'roadmaps:certificate_view' primary_certificate.certificate_id %}" class="dash-btn-primary">
+                        <i class="bi bi-award-fill"></i>
+                        <span>View Certificate</span>
+                    </a>
+                    <a href="{% url 'roadmaps:path_detail' primary_enrollment.career_path.slug %}" class="dash-btn-secondary">
+                        <span>Review Roadmap</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    {% else %}
                     <a href="{% url 'roadmaps:path_detail' primary_enrollment.career_path.slug %}" class="dash-btn-primary">
                         <span>Review Roadmap</span>
                         <i class="bi bi-arrow-right"></i>
                     </a>
+                    {% endif %}
                     <a href="{% url 'interviews:hub' %}" class="dash-btn-secondary">
                         <i class="bi bi-mortarboard"></i>
-                        <span>Practice Interview Challenges</span>
+                        <span>Practice Interview</span>
                     </a>
                     {% else %}
                     <a href="{% url 'roadmaps:path_detail' primary_enrollment.career_path.slug %}{% if current_milestone %}#milestone-week-{{ current_milestone.week_number }}{% endif %}" class="dash-btn-primary">

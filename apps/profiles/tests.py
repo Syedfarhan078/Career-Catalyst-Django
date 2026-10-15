@@ -373,4 +373,30 @@ class StudentPortfolioTestCase(TestCase):
         self.assertContains(response, 'Showcase Cert Beta')
         self.assertContains(response, 'OpenAI')
 
+    def test_public_profile_and_edit_tab_render_roadmap_certificates(self):
+        from apps.roadmaps.models import CareerPath, RoadmapCertificate
+        path = CareerPath.objects.create(name='AI Engineer', slug='ai-engineer')
+        cert = RoadmapCertificate.objects.create(
+            certificate_id='CC-2026-PROFILETEST1',
+            user=self.user,
+            career_path=path,
+            total_topics_completed=8,
+            skills_summary='PyTorch, Transformers'
+        )
+
+        # Public Profile View
+        res_view = self.client.get('/profile/view/')
+        self.assertEqual(res_view.status_code, 200)
+        self.assertContains(res_view, 'AI Engineer')
+        self.assertContains(res_view, 'CC-2026-PROFILETEST1')
+        self.assertContains(res_view, 'CareerCatalyst Verified')
+
+        # Edit Profile Portfolio Tab
+        res_edit = self.client.get('/profile/edit/?tab=portfolio')
+        self.assertEqual(res_edit.status_code, 200)
+        self.assertContains(res_edit, 'Verified Course Certificates')
+        self.assertContains(res_edit, 'AI Engineer')
+        self.assertContains(res_edit, 'CC-2026-PROFILETEST1')
+
+
 

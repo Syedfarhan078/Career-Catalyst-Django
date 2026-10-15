@@ -145,6 +145,8 @@ def profile_update_view(request):
     target_career = profile.career_goal or "Engineering Student"
     projects = profile.projects.all()
     certifications = profile.certifications.all()
+    from apps.roadmaps.models import RoadmapCertificate
+    roadmap_certificates = RoadmapCertificate.objects.filter(user=request.user, is_valid=True).select_related('career_path')
 
     context = {
         'profile': profile,
@@ -154,6 +156,7 @@ def profile_update_view(request):
         'cert_form': cert_form,
         'projects': projects,
         'certifications': certifications,
+        'roadmap_certificates': roadmap_certificates,
         'account_form': account_form,
         'password_form': password_form,
         'active_tab': active_tab,
@@ -174,15 +177,18 @@ def profile_detail_view(request):
     target_career = profile.career_goal or "Engineering Student"
 
     from apps.roadmaps.services import get_user_earned_skills_set
+    from apps.roadmaps.models import RoadmapCertificate
     earned_skills = sorted(list(get_user_earned_skills_set(request.user)))
     projects = profile.projects.all()
     certifications = profile.certifications.all()
+    roadmap_certificates = RoadmapCertificate.objects.filter(user=profile.user, is_valid=True).select_related('career_path')
     
     context = {
         'profile': profile,
         'earned_skills': earned_skills,
         'projects': projects,
         'certifications': certifications,
+        'roadmap_certificates': roadmap_certificates,
         'completion_percentage': completion_percentage,
         'user_initials': user_initials,
         'target_career': target_career,

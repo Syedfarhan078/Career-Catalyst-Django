@@ -3,7 +3,10 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 
-from .models import CareerPath, Milestone, Topic, UserRoadmap, TopicProgress
+from .models import (
+    CareerPath, Milestone, Topic, UserRoadmap, TopicProgress,
+    RoadmapCertificate, generate_certificate_id
+)
 from apps.profiles.models import StudentProfile
 
 User = get_user_model()
@@ -421,4 +424,344 @@ class RoadmapEarnedSkillsTests(TestCase):
         response = self.client.post(reverse('roadmaps:toggle_topic', args=[self.topic_django.id]))
         # get_object_or_404 returns 404 because user_roadmap for other_user does not exist
         self.assertEqual(response.status_code, 404)
+
+
+class RoadmapCertificateModelTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='certstudent', password='password123')
+        self.path = CareerPath.objects.create(
+            name='Cloud DevOps',
+            slug='cloud-devops',
+            description='DevOps Path'
+        )
+
+    def test_generate_certificate_id_format(self):
+        cert_id = generate_certificate_id()
+        import datetime
+        year = str(datetime.date.today().year)
+        self.assertTrue(cert_id.startswith(f"CC-{year}-"))
+        parts = cert_id.split('-')
+        self.assertEqual(len(parts), 3)
+        self.assertEqual(parts[0], 'CC')
+        self.assertEqual(parts[1], year)
+        self.assertEqual(len(parts[2]), 12)
+        # Hex uppercase verification
+        self.assertTrue(all(c in '0123456789ABCDEF' for c in parts[2]))
+
+    def test_database_uniqueness_constraint_user_and_career_path(self):
+        from django.db import IntegrityError
+        RoadmapCertificate.objects.create(
+            certificate_id=generate_certificate_id(),
+            user=self.user,
+            career_path=self.path,
+            total_topics_completed=5,
+            skills_summary='Docker, Kubernetes'
+        )
+        with self.assertRaises(IntegrityError):
+            RoadmapCertificate.objects.create(
+                certificate_id=generate_certificate_id(),
+                user=self.user,
+                career_path=self.path,
+                total_topics_completed=5,
+                skills_summary='Docker, Kubernetes'
+            )
+
+    def test_model_str_representation(self):
+        cert = RoadmapCertificate.objects.create(
+            certificate_id='CC-2026-TEST12345678',
+            user=self.user,
+            career_path=self.path,
+            total_topics_completed=10
+        )
+        self.assertIn('CC-2026-TEST12345678', str(cert))
+        self.assertIn('certstudent', str(cert))
+        self.assertIn('Cloud DevOps', str(cert))
+
+
+class RoadmapCertificateAwardingServiceTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='awardstudent',
+            first_name='Award',
+            last_name='Student',
+            password='password123'
+        )
+        self.client.force_login(self.user)
+
+        self.path = CareerPath.objects.create(
+            name='Frontend Engineer',
+            slug='frontend-engineer',
+            description='Frontend Path'
+        )
+        self.ms = Milestone.objects.create(
+            career_path=self.path,
+            week_number=1,
+            title='Web Basics',
+            order=1
+        )
+        self.topic1 = Topic.objects.create(
+            milestone=self.ms,
+            title='HTML5',
+            skills_taught='HTML5, Semantic Web',
+            order=1
+        )
+        self.topic2 = Topic.objects.create(
+            milestone=self.ms,
+            title='CSS3',
+            skills_taught='CSS3, Flexbox',
+            order=2
+        )
+
+        # Enroll user
+        self.user_roadmap = UserRoadmap.objects.create(user=self.user, career_path=self.path)
+        self.prog1 = TopicProgress.objects.create(user_roadmap=self.user_roadmap, topic=self.topic1, is_completed=False)
+        self.prog2 = TopicProgress.objects.create(user_roadmap=self.user_roadmap, topic=self.topic2, is_completed=False)
+
+    def test_partial_completion_does_not_award_certificate(self):
+        from .services import check_and_award_roadmap_certificate
+        self.prog1.is_completed = True
+        self.prog1.save()
+
+        cert, created = check_and_award_roadmap_certificate(self.user, self.path)
+        self.assertIsNone(cert)
+        self.assertFalse(created)
+        self.assertEqual(RoadmapCertificate.objects.filter(user=self.user, career_path=self.path).count(), 0)
+
+    def test_full_completion_awards_certificate(self):
+        from .services import check_and_award_roadmap_certificate
+        self.prog1.is_completed = True
+        self.prog1.save()
+        self.prog2.is_completed = True
+        self.prog2.save()
+
+        cert, created = check_and_award_roadmap_certificate(self.user, self.path)
+        self.assertIsNotNone(cert)
+        self.assertTrue(created)
+        self.assertEqual(cert.user, self.user)
+        self.assertEqual(cert.career_path, self.path)
+        self.assertEqual(cert.total_topics_completed, 2)
+        self.assertIn('HTML5', cert.skills_summary)
+        self.assertIn('CSS3', cert.skills_summary)
+
+    def test_empty_roadmap_with_zero_topics_never_awards_certificate(self):
+        from .services import check_and_award_roadmap_certificate
+        empty_path = CareerPath.objects.create(
+            name='Empty Path',
+            slug='empty-path',
+            description='Path without topics'
+        )
+        UserRoadmap.objects.create(user=self.user, career_path=empty_path)
+
+        cert, created = check_and_award_roadmap_certificate(self.user, empty_path)
+        self.assertIsNone(cert)
+        self.assertFalse(created)
+
+    def test_awarding_is_idempotent(self):
+        from .services import check_and_award_roadmap_certificate
+        self.prog1.is_completed = True
+        self.prog1.save()
+        self.prog2.is_completed = True
+        self.prog2.save()
+
+        cert1, created1 = check_and_award_roadmap_certificate(self.user, self.path)
+        self.assertTrue(created1)
+
+        # Call again
+        cert2, created2 = check_and_award_roadmap_certificate(self.user, self.path)
+        self.assertFalse(created2)
+        self.assertEqual(cert1.id, cert2.id)
+        self.assertEqual(cert1.certificate_id, cert2.certificate_id)
+        self.assertEqual(RoadmapCertificate.objects.filter(user=self.user, career_path=self.path).count(), 1)
+
+    def test_topic_toggle_endpoint_awards_and_returns_metadata(self):
+        # Complete topic 1
+        self.client.post(reverse('roadmaps:toggle_topic', args=[self.topic1.id]))
+        self.assertEqual(RoadmapCertificate.objects.count(), 0)
+
+        # Complete topic 2 (completing 100%)
+        response = self.client.post(reverse('roadmaps:toggle_topic', args=[self.topic2.id]))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertTrue(data['is_completed'])
+        self.assertEqual(data['progress_percentage'], 100)
+        self.assertTrue(data['certificate_awarded'])
+        self.assertIn('certificate_id', data)
+        self.assertIn('certificate_url', data)
+        self.assertIn('pdf_url', data)
+
+        # Certificate exists in DB
+        self.assertEqual(RoadmapCertificate.objects.filter(user=self.user, career_path=self.path).count(), 1)
+
+    def test_untoggling_topic_after_issuance_preserves_certificate(self):
+        # Complete both topics
+        self.client.post(reverse('roadmaps:toggle_topic', args=[self.topic1.id]))
+        self.client.post(reverse('roadmaps:toggle_topic', args=[self.topic2.id]))
+        cert = RoadmapCertificate.objects.get(user=self.user, career_path=self.path)
+        self.assertTrue(cert.is_valid)
+
+        # Untoggle topic 2
+        response = self.client.post(reverse('roadmaps:toggle_topic', args=[self.topic2.id]))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertFalse(data['is_completed'])
+        self.assertEqual(data['progress_percentage'], 50)
+        self.assertFalse(data['certificate_awarded'])
+
+        # Certificate is preserved and remains valid
+        cert.refresh_from_db()
+        self.assertTrue(cert.is_valid)
+        self.assertEqual(RoadmapCertificate.objects.filter(user=self.user, career_path=self.path).count(), 1)
+
+    def test_unenrollment_preserves_certificate(self):
+        from .services import check_and_award_roadmap_certificate
+        self.prog1.is_completed = True
+        self.prog1.save()
+        self.prog2.is_completed = True
+        self.prog2.save()
+
+        cert, _ = check_and_award_roadmap_certificate(self.user, self.path)
+        self.assertIsNotNone(cert)
+
+        # Delete UserRoadmap enrollment
+        self.user_roadmap.delete()
+
+        # Certificate is preserved with user_roadmap set to NULL
+        cert.refresh_from_db()
+        self.assertIsNone(cert.user_roadmap)
+        self.assertEqual(cert.user, self.user)
+        self.assertEqual(cert.career_path, self.path)
+
+
+class RoadmapCertificateViewsAndVerificationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='viewstudent',
+            first_name='View',
+            last_name='Student',
+            email='viewstudent@private.com',
+            password='password123'
+        )
+        self.other_user = User.objects.create_user(username='otherstudent', password='password123')
+        self.path = CareerPath.objects.create(
+            name='Security Analyst',
+            slug='security-analyst',
+            description='Security Path'
+        )
+        self.cert = RoadmapCertificate.objects.create(
+            certificate_id='CC-2026-A1B2C3D4E5F6',
+            user=self.user,
+            career_path=self.path,
+            total_topics_completed=12,
+            skills_summary='SIEM, Incident Response, Cryptography'
+        )
+
+    def test_certificate_detail_view_owner_success(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('roadmaps:certificate_view', args=[self.cert.certificate_id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Security Analyst')
+        self.assertContains(response, 'CC-2026-A1B2C3D4E5F6')
+        self.assertContains(response, 'View Student')
+
+    def test_certificate_detail_view_non_owner_forbidden(self):
+        self.client.force_login(self.other_user)
+        response = self.client.get(reverse('roadmaps:certificate_view', args=[self.cert.certificate_id]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_certificate_detail_view_unauthenticated_redirect(self):
+        self.client.logout()
+        response = self.client.get(reverse('roadmaps:certificate_view', args=[self.cert.certificate_id]))
+        self.assertEqual(response.status_code, 302)
+
+    def test_certificate_pdf_view_owner_success(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('roadmaps:certificate_pdf', args=[self.cert.certificate_id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertIn(f'filename="CareerCatalyst_Certificate_{self.cert.certificate_id}.pdf"', response['Content-Disposition'])
+
+    def test_certificate_pdf_view_non_owner_forbidden(self):
+        self.client.force_login(self.other_user)
+        response = self.client.get(reverse('roadmaps:certificate_pdf', args=[self.cert.certificate_id]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_public_verification_view_unauthenticated_valid(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.client.logout()
+        response = self.client.get(f"/verify/{self.cert.certificate_id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Verified Credential')
+        self.assertContains(response, 'View Student')
+        self.assertContains(response, 'Security Analyst')
+        self.assertContains(response, 'CC-2026-A1B2C3D4E5F6')
+
+        # PRIVACY GUARANTEE: Sensitive PII must NOT be exposed
+        content = response.content.decode('utf-8')
+        self.assertNotIn('viewstudent@private.com', content)
+
+    def test_public_verification_revoked_status(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.cert.is_valid = False
+        self.cert.revocation_reason = "Academic integrity violation."
+        self.cert.save()
+
+        self.client.logout()
+        response = self.client.get(f"/verify/{self.cert.certificate_id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Credential Revoked')
+        self.assertContains(response, 'Academic integrity violation.')
+
+    def test_public_verification_not_found(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.client.logout()
+        response = self.client.get('/verify/CC-2026-NONEXISTENT1/')
+        self.assertEqual(response.status_code, 404)
+        self.assertContains(response, 'Credential Not Found', status_code=404)
+
+    def test_public_verification_rate_limiting(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.client.logout()
+
+        # Fire 30 permitted requests
+        for _ in range(30):
+            res = self.client.get(f"/verify/{self.cert.certificate_id}/")
+            self.assertEqual(res.status_code, 200)
+
+        # 31st request should be blocked with 429
+        blocked_res = self.client.get(f"/verify/{self.cert.certificate_id}/")
+        self.assertEqual(blocked_res.status_code, 429)
+        cache.clear()
+
+
+class AwardCompletedRoadmapCertificatesCommandTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='retrostudent', password='password123')
+        self.path = CareerPath.objects.create(name='Data Science', slug='data-science')
+        self.ms = Milestone.objects.create(career_path=self.path, week_number=1, title='Intro')
+        self.t1 = Topic.objects.create(milestone=self.ms, title='Pandas', order=1)
+        self.t2 = Topic.objects.create(milestone=self.ms, title='NumPy', order=2)
+
+        self.enr = UserRoadmap.objects.create(user=self.user, career_path=self.path)
+        TopicProgress.objects.create(user_roadmap=self.enr, topic=self.t1, is_completed=True)
+        TopicProgress.objects.create(user_roadmap=self.enr, topic=self.t2, is_completed=True)
+
+    def test_management_command_dry_run_does_not_create_certificate(self):
+        call_command('award_completed_roadmap_certificates', '--dry-run')
+        self.assertEqual(RoadmapCertificate.objects.filter(user=self.user).count(), 0)
+
+    def test_management_command_awards_completed_roadmap(self):
+        call_command('award_completed_roadmap_certificates')
+        self.assertEqual(RoadmapCertificate.objects.filter(user=self.user, career_path=self.path).count(), 1)
+        cert = RoadmapCertificate.objects.get(user=self.user, career_path=self.path)
+        self.assertTrue(cert.is_valid)
+
+        # Rerun command - must be idempotent
+        call_command('award_completed_roadmap_certificates')
+        self.assertEqual(RoadmapCertificate.objects.filter(user=self.user, career_path=self.path).count(), 1)
+
 

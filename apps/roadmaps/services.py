@@ -4,8 +4,11 @@ Roadmap-to-Skills Synchronization Services.
 Provides deterministic derivation of roadmap-earned skills from
 Topic.skills_taught and completed TopicProgress.
 """
-from typing import List, Set, Dict, Any
-from apps.roadmaps.models import Topic, TopicProgress
+from typing import List, Set, Dict, Any, Optional
+from django.db import transaction, IntegrityError
+from apps.roadmaps.models import (
+    Topic, TopicProgress, UserRoadmap, RoadmapCertificate, generate_certificate_id
+)
 
 
 def get_topic_skills(topic: Topic) -> List[str]:
@@ -117,3 +120,93 @@ def sync_topic_completion(user, topic: Topic, is_completed: bool) -> Dict[str, A
             "lost_skills": lost,
             "all_earned_skills": sorted(list(all_earned))
         }
+
+
+def get_roadmap_certificate(user, career_path) -> Optional[RoadmapCertificate]:
+    """Retrieves an existing RoadmapCertificate for a user and career path, or None."""
+    if not user or not user.is_authenticated or not career_path:
+        return None
+    return RoadmapCertificate.objects.filter(user=user, career_path=career_path).first()
+
+
+def check_and_award_roadmap_certificate(user, career_path) -> tuple[Optional[RoadmapCertificate], bool]:
+    """
+    Evaluates whether a student has completed every required topic in an enrolled roadmap
+    and awards a RoadmapCertificate atomically, idempotently, and concurrency-safely.
+
+    Returns:
+        (certificate: Optional[RoadmapCertificate], newly_awarded: bool)
+
+    Guarantees:
+    - Never awards for empty roadmaps (total_topics == 0).
+    - Never awards unless all required topics are persisted as completed.
+    - Idempotent: repeated calls return the existing certificate with newly_awarded=False.
+    - Concurrency-safe: database unique constraint and atomic transaction prevent duplicates.
+    """
+    if not user or not user.is_authenticated or not career_path:
+        return None, False
+
+    # 1. Fast path: If certificate already exists, return immediately
+    existing_cert = RoadmapCertificate.objects.filter(user=user, career_path=career_path).first()
+    if existing_cert:
+        return existing_cert, False
+
+    # 2. Check enrollment
+    user_roadmap = UserRoadmap.objects.filter(user=user, career_path=career_path).first()
+    if not user_roadmap:
+        return None, False
+
+    # 3. Check curriculum completeness
+    total_topics = Topic.objects.filter(milestone__career_path=career_path).count()
+    if total_topics == 0:
+        return None, False
+
+    completed_count = user_roadmap.topic_progress.filter(is_completed=True).count()
+    if completed_count < total_topics:
+        return None, False
+
+    # 4. Atomic, concurrency-safe certificate creation
+    with transaction.atomic():
+        # Double-check inside transaction with select_for_update or direct get_or_create
+        existing = RoadmapCertificate.objects.filter(user=user, career_path=career_path).first()
+        if existing:
+            return existing, False
+
+        # Gather authoritative skills snapshot from path topics
+        skills: List[str] = []
+        seen_skills: Set[str] = set()
+        topics = Topic.objects.filter(
+            milestone__career_path=career_path
+        ).select_related('milestone').order_by('milestone__order', 'milestone__week_number', 'order')
+
+        for t in topics:
+            for s in t.get_skills_list():
+                if s.lower() not in seen_skills:
+                    seen_skills.add(s.lower())
+                    skills.append(s)
+        skills_summary = ", ".join(skills)
+
+        # Handle ID collision retries (cryptographically rare, but strictly handled)
+        max_retries = 3
+        for attempt in range(max_retries):
+            cert_id = generate_certificate_id()
+            try:
+                cert = RoadmapCertificate.objects.create(
+                    certificate_id=cert_id,
+                    user=user,
+                    career_path=career_path,
+                    user_roadmap=user_roadmap,
+                    total_topics_completed=total_topics,
+                    skills_summary=skills_summary
+                )
+                return cert, True
+            except IntegrityError as exc:
+                # If collision on (user, career_path), another process succeeded concurrently
+                existing = RoadmapCertificate.objects.filter(user=user, career_path=career_path).first()
+                if existing:
+                    return existing, False
+                if attempt == max_retries - 1:
+                    raise exc
+
+    return None, False
+

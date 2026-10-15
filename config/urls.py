@@ -19,6 +19,8 @@ from django.urls import path, include, re_path
 from django.conf import settings
 from django.views.static import serve
 
+from apps.roadmaps.views import verify_certificate
+
 urlpatterns = [
     path('admin-portal/', admin.site.urls),
     path("accounts/", include("apps.accounts.urls")),
@@ -26,6 +28,7 @@ urlpatterns = [
     path("resume/", include("apps.resume.urls")),
     path("ai-resume/", include("apps.ai_resume.urls")),
     path("roadmaps/", include("apps.roadmaps.urls")),
+    path("verify/<str:certificate_id>/", verify_certificate, name='public_verify_certificate'),
     path("interviews/", include("apps.interviews.urls")),
     path("community/", include("apps.community.urls")),
     path("recommendation/", include("apps.recommendation.urls")),

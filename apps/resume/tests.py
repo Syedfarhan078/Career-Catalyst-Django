@@ -276,3 +276,52 @@ class ResumeBuilderTests(TestCase):
         self.assertEqual(self.resume.title, 'Renamed Senior Engineer Resume')
         self.assertEqual(self.resume.template, 'minimal')
 
+    def test_import_roadmap_certificate_into_resume_idempotent(self):
+        from apps.roadmaps.models import CareerPath, RoadmapCertificate
+
+        # Create student profile so import doesn't abort
+        StudentProfile.objects.create(
+            user=self.user,
+            college='Test College',
+            degree='B.Tech',
+            graduation_year=2026
+        )
+
+        path = CareerPath.objects.create(name='DevOps Engineer', slug='devops-engineer')
+        rc = RoadmapCertificate.objects.create(
+            certificate_id='CC-2026-RESUMETEST1',
+            user=self.user,
+            career_path=path,
+            total_topics_completed=10,
+            skills_summary='CI/CD, Kubernetes',
+            is_valid=True
+        )
+
+        # 1. First import
+        res1 = self.client.post(
+            reverse('resume:api_import_profile', args=[self.resume.id]),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(res1.status_code, 200)
+        data1 = res1.json()
+        self.assertTrue(data1['success'])
+        self.assertEqual(data1['imported_certs_count'], 1)
+        self.assertEqual(self.resume.certifications.count(), 1)
+
+        cert_item = self.resume.certifications.first()
+        self.assertEqual(cert_item.name, 'DevOps Engineer Track Mastery')
+        self.assertEqual(cert_item.organization, 'CareerCatalyst')
+        self.assertIn('CC-2026-RESUMETEST1', cert_item.credential_url)
+
+        # 2. Second import - must be idempotent (0 newly imported)
+        res2 = self.client.post(
+            reverse('resume:api_import_profile', args=[self.resume.id]),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(res2.status_code, 200)
+        data2 = res2.json()
+        self.assertTrue(data2['success'])
+        self.assertEqual(data2['imported_certs_count'], 0)
+        self.assertEqual(self.resume.certifications.count(), 1)
+
+

@@ -288,6 +288,10 @@ def import_profile_data(request, pk):
             imported_projects_count += 1
 
     # 4. Import Certifications (Selective & Idempotent via Conservative Deduplication)
+    from types import SimpleNamespace
+    from django.urls import reverse
+    from apps.roadmaps.models import RoadmapCertificate
+
     profile_certs = profile.certifications.all()
     if selected_cert_ids:
         profile_certs = profile_certs.filter(id__in=selected_cert_ids)
@@ -304,6 +308,41 @@ def import_profile_data(request, pk):
             )
             existing_resume_certs.append(new_c)
             imported_certs_count += 1
+
+    # 5. Import Authoritative CareerCatalyst Roadmap Certificates
+    selected_roadmap_cert_ids = request.POST.getlist('selected_roadmap_cert_ids')
+    should_import_roadmap_certs = bool(selected_roadmap_cert_ids) or (not selected_cert_ids and not selected_project_ids)
+
+    if should_import_roadmap_certs:
+        roadmap_certs_qs = RoadmapCertificate.objects.filter(user=request.user, is_valid=True).select_related('career_path')
+        if selected_roadmap_cert_ids:
+            roadmap_certs_qs = roadmap_certs_qs.filter(id__in=selected_roadmap_cert_ids)
+
+        for rc in roadmap_certs_qs:
+            try:
+                verify_path = reverse('roadmaps:verify_certificate', args=[rc.certificate_id])
+                cred_url = request.build_absolute_uri(verify_path)
+            except Exception:
+                cred_url = f"/verify/{rc.certificate_id}/"
+
+            rc_proxy = SimpleNamespace(
+                name=f"{rc.career_path.name} Track Mastery",
+                organization="CareerCatalyst",
+                credential_id=rc.certificate_id,
+                credential_url=cred_url,
+                issue_date=rc.issued_at.date() if rc.issued_at else None,
+            )
+
+            if not any(are_certifications_duplicate(rc_proxy, existing) for existing in existing_resume_certs):
+                new_c = Certification.objects.create(
+                    resume=resume,
+                    name=rc_proxy.name,
+                    organization=rc_proxy.organization,
+                    issue_date=rc_proxy.issue_date,
+                    credential_url=rc_proxy.credential_url
+                )
+                existing_resume_certs.append(new_c)
+                imported_certs_count += 1
 
     return JsonResponse({
         'success': True,

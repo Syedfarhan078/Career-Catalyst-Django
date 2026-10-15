@@ -391,8 +391,46 @@
                             {% endif %}
                         </div>
 
-                        {% if certifications %}
+                        {% if roadmap_certificates or certifications %}
                             <div class="d-flex flex-column gap-3">
+                                {% for rcert in roadmap_certificates %}
+                                    <div class="p-3 rounded bg-light border border-primary-subtle" style="border-left: 4px solid #4f46e5 !important;">
+                                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1 mb-1">
+                                            <h4 class="h6 fw-bold mb-0 text-body">
+                                                {{ rcert.career_path.name }} Track Mastery
+                                            </h4>
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill small">
+                                                <i class="bi bi-patch-check-fill me-1"></i> CareerCatalyst Verified
+                                            </span>
+                                        </div>
+
+                                        <div class="small text-muted mb-2">
+                                            Issued {{ rcert.issued_at|date:"M Y" }} &middot; Credential ID: <code class="text-body fw-bold">{{ rcert.certificate_id }}</code> &middot; {{ rcert.total_topics_completed }} Lessons Mastered
+                                        </div>
+
+                                        {% if rcert.get_skills_list %}
+                                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                                {% for sk in rcert.get_skills_list %}
+                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-pill small" style="font-size: 0.75rem;">
+                                                        {{ sk }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="d-flex gap-3 pt-1">
+                                            <a href="{% url 'roadmaps:verify_certificate' rcert.certificate_id %}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-primary small fw-semibold d-inline-flex align-items-center gap-1">
+                                                <i class="bi bi-shield-check"></i> Verify Credential <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                                            </a>
+                                            {% if profile.user == request.user %}
+                                            <a href="{% url 'roadmaps:certificate_pdf' rcert.certificate_id %}" class="text-decoration-none text-body small fw-semibold d-inline-flex align-items-center gap-1">
+                                                <i class="bi bi-download"></i> Download PDF
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+
                                 {% for cert in certifications %}
                                     <div class="p-3 rounded bg-light border">
                                         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1 mb-1">

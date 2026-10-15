@@ -140,7 +140,13 @@ def are_certifications_duplicate(c1, c2):
 
     url1 = normalize_url(getattr(c1, 'credential_url', ''))
     url2 = normalize_url(getattr(c2, 'credential_url', ''))
-    if url1 and url2 and url1 == url2:
+    if url1 and url2:
+        if url1 == url2 or url1.endswith(url2) or url2.endswith(url1):
+            return True
+
+    if id1 and url2 and id1 in url2:
+        return True
+    if id2 and url1 and id2 in url1:
         return True
 
     # Tier 2: Name + Organization match
@@ -166,6 +172,7 @@ def get_unified_portfolio_diagnostics(user, default_resume=None):
     1. StudentProfile (permanent profile records)
     2. Default Resume (active document)
     3. Other user resumes (if present)
+    4. Authoritative CareerCatalyst Roadmap Certificates
     
     Returns:
         (unique_projects_count: int, unique_certs_count: int, deduplicated_project_skills: list, deduplicated_cert_skills: list)
@@ -197,6 +204,32 @@ def get_unified_portfolio_diagnostics(user, default_resume=None):
         for c in res.certifications.all():
             if not any(are_certifications_duplicate(c, existing) for existing in unique_certs):
                 unique_certs.append(c)
+
+    # 3. Inspect valid CareerCatalyst Roadmap Certificates
+    try:
+        from apps.roadmaps.models import RoadmapCertificate
+        from django.urls import reverse
+        from types import SimpleNamespace
+
+        roadmap_certs = RoadmapCertificate.objects.filter(user=user, is_valid=True).select_related('career_path')
+        for rc in roadmap_certs:
+            try:
+                c_url = reverse('roadmaps:verify_certificate', args=[rc.certificate_id])
+            except Exception:
+                c_url = f"/verify/{rc.certificate_id}/"
+
+            rc_proxy = SimpleNamespace(
+                name=f"{rc.career_path.name} Track Mastery",
+                organization="CareerCatalyst",
+                credential_id=rc.certificate_id,
+                credential_url=c_url,
+                issue_date=rc.issued_at.date() if rc.issued_at else None,
+                skills_validated=rc.skills_summary or rc.career_path.name,
+            )
+            if not any(are_certifications_duplicate(rc_proxy, existing) for existing in unique_certs):
+                unique_certs.append(rc_proxy)
+    except Exception:
+        pass
 
     project_skills = []
     for p in unique_projects:

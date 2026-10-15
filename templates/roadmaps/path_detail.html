@@ -133,6 +133,12 @@
                     <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1.5 fw-semibold">
                         <i class="bi bi-check-circle-fill me-1"></i> Track Fully Mastered
                     </span>
+                    {% if certificate %}
+                    <a href="{% url 'roadmaps:certificate_view' certificate.certificate_id %}" class="dash-btn-primary dash-btn-sm" id="certificateBtn">
+                        <i class="bi bi-award-fill"></i>
+                        <span>View Certificate</span>
+                    </a>
+                    {% endif %}
                     <a href="{% url 'interviews:hub' %}" class="dash-btn-secondary dash-btn-sm">
                         <i class="bi bi-mortarboard"></i>
                         <span>Practice Interview</span>

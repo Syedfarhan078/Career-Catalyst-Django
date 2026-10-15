@@ -1,3 +1,4 @@
+import secrets
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -116,3 +117,82 @@ class TopicProgress(models.Model):
     def __str__(self):
         status = "✓" if self.is_completed else "□"
         return f"{status} {self.topic.title}"
+
+
+def generate_certificate_id():
+    year = timezone.now().year
+    token = secrets.token_hex(6).upper()
+    return f"CC-{year}-{token}"
+
+
+class RoadmapCertificate(models.Model):
+    certificate_id = models.CharField(
+        max_length=64,
+        unique=True,
+        db_index=True,
+        editable=False,
+        default=generate_certificate_id,
+        help_text="Cryptographically random verification ID (e.g. CC-2026-F89A12BD)"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='roadmap_certificates'
+    )
+    career_path = models.ForeignKey(
+        CareerPath,
+        on_delete=models.PROTECT,
+        related_name='awarded_certificates'
+    )
+    user_roadmap = models.ForeignKey(
+        UserRoadmap,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='certificates'
+    )
+    issued_at = models.DateTimeField(default=timezone.now)
+    total_topics_completed = models.PositiveIntegerField(
+        default=0,
+        help_text="Curriculum depth snapshot at the time of issuance"
+    )
+    skills_summary = models.TextField(
+        blank=True,
+        default="",
+        help_text="Snapshot of comma-separated skills taught at issuance time"
+    )
+    is_valid = models.BooleanField(
+        default=True,
+        help_text="Status flag for administrative revocation or invalidation"
+    )
+    revocation_reason = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Reason for revocation if revoked"
+    )
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-issued_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'career_path'],
+                name='unique_user_career_path_certificate'
+            )
+        ]
+        indexes = [
+            models.Index(fields=['certificate_id']),
+            models.Index(fields=['user', '-issued_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.certificate_id} - {self.user.username} ({self.career_path.name})"
+
+    def get_skills_list(self):
+        if not self.skills_summary:
+            return []
+        return [s.strip() for s in self.skills_summary.split(',') if s.strip()]
+

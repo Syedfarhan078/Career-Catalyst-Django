@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CareerPath, Milestone, Topic, UserRoadmap, TopicProgress
+from .models import CareerPath, Milestone, Topic, UserRoadmap, TopicProgress, RoadmapCertificate
 
 
 class MilestoneInline(admin.TabularInline):
@@ -34,3 +34,11 @@ class UserRoadmapAdmin(admin.ModelAdmin):
 @admin.register(TopicProgress)
 class TopicProgressAdmin(admin.ModelAdmin):
     list_display = ('user_roadmap', 'topic', 'is_completed', 'completed_at')
+
+@admin.register(RoadmapCertificate)
+class RoadmapCertificateAdmin(admin.ModelAdmin):
+    list_display = ('certificate_id', 'user', 'career_path', 'issued_at', 'total_topics_completed', 'is_valid')
+    list_filter = ('is_valid', 'career_path', 'issued_at')
+    search_fields = ('certificate_id', 'user__username', 'user__email', 'career_path__name')
+    readonly_fields = ('certificate_id', 'created_at', 'updated_at')
+
