@@ -13,7 +13,7 @@ from xhtml2pdf import pisa
 
 from .models import CareerPath, Milestone, Topic, UserRoadmap, TopicProgress, RoadmapCertificate
 from .services import sync_topic_completion, check_and_award_roadmap_certificate, get_roadmap_certificate
-from .utils import generate_qr_code_base64, is_rate_limited
+from .utils import generate_qr_code_base64, is_rate_limited, get_verified_badge_base64
 from apps.profiles.models import StudentProfile
 
 
@@ -441,6 +441,7 @@ def certificate_pdf(request, certificate_id):
     )
     verification_url = request.build_absolute_uri(reverse('roadmaps:verify_certificate', args=[cert.certificate_id]))
     qr_code_base64 = generate_qr_code_base64(verification_url)
+    badge_base64 = get_verified_badge_base64()
     recipient_name = cert.user.get_full_name() or cert.user.username
 
     html_string = render_to_string('roadmaps/certificate_pdf.html', {
@@ -448,6 +449,7 @@ def certificate_pdf(request, certificate_id):
         'recipient_name': recipient_name,
         'verification_url': verification_url,
         'qr_code_base64': qr_code_base64,
+        'badge_base64': badge_base64,
         'skills_list': cert.get_skills_list(),
     })
 

@@ -423,7 +423,7 @@
                                                 <i class="bi bi-shield-check"></i> Verify Credential <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
                                             </a>
                                             {% if profile.user == request.user %}
-                                            <a href="{% url 'roadmaps:certificate_pdf' rcert.certificate_id %}" class="text-decoration-none text-body small fw-semibold d-inline-flex align-items-center gap-1">
+                                            <a href="{% url 'roadmaps:certificate_pdf' rcert.certificate_id %}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-body small fw-semibold d-inline-flex align-items-center gap-1">
                                                 <i class="bi bi-download"></i> Download PDF
                                             </a>
                                             {% endif %}

@@ -3,12 +3,27 @@ Utilities for Roadmaps & Certificates:
 - In-memory QR code generation using ReportLab QREncoder and Pillow (pure Python, zero extra dependencies).
 - Cache-backed rate limiting for public certificate verification endpoints.
 """
+import os
 import io
 import base64
 from typing import Optional
+from django.conf import settings
 from django.core.cache import cache
 from reportlab.graphics.barcode import qrencoder
 from PIL import Image
+
+
+def get_verified_badge_base64() -> str:
+    """
+    Returns data URI for verified badge PNG icon for PDF rendering.
+    Reads static/images/verified_badge.png and returns data:image/png;base64 string.
+    """
+    badge_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'verified_badge.png')
+    if os.path.exists(badge_path):
+        with open(badge_path, 'rb') as f:
+            b64_data = base64.b64encode(f.read()).decode('ascii')
+            return f"data:image/png;base64,{b64_data}"
+    return ""
 
 
 def generate_qr_code_base64(data_url: str, box_size: int = 5, border: int = 4) -> str:
