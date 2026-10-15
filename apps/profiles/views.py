@@ -1,12 +1,12 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
 from apps.accounts.forms import UserProfileForm
-from .models import StudentProfile
-from .forms import StudentProfileForm
+from .models import StudentProfile, StudentProject, StudentCertification
+from .forms import StudentProfileForm, StudentProjectForm, StudentCertificationForm
 
 @login_required
 def profile_create_view(request):
@@ -44,11 +44,13 @@ def profile_update_view(request):
         
     profile = request.user.studentprofile
     active_tab = request.GET.get('tab', 'account')
-    if active_tab not in ['account', 'profile', 'security', 'danger']:
+    if active_tab not in ['account', 'profile', 'portfolio', 'security', 'danger']:
         active_tab = 'account'
 
     account_form = UserProfileForm(instance=request.user)
     profile_form = StudentProfileForm(instance=profile)
+    project_form = StudentProjectForm()
+    cert_form = StudentCertificationForm()
     password_form = PasswordChangeForm(user=request.user)
 
     if request.method == 'POST':
@@ -73,6 +75,48 @@ def profile_update_view(request):
                 return redirect(f"{reverse('profile_edit')}?tab=profile")
             else:
                 messages.error(request, "Please correct the errors in your career profile.")
+
+        elif action == 'add_project':
+            active_tab = 'portfolio'
+            project_form = StudentProjectForm(request.POST)
+            if project_form.is_valid():
+                new_project = project_form.save(commit=False)
+                new_project.profile = profile
+                new_project.save()
+                messages.success(request, f"Project '{new_project.title}' added to your portfolio.")
+                return redirect(f"{reverse('profile_edit')}?tab=portfolio")
+            else:
+                messages.error(request, "Please correct the errors in your project submission.")
+
+        elif action == 'delete_project':
+            active_tab = 'portfolio'
+            project_id = request.POST.get('project_id')
+            project = get_object_or_404(StudentProject, pk=project_id, profile=profile)
+            project_title = project.title
+            project.delete()
+            messages.success(request, f"Project '{project_title}' removed from your portfolio.")
+            return redirect(f"{reverse('profile_edit')}?tab=portfolio")
+
+        elif action == 'add_certification':
+            active_tab = 'portfolio'
+            cert_form = StudentCertificationForm(request.POST)
+            if cert_form.is_valid():
+                new_cert = cert_form.save(commit=False)
+                new_cert.profile = profile
+                new_cert.save()
+                messages.success(request, f"Certification '{new_cert.name}' added to your credentials.")
+                return redirect(f"{reverse('profile_edit')}?tab=portfolio")
+            else:
+                messages.error(request, "Please correct the errors in your certification submission.")
+
+        elif action == 'delete_certification':
+            active_tab = 'portfolio'
+            cert_id = request.POST.get('certification_id')
+            cert = get_object_or_404(StudentCertification, pk=cert_id, profile=profile)
+            cert_name = cert.name
+            cert.delete()
+            messages.success(request, f"Certification '{cert_name}' removed from your credentials.")
+            return redirect(f"{reverse('profile_edit')}?tab=portfolio")
 
         elif action == 'change_password':
             active_tab = 'security'
@@ -99,11 +143,17 @@ def profile_update_view(request):
     completion_percentage = profile.calculate_completion_percentage()
     user_initials = f"{request.user.first_name[:1]}{request.user.last_name[:1]}".upper() or request.user.username[:2].upper()
     target_career = profile.career_goal or "Engineering Student"
+    projects = profile.projects.all()
+    certifications = profile.certifications.all()
 
     context = {
         'profile': profile,
         'form': profile_form,
         'profile_form': profile_form,
+        'project_form': project_form,
+        'cert_form': cert_form,
+        'projects': projects,
+        'certifications': certifications,
         'account_form': account_form,
         'password_form': password_form,
         'active_tab': active_tab,
@@ -125,13 +175,18 @@ def profile_detail_view(request):
 
     from apps.roadmaps.services import get_user_earned_skills_set
     earned_skills = sorted(list(get_user_earned_skills_set(request.user)))
+    projects = profile.projects.all()
+    certifications = profile.certifications.all()
     
     context = {
         'profile': profile,
         'earned_skills': earned_skills,
+        'projects': projects,
+        'certifications': certifications,
         'completion_percentage': completion_percentage,
         'user_initials': user_initials,
         'target_career': target_career,
     }
     return render(request, 'profiles/profile.html', context)
+
 

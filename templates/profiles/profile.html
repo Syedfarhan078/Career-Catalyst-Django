@@ -308,6 +308,132 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Projects & Applied Work -->
+                    <div class="settings-card">
+                        <div class="settings-card-header d-flex justify-content-between align-items-center">
+                            <h3 class="settings-card-title mb-0">
+                                <i class="bi bi-folder-check text-primary"></i>
+                                Projects & Applied Work
+                            </h3>
+                            {% if profile.user == request.user %}
+                                <a href="{% url 'profile_edit' %}?tab=portfolio" class="text-primary small text-decoration-none fw-semibold">
+                                    <i class="bi bi-plus-circle me-1"></i> Manage
+                                </a>
+                            {% endif %}
+                        </div>
+
+                        {% if projects %}
+                            <div class="d-flex flex-column gap-3">
+                                {% for proj in projects %}
+                                    <div class="p-3 rounded bg-light border">
+                                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1 mb-2">
+                                            <h4 class="h6 fw-bold mb-0 text-body">{{ proj.title }}</h4>
+                                            {% if proj.is_current %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill small">In Progress</span>
+                                            {% elif proj.start_date or proj.end_date %}
+                                                <span class="text-muted small">
+                                                    {{ proj.start_date|date:"M Y"|default:"" }} {% if proj.start_date and proj.end_date %}&ndash;{% endif %} {{ proj.end_date|date:"M Y"|default:"" }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if proj.description %}
+                                            <p class="small text-muted mb-2 lh-base">{{ proj.description }}</p>
+                                        {% endif %}
+
+                                        {% if proj.technologies_list %}
+                                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                                {% for t in proj.technologies_list %}
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill small" style="font-size: 0.75rem;">
+                                                        {{ t }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="d-flex gap-3 small pt-1">
+                                            {% if proj.github_url %}
+                                                <a href="{{ proj.github_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-body fw-semibold d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-github"></i> Repository <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if proj.live_demo_url %}
+                                                <a href="{{ proj.live_demo_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-primary fw-semibold d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-globe"></i> Live Demo <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-muted small py-2">
+                                No portfolio projects documented yet.
+                                {% if profile.user == request.user %}
+                                    <a href="{% url 'profile_edit' %}?tab=portfolio" class="text-primary text-decoration-none ms-1">Add your first project &rarr;</a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Certifications & Credentials -->
+                    <div class="settings-card">
+                        <div class="settings-card-header d-flex justify-content-between align-items-center">
+                            <h3 class="settings-card-title mb-0">
+                                <i class="bi bi-award text-primary"></i>
+                                Certifications & Credentials
+                            </h3>
+                            {% if profile.user == request.user %}
+                                <a href="{% url 'profile_edit' %}?tab=portfolio" class="text-primary small text-decoration-none fw-semibold">
+                                    <i class="bi bi-plus-circle me-1"></i> Manage
+                                </a>
+                            {% endif %}
+                        </div>
+
+                        {% if certifications %}
+                            <div class="d-flex flex-column gap-3">
+                                {% for cert in certifications %}
+                                    <div class="p-3 rounded bg-light border">
+                                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1 mb-1">
+                                            <h4 class="h6 fw-bold mb-0 text-body">{{ cert.name }}</h4>
+                                            <span class="small text-muted">{{ cert.organization }}</span>
+                                        </div>
+
+                                        <div class="small text-muted mb-2">
+                                            {% if cert.issue_date %}Issued {{ cert.issue_date|date:"M Y" }}{% endif %}
+                                            {% if cert.credential_id %} &middot; Credential ID: <code class="text-body">{{ cert.credential_id }}</code>{% endif %}
+                                        </div>
+
+                                        {% if cert.skills_list %}
+                                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                                {% for sk in cert.skills_list %}
+                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-pill small" style="font-size: 0.75rem;">
+                                                        {{ sk }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+
+                                        {% if cert.credential_url %}
+                                            <div class="pt-1">
+                                                <a href="{{ cert.credential_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-primary small fw-semibold d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-patch-check"></i> View Verification Credential <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-muted small py-2">
+                                No industry certifications recorded yet.
+                                {% if profile.user == request.user %}
+                                    <a href="{% url 'profile_edit' %}?tab=portfolio" class="text-primary text-decoration-none ms-1">Add certification &rarr;</a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </main>

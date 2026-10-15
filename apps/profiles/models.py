@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 class StudentProfile(models.Model):
     GENDER_CHOICES = [
@@ -82,3 +83,95 @@ class StudentProfile(models.Model):
         import re
         parts = re.split(r'[,\n\r]+', self.skills)
         return [p.strip() for p in parts if p.strip()]
+
+
+class StudentProject(models.Model):
+    profile = models.ForeignKey(
+        StudentProfile,
+        on_delete=models.CASCADE,
+        related_name='projects',
+        db_index=True
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    technologies_used = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Comma-separated tools and technologies (e.g. Django, React, PostgreSQL)"
+    )
+    github_url = models.URLField(max_length=500, blank=True)
+    live_demo_url = models.URLField(max_length=500, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    is_current = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-end_date', '-created_at']
+        indexes = [
+            models.Index(fields=['profile', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.title} ({self.profile.user.username})"
+
+    def clean(self):
+        super().clean()
+        if self.start_date and self.end_date and self.end_date < self.start_date:
+            raise ValidationError({'end_date': "End date cannot precede start date."})
+        if self.github_url and not self.github_url.startswith(('http://', 'https://')):
+            raise ValidationError({'github_url': "GitHub URL must start with http:// or https://"})
+        if self.live_demo_url and not self.live_demo_url.startswith(('http://', 'https://')):
+            raise ValidationError({'live_demo_url': "Live demo URL must start with http:// or https://"})
+
+    @property
+    def technologies_list(self):
+        if not self.technologies_used:
+            return []
+        return [t.strip() for t in self.technologies_used.split(',') if t.strip()]
+
+
+class StudentCertification(models.Model):
+    profile = models.ForeignKey(
+        StudentProfile,
+        on_delete=models.CASCADE,
+        related_name='certifications',
+        db_index=True
+    )
+    name = models.CharField(max_length=255, verbose_name="Certification Name")
+    organization = models.CharField(max_length=255, verbose_name="Issuing Organization")
+    issue_date = models.DateField(null=True, blank=True)
+    expiration_date = models.DateField(null=True, blank=True)
+    credential_id = models.CharField(max_length=150, blank=True, verbose_name="Credential ID")
+    credential_url = models.URLField(max_length=500, blank=True, verbose_name="Credential Verification URL")
+    skills_validated = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Comma-separated competencies validated (e.g. AWS, Cloud Computing, Docker)"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-issue_date', '-created_at']
+        indexes = [
+            models.Index(fields=['profile', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.name} - {self.organization} ({self.profile.user.username})"
+
+    def clean(self):
+        super().clean()
+        if self.issue_date and self.expiration_date and self.expiration_date < self.issue_date:
+            raise ValidationError({'expiration_date': "Expiration date cannot precede issue date."})
+        if self.credential_url and not self.credential_url.startswith(('http://', 'https://')):
+            raise ValidationError({'credential_url': "Credential verification URL must start with http:// or https://"})
+
+    @property
+    def skills_list(self):
+        if not self.skills_validated:
+            return []
+        return [s.strip() for s in self.skills_validated.split(',') if s.strip()]
+

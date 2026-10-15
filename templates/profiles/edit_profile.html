@@ -114,6 +114,10 @@
                     <i class="bi bi-mortarboard-fill"></i>
                     <span>Career & Profile</span>
                 </button>
+                <button type="button" class="settings-nav-tab {% if active_tab == 'portfolio' %}active{% endif %}" id="tab-btn-portfolio" role="tab" aria-selected="{% if active_tab == 'portfolio' %}true{% else %}false{% endif %}" onclick="switchSettingsTab('portfolio')">
+                    <i class="bi bi-folder-check"></i>
+                    <span>Portfolio & Projects</span>
+                </button>
                 <button type="button" class="settings-nav-tab {% if active_tab == 'security' %}active{% endif %}" id="tab-btn-security" role="tab" aria-selected="{% if active_tab == 'security' %}true{% else %}false{% endif %}" onclick="switchSettingsTab('security')">
                     <i class="bi bi-shield-lock-fill"></i>
                     <span>Security & Password</span>
@@ -510,6 +514,277 @@
             </div>
 
             <!-- ==========================================================
+                 TAB: PORTFOLIO & PROJECTS (Candidate-Reported Achievements)
+                 ========================================================== -->
+            <div class="settings-tab-panel" id="panel-portfolio" style="{% if active_tab != 'portfolio' %}display: none;{% endif %}">
+                <!-- Section 1: Technical Projects -->
+                <div class="settings-card mb-4">
+                    <div class="settings-card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-folder-check text-primary"></i>
+                                Technical Projects Portfolio
+                            </h3>
+                            <p class="settings-card-subtitle">Document full-stack systems, algorithmic projects, and apps. Directly powers your Career Guidance Applied Projects pillar.</p>
+                        </div>
+                        <button type="button" class="settings-btn-primary d-inline-flex align-items-center gap-2" data-bs-toggle="collapse" data-bs-target="#addProjectCollapse" aria-expanded="false" aria-controls="addProjectCollapse">
+                            <i class="bi bi-plus-lg"></i>
+                            <span>Add New Project</span>
+                        </button>
+                    </div>
+
+                    <!-- Collapsible Add Project Form -->
+                    <div class="collapse mb-4" id="addProjectCollapse">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <h4 class="h6 fw-bold mb-3 text-body"><i class="bi bi-plus-circle me-1 text-primary"></i> Add Project to Portfolio</h4>
+                            <form method="POST" action="{% url 'profile_edit' %}?tab=portfolio">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="add_project">
+                                
+                                <div class="row g-3">
+                                    <div class="col-md-6 settings-form-group">
+                                        <label class="settings-label" for="proj_title">Project Title <span class="text-danger">*</span></label>
+                                        <input type="text" name="title" id="proj_title" class="form-control" placeholder="e.g. Distributed Task Queue" required>
+                                    </div>
+                                    <div class="col-md-6 settings-form-group">
+                                        <label class="settings-label" for="proj_tech">Technologies & Tools</label>
+                                        <input type="text" name="technologies_used" id="proj_tech" class="form-control" placeholder="e.g. Python, Django, Redis, Docker, PostgreSQL">
+                                        <div class="small text-muted mt-1" style="font-size: 0.75rem;">Comma-separated. Normalized into your career skill profile.</div>
+                                    </div>
+                                    <div class="col-md-6 settings-form-group">
+                                        <label class="settings-label" for="proj_github"><i class="bi bi-github me-1"></i> GitHub Repository URL</label>
+                                        <input type="url" name="github_url" id="proj_github" class="form-control" placeholder="https://github.com/username/project">
+                                    </div>
+                                    <div class="col-md-6 settings-form-group">
+                                        <label class="settings-label" for="proj_live"><i class="bi bi-globe me-1 text-info"></i> Live Demo / Deployment URL</label>
+                                        <input type="url" name="live_demo_url" id="proj_live" class="form-control" placeholder="https://myproject.demo.com">
+                                    </div>
+                                    <div class="col-sm-4 settings-form-group">
+                                        <label class="settings-label" for="proj_start">Start Date</label>
+                                        <input type="date" name="start_date" id="proj_start" class="form-control">
+                                    </div>
+                                    <div class="col-sm-4 settings-form-group">
+                                        <label class="settings-label" for="proj_end">End Date</label>
+                                        <input type="date" name="end_date" id="proj_end" class="form-control">
+                                    </div>
+                                    <div class="col-sm-4 settings-form-group d-flex align-items-center pt-3">
+                                        <div class="form-check mt-3">
+                                            <input class="form-check-input" type="checkbox" name="is_current" id="proj_current" value="true">
+                                            <label class="form-check-label small" for="proj_current">
+                                                Currently Working On This
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 settings-form-group">
+                                        <label class="settings-label" for="proj_desc">Description & Outcomes</label>
+                                        <textarea name="description" id="proj_desc" rows="3" class="form-control" placeholder="Key responsibilities, architectural highlights, quantifiable impact..."></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top">
+                                    <button type="button" class="settings-btn-outline" data-bs-toggle="collapse" data-bs-target="#addProjectCollapse">Cancel</button>
+                                    <button type="submit" class="settings-btn-primary d-inline-flex align-items-center gap-1">
+                                        <i class="bi bi-check2"></i>
+                                        <span>Save Project</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Existing Projects List -->
+                    {% if projects %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for proj in projects %}
+                                <div class="p-3 rounded bg-light border position-relative">
+                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2">
+                                        <div>
+                                            <h4 class="h6 fw-bold mb-1 text-body">{{ proj.title }}</h4>
+                                            {% if proj.is_current %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill small">In Progress</span>
+                                            {% elif proj.start_date or proj.end_date %}
+                                                <span class="text-muted small">
+                                                    {{ proj.start_date|date:"M Y"|default:"" }} {% if proj.start_date and proj.end_date %}&ndash;{% endif %} {{ proj.end_date|date:"M Y"|default:"" }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        <form method="POST" action="{% url 'profile_edit' %}?tab=portfolio" onsubmit="return confirm('Remove project \'{{ proj.title|escapejs }}\' from your portfolio?');">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="delete_project">
+                                            <input type="hidden" name="project_id" value="{{ proj.pk }}">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete Project">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                    {% if proj.description %}
+                                        <p class="small text-muted mb-2 lh-base">{{ proj.description }}</p>
+                                    {% endif %}
+
+                                    {% if proj.technologies_list %}
+                                        <div class="d-flex flex-wrap gap-1 mb-2">
+                                            {% for t in proj.technologies_list %}
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill small" style="font-size: 0.75rem;">
+                                                    {{ t }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="d-flex gap-3 small pt-1">
+                                        {% if proj.github_url %}
+                                            <a href="{{ proj.github_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-body fw-semibold d-inline-flex align-items-center gap-1">
+                                                <i class="bi bi-github"></i> Repository <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                                            </a>
+                                        {% endif %}
+                                        {% if proj.live_demo_url %}
+                                            <a href="{{ proj.live_demo_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-primary fw-semibold d-inline-flex align-items-center gap-1">
+                                                <i class="bi bi-globe"></i> Live Demo <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 px-3 bg-light rounded border">
+                            <i class="bi bi-folder-plus fs-2 text-muted mb-2 d-block"></i>
+                            <div class="fw-semibold text-body mb-1">No Projects Added Yet</div>
+                            <p class="small text-muted mb-3" style="max-width: 450px; margin: 0 auto;">Adding technical projects demonstrates practical implementation and directly increases your Product and General Tech readiness score by up to 30 points.</p>
+                            <button type="button" class="settings-btn-primary btn-sm d-inline-flex align-items-center gap-1" data-bs-toggle="collapse" data-bs-target="#addProjectCollapse">
+                                <i class="bi bi-plus-lg"></i>
+                                <span>Add Your First Project</span>
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Section 2: Industry Certifications -->
+                <div class="settings-card">
+                    <div class="settings-card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
+                        <div>
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-award text-primary"></i>
+                                Industry Certifications & Credentials
+                            </h3>
+                            <p class="settings-card-subtitle">Document recognized certificates from AWS, Google, Meta, Microsoft, Cisco, Coursera, etc.</p>
+                        </div>
+                        <button type="button" class="settings-btn-primary d-inline-flex align-items-center gap-2" data-bs-toggle="collapse" data-bs-target="#addCertCollapse" aria-expanded="false" aria-controls="addCertCollapse">
+                            <i class="bi bi-plus-lg"></i>
+                            <span>Add Certification</span>
+                        </button>
+                    </div>
+
+                    <!-- Collapsible Add Certification Form -->
+                    <div class="collapse mb-4" id="addCertCollapse">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <h4 class="h6 fw-bold mb-3 text-body"><i class="bi bi-plus-circle me-1 text-primary"></i> Add Industry Certification</h4>
+                            <form method="POST" action="{% url 'profile_edit' %}?tab=portfolio">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="add_certification">
+                                
+                                <div class="row g-3">
+                                    <div class="col-md-6 settings-form-group">
+                                        <label class="settings-label" for="cert_name">Certification Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="name" id="cert_name" class="form-control" placeholder="e.g. AWS Certified Solutions Architect" required>
+                                    </div>
+                                    <div class="col-md-6 settings-form-group">
+                                        <label class="settings-label" for="cert_org">Issuing Organization <span class="text-danger">*</span></label>
+                                        <input type="text" name="organization" id="cert_org" class="form-control" placeholder="e.g. Amazon Web Services" required>
+                                    </div>
+                                    <div class="col-sm-4 settings-form-group">
+                                        <label class="settings-label" for="cert_issue">Issue Date</label>
+                                        <input type="date" name="issue_date" id="cert_issue" class="form-control">
+                                    </div>
+                                    <div class="col-sm-4 settings-form-group">
+                                        <label class="settings-label" for="cert_exp">Expiration Date</label>
+                                        <input type="date" name="expiration_date" id="cert_exp" class="form-control">
+                                    </div>
+                                    <div class="col-sm-4 settings-form-group">
+                                        <label class="settings-label" for="cert_id">Credential ID</label>
+                                        <input type="text" name="credential_id" id="cert_id" class="form-control" placeholder="e.g. AWS-1234567">
+                                    </div>
+                                    <div class="col-md-6 settings-form-group">
+                                        <label class="settings-label" for="cert_url"><i class="bi bi-patch-check me-1 text-primary"></i> Verification URL</label>
+                                        <input type="url" name="credential_url" id="cert_url" class="form-control" placeholder="https://www.credly.com/badges/...">
+                                    </div>
+                                    <div class="col-md-6 settings-form-group">
+                                        <label class="settings-label" for="cert_skills">Skills Validated</label>
+                                        <input type="text" name="skills_validated" id="cert_skills" class="form-control" placeholder="e.g. AWS, Cloud Infrastructure, Docker">
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top">
+                                    <button type="button" class="settings-btn-outline" data-bs-toggle="collapse" data-bs-target="#addCertCollapse">Cancel</button>
+                                    <button type="submit" class="settings-btn-primary d-inline-flex align-items-center gap-1">
+                                        <i class="bi bi-check2"></i>
+                                        <span>Save Certification</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Existing Certifications List -->
+                    {% if certifications %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for cert in certifications %}
+                                <div class="p-3 rounded bg-light border position-relative">
+                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2">
+                                        <div>
+                                            <h4 class="h6 fw-bold mb-1 text-body">{{ cert.name }}</h4>
+                                            <div class="small text-muted">
+                                                <span class="fw-semibold text-secondary">{{ cert.organization }}</span>
+                                                {% if cert.issue_date %} &middot; Issued {{ cert.issue_date|date:"M Y" }}{% endif %}
+                                                {% if cert.credential_id %} &middot; ID: <code class="text-body">{{ cert.credential_id }}</code>{% endif %}
+                                            </div>
+                                        </div>
+                                        <form method="POST" action="{% url 'profile_edit' %}?tab=portfolio" onsubmit="return confirm('Remove certification \'{{ cert.name|escapejs }}\'?');">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="delete_certification">
+                                            <input type="hidden" name="certification_id" value="{{ cert.pk }}">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete Certification">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                    {% if cert.skills_list %}
+                                        <div class="d-flex flex-wrap gap-1 mb-2">
+                                            {% for sk in cert.skills_list %}
+                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-pill small" style="font-size: 0.75rem;">
+                                                    {{ sk }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+
+                                    {% if cert.credential_url %}
+                                        <div class="pt-1">
+                                            <a href="{{ cert.credential_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-primary small fw-semibold d-inline-flex align-items-center gap-1">
+                                                <i class="bi bi-patch-check"></i> View Verification Credential <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4 px-3 bg-light rounded border">
+                            <i class="bi bi-award fs-2 text-muted mb-2 d-block"></i>
+                            <div class="fw-semibold text-body mb-1">No Certifications Recorded</div>
+                            <p class="small text-muted mb-3" style="max-width: 450px; margin: 0 auto;">Document industry credentials to provide proof of verified technical competence for enterprise hiring filters.</p>
+                            <button type="button" class="settings-btn-primary btn-sm d-inline-flex align-items-center gap-1" data-bs-toggle="collapse" data-bs-target="#addCertCollapse">
+                                <i class="bi bi-plus-lg"></i>
+                                <span>Add Your First Certification</span>
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ==========================================================
                  TAB 3: SECURITY & PASSWORD (PasswordChangeForm)
                  ========================================================== -->
             <div class="settings-tab-panel" id="panel-security" style="{% if active_tab != 'security' %}display: none;{% endif %}">
@@ -662,7 +937,7 @@
 
 // 2. Tab Switcher
 function switchSettingsTab(tabName) {
-    const tabs = ['account', 'profile', 'security', 'danger'];
+    const tabs = ['account', 'profile', 'portfolio', 'security', 'danger'];
     if (!tabs.includes(tabName)) return;
 
     tabs.forEach(t => {
@@ -728,7 +1003,7 @@ function previewStudentAvatar(input) {
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tab = urlParams.get('tab');
-    if (tab && ['account', 'profile', 'security', 'danger'].includes(tab)) {
+    if (tab && ['account', 'profile', 'portfolio', 'security', 'danger'].includes(tab)) {
         switchSettingsTab(tab);
     }
 });

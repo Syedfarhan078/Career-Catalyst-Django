@@ -492,7 +492,7 @@ async function deleteItem(section, id) {
 }
 
 async function importFromProfile() {
-    if (!confirm('Are you sure you want to autofill details from your student profile? This will auto-populate education and skills.')) return;
+    if (!confirm('Are you sure you want to autofill details from your student profile? This will import your education, skills, projects, and certifications without creating duplicates.')) return;
     
     const url = "{% url 'resume:api_import_profile' resume.pk %}";
     const formData = new FormData();
@@ -508,10 +508,22 @@ async function importFromProfile() {
         });
         const data = await response.json();
         if (data.success) {
-            renderItemsList('education', data.educations);
-            renderItemsList('skill', data.skills);
+            if (data.educations) renderItemsList('education', data.educations);
+            if (data.skills) renderItemsList('skill', data.skills);
+            if (data.projects) renderItemsList('project', data.projects);
+            if (data.certifications) renderItemsList('certification', data.certifications);
             refreshPreview();
-            alert(`Import successful! Added your academic education and ${data.imported_skills_count} skills.`);
+            
+            let msgParts = [];
+            if (data.imported_edu) msgParts.push('Education');
+            if (data.imported_skills_count) msgParts.push(`${data.imported_skills_count} Skills`);
+            if (data.imported_projects_count) msgParts.push(`${data.imported_projects_count} Projects`);
+            if (data.imported_certs_count) msgParts.push(`${data.imported_certs_count} Certifications`);
+            
+            const msg = msgParts.length > 0 
+                ? `Import successful! Added: ${msgParts.join(', ')}.`
+                : 'Profile already synchronized. No new unique items to import.';
+            alert(msg);
         } else {
             alert(data.error || 'Autofill failed.');
         }

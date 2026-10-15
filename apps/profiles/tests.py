@@ -1,8 +1,9 @@
+import datetime
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from apps.profiles.models import StudentProfile
-from apps.profiles.forms import StudentProfileForm
+from apps.profiles.models import StudentProfile, StudentProject, StudentCertification
+from apps.profiles.forms import StudentProfileForm, StudentProjectForm, StudentCertificationForm
 
 User = get_user_model()
 
@@ -197,4 +198,179 @@ class UnifiedSettingsViewTests(TestCase):
         self.assertTemplateUsed(response, 'profiles/profile.html')
         self.assertContains(response, 'Student Profile')
         self.assertContains(response, 'Software Engineer')
+
+
+class StudentPortfolioTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='portfoliostudent',
+            email='portfolio@test.com',
+            password='TestPassword123!',
+            first_name='Portfolio',
+            last_name='Student'
+        )
+        self.profile = StudentProfile.objects.create(
+            user=self.user,
+            phone_number='1234567890',
+            cgpa=8.8,
+            graduation_year=2026,
+            career_goal='Full Stack Engineer'
+        )
+
+        self.other_user = User.objects.create_user(
+            username='otherstudent',
+            email='other@test.com',
+            password='OtherPassword123!'
+        )
+        self.other_profile = StudentProfile.objects.create(
+            user=self.other_user,
+            cgpa=7.5
+        )
+
+        self.client.force_login(self.user)
+
+    def test_student_project_creation_and_ordering(self):
+        p1 = StudentProject.objects.create(
+            profile=self.profile,
+            title='Alpha Project',
+            technologies_used='Python, Django',
+            description='First project',
+            start_date=datetime.date(2025, 1, 1),
+            end_date=datetime.date(2025, 2, 1)
+        )
+        p2 = StudentProject.objects.create(
+            profile=self.profile,
+            title='Beta Project',
+            technologies_used='React, TypeScript',
+            description='Second project',
+            start_date=datetime.date(2025, 3, 1),
+            end_date=datetime.date(2025, 5, 1)
+        )
+        self.assertIn('Alpha Project', str(p1))
+        projects = list(self.profile.projects.all())
+        # Ordered by -end_date, -created_at
+        self.assertEqual(projects[0], p2)
+        self.assertEqual(projects[1], p1)
+
+    def test_student_project_chronological_date_validation(self):
+        invalid_proj = StudentProject(
+            profile=self.profile,
+            title='Time Machine',
+            start_date=datetime.date(2025, 5, 1),
+            end_date=datetime.date(2025, 2, 1),
+            is_current=False
+        )
+        with self.assertRaises(ValidationError):
+            invalid_proj.clean()
+
+    def test_student_certification_creation_and_fields(self):
+        cert = StudentCertification.objects.create(
+            profile=self.profile,
+            name='AWS Certified Developer',
+            organization='Amazon Web Services',
+            issue_date=datetime.date(2025, 1, 15),
+            expiration_date=datetime.date(2028, 1, 15),
+            credential_id='AWS-DEV-9988',
+            credential_url='https://aws.amazon.com/verify/9988'
+        )
+        self.assertEqual(str(cert), f"AWS Certified Developer - Amazon Web Services ({self.user.username})")
+
+        invalid_cert = StudentCertification(
+            profile=self.profile,
+            name='Expired Before Issue',
+            organization='Bad Academy',
+            issue_date=datetime.date(2025, 6, 1),
+            expiration_date=datetime.date(2025, 1, 1)
+        )
+        with self.assertRaises(ValidationError):
+            invalid_cert.clean()
+
+    def test_add_project_via_post_action(self):
+        post_data = {
+            'action': 'add_project',
+            'title': 'AI Workflow Engine',
+            'technologies_used': 'Python, Celery, Redis',
+            'description': 'Distributed task pipeline',
+            'github_url': 'https://github.com/portfoliostudent/ai-workflow',
+            'live_demo_url': 'https://ai-workflow.example.com',
+            'start_date': '2025-01-01',
+            'is_current': 'on'
+        }
+        response = self.client.post('/profile/edit/?tab=portfolio', data=post_data)
+        self.assertRedirects(response, '/profile/edit/?tab=portfolio')
+
+        project = self.profile.projects.filter(title='AI Workflow Engine').first()
+        self.assertIsNotNone(project)
+        self.assertEqual(project.technologies_used, 'Python, Celery, Redis')
+        self.assertTrue(project.is_current)
+
+    def test_add_certification_via_post_action(self):
+        post_data = {
+            'action': 'add_certification',
+            'name': 'Google Cloud Associate Cloud Engineer',
+            'organization': 'Google Cloud',
+            'issue_date': '2025-02-01',
+            'credential_id': 'GCP-ACE-12345',
+            'credential_url': 'https://cloud.google.com/verify/12345',
+            'skills_validated': 'Google Cloud, Kubernetes, Terraform'
+        }
+        response = self.client.post('/profile/edit/?tab=portfolio', data=post_data)
+        self.assertRedirects(response, '/profile/edit/?tab=portfolio')
+
+        cert = self.profile.certifications.filter(name='Google Cloud Associate Cloud Engineer').first()
+        self.assertIsNotNone(cert)
+        self.assertEqual(cert.organization, 'Google Cloud')
+        self.assertEqual(cert.credential_id, 'GCP-ACE-12345')
+
+    def test_delete_project_idor_prevention(self):
+        # Project belonging to other_profile
+        other_project = StudentProject.objects.create(
+            profile=self.other_profile,
+            title='Secret Other Project',
+            technologies_used='Go, Rust'
+        )
+
+        response = self.client.post('/profile/edit/?tab=portfolio', data={
+            'action': 'delete_project',
+            'project_id': other_project.id
+        })
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(StudentProject.objects.filter(id=other_project.id).exists())
+
+    def test_delete_certification_idor_prevention(self):
+        # Certification belonging to other_profile
+        other_cert = StudentCertification.objects.create(
+            profile=self.other_profile,
+            name='Other Certification',
+            organization='Other Org'
+        )
+
+        response = self.client.post('/profile/edit/?tab=portfolio', data={
+            'action': 'delete_certification',
+            'certification_id': other_cert.id
+        })
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(StudentCertification.objects.filter(id=other_cert.id).exists())
+
+    def test_public_profile_renders_portfolio_sections(self):
+        StudentProject.objects.create(
+            profile=self.profile,
+            title='Showcase Project Alpha',
+            technologies_used='Django, Vue.js',
+            description='A showcase application.'
+        )
+        StudentCertification.objects.create(
+            profile=self.profile,
+            name='Showcase Cert Beta',
+            organization='OpenAI'
+        )
+
+        response = self.client.get('/profile/view/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Showcase Project Alpha')
+        self.assertContains(response, 'Django')
+        self.assertContains(response, 'Vue.js')
+        self.assertContains(response, 'Showcase Cert Beta')
+        self.assertContains(response, 'OpenAI')
+
 

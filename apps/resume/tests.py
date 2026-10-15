@@ -1,7 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from .models import Resume, Education, Experience
+from .models import Resume, Education, Experience, Project, Certification, Skill
+from apps.profiles.models import StudentProfile, StudentProject, StudentCertification
 
 User = get_user_model()
 
@@ -99,6 +100,118 @@ class ResumeBuilderTests(TestCase):
         self.assertEqual(self.resume.educations.count(), 1)
         self.assertEqual(self.resume.skills.count(), 3)
         self.assertEqual(self.resume.educations.first().college, 'Autofill Tech University')
+
+    def test_import_profile_includes_projects_and_certifications(self):
+        profile = StudentProfile.objects.create(
+            user=self.user,
+            college='Project Tech Institute',
+            degree='B.Tech',
+            branch='CSE',
+            graduation_year=2026,
+            cgpa=9.0,
+            skills='Python, Django'
+        )
+        StudentProject.objects.create(
+            profile=profile,
+            title='Realtime Chat Engine',
+            description='Websocket chat system',
+            technologies_used='Django Channels, Redis',
+            github_url='https://github.com/testuser/chat',
+            live_demo_url='https://chat.example.com'
+        )
+        StudentCertification.objects.create(
+            profile=profile,
+            name='AWS Certified Solutions Architect',
+            organization='Amazon Web Services',
+            credential_url='https://aws.amazon.com/verify/123'
+        )
+
+        response = self.client.post(
+            reverse('resume:api_import_profile', args=[self.resume.id]),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['imported_projects_count'], 1)
+        self.assertEqual(data['imported_certs_count'], 1)
+
+        # Verify records created in Resume
+        self.assertEqual(self.resume.projects.count(), 1)
+        self.assertEqual(self.resume.certifications.count(), 1)
+        proj = self.resume.projects.first()
+        self.assertEqual(proj.title, 'Realtime Chat Engine')
+        self.assertEqual(proj.technologies_used, 'Django Channels, Redis')
+        self.assertEqual(proj.github_url, 'https://github.com/testuser/chat')
+
+        cert = self.resume.certifications.first()
+        self.assertEqual(cert.name, 'AWS Certified Solutions Architect')
+        self.assertEqual(cert.organization, 'Amazon Web Services')
+
+    def test_import_profile_idempotent_no_duplicates(self):
+        profile = StudentProfile.objects.create(
+            user=self.user,
+            skills='Python'
+        )
+        StudentProject.objects.create(
+            profile=profile,
+            title='Idempotent Project',
+            description='Unique description',
+            technologies_used='Python',
+            github_url='https://github.com/testuser/idem'
+        )
+        StudentCertification.objects.create(
+            profile=profile,
+            name='Idempotent Cert',
+            organization='Test Org'
+        )
+
+        # First import
+        self.client.post(
+            reverse('resume:api_import_profile', args=[self.resume.id]),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(self.resume.projects.count(), 1)
+        self.assertEqual(self.resume.certifications.count(), 1)
+
+        # Second import: should NOT create duplicate projects or certifications
+        response2 = self.client.post(
+            reverse('resume:api_import_profile', args=[self.resume.id]),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response2.status_code, 200)
+        self.assertEqual(self.resume.projects.count(), 1)
+        self.assertEqual(self.resume.certifications.count(), 1)
+
+    def test_resume_specific_edits_do_not_mutate_profile_records(self):
+        profile = StudentProfile.objects.create(
+            user=self.user,
+            skills='Python'
+        )
+        prof_proj = StudentProject.objects.create(
+            profile=profile,
+            title='Original Profile Project',
+            description='Original Profile Description',
+            technologies_used='Python'
+        )
+
+        # Import into resume
+        self.client.post(
+            reverse('resume:api_import_profile', args=[self.resume.id]),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        resume_proj = self.resume.projects.first()
+
+        # Modify resume-specific project
+        resume_proj.title = 'Tailored Resume Project'
+        resume_proj.description = 'Tailored description emphasizing metrics'
+        resume_proj.save()
+
+        # Refresh profile project from database
+        prof_proj.refresh_from_db()
+        self.assertEqual(prof_proj.title, 'Original Profile Project')
+        self.assertEqual(prof_proj.description, 'Original Profile Description')
+        self.assertEqual(resume_proj.title, 'Tailored Resume Project')
 
     def test_download_pdf_all_templates(self):
         for tpl in ['professional', 'modern', 'minimal']:

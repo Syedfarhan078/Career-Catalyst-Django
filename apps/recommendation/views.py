@@ -8,7 +8,12 @@ from apps.profiles.models import StudentProfile
 from apps.roadmaps.models import CareerPath, UserRoadmap, TopicProgress
 from .models import CareerAnalysis
 from .forms import CareerTargetForm
-from .services import generate_career_recommendation, enroll_and_sync_roadmap
+from .services import (
+    generate_career_recommendation,
+    enroll_and_sync_roadmap,
+    calculate_career_pillars,
+    get_unified_portfolio_diagnostics
+)
 
 def _calculate_pillars(analysis, user, profile, matched_career_path, user_roadmap):
     if not analysis:
@@ -24,11 +29,10 @@ def _calculate_pillars(analysis, user, profile, matched_career_path, user_roadma
     matched_count = len(set(all_matched))
     skill_match_ratio = (matched_count / total_path_topics) if total_path_topics > 0 else 0.0
     
-    # Check default resume
+    # Check default resume & unified portfolio diagnostics
     default_resume = Resume.objects.filter(user=user, is_default=True).first() or Resume.objects.filter(user=user).first()
-    projects_count = default_resume.projects.count() if default_resume else 0
+    projects_count, certifications_count, _, _ = get_unified_portfolio_diagnostics(user, default_resume)
     experiences_count = default_resume.experiences.count() if default_resume else 0
-    certifications_count = default_resume.certifications.count() if default_resume else 0
     is_enrolled = bool(user_roadmap and user_roadmap.is_active)
     
     cgpa_val = 0.0
@@ -38,81 +42,24 @@ def _calculate_pillars(analysis, user, profile, matched_career_path, user_roadma
         except (ValueError, TypeError):
             cgpa_val = 6.0
 
-    if tier == 'product':
-        max_skills, max_projects, max_academic, max_exp = 45, 30, 10, 15
-        pillar_skills = round(skill_match_ratio * 45)
-        if projects_count >= 3:
-            pillar_projects = 30
-        elif projects_count == 2:
-            pillar_projects = 22
-        elif projects_count == 1:
-            pillar_projects = 12
-        else:
-            pillar_projects = 0
-            
-        if cgpa_val >= 8.5:
-            pillar_academic = 10
-        elif cgpa_val >= 7.5:
-            pillar_academic = 8
-        elif cgpa_val >= 6.5:
-            pillar_academic = 6
-        else:
-            pillar_academic = 4
-            
-        p_exp = min(experiences_count * 6, 8)
-        p_certs = min(certifications_count * 3, 4)
-        p_enr = 3 if is_enrolled else 0
-        pillar_exp = min(p_exp + p_certs + p_enr, 15)
-        
-    elif tier == 'service':
-        max_skills, max_projects, max_academic, max_exp = 35, 20, 25, 20
-        pillar_skills = round(skill_match_ratio * 35)
-        if projects_count >= 2:
-            pillar_projects = 20
-        elif projects_count == 1:
-            pillar_projects = 14
-        else:
-            pillar_projects = 0
-            
-        if cgpa_val >= 8.5:
-            pillar_academic = 25
-        elif cgpa_val >= 7.5:
-            pillar_academic = 20
-        elif cgpa_val >= 6.5:
-            pillar_academic = 15
-        else:
-            pillar_academic = 6
-            
-        p_exp = min(experiences_count * 8, 10)
-        p_certs = min(certifications_count * 6, 8)
-        p_enr = 2 if is_enrolled else 0
-        pillar_exp = min(p_exp + p_certs + p_enr, 20)
-        
-    else:
-        max_skills, max_projects, max_academic, max_exp = 40, 25, 15, 20
-        pillar_skills = round(skill_match_ratio * 40)
-        if projects_count >= 3:
-            pillar_projects = 25
-        elif projects_count == 2:
-            pillar_projects = 18
-        elif projects_count == 1:
-            pillar_projects = 10
-        else:
-            pillar_projects = 0
-            
-        if cgpa_val >= 8.5:
-            pillar_academic = 15
-        elif cgpa_val >= 7.5:
-            pillar_academic = 12
-        elif cgpa_val >= 6.5:
-            pillar_academic = 9
-        else:
-            pillar_academic = 5
-            
-        p_exp = min(experiences_count * 8, 10)
-        p_certs = min(certifications_count * 4, 6)
-        p_enr = 4 if is_enrolled else 0
-        pillar_exp = min(p_exp + p_certs + p_enr, 20)
+    pillars = calculate_career_pillars(
+        tier=tier,
+        skill_match_ratio=skill_match_ratio,
+        projects_count=projects_count,
+        experiences_count=experiences_count,
+        certifications_count=certifications_count,
+        is_enrolled=is_enrolled,
+        cgpa_val=cgpa_val
+    )
+    pillar_skills = pillars['pillar_skills']
+    pillar_projects = pillars['pillar_projects']
+    pillar_academic = pillars['pillar_academic']
+    pillar_exp = pillars['pillar_exp']
+    max_skills = pillars['max_skills']
+    max_projects = pillars['max_projects']
+    max_academic = pillars['max_academic']
+    max_exp = pillars['max_exp']
+
 
     return [
         {

@@ -22,6 +22,255 @@ def normalize_token(text):
     return s
 
 
+def normalize_url(url):
+    """
+    Normalizes a repository or verification URL for stable comparison.
+    Strips protocol, www, trailing slashes, and .git suffix.
+    """
+    if not url:
+        return ""
+    u = str(url).strip().lower()
+    u = re.sub(r'^https?://', '', u)
+    u = re.sub(r'^www\.', '', u)
+    u = re.sub(r'\.git$', '', u)
+    return u.rstrip('/')
+
+
+def resolve_skill_alias(token):
+    """
+    Normalizes a skill token using the platform's canonical skill taxonomy aliases if available.
+    """
+    norm = normalize_token(token)
+    if not norm:
+        return ""
+    try:
+        from apps.ai_resume.nlp_engine import load_taxonomy
+        taxonomy = load_taxonomy()
+        aliases = taxonomy.get("aliases", {})
+        if norm in aliases:
+            return normalize_token(aliases[norm])
+    except Exception:
+        pass
+    return norm
+
+
+def extract_taxonomy_skills(text):
+    """
+    Splits comma/newline separated skills and resolves aliases via taxonomy.
+    """
+    if not text:
+        return []
+    cleaned = str(text).replace('\n', ',')
+    skills = []
+    for raw in cleaned.split(','):
+        c = raw.strip()
+        if c:
+            alias = resolve_skill_alias(c)
+            skills.append(alias if alias else normalize_token(c))
+    return skills
+
+
+def are_projects_duplicate(p1, p2):
+    """
+    Conservatively checks if two project records represent the same underlying achievement.
+    Tier 1: Stable repository or live demo URL match.
+    Tier 2: Conservative normalized title match with corroborating technology overlap or date match.
+    Never merges generic titles with disjoint technologies.
+    """
+    if p1 is p2:
+        return True
+
+    # Tier 1: URL Matching
+    git1 = normalize_url(getattr(p1, 'github_url', ''))
+    git2 = normalize_url(getattr(p2, 'github_url', ''))
+    if git1 and git2 and git1 == git2:
+        return True
+
+    demo1 = normalize_url(getattr(p1, 'live_demo_url', ''))
+    demo2 = normalize_url(getattr(p2, 'live_demo_url', ''))
+    if demo1 and demo2 and demo1 == demo2:
+        return True
+
+    # Tier 2: Title matching with corroborating context
+    title1 = normalize_token(getattr(p1, 'title', ''))
+    title2 = normalize_token(getattr(p2, 'title', ''))
+    if not title1 or title1 != title2:
+        return False
+
+    # Title is identical: check technologies overlap
+    tech1 = set(extract_taxonomy_skills(getattr(p1, 'technologies_used', '')))
+    tech2 = set(extract_taxonomy_skills(getattr(p2, 'technologies_used', '')))
+    if tech1 and tech2:
+        shared = tech1 & tech2
+        union = tech1 | tech2
+        # Jaccard overlap >= 0.4 or at least 2 common non-trivial technologies
+        if len(shared) / len(union) >= 0.4 or len(shared) >= 2:
+            return True
+        # If both specified technologies and have zero/very low overlap, they are different projects with a generic title!
+        return False
+
+    # If technologies are missing on one side, check start_date if available
+    d1 = getattr(p1, 'start_date', None)
+    d2 = getattr(p2, 'start_date', None)
+    if d1 and d2 and d1.year == d2.year and d1.month == d2.month:
+        return True
+
+    # If one side is a simple title copy without contradictory tech, treat as match if description or title is specific (>10 chars)
+    if not tech1 or not tech2:
+        if len(title1) >= 12:
+            return True
+
+    return False
+
+
+def are_certifications_duplicate(c1, c2):
+    """
+    Conservatively checks if two certification records represent the same credential.
+    Tier 1: Stable credential ID or verification URL match.
+    Tier 2: Conservative normalized name AND organization match.
+    """
+    if c1 is c2:
+        return True
+
+    # Tier 1: Stable credential ID or URL match
+    id1 = (getattr(c1, 'credential_id', '') or '').strip().lower()
+    id2 = (getattr(c2, 'credential_id', '') or '').strip().lower()
+    if id1 and id2 and id1 == id2:
+        return True
+
+    url1 = normalize_url(getattr(c1, 'credential_url', ''))
+    url2 = normalize_url(getattr(c2, 'credential_url', ''))
+    if url1 and url2 and url1 == url2:
+        return True
+
+    # Tier 2: Name + Organization match
+    name1 = normalize_token(getattr(c1, 'name', ''))
+    name2 = normalize_token(getattr(c2, 'name', ''))
+    org1 = normalize_token(getattr(c1, 'organization', ''))
+    org2 = normalize_token(getattr(c2, 'organization', ''))
+
+    if name1 and name2 and name1 == name2 and org1 and org2 and org1 == org2:
+        # Check issue date if both present (must not contradict by > 365 days)
+        d1 = getattr(c1, 'issue_date', None)
+        d2 = getattr(c2, 'issue_date', None)
+        if d1 and d2 and abs((d1 - d2).days) > 365:
+            return False
+        return True
+
+    return False
+
+
+def get_unified_portfolio_diagnostics(user, default_resume=None):
+    """
+    Collects and deduplicates projects and certifications across:
+    1. StudentProfile (permanent profile records)
+    2. Default Resume (active document)
+    3. Other user resumes (if present)
+    
+    Returns:
+        (unique_projects_count: int, unique_certs_count: int, deduplicated_project_skills: list, deduplicated_cert_skills: list)
+    """
+    if not user or not getattr(user, 'is_authenticated', False):
+        return 0, 0, [], []
+
+    unique_projects = []
+    unique_certs = []
+
+    # 1. Inspect StudentProfile records
+    if hasattr(user, 'studentprofile'):
+        try:
+            for p in user.studentprofile.projects.all():
+                if not any(are_projects_duplicate(p, existing) for existing in unique_projects):
+                    unique_projects.append(p)
+            for c in user.studentprofile.certifications.all():
+                if not any(are_certifications_duplicate(c, existing) for existing in unique_certs):
+                    unique_certs.append(c)
+        except Exception:
+            pass
+
+    # 2. Inspect resumes (prioritize default resume)
+    resumes_qs = user.resumes.all().order_by('-is_default', '-updated_at').prefetch_related('projects', 'certifications')
+    for res in resumes_qs:
+        for p in res.projects.all():
+            if not any(are_projects_duplicate(p, existing) for existing in unique_projects):
+                unique_projects.append(p)
+        for c in res.certifications.all():
+            if not any(are_certifications_duplicate(c, existing) for existing in unique_certs):
+                unique_certs.append(c)
+
+    project_skills = []
+    for p in unique_projects:
+        tech = getattr(p, 'technologies_used', None)
+        if tech:
+            project_skills.extend(extract_taxonomy_skills(tech))
+
+    cert_skills = []
+    for c in unique_certs:
+        val = getattr(c, 'skills_validated', None)
+        if val:
+            cert_skills.extend(extract_taxonomy_skills(val))
+        elif getattr(c, 'name', None):
+            cert_skills.extend(extract_taxonomy_skills(c.name))
+
+    return len(unique_projects), len(unique_certs), project_skills, cert_skills
+
+
+def calculate_career_pillars(tier: str, skill_match_ratio: float, projects_count: int, 
+                             experiences_count: int, certifications_count: int, 
+                             is_enrolled: bool, cgpa_val: float) -> dict:
+    """
+    CANONICAL SCORING ENGINE:
+    Preserves exact weights, tier criteria, and caps across all tiers.
+    Shared by services.py (analysis generation) and views.py (dashboard pillar rendering).
+    """
+    if tier == 'product':
+        max_skills, max_projects, max_academic, max_exp = 45, 30, 10, 15
+        pillar_skills = round(skill_match_ratio * 45)
+        pillar_projects = 30 if projects_count >= 3 else (22 if projects_count == 2 else (12 if projects_count == 1 else 0))
+        pillar_academic = 10 if cgpa_val >= 8.5 else (8 if cgpa_val >= 7.5 else (6 if cgpa_val >= 6.5 else 4))
+        p_exp = min(experiences_count * 6, 8)
+        p_certs = min(certifications_count * 3, 4)
+        p_enr = 3 if is_enrolled else 0
+        pillar_exp = min(p_exp + p_certs + p_enr, 15)
+        
+    elif tier == 'service':
+        max_skills, max_projects, max_academic, max_exp = 35, 20, 25, 20
+        pillar_skills = round(skill_match_ratio * 35)
+        pillar_projects = 20 if projects_count >= 2 else (14 if projects_count == 1 else 0)
+        pillar_academic = 25 if cgpa_val >= 8.5 else (20 if cgpa_val >= 7.5 else (15 if cgpa_val >= 6.5 else 6))
+        p_exp = min(experiences_count * 8, 10)
+        p_certs = min(certifications_count * 6, 8)
+        p_enr = 2 if is_enrolled else 0
+        pillar_exp = min(p_exp + p_certs + p_enr, 20)
+        
+    else: # 'general'
+        max_skills, max_projects, max_academic, max_exp = 40, 25, 15, 20
+        pillar_skills = round(skill_match_ratio * 40)
+        pillar_projects = 25 if projects_count >= 3 else (18 if projects_count == 2 else (10 if projects_count == 1 else 0))
+        pillar_academic = 15 if cgpa_val >= 8.5 else (12 if cgpa_val >= 7.5 else (9 if cgpa_val >= 6.5 else 5))
+        p_exp = min(experiences_count * 8, 10)
+        p_certs = min(certifications_count * 4, 6)
+        p_enr = 4 if is_enrolled else 0
+        pillar_exp = min(p_exp + p_certs + p_enr, 20)
+
+    total_score = min(pillar_skills + pillar_projects + pillar_academic + pillar_exp, 100)
+
+    return {
+        'pillar_skills': pillar_skills,
+        'pillar_projects': pillar_projects,
+        'pillar_academic': pillar_academic,
+        'pillar_exp': pillar_exp,
+        'p_exp': p_exp,
+        'p_certs': p_certs,
+        'p_enr': p_enr,
+        'max_skills': max_skills,
+        'max_projects': max_projects,
+        'max_academic': max_academic,
+        'max_exp': max_exp,
+        'total_score': total_score,
+    }
+
+
 def check_user_resume_status(user):
     """
     Checks whether the user has uploaded an ATS resume or created one in the resume builder.
@@ -53,6 +302,28 @@ def extract_student_skills_set(user, profile, default_resume, latest_resume_anal
             clean_s = s.strip()
             if clean_s and clean_s not in raw_skills:
                 raw_skills.append(clean_s)
+
+    # 1b. Profile Projects & Certifications (Candidate-Reported Portfolio)
+    if profile:
+        try:
+            for proj in profile.projects.all():
+                if proj.technologies_used:
+                    for t in proj.technologies_used.split(','):
+                        clean_t = t.strip()
+                        if clean_t and clean_t not in raw_skills:
+                            raw_skills.append(clean_t)
+            for cert in profile.certifications.all():
+                if cert.skills_validated:
+                    for s in cert.skills_validated.split(','):
+                        clean_s = s.strip()
+                        if clean_s and clean_s not in raw_skills:
+                            raw_skills.append(clean_s)
+                elif cert.name:
+                    clean_name = cert.name.strip()
+                    if clean_name and clean_name not in raw_skills:
+                        raw_skills.append(clean_name)
+        except Exception:
+            pass
         
     # 2. Built Resume Skills
     if default_resume:
@@ -65,6 +336,9 @@ def extract_student_skills_set(user, profile, default_resume, latest_resume_anal
                     clean_t = t.strip()
                     if clean_t and clean_t not in raw_skills:
                         raw_skills.append(clean_t)
+        for cert in default_resume.certifications.all():
+            if cert.name and cert.name not in raw_skills:
+                raw_skills.append(cert.name)
                 
     # 3. Uploaded ATS Scan Skills
     if latest_resume_analysis and latest_resume_analysis.raw_text:
@@ -87,10 +361,16 @@ def extract_student_skills_set(user, profile, default_resume, latest_resume_anal
         norm = normalize_token(s)
         if norm:
             normalized_tokens.add(norm)
+            alias = resolve_skill_alias(norm)
+            if alias:
+                normalized_tokens.add(alias)
             # Add subwords for compound names
             for word in norm.split():
                 if len(word) >= 3:
                     normalized_tokens.add(word)
+                    alias_word = resolve_skill_alias(word)
+                    if alias_word:
+                        normalized_tokens.add(alias_word)
 
     return raw_skills, normalized_tokens
 
@@ -229,9 +509,8 @@ def evaluate_student_against_path(user, profile, career_path, has_resume, latest
 
     # --- TIER-CALIBRATED SCORING ENGINE ---
     skill_match_ratio = (total_matched_topics / total_path_topics) if total_path_topics > 0 else 0.0
-    projects_count = default_resume.projects.count() if default_resume else 0
+    projects_count, certifications_count, _, _ = get_unified_portfolio_diagnostics(user, default_resume)
     experiences_count = default_resume.experiences.count() if default_resume else 0
-    certifications_count = default_resume.certifications.count() if default_resume else 0
     is_enrolled = UserRoadmap.objects.filter(user=user, career_path=career_path).exists()
     
     cgpa_val = 0.0
@@ -241,87 +520,21 @@ def evaluate_student_against_path(user, profile, career_path, has_resume, latest
         except (ValueError, TypeError):
             cgpa_val = 6.0
 
-    if company_tier == 'product':
-        # PRODUCT-BASED / STARTUP CALIBRATION (Heavy on skills & projects, low on GPA cutoffs)
-        pillar_skills = round(skill_match_ratio * 45)  # Max 45 pts
-        
-        if projects_count >= 3:
-            pillar_projects = 30
-        elif projects_count == 2:
-            pillar_projects = 22
-        elif projects_count == 1:
-            pillar_projects = 12
-        else:
-            pillar_projects = 0
-            
-        if cgpa_val >= 8.5:
-            pillar_academic = 10
-        elif cgpa_val >= 7.5:
-            pillar_academic = 8
-        elif cgpa_val >= 6.5:
-            pillar_academic = 6
-        else:
-            pillar_academic = 4
-            
-        pillar_exp = min(experiences_count * 6, 8)
-        pillar_certs = min(certifications_count * 3, 4)
-        pillar_enrollment = 3 if is_enrolled else 0
-        pillar_experience_total = min(pillar_exp + pillar_certs + pillar_enrollment, 15)
-        
-    elif company_tier == 'service':
-        # ENTERPRISE & IT SERVICES CALIBRATION (High emphasis on CGPA cutoffs & Core CS fundamentals)
-        pillar_skills = round(skill_match_ratio * 35)  # Max 35 pts
-        
-        if projects_count >= 2:
-            pillar_projects = 20
-        elif projects_count == 1:
-            pillar_projects = 14
-        else:
-            pillar_projects = 0
-            
-        # Heavy CGPA weighting (critical for eligibility filtering)
-        if cgpa_val >= 8.5:
-            pillar_academic = 25
-        elif cgpa_val >= 7.5:
-            pillar_academic = 20
-        elif cgpa_val >= 6.5:
-            pillar_academic = 15
-        else:
-            pillar_academic = 6
-            
-        pillar_exp = min(experiences_count * 8, 10)
-        pillar_certs = min(certifications_count * 6, 8)
-        pillar_enrollment = 2 if is_enrolled else 0
-        pillar_experience_total = min(pillar_exp + pillar_certs + pillar_enrollment, 20)
-        
-    else:
-        # GENERAL / BALANCED CALIBRATION
-        pillar_skills = round(skill_match_ratio * 40)
-        if projects_count >= 3:
-            pillar_projects = 25
-        elif projects_count == 2:
-            pillar_projects = 18
-        elif projects_count == 1:
-            pillar_projects = 10
-        else:
-            pillar_projects = 0
-            
-        if cgpa_val >= 8.5:
-            pillar_academic = 15
-        elif cgpa_val >= 7.5:
-            pillar_academic = 12
-        elif cgpa_val >= 6.5:
-            pillar_academic = 9
-        else:
-            pillar_academic = 5
-            
-        pillar_exp = min(experiences_count * 8, 10)
-        pillar_certs = min(certifications_count * 4, 6)
-        pillar_enrollment = 4 if is_enrolled else 0
-        pillar_experience_total = min(pillar_exp + pillar_certs + pillar_enrollment, 20)
+    pillars = calculate_career_pillars(
+        tier=company_tier,
+        skill_match_ratio=skill_match_ratio,
+        projects_count=projects_count,
+        experiences_count=experiences_count,
+        certifications_count=certifications_count,
+        is_enrolled=is_enrolled,
+        cgpa_val=cgpa_val
+    )
+    pillar_skills = pillars['pillar_skills']
+    pillar_projects = pillars['pillar_projects']
+    pillar_academic = pillars['pillar_academic']
+    pillar_experience_total = pillars['pillar_exp']
+    career_readiness_score = pillars['total_score']
 
-    # Calculate Total Readiness Score
-    career_readiness_score = min(pillar_skills + pillar_projects + pillar_academic + pillar_experience_total, 100)
     
     # Calculate Role Alignment Confidence
     confidence_score = round((skill_match_ratio * 70) + ((career_readiness_score / 100) * 30))

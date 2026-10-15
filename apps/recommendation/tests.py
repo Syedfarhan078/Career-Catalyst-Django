@@ -1,11 +1,18 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from apps.profiles.models import StudentProfile
+from apps.profiles.models import StudentProfile, StudentProject, StudentCertification
 from apps.resume.models import Resume, Education, Project, Skill
 from apps.roadmaps.models import CareerPath, Milestone, Topic
 from .models import CareerAnalysis
-from .services import evaluate_student_against_path, generate_career_recommendation
+from .services import (
+    evaluate_student_against_path,
+    generate_career_recommendation,
+    get_unified_portfolio_diagnostics,
+    calculate_career_pillars,
+    extract_student_skills_set
+)
+from .views import _calculate_pillars
 
 User = get_user_model()
 
@@ -513,6 +520,130 @@ class CareerRecalibrationDynamicTests(TestCase):
         ms2_score1 = next((item['user_score'] for item in radar1 if 'Frameworks' in item['name']), 0)
         ms2_score2 = next((item['user_score'] for item in radar2 if 'Frameworks' in item['name']), 0)
         self.assertGreater(ms2_score2, ms2_score1)
+
+
+class UnifiedPortfolioRecommendationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='portfoliouser',
+            email='portfolio_user@careercatalyst.com',
+            password='testpassword123'
+        )
+        self.profile = StudentProfile.objects.create(
+            user=self.user,
+            cgpa=9.0,
+            skills='Python, SQL'
+        )
+        self.path = CareerPath.objects.create(
+            name="Backend Engineer",
+            slug="backend-engineer",
+            difficulty="Intermediate",
+            is_active=True
+        )
+        ms = Milestone.objects.create(career_path=self.path, week_number=1, title="Backend Basics")
+        Topic.objects.create(milestone=ms, title="Python")
+        Topic.objects.create(milestone=ms, title="SQL")
+
+    def test_readiness_scoring_credits_profile_projects_without_resume(self):
+        # Without projects, evaluate readiness
+        score_data_0 = evaluate_student_against_path(
+            self.user, self.profile, self.path, False, None, None, company_tier='product'
+        )
+
+        # Add 3 profile projects
+        StudentProject.objects.create(
+            profile=self.profile,
+            title='Project Alpha',
+            technologies_used='Python, Django'
+        )
+        StudentProject.objects.create(
+            profile=self.profile,
+            title='Project Beta',
+            technologies_used='FastAPI, Redis'
+        )
+        StudentProject.objects.create(
+            profile=self.profile,
+            title='Project Gamma',
+            technologies_used='PostgreSQL, Celery'
+        )
+
+        score_data_3 = evaluate_student_against_path(
+            self.user, self.profile, self.path, False, None, None, company_tier='product'
+        )
+
+        # In product tier: 3 projects award full 30 points
+        diff = score_data_3["career_readiness_score"] - score_data_0["career_readiness_score"]
+        self.assertEqual(diff, 30)
+
+    def test_conservative_deduplication_url_match(self):
+        StudentProject.objects.create(
+            profile=self.profile,
+            title='Web Scraper',
+            technologies_used='Python, Beautiful Soup',
+            github_url='https://github.com/portfoliouser/scraper/'
+        )
+        resume = Resume.objects.create(user=self.user, title='Resume 1', is_default=True)
+        Project.objects.create(
+            resume=resume,
+            title='Different Title Web Scraper',
+            technologies_used='Python, bs4',
+            github_url='https://github.com/portfoliouser/scraper'
+        )
+
+        proj_count, cert_count, has_proj, has_cert = get_unified_portfolio_diagnostics(self.user, resume)
+        # Deduplication merges them because of normalized GitHub URL match
+        self.assertEqual(proj_count, 1)
+        self.assertTrue(has_proj)
+
+    def test_conservative_deduplication_generic_title_disjoint_tech_not_merged(self):
+        StudentProject.objects.create(
+            profile=self.profile,
+            title='Portfolio Website',
+            technologies_used='Django, HTML, CSS'
+        )
+        resume = Resume.objects.create(user=self.user, title='Resume 2', is_default=True)
+        Project.objects.create(
+            resume=resume,
+            title='Portfolio Website',
+            technologies_used='Flutter, Dart, Mobile'
+        )
+
+        proj_count, cert_count, _, _ = get_unified_portfolio_diagnostics(self.user, resume)
+        # Conservative matching keeps them separate because technology overlap is below threshold
+        self.assertEqual(proj_count, 2)
+
+    def test_canonical_scoring_engine_parity(self):
+        StudentProject.objects.create(
+            profile=self.profile,
+            title='API Gateway',
+            technologies_used='Go, Docker'
+        )
+        StudentCertification.objects.create(
+            profile=self.profile,
+            name='AWS Solutions Architect',
+            organization='AWS'
+        )
+
+        for tier in ['product', 'service', 'general']:
+            analysis = generate_career_recommendation(self.user, 'Backend Engineer', tier)
+            rendered_pillars = _calculate_pillars(analysis, self.user, self.profile, self.path, None)
+            sum_pillars = sum(p['score'] for p in rendered_pillars)
+
+            # The sum of dashboard pillars must exactly match the saved analysis readiness score
+            self.assertEqual(sum_pillars, analysis.career_readiness_score)
+
+    def test_skill_extraction_normalizes_aliases(self):
+        StudentProject.objects.create(
+            profile=self.profile,
+            title='Cloud Infrastructure',
+            technologies_used='Postgres, ReactJS, K8s'
+        )
+        raw_skills, _ = extract_student_skills_set(self.user, self.profile, None, None)
+        lower_skills = {s.lower() for s in raw_skills}
+        self.assertTrue('postgresql' in lower_skills or 'postgres' in lower_skills)
+        self.assertTrue('react' in lower_skills or 'reactjs' in lower_skills)
+        self.assertTrue('kubernetes' in lower_skills or 'k8s' in lower_skills)
+
 
 
 

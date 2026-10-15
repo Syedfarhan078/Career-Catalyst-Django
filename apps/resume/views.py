@@ -237,6 +237,12 @@ def import_profile_data(request, pk):
 
     imported_edu = False
     imported_skills_count = 0
+    imported_projects_count = 0
+    imported_certs_count = 0
+
+    # Optional selective IDs (from form-data or json)
+    selected_project_ids = request.POST.getlist('selected_project_ids')
+    selected_cert_ids = request.POST.getlist('selected_cert_ids')
 
     # 1. Import Education
     if profile.college and profile.degree and not resume.educations.exists():
@@ -260,10 +266,54 @@ def import_profile_data(request, pk):
                 Skill.objects.create(resume=resume, name=s_name)
                 imported_skills_count += 1
 
+    # 3. Import Projects (Selective & Idempotent via Conservative Deduplication)
+    from apps.recommendation.services import are_projects_duplicate, are_certifications_duplicate
+
+    profile_projects = profile.projects.all()
+    if selected_project_ids:
+        profile_projects = profile_projects.filter(id__in=selected_project_ids)
+
+    existing_resume_projects = list(resume.projects.all())
+    for p in profile_projects:
+        if not any(are_projects_duplicate(p, existing) for existing in existing_resume_projects):
+            new_p = Project.objects.create(
+                resume=resume,
+                title=p.title,
+                description=p.description,
+                technologies_used=p.technologies_used,
+                github_url=p.github_url,
+                live_demo_url=p.live_demo_url
+            )
+            existing_resume_projects.append(new_p)
+            imported_projects_count += 1
+
+    # 4. Import Certifications (Selective & Idempotent via Conservative Deduplication)
+    profile_certs = profile.certifications.all()
+    if selected_cert_ids:
+        profile_certs = profile_certs.filter(id__in=selected_cert_ids)
+
+    existing_resume_certs = list(resume.certifications.all())
+    for c in profile_certs:
+        if not any(are_certifications_duplicate(c, existing) for existing in existing_resume_certs):
+            new_c = Certification.objects.create(
+                resume=resume,
+                name=c.name,
+                organization=c.organization,
+                issue_date=c.issue_date,
+                credential_url=c.credential_url
+            )
+            existing_resume_certs.append(new_c)
+            imported_certs_count += 1
+
     return JsonResponse({
         'success': True,
         'educations': get_section_items(resume, 'education'),
         'skills': get_section_items(resume, 'skill'),
+        'projects': get_section_items(resume, 'project'),
+        'certifications': get_section_items(resume, 'certification'),
         'imported_edu': imported_edu,
-        'imported_skills_count': imported_skills_count
+        'imported_skills_count': imported_skills_count,
+        'imported_projects_count': imported_projects_count,
+        'imported_certs_count': imported_certs_count
     })
+
