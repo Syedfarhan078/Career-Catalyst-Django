@@ -6,159 +6,223 @@
 <style>
     @page {
         size: a4 landscape;
-        margin: 8mm;
+        margin: 6mm 8mm;
     }
     body {
         font-family: Helvetica, Arial, sans-serif;
-        color: #0f172a;
+        color: #1e293b;
         background-color: #ffffff;
         margin: 0;
         padding: 0;
     }
-    .cert-border {
-        border: 4px solid #1e293b;
-        padding: 6mm;
-        height: 178mm;
-    }
-    .cert-inner-border {
-        border: 1.5px solid #64748b;
-        padding: 8mm 12mm;
-        height: 160mm;
-        text-align: center;
-        background-color: #fdfdfd;
-    }
-    .cert-badge {
-        font-size: 10pt;
-        font-weight: bold;
-        letter-spacing: 2px;
-        color: #4338ca;
-        text-transform: uppercase;
-        margin-top: 2mm;
-        margin-bottom: 3mm;
-    }
-    .cert-brand {
-        font-size: 18pt;
-        font-weight: bold;
-        color: #0f172a;
-        margin-bottom: 2mm;
-    }
-    .cert-brand-accent {
-        color: #4f46e5;
-    }
-    .cert-subheading {
-        font-size: 11pt;
-        color: #64748b;
-        margin-bottom: 5mm;
-    }
-    .cert-for {
-        font-size: 10pt;
-        color: #475569;
-        font-style: italic;
-        margin-bottom: 2mm;
-    }
-    .cert-recipient {
-        font-size: 26pt;
-        font-weight: bold;
-        color: #0f172a;
-        margin-bottom: 4mm;
-        border-bottom: 1.5px solid #cbd5e1;
-        display: inline-block;
-        padding-bottom: 2mm;
-    }
-    .cert-statement {
-        font-size: 11pt;
-        color: #334155;
-        line-height: 1.4;
-        margin-top: 3mm;
-        margin-bottom: 3mm;
-    }
-    .cert-track {
-        font-size: 18pt;
-        font-weight: bold;
-        color: #4338ca;
-        margin-bottom: 3mm;
-    }
-    .cert-meta-desc {
-        font-size: 9pt;
-        color: #64748b;
-        line-height: 1.4;
-        margin-bottom: 6mm;
-    }
-    .cert-footer-table {
+    table.cert-outer {
         width: 100%;
-        margin-top: 6mm;
+        border: 4px solid #1e3a8a;
+        border-collapse: collapse;
+        background-color: #ffffff;
+    }
+    td.cert-outer-td {
+        padding: 4px;
+    }
+    table.cert-mid {
+        width: 100%;
+        border: 1px solid #94a3b8;
         border-collapse: collapse;
     }
-    .cert-footer-col {
+    td.cert-mid-td {
+        padding: 3px;
+    }
+    table.cert-inner {
+        width: 100%;
+        border: 2px solid #d97706; /* Warm gold accent line */
+        border-collapse: collapse;
+        background-color: #ffffff;
+    }
+    td.cert-inner-td {
+        padding: 16px 28px 12px 28px;
+        text-align: center;
+    }
+    .brand-title {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 19pt;
+        font-weight: bold;
+        color: #0f172a;
+        letter-spacing: 1px;
+    }
+    .brand-accent {
+        color: #2563eb;
+    }
+    .cert-heading {
+        font-family: "Times New Roman", Times, Georgia, serif;
+        font-size: 21pt;
+        font-weight: bold;
+        color: #1e3a8a;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-top: 4px;
+        margin-bottom: 2px;
+    }
+    .cert-subheading {
+        font-size: 8.5pt;
+        font-weight: bold;
+        color: #b45309; /* Warm gold/bronze */
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin-bottom: 12px;
+    }
+    .for-text {
+        font-family: "Times New Roman", Times, Georgia, serif;
+        font-size: 11pt;
+        font-style: italic;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+    .recipient-name {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 27pt;
+        font-weight: bold;
+        color: #0f172a;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+    .fulfillment-text {
+        font-size: 10pt;
+        color: #475569;
+        margin-bottom: 4px;
+        line-height: 1.3;
+    }
+    .track-title {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 20pt;
+        font-weight: bold;
+        color: #1e3a8a;
+        margin-bottom: 6px;
+    }
+    .skills-summary {
+        font-size: 8.5pt;
+        color: #64748b;
+        max-width: 650px;
+        margin: 0 auto 14px auto;
+        line-height: 1.3;
+    }
+    table.footer-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 6px;
+    }
+    td.footer-col {
         vertical-align: bottom;
     }
-    .cert-meta-label {
-        font-size: 8pt;
+    .footer-label {
+        font-size: 7pt;
         color: #94a3b8;
         text-transform: uppercase;
         letter-spacing: 1px;
-    }
-    .cert-meta-value {
-        font-size: 10pt;
         font-weight: bold;
-        color: #0f172a;
-        margin-top: 1mm;
     }
-    .cert-id-badge {
+    .footer-value {
+        font-size: 9.5pt;
+        font-weight: bold;
+        color: #1e293b;
+        margin-top: 1px;
+    }
+    .cert-id-code {
         font-family: Courier, monospace;
-        font-size: 10pt;
-        color: #4338ca;
+        font-size: 9.5pt;
         font-weight: bold;
+        color: #1e3a8a;
+        margin-top: 1px;
     }
 </style>
 </head>
 <body>
-<div class="cert-border">
-    <div class="cert-inner-border">
-        <div class="cert-brand">Career<span class="cert-brand-accent">Catalyst</span></div>
-        <div class="cert-badge">Official Certificate of Track Mastery</div>
-        <div class="cert-subheading">Verified Curriculum & Practical Competency Demonstration</div>
+<table class="cert-outer">
+    <tr>
+        <td class="cert-outer-td">
+            <table class="cert-mid">
+                <tr>
+                    <td class="cert-mid-td">
+                        <table class="cert-inner">
+                            <tr>
+                                <td class="cert-inner-td">
+                                    <!-- Header / Brand -->
+                                    <div class="brand-title">Career<span class="brand-accent">Catalyst</span></div>
+                                    <div class="cert-heading">Certificate of Track Mastery</div>
+                                    <div class="cert-subheading">Verified Curriculum &bull; Demonstrated Technical Competency</div>
 
-        <div class="cert-for">This acknowledges that</div>
-        <div class="cert-recipient">{{ recipient_name }}</div>
+                                    <!-- Recipient -->
+                                    <div class="for-text">This official credential is awarded to</div>
+                                    <div class="recipient-name">{{ recipient_name }}</div>
+                                    <table align="center" style="margin: 0 auto 8px auto;">
+                                        <tr>
+                                            <td style="width: 280px; border-bottom: 1.5px solid #2563eb; height: 1px;">&nbsp;</td>
+                                        </tr>
+                                    </table>
 
-        <div class="cert-statement">has successfully fulfilled all curriculum requirements, completed every lesson, and demonstrated proficiency in</div>
-        <div class="cert-track">{{ cert.career_path.name }}</div>
+                                    <!-- Statement & Track -->
+                                    <div class="fulfillment-text">for successfully completing all curriculum requirements, milestone projects, and mastering the track:</div>
+                                    <div class="track-title">{{ cert.career_path.name }}</div>
 
-        <div class="cert-meta-desc">
-            Completed {{ cert.total_topics_completed }} lessons covering key competencies:
-            {{ cert.skills_summary|truncatewords:20 }}
-        </div>
+                                    <!-- Competencies -->
+                                    <div class="skills-summary">
+                                        <strong>Curriculum Mastery ({{ cert.total_topics_completed }} Lessons):</strong>
+                                        {{ cert.skills_summary|truncatewords:25 }}
+                                    </div>
 
-        <table class="cert-footer-table">
-            <tr>
-                <td class="cert-footer-col" style="text-align: left; width: 33%;">
-                    <div class="cert-meta-label">Date Awarded</div>
-                    <div class="cert-meta-value">{{ cert.issued_at|date:"F d, Y" }}</div>
-                    <div style="margin-top: 4mm;">
-                        <div class="cert-meta-label">Issuing Platform</div>
-                        <div class="cert-meta-value" style="color: #4338ca;">CareerCatalyst Education</div>
-                    </div>
-                </td>
-                <td class="cert-footer-col" style="text-align: center; width: 34%;">
-                    {% if qr_code_base64 %}
-                    <div>
-                        <img src="{{ qr_code_base64 }}" width="72" height="72" alt="QR Code" />
-                    </div>
-                    <div style="font-size: 7pt; color: #64748b; margin-top: 1mm;">Scan to Verify Authenticity</div>
-                    {% endif %}
-                </td>
-                <td class="cert-footer-col" style="text-align: right; width: 33%;">
-                    <div class="cert-meta-label">Certificate Identification</div>
-                    <div class="cert-id-badge">{{ cert.certificate_id }}</div>
-                    <div style="margin-top: 4mm;">
-                        <div class="cert-meta-label">Registry Status</div>
-                        <div class="cert-meta-value" style="color: #059669;">Verified & In Good Standing</div>
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </div>
-</div>
+                                    <!-- Footer Triple Column -->
+                                    <table class="footer-table">
+                                        <tr>
+                                            <!-- Column 1: Date & Issuing Platform -->
+                                            <td class="footer-col" style="text-align: left; width: 33%; padding-bottom: 2px;">
+                                                <div class="footer-label">Date Awarded</div>
+                                                <div class="footer-value">{{ cert.issued_at|date:"F d, Y" }}</div>
+                                                <div style="margin-top: 8px;">
+                                                    <div class="footer-label">Verified By</div>
+                                                    <div class="footer-value" style="color: #1e3a8a;">CareerCatalyst Academic Board</div>
+                                                    <table style="width: 150px; margin-top: 4px;">
+                                                        <tr>
+                                                            <td style="border-bottom: 1px solid #cbd5e1; height: 1px;">&nbsp;</td>
+                                                        </tr>
+                                                    </table>
+                                                    <div style="font-size: 6.5pt; color: #94a3b8; margin-top: 1px;">Authorized Academic Credential</div>
+                                                </div>
+                                            </td>
+
+                                            <!-- Column 2: Official QR Verification -->
+                                            <td class="footer-col" style="text-align: center; width: 34%; padding-bottom: 2px;">
+                                                {% if qr_code_base64 %}
+                                                <img src="{{ qr_code_base64 }}" width="64" height="64" alt="Verification QR Code" />
+                                                <div style="font-size: 6.5pt; color: #64748b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">
+                                                    Scan to Verify Online
+                                                </div>
+                                                {% endif %}
+                                            </td>
+
+                                            <!-- Column 3: Credential ID & Registry Status -->
+                                            <td class="footer-col" style="text-align: right; width: 33%; padding-bottom: 2px;">
+                                                <div class="footer-label">Certificate Identification</div>
+                                                <div class="cert-id-code">{{ cert.certificate_id }}</div>
+                                                <div style="margin-top: 8px;">
+                                                    <div class="footer-label">Registry Status</div>
+                                                    <div class="footer-value" style="color: #059669;">Verified &bull; In Good Standing</div>
+                                                    <table align="right" style="width: 150px; margin-top: 4px;">
+                                                        <tr>
+                                                            <td style="border-bottom: 1px solid #cbd5e1; height: 1px;">&nbsp;</td>
+                                                        </tr>
+                                                    </table>
+                                                    <div style="font-size: 6.5pt; color: #94a3b8; margin-top: 1px;">Official CareerCatalyst Registry</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 </body>
 </html>
