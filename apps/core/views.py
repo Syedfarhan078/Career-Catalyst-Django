@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.conf import settings
 
 from apps.roadmaps.models import UserRoadmap, TopicProgress
 from apps.resume.models import Resume
@@ -499,3 +500,18 @@ def dashboard_view(request):
         'is_roadmap_completed': is_roadmap_completed,
     }
     return render(request, 'core/dashboard.html', context)
+
+
+def robots_txt(request):
+    """
+    Serve robots.txt with search crawler instructions and canonical sitemap.
+    """
+    canonical_protocol = getattr(settings, 'CANONICAL_PROTOCOL', 'https')
+    canonical_hostname = getattr(settings, 'CANONICAL_HOSTNAME', None) or 'careercatalyst.dpdns.org'
+    sitemap_url = f"{canonical_protocol}://{canonical_hostname}{reverse('sitemap')}"
+    return render(
+        request,
+        'robots.txt',
+        {'sitemap_url': sitemap_url},
+        content_type='text/plain; charset=utf-8',
+    )

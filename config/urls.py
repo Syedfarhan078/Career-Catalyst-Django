@@ -18,10 +18,15 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf import settings
 from django.views.static import serve
+from django.contrib.sitemaps.views import sitemap
 
 from apps.roadmaps.views import verify_certificate
+from apps.core.sitemaps import sitemaps
+from apps.core.views import robots_txt
 
 urlpatterns = [
+    path('robots.txt', robots_txt, name='robots_txt'),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='sitemap'),
     path('admin-portal/', admin.site.urls),
     path("accounts/", include("apps.accounts.urls")),
     path("profile/", include("apps.profiles.urls")),

@@ -57,6 +57,10 @@ if env_csrf:
 # Reverse proxy SSL header (Essential for Render to properly validate CSRF tokens over HTTPS)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# Canonical SEO / Hostname Configuration
+CANONICAL_HOSTNAME = os.getenv("CANONICAL_HOSTNAME", "careercatalyst.dpdns.org")
+CANONICAL_PROTOCOL = os.getenv("CANONICAL_PROTOCOL", "https")
+
 
 # Application definition
 
@@ -77,6 +81,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     'crispy_forms',
     'crispy_bootstrap5',
 ]

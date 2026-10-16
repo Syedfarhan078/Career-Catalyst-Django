@@ -1,4 +1,5 @@
-from django.test import TestCase, Client
+import xml.etree.ElementTree as ET
+from django.test import TestCase, Client, override_settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from apps.profiles.models import StudentProfile
@@ -126,3 +127,114 @@ class DashboardRefinementTests(TestCase):
         # Progress must either be a real percentage (active topic) or None
         if next_step['state'] != 'topic_continue':
             self.assertIsNone(next_step['progress'], f"Fake progress found in state: {next_step['state']}")
+
+
+class SEOCrawlerEndpointTests(TestCase):
+    def setUp(self):
+        self.client = Client(HTTP_HOST='127.0.0.1')
+
+    def test_robots_txt_status_and_content_type(self):
+        response = self.client.get('/robots.txt')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response['Content-Type'].startswith('text/plain'))
+
+    def test_robots_txt_rules_allow_and_disallow(self):
+        response = self.client.get('/robots.txt')
+        content = response.content.decode('utf-8')
+
+        # Verify user-agent and home page allowance
+        self.assertIn('User-agent: *', content)
+        self.assertIn('Allow: /$', content)
+
+        # Verify disallow rules for authenticated/private areas
+        private_prefixes = [
+            '/admin-portal/',
+            '/accounts/',
+            '/dashboard/',
+            '/profile/',
+            '/resume/',
+            '/ai-resume/',
+            '/roadmaps/',
+            '/interviews/',
+            '/community/',
+            '/recommendation/',
+            '/tracker/',
+            '/verify/',
+            '/media/',
+        ]
+        for prefix in private_prefixes:
+            self.assertIn(f'Disallow: {prefix}', content, f"robots.txt missing Disallow for {prefix}")
+
+        # Verify sitemap directive presence
+        self.assertIn('Sitemap: https://careercatalyst.dpdns.org/sitemap.xml', content)
+
+    def test_robots_txt_canonical_host_configuration(self):
+        with override_settings(CANONICAL_HOSTNAME='staging.careercatalyst.com', CANONICAL_PROTOCOL='https'):
+            response = self.client.get('/robots.txt')
+            content = response.content.decode('utf-8')
+            self.assertIn('Sitemap: https://staging.careercatalyst.com/sitemap.xml', content)
+
+    def test_sitemap_xml_status_and_content_type(self):
+        response = self.client.get('/sitemap.xml')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response['Content-Type'].startswith('application/xml'))
+
+    def test_sitemap_xml_validity_and_canonical_urls(self):
+        response = self.client.get('/sitemap.xml')
+        self.assertEqual(response.status_code, 200)
+
+        # Parse XML to verify well-formed syntax
+        root = ET.fromstring(response.content)
+        self.assertEqual(root.tag, '{http://www.sitemaps.org/schemas/sitemap/0.9}urlset')
+
+        # Extract all <loc> values
+        urls = [loc.text for loc in root.findall('{http://www.sitemaps.org/schemas/sitemap/0.9}url/{http://www.sitemaps.org/schemas/sitemap/0.9}loc')]
+
+        # The homepage should be present as canonical
+        self.assertIn('https://careercatalyst.dpdns.org/', urls)
+
+    def test_sitemap_xml_excludes_private_and_user_specific_pages(self):
+        response = self.client.get('/sitemap.xml')
+        content = response.content.decode('utf-8')
+
+        private_keywords = [
+            '/dashboard',
+            '/admin-portal',
+            '/accounts',
+            '/profile',
+            '/resume',
+            '/ai-resume',
+            '/roadmaps',
+            '/interviews',
+            '/community',
+            '/recommendation',
+            '/tracker',
+            '/verify',
+            '/media',
+        ]
+        for keyword in private_keywords:
+            self.assertNotIn(keyword, content, f"Sitemap XML must not contain private keyword: {keyword}")
+
+    def test_sitemap_xml_canonical_host_configuration(self):
+        with override_settings(CANONICAL_HOSTNAME='custom.domain.example', CANONICAL_PROTOCOL='https'):
+            response = self.client.get('/sitemap.xml')
+            root = ET.fromstring(response.content)
+            urls = [loc.text for loc in root.findall('{http://www.sitemaps.org/schemas/sitemap/0.9}url/{http://www.sitemaps.org/schemas/sitemap/0.9}loc')]
+            self.assertIn('https://custom.domain.example/', urls)
+
+    def test_private_areas_excluded_by_robots_txt_redirect_anonymous_users(self):
+        # Confirm that areas excluded in robots.txt require authentication
+        private_urls = [
+            '/dashboard/',
+            '/profile/',
+            '/resume/',
+            '/roadmaps/',
+            '/interviews/',
+            '/community/',
+            '/recommendation/',
+            '/tracker/',
+        ]
+        for url in private_urls:
+            res = self.client.get(url)
+            self.assertEqual(res.status_code, 302, f"Expected 302 redirect for unauthenticated access to {url}")
+            self.assertIn('/accounts/login/', res.url)

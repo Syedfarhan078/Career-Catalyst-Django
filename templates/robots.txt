@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /$
+
+# Disallow private user workspaces and authenticated portals
+Disallow: /admin-portal/
+Disallow: /accounts/
+Disallow: /dashboard/
+Disallow: /profile/
+Disallow: /resume/
+Disallow: /ai-resume/
+Disallow: /roadmaps/
+Disallow: /interviews/
+Disallow: /community/
+Disallow: /recommendation/
+Disallow: /tracker/
+Disallow: /verify/
+Disallow: /media/
+
+# Sitemap location
+Sitemap: {{ sitemap_url }}
