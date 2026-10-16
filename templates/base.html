@@ -49,7 +49,45 @@
     
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Career Catalyst - AI-powered career development platform for students. Build resumes, discover career paths, track skills, and get personalized guidance.">
+    <meta name="description" content="CareerCatalyst is an AI-powered career development platform. Master structured 12-week learning roadmaps, benchmark resumes with ATS scoring, and practice mock interviews.">
+    <meta name="keywords" content="career catalyst, career roadmaps, ats resume analyzer, mock interview practice, student portfolio, tech jobs preparation, learning tracks">
+    <meta name="author" content="CareerCatalyst">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://careercatalyst.dpdns.org{{ request.path|default:'/' }}">
+
+    <!-- Open Graph / Facebook / LinkedIn / WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://careercatalyst.dpdns.org{{ request.path|default:'/' }}">
+    <meta property="og:site_name" content="CareerCatalyst">
+    <meta property="og:title" content="CareerCatalyst — AI Career Roadmaps, ATS Resume Analyzer & Interview Prep">
+    <meta property="og:description" content="Structured career development platform. Master 12-week learning roadmaps, benchmark your resume with ATS scoring, and practice mock interviews.">
+    <meta property="og:image" content="https://careercatalyst.dpdns.org{% static 'images/logo.png' %}">
+
+    <!-- Twitter / X Cards -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:url" content="https://careercatalyst.dpdns.org{{ request.path|default:'/' }}">
+    <meta name="twitter:title" content="CareerCatalyst — AI Career Roadmaps & Interview Prep">
+    <meta name="twitter:description" content="Structured career development platform. Master 12-week learning roadmaps, benchmark your resume, and practice mock interviews.">
+    <meta name="twitter:image" content="https://careercatalyst.dpdns.org{% static 'images/logo.png' %}">
+
+    <!-- Schema.org JSON-LD Structured Data for Google Rich Snippets -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "CareerCatalyst",
+      "url": "https://careercatalyst.dpdns.org/",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "All",
+      "description": "AI-powered career development platform featuring structured learning roadmaps, ATS resume analysis, mock interview preparation, and job application tracking.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+
     <title>{% block title %}Career Catalyst{% endblock %}</title>
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}?v=3.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
