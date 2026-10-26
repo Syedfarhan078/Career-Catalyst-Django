@@ -31,7 +31,7 @@ DEBUG = os.getenv("DEBUG") == "True"
 ALLOWED_HOSTS = ["127.0.0.1",
                  "localhost", 
                  '172.20.10.2',
-                 "career-catalyst-ad5m.onrender.com",]
+                 "career-catalyst-ad5m.onrender.com"]
 
 if os.getenv("RENDER_EXTERNAL_HOSTNAME"):
     ALLOWED_HOSTS.append(os.getenv("RENDER_EXTERNAL_HOSTNAME"))
