@@ -20,7 +20,7 @@ class StaticViewSitemap(Sitemap):
         return reverse(item)
 
     def get_domain(self, site=None):
-        return getattr(settings, 'CANONICAL_HOSTNAME', None) or (site.domain if site else 'careercatalyst.dpdns.org')
+        return getattr(settings, 'CANONICAL_HOSTNAME', None) or (site.domain if site else 'career-catalyst-ad5m.onrender.com')
 
 
 sitemaps = {

@@ -166,7 +166,7 @@ class SEOCrawlerEndpointTests(TestCase):
             self.assertIn(f'Disallow: {prefix}', content, f"robots.txt missing Disallow for {prefix}")
 
         # Verify sitemap directive presence
-        self.assertIn('Sitemap: https://careercatalyst.dpdns.org/sitemap.xml', content)
+        self.assertIn('Sitemap: https://career-catalyst-ad5m.onrender.com/sitemap.xml', content)
 
     def test_robots_txt_canonical_host_configuration(self):
         with override_settings(CANONICAL_HOSTNAME='staging.careercatalyst.com', CANONICAL_PROTOCOL='https'):
@@ -191,7 +191,7 @@ class SEOCrawlerEndpointTests(TestCase):
         urls = [loc.text for loc in root.findall('{http://www.sitemaps.org/schemas/sitemap/0.9}url/{http://www.sitemaps.org/schemas/sitemap/0.9}loc')]
 
         # The homepage should be present as canonical
-        self.assertIn('https://careercatalyst.dpdns.org/', urls)
+        self.assertIn('https://career-catalyst-ad5m.onrender.com/', urls)
 
     def test_sitemap_xml_excludes_private_and_user_specific_pages(self):
         response = self.client.get('/sitemap.xml')

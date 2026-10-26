@@ -31,8 +31,7 @@ DEBUG = os.getenv("DEBUG") == "True"
 ALLOWED_HOSTS = ["127.0.0.1",
                  "localhost", 
                  '172.20.10.2',
-                 "careercatalyst.dpdns.org",
-                 "www.careercatalyst.dpdns.org"]
+                 "career-catalyst-ad5m.onrender.com",]
 
 if os.getenv("RENDER_EXTERNAL_HOSTNAME"):
     ALLOWED_HOSTS.append(os.getenv("RENDER_EXTERNAL_HOSTNAME"))
@@ -42,8 +41,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1",
     "http://localhost",
     "https://*.onrender.com",
-    "https://careercatalyst.dpdns.org",
-    "https://www.careercatalyst.dpdns.org",
+    "https://career-catalyst-ad5m.onrender.com",
 ]
 
 render_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME")
@@ -58,7 +56,7 @@ if env_csrf:
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Canonical SEO / Hostname Configuration
-CANONICAL_HOSTNAME = os.getenv("CANONICAL_HOSTNAME", "careercatalyst.dpdns.org")
+CANONICAL_HOSTNAME = os.getenv("CANONICAL_HOSTNAME", "career-catalyst-ad5m.onrender.com")
 CANONICAL_PROTOCOL = os.getenv("CANONICAL_PROTOCOL", "https")
 
 

@@ -507,7 +507,7 @@ def robots_txt(request):
     Serve robots.txt with search crawler instructions and canonical sitemap.
     """
     canonical_protocol = getattr(settings, 'CANONICAL_PROTOCOL', 'https')
-    canonical_hostname = getattr(settings, 'CANONICAL_HOSTNAME', None) or 'careercatalyst.dpdns.org'
+    canonical_hostname = getattr(settings, 'CANONICAL_HOSTNAME', None) or 'career-catalyst-ad5m.onrender.com'
     sitemap_url = f"{canonical_protocol}://{canonical_hostname}{reverse('sitemap')}"
     return render(
         request,
