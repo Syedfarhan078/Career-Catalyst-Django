@@ -39,6 +39,40 @@
         <form method="POST" novalidate>
             {% csrf_token %}
 
+            <!-- Account Type Selection Cards -->
+            <div class="auth-form-group mb-3">
+                <label class="auth-label mb-2 d-block">Account Type <span class="text-danger">*</span></label>
+                <div class="row g-2">
+                    <div class="col-sm-6">
+                        <input type="radio" class="btn-check" name="role" id="role_student" value="student" {% if form.role.value == 'student' or not form.role.value %}checked{% endif %} required>
+                        <label class="card h-100 p-3 border rounded-3 cursor-pointer role-select-card" for="role_student" style="cursor: pointer; transition: all 0.2s ease;">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="bi bi-mortarboard-fill text-primary fs-5"></i>
+                                <span class="fw-bold text-body">Student</span>
+                            </div>
+                            <p class="small text-muted mb-0" style="font-size: 0.78rem; line-height: 1.35;">
+                                For engineering students and graduates who want to develop skills, build roadmaps, improve resumes, and prepare for jobs.
+                            </p>
+                        </label>
+                    </div>
+                    <div class="col-sm-6">
+                        <input type="radio" class="btn-check" name="role" id="role_mentor" value="mentor" {% if form.role.value == 'mentor' %}checked{% endif %} required>
+                        <label class="card h-100 p-3 border rounded-3 cursor-pointer role-select-card" for="role_mentor" style="cursor: pointer; transition: all 0.2s ease;">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="bi bi-person-workspace text-primary fs-5"></i>
+                                <span class="fw-bold text-body">Mentor</span>
+                            </div>
+                            <p class="small text-muted mb-0" style="font-size: 0.78rem; line-height: 1.35;">
+                                For professionals who want to guide students, provide mentorship, and conduct mentorship sessions.
+                            </p>
+                        </label>
+                    </div>
+                </div>
+                {% if form.role.errors %}
+                    <div class="auth-field-error mt-1">{{ form.role.errors.0 }}</div>
+                {% endif %}
+            </div>
+
             <!-- Name Fields (First Name & Last Name) -->
             <div class="row g-2 mb-3">
                 <div class="col-sm-6">
@@ -126,4 +160,20 @@
         Already have an account? <a href="{% url 'login' %}">Sign in</a>
     </div>
 </div>
+
+<style>
+.role-select-card {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0 !important;
+}
+[data-bs-theme="dark"] .role-select-card {
+    background: #1e293b;
+    border-color: #334155 !important;
+}
+.btn-check:checked + .role-select-card {
+    border-color: #2563EB !important;
+    background: rgba(37, 99, 235, 0.05) !important;
+    box-shadow: 0 0 0 1px #2563EB;
+}
+</style>
 {% endblock %}

@@ -17,7 +17,12 @@ def register_mentor_service(user, form_cleaned_data):
     """
     Creates a new MentorProfile for a user and sets it to 'Pending' verification.
     Also parses the skills_csv and populates MentorSkill models.
+    Ensures user.role is set to 'mentor'.
     """
+    if getattr(user, 'role', None) != 'mentor':
+        user.role = 'mentor'
+        user.save(update_fields=['role'])
+
     skills_csv = form_cleaned_data.pop('skills_csv', '')
     
     # Check if profile already exists, if so overwrite or update

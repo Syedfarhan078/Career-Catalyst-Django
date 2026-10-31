@@ -3,6 +3,7 @@ import os
 from datetime import timedelta
 from django.core.mail import send_mail
 from django.conf import settings
+from django.urls import reverse
 from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth import get_user_model
@@ -167,3 +168,23 @@ def resend_user_otp(user_id):
     otp_hash = make_password(otp_code)
     EmailOTP.objects.create(user=user, otp_hash=otp_hash)
     send_otp_email(user, otp_code)
+
+
+def get_role_based_redirect_url(user):
+    """
+    Centralized role-aware destination helper.
+    Authoritatively determines destination based on User.role and profile/application states.
+    """
+    role = getattr(user, 'role', 'student')
+    if role == 'mentor':
+        if not hasattr(user, 'mentor_profile'):
+            return reverse('community:mentor_register')
+        mentor = user.mentor_profile
+        if mentor.status == 'Approved' and mentor.verified:
+            return reverse('community:mentor_dashboard')
+        return reverse('community:mentor_register')
+    else:
+        if not hasattr(user, 'studentprofile'):
+            return reverse('profile_create')
+        return reverse('dashboard')
+

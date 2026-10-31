@@ -67,23 +67,6 @@
             
             <ul class="navbar-nav ms-auto align-items-lg-center gap-2 gap-lg-3 mt-3 mt-lg-0">
                 {% if user.is_authenticated %}
-                    {% if is_approved_mentor %}
-                        <!-- Workspace Switcher Pill for Mentors -->
-                        <li class="nav-item d-none d-lg-block">
-                            {% if active_workspace == 'mentor' %}
-                                <a href="{% url 'community:switch_workspace' %}?role=student" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 rounded-pill px-3 py-1 fw-medium" title="Switch to Student Workspace">
-                                    <i class="bi bi-mortarboard-fill"></i>
-                                    <span>Student View</span>
-                                </a>
-                            {% else %}
-                                <a href="{% url 'community:switch_workspace' %}?role=mentor" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 rounded-pill px-3 py-1 text-white fw-medium shadow-sm" title="Switch to Mentor Workspace">
-                                    <i class="bi bi-person-workspace"></i>
-                                    <span>Mentor Workspace</span>
-                                </a>
-                            {% endif %}
-                        </li>
-                    {% endif %}
-
                     <!-- Notifications Dropdown -->
                     <li class="nav-item dropdown notifications-dropdown">
                         <a class="nav-link p-0 position-relative d-flex align-items-center justify-content-center text-secondary border-0" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 36px; height: 36px; font-size: 1.15rem;">
@@ -195,21 +178,7 @@
                                     </div>
                                 </div>
                             </li>
-                            <!-- Workspace Switcher Action inside Dropdown -->
-                            {% if is_approved_mentor %}
-                                <li><hr class="dropdown-divider my-2"></li>
-                                <li class="px-3 py-1">
-                                    {% if active_workspace == 'mentor' %}
-                                        <a href="{% url 'community:switch_workspace' %}?role=student" class="btn btn-sm btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2 py-1" style="font-size: 0.8rem;">
-                                            <i class="bi bi-mortarboard-fill"></i> Switch to Student View
-                                        </a>
-                                    {% else %}
-                                        <a href="{% url 'community:switch_workspace' %}?role=mentor" class="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-center gap-2 py-1 text-white shadow-sm" style="font-size: 0.8rem;">
-                                            <i class="bi bi-person-workspace"></i> Switch to Mentor View
-                                        </a>
-                                    {% endif %}
-                                </li>
-                            {% elif user.mentor_profile and user.mentor_profile.status == 'Inactive' %}
+                            {% if user.mentor_profile and user.mentor_profile.status == 'Inactive' %}
                                 <li><hr class="dropdown-divider my-2"></li>
                                 <li class="px-3 py-1">
                                     <a href="{% url 'community:mentor_register' %}" class="btn btn-sm btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2 py-1" style="font-size: 0.8rem;">

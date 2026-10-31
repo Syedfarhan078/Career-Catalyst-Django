@@ -5,7 +5,19 @@ from datetime import timedelta
 
 
 class User(AbstractUser):
+    ROLE_CHOICES = (
+        ('student', 'Student'),
+        ('mentor', 'Mentor'),
+    )
+
     email = models.EmailField(unique=True)
+
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='student',
+        help_text="Authoritative account role defining workspace access and platform permissions."
+    )
 
     profile_picture = models.ImageField(
         upload_to="profile_pictures/",
@@ -22,6 +34,14 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
 
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def is_student(self):
+        return self.role == 'student'
+
+    @property
+    def is_mentor_role(self):
+        return self.role == 'mentor'
 
     def __str__(self):
         return self.username

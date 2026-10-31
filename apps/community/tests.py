@@ -30,7 +30,8 @@ class MentorMarketplaceTests(TestCase):
         self.mentor_user = User.objects.create_user(
             username='mentor_alice',
             email='alice@mentor.com',
-            password='password123'
+            password='password123',
+            role='mentor'
         )
         self.staff_user = User.objects.create_user(
             username='staff_admin',
@@ -813,7 +814,8 @@ class Phase2MentorWorkspaceTests(TestCase):
         self.mentor_user = User.objects.create_user(
             username='mentor_phase2',
             email='mentor2@test.com',
-            password='password123'
+            password='password123',
+            role='mentor'
         )
         self.mentor_student_profile = StudentProfile.objects.create(
             user=self.mentor_user,
@@ -850,10 +852,10 @@ class Phase2MentorWorkspaceTests(TestCase):
         self.assertEqual(res.context['active_workspace'], 'student')
 
     def test_approved_mentor_can_switch_workspaces_roundtrip(self):
-        """Phase 2: Approved mentors can switch to mentor workspace and back to student workspace."""
+        """Phase 1.1: Approved mentors cannot switch to student workspace; single-role is enforced."""
         self.client.force_login(self.mentor_user)
 
-        # 1. Switch to mentor workspace
+        # 1. Switch to mentor workspace normalizes to mentor
         res = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
         self.assertRedirects(res, reverse('community:mentor_dashboard'))
         self.assertEqual(self.client.session.get('active_role'), 'mentor')
@@ -864,13 +866,13 @@ class Phase2MentorWorkspaceTests(TestCase):
         self.assertTrue(dash_res.context['is_approved_mentor'])
         self.assertEqual(dash_res.context['active_workspace'], 'mentor')
 
-        # 2. Switch back to student workspace
+        # 2. Attempting to switch to student workspace is denied and redirected to mentor dashboard
         res_back = self.client.post(reverse('community:switch_workspace'), {'role': 'student'})
-        self.assertRedirects(res_back, reverse('dashboard'))
-        self.assertEqual(self.client.session.get('active_role'), 'student')
+        self.assertRedirects(res_back, reverse('community:mentor_dashboard'))
+        self.assertEqual(self.client.session.get('active_role'), 'mentor')
 
     def test_unapproved_users_cannot_switch_to_mentor_workspace(self):
-        """Phase 2: Students and unapproved applicants cannot switch to mentor workspace."""
+        """Phase 1.1: Students and unapproved applicants cannot access or switch to mentor workspace."""
         # 1. Regular student
         self.client.force_login(self.student_user)
         res = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
@@ -884,22 +886,22 @@ class Phase2MentorWorkspaceTests(TestCase):
         self.client.force_login(self.mentor_user)
 
         res_pending = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
-        self.assertRedirects(res_pending, reverse('dashboard'))
-        self.assertEqual(self.client.session.get('active_role'), 'student')
+        self.assertRedirects(res_pending, reverse('community:mentor_register'))
+        self.assertEqual(self.client.session.get('active_role'), 'mentor')
 
         # 3. Rejected mentor
         self.mentor_profile.status = 'Rejected'
         self.mentor_profile.save()
         res_rejected = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
-        self.assertRedirects(res_rejected, reverse('dashboard'))
-        self.assertEqual(self.client.session.get('active_role'), 'student')
+        self.assertRedirects(res_rejected, reverse('community:mentor_register'))
+        self.assertEqual(self.client.session.get('active_role'), 'mentor')
 
         # 4. Blocked mentor
         self.mentor_profile.status = 'Blocked'
         self.mentor_profile.save()
         res_blocked = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
-        self.assertRedirects(res_blocked, reverse('dashboard'))
-        self.assertEqual(self.client.session.get('active_role'), 'student')
+        self.assertRedirects(res_blocked, reverse('community:mentor_register'))
+        self.assertEqual(self.client.session.get('active_role'), 'mentor')
 
     def test_tampered_session_clamped_and_denied_access(self):
         """Phase 2: Forging session active_role='mentor' is clamped and rejected by backend guards."""
@@ -1048,7 +1050,7 @@ class Phase2MentorWorkspaceTests(TestCase):
         self.assertEqual(res.context['active_mentees'], 2)
 
     def test_core_dashboard_redirects_approved_mentor_in_mentor_workspace(self):
-        """Phase 2: Core /dashboard/ redirects to mentor dashboard when active_role is 'mentor'."""
+        """Phase 1.1: Core /dashboard/ ALWAYS redirects mentor to mentor workspace, regardless of session."""
         self.client.force_login(self.mentor_user)
         session = self.client.session
         session['active_role'] = 'mentor'
@@ -1057,11 +1059,11 @@ class Phase2MentorWorkspaceTests(TestCase):
         res = self.client.get(reverse('dashboard'))
         self.assertRedirects(res, reverse('community:mentor_dashboard'))
 
-        # When switched to 'student', renders normal student dashboard
+        # Even if session forged/set to 'student', mentor is strictly denied student dashboard
         session['active_role'] = 'student'
         session.save()
         res_student = self.client.get(reverse('dashboard'))
-        self.assertEqual(res_student.status_code, 200)
+        self.assertRedirects(res_student, reverse('community:mentor_dashboard'))
 
     def test_marketplace_cta_adapts_for_mentor_and_student(self):
         """Phase 2: Directory CTA shows 'Mentor Dashboard' for mentors, 'Apply as Mentor' for students."""
@@ -1080,16 +1082,18 @@ class Phase2MentorWorkspaceTests(TestCase):
         self.assertNotContains(res_mentor, 'Apply as Mentor')
 
     def test_workspace_switch_preserves_session_and_student_data(self):
-        """Phase 2: Switching workspaces does not log the user out and preserves user profile data."""
+        """Phase 1.1: Cross-role switching is prevented; legacy student data remains intact."""
         self.client.force_login(self.mentor_user)
         self.assertEqual(int(self.client.session['_auth_user_id']), self.mentor_user.pk)
 
-        # Switch to mentor
-        self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
+        # Attempt to switch to mentor (normalizes to mentor)
+        res_mentor = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
+        self.assertRedirects(res_mentor, reverse('community:mentor_dashboard'))
         self.assertEqual(int(self.client.session['_auth_user_id']), self.mentor_user.pk)
 
-        # Switch to student
-        self.client.post(reverse('community:switch_workspace'), {'role': 'student'})
+        # Attempt to switch to student (denied; normalizes to mentor)
+        res_student = self.client.post(reverse('community:switch_workspace'), {'role': 'student'})
+        self.assertRedirects(res_student, reverse('community:mentor_dashboard'))
         self.assertEqual(int(self.client.session['_auth_user_id']), self.mentor_user.pk)
 
         # Verify StudentProfile is fully intact
@@ -1098,7 +1102,7 @@ class Phase2MentorWorkspaceTests(TestCase):
         self.assertEqual(self.mentor_student_profile.career_goal, 'Principal Engineer')
 
     def test_navbar_renders_workspace_switcher_for_mentors_only(self):
-        """Phase 2: Navbar includes workspace switcher UI elements only for approved mentors."""
+        """Phase 1.1: Cross-role workspace switchers are removed from navbar and sidebars."""
         from django.template.loader import render_to_string
         from django.test import RequestFactory
         factory = RequestFactory()
@@ -1112,7 +1116,6 @@ class Phase2MentorWorkspaceTests(TestCase):
             'is_approved_mentor': False,
             'active_workspace': 'student',
         }, request=request_student)
-        self.assertNotIn('Mentor Workspace', html_student)
         self.assertNotIn('/community/workspace/switch/', html_student)
 
         # 2. Approved mentor in navbar
@@ -1122,19 +1125,14 @@ class Phase2MentorWorkspaceTests(TestCase):
         html_mentor = render_to_string('partials/navbar.html', {
             'user': self.mentor_user,
             'is_approved_mentor': True,
-            'active_workspace': 'student',
+            'active_workspace': 'mentor',
         }, request=request_mentor)
-        self.assertIn('Mentor Workspace', html_mentor)
-        self.assertIn('/community/workspace/switch/?role=mentor', html_mentor)
+        self.assertNotIn('/community/workspace/switch/', html_mentor)
 
-        # 3. Student dashboard sidebar shows workspace mode toggle only to approved mentors
+        # 3. Student dashboard sidebar does not show workspace mode toggle
         self.client.force_login(self.student_user)
         dash_student = self.client.get(reverse('dashboard'))
         self.assertNotContains(dash_student, 'Switch to Mentor Workspace')
-
-        self.client.force_login(self.mentor_user)
-        dash_mentor = self.client.get(reverse('dashboard'))
-        self.assertContains(dash_mentor, 'Switch to Mentor Workspace')
 
 
 class Phase4MentorLifecycleTests(TestCase):
@@ -1157,7 +1155,8 @@ class Phase4MentorLifecycleTests(TestCase):
         self.mentor_user = User.objects.create_user(
             username='mentor_p4',
             email='p4_mentor@test.com',
-            password='password123'
+            password='password123',
+            role='mentor'
         )
         self.mentor_student_profile = StudentProfile.objects.create(
             user=self.mentor_user,
@@ -1296,7 +1295,7 @@ class Phase4MentorLifecycleTests(TestCase):
 
         self.client.force_login(self.mentor_user)
         res = self.client.post(reverse('community:mentor_step_down'), {'reason': 'Taking a sabbatical'})
-        self.assertRedirects(res, reverse('dashboard'))
+        self.assertRedirects(res, reverse('dashboard'), target_status_code=302)
 
         # Mentor profile state
         self.mentor_profile.refresh_from_db()
@@ -1310,8 +1309,8 @@ class Phase4MentorLifecycleTests(TestCase):
         self.assertEqual(req1.status, 'Cancelled')
         self.assertEqual(req2.status, 'Cancelled')
 
-        # Session role reset
-        self.assertEqual(self.client.session.get('active_role'), 'student')
+        # Session role normalized to authoritative account role
+        self.assertEqual(self.client.session.get('active_role'), 'mentor')
 
     def test_stepped_down_mentor_denied_mentor_workspace(self):
         """Phase 4: Inactive mentors cannot access mentor workspace and are clamped to student."""
@@ -1321,10 +1320,10 @@ class Phase4MentorLifecycleTests(TestCase):
 
         self.client.force_login(self.mentor_user)
 
-        # Cannot switch to mentor role
+        # Inactive mentor attempting to switch is directed to status/reactivation area
         switch_res = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
-        self.assertRedirects(switch_res, reverse('dashboard'))
-        self.assertEqual(self.client.session.get('active_role'), 'student')
+        self.assertRedirects(switch_res, reverse('community:mentor_register'))
+        self.assertEqual(self.client.session.get('active_role'), 'mentor')
 
         # Visiting mentor dashboard renders mentor_status.html with reactivate option
         dash_res = self.client.get(reverse('community:mentor_dashboard'))
@@ -1360,7 +1359,7 @@ class Phase4MentorLifecycleTests(TestCase):
 
         self.client.force_login(self.mentor_user)
         res = self.client.post(reverse('community:reactivate_mentor'))
-        self.assertRedirects(res, reverse('dashboard'))
+        self.assertRedirects(res, reverse('dashboard'), target_status_code=302)
 
         self.mentor_profile.refresh_from_db()
         self.assertEqual(self.mentor_profile.status, 'Blocked')
@@ -1443,12 +1442,14 @@ class Phase41LifecycleHardeningTests(TestCase):
         self.mentor_user = User.objects.create_user(
             username='mentor_ada',
             email='ada@lovelace.org',
-            password='password123'
+            password='password123',
+            role='mentor'
         )
         self.mentor_user2 = User.objects.create_user(
             username='mentor_charles',
             email='charles@babbage.org',
-            password='password123'
+            password='password123',
+            role='mentor'
         )
         self.staff_user = User.objects.create_user(
             username='admin_staff',
@@ -1684,7 +1685,7 @@ class Phase41LifecycleHardeningTests(TestCase):
             reverse('community:mentor_step_down'),
             {'reason': step_down_reason}
         )
-        self.assertRedirects(res, reverse('dashboard'))
+        self.assertRedirects(res, reverse('dashboard'), target_status_code=302)
 
         self.mentor_profile.refresh_from_db()
         self.assertEqual(self.mentor_profile.status, 'Inactive')

@@ -20,12 +20,18 @@ def home_view(request):
 
 @login_required
 def dashboard_view(request):
-    # Route to mentor dashboard if active workspace is mentor
-    if request.session.get('active_role') == 'mentor':
+    role = getattr(request.user, 'role', 'student')
+
+    # Authoritative single-role rule: Only role == 'mentor' accounts route to mentor workspace
+    if role == 'mentor':
+        request.session['active_role'] = 'mentor'
         if hasattr(request.user, 'mentor_profile') and request.user.mentor_profile.status == 'Approved' and request.user.mentor_profile.verified:
             return redirect('community:mentor_dashboard')
-        else:
-            request.session['active_role'] = 'student'
+        return redirect('community:mentor_register')
+
+    # Students: normalize session to student workspace
+    if request.session.get('active_role') != 'student':
+        request.session['active_role'] = 'student'
 
     # If the user doesn't have a profile completed yet, redirect them to complete it
     if not hasattr(request.user, 'studentprofile'):

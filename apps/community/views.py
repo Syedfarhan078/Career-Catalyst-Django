@@ -67,6 +67,9 @@ def mentor_required(view_func):
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+        if getattr(request.user, 'role', 'student') != 'mentor':
+            messages.info(request, "Please register to become a mentor first.")
+            return redirect('community:mentor_register')
         if not hasattr(request.user, 'mentor_profile'):
             messages.info(request, "Please register to become a mentor first.")
             return redirect('community:mentor_register')
@@ -453,22 +456,24 @@ def mentor_register(request):
 @login_required
 def switch_workspace(request):
     """
-    Switches active workspace between Student and Mentor.
-    Validates mentor status before allowing 'mentor' role.
+    Cross-role workspace switcher disabled for single-role architecture.
+    Normalizes session to the authoritative account role and redirects to the authorized workspace.
     """
-    role = request.GET.get('role') or request.POST.get('role')
-    if role == 'mentor':
+    requested_role = request.GET.get('role') or request.POST.get('role')
+    user_role = getattr(request.user, 'role', 'student')
+    is_mentor_account = (user_role == 'mentor')
+
+    if is_mentor_account:
+        request.session['active_role'] = 'mentor'
+        if requested_role and requested_role != 'mentor':
+            messages.warning(request, "Cross-role workspace switching is disabled. Your account is dedicated to the Mentor workspace.")
         if hasattr(request.user, 'mentor_profile') and request.user.mentor_profile.status == 'Approved' and request.user.mentor_profile.verified:
-            request.session['active_role'] = 'mentor'
-            messages.success(request, "Switched to Mentor Workspace.")
             return redirect('community:mentor_dashboard')
-        else:
-            messages.error(request, "You must be an approved mentor to access the Mentor Workspace.")
-            request.session['active_role'] = 'student'
-            return redirect('dashboard')
+        return redirect('community:mentor_register')
     else:
         request.session['active_role'] = 'student'
-        messages.success(request, "Switched to Student Workspace.")
+        if requested_role and requested_role != 'student':
+            messages.warning(request, "Cross-role workspace switching is disabled. Your account is dedicated to the Student workspace.")
         return redirect('dashboard')
 
 
@@ -772,6 +777,12 @@ def respond_to_request(request, pk):
 
 @login_required
 def student_bookings_list(request):
+    user_role = getattr(request.user, 'role', 'student')
+    if user_role == 'mentor':
+        if hasattr(request.user, 'mentor_profile') and request.user.mentor_profile.status == 'Approved' and request.user.mentor_profile.verified:
+            return redirect('community:mentor_dashboard')
+        return redirect('community:mentor_register')
+
     bookings = MentorshipRequest.objects.filter(student=request.user).select_related('mentor', 'mentor__user')
     review_form = MentorReviewForm()
     

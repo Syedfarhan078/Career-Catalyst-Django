@@ -9,16 +9,31 @@ class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
     first_name = forms.CharField(required=True)
     last_name = forms.CharField(required=True)
+    role = forms.ChoiceField(
+        choices=User.ROLE_CHOICES,
+        required=True,
+        error_messages={'required': 'Please choose an account type (Student or Mentor).'},
+        widget=forms.RadioSelect(attrs={'class': 'btn-check'})
+    )
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name')
+        fields = ('username', 'email', 'first_name', 'last_name', 'role')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Apply Bootstrap classes to all fields
-        for field in self.fields.values():
-            field.widget.attrs.update({'class': 'form-control'})
+        # Apply Bootstrap classes to text fields, excluding role radios
+        for name, field in self.fields.items():
+            if name != 'role':
+                field.widget.attrs.update({'class': 'form-control'})
+
+    def clean_role(self):
+        role = self.cleaned_data.get('role')
+        if not role:
+            role = 'student'
+        if role not in dict(User.ROLE_CHOICES):
+            raise forms.ValidationError("Invalid account role selected.")
+        return role
 
 class UserLoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):

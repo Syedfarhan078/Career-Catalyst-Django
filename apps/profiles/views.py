@@ -10,6 +10,11 @@ from .forms import StudentProfileForm, StudentProjectForm, StudentCertificationF
 
 @login_required
 def profile_create_view(request):
+    if getattr(request.user, 'role', 'student') == 'mentor':
+        if hasattr(request.user, 'mentor_profile') and request.user.mentor_profile.status == 'Approved' and request.user.mentor_profile.verified:
+            return redirect('community:mentor_dashboard')
+        return redirect('community:mentor_register')
+
     # Check if profile already exists
     if hasattr(request.user, 'studentprofile'):
         return redirect('profile_detail')
@@ -38,6 +43,11 @@ def profile_create_view(request):
 
 @login_required
 def profile_update_view(request):
+    if getattr(request.user, 'role', 'student') == 'mentor':
+        if hasattr(request.user, 'mentor_profile') and request.user.mentor_profile.status == 'Approved' and request.user.mentor_profile.verified:
+            return redirect('community:mentor_dashboard')
+        return redirect('community:mentor_register')
+
     # Check if profile exists; if not, force create
     if not hasattr(request.user, 'studentprofile'):
         return redirect('profile_create')
@@ -168,6 +178,11 @@ def profile_update_view(request):
 
 @login_required
 def profile_detail_view(request):
+    if getattr(request.user, 'role', 'student') == 'mentor':
+        if hasattr(request.user, 'mentor_profile') and request.user.mentor_profile.status == 'Approved' and request.user.mentor_profile.verified:
+            return redirect('community:mentor_dashboard')
+        return redirect('community:mentor_register')
+
     if not hasattr(request.user, 'studentprofile'):
         return redirect('profile_create')
         

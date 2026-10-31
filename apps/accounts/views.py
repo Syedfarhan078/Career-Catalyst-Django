@@ -10,11 +10,11 @@ from django.urls import reverse_lazy
 
 from django.core.exceptions import ValidationError
 from .forms import UserRegistrationForm, UserLoginForm, UserProfileForm, OTPVerificationForm, CustomPasswordResetForm
-from .services import create_user_with_otp, verify_user_otp, resend_user_otp
+from .services import create_user_with_otp, verify_user_otp, resend_user_otp, get_role_based_redirect_url
 
 def register_view(request):
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect(get_role_based_redirect_url(request.user))
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
@@ -31,7 +31,7 @@ def register_view(request):
 
 def verify_otp_view(request):
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect(get_role_based_redirect_url(request.user))
         
     user_id = request.session.get('verify_user_id')
     if not user_id:
@@ -48,7 +48,7 @@ def verify_otp_view(request):
                     del request.session['verify_user_id']
                 login(request, user)
                 messages.success(request, "Email verified successfully! Welcome to Career Catalyst.")
-                return redirect('dashboard')
+                return redirect(get_role_based_redirect_url(user))
             except ValidationError as e:
                 form.add_error('otp_code', e.message)
     else:
@@ -57,7 +57,7 @@ def verify_otp_view(request):
 
 def resend_otp_view(request):
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect(get_role_based_redirect_url(request.user))
         
     user_id = request.session.get('verify_user_id')
     if not user_id:
@@ -74,14 +74,14 @@ def resend_otp_view(request):
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('dashboard')
+        return redirect(get_role_based_redirect_url(request.user))
     if request.method == 'POST':
         form = UserLoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
             messages.success(request, f"Welcome back, {user.username}!")
-            return redirect('dashboard')
+            return redirect(get_role_based_redirect_url(user))
         else:
             messages.error(request, "Invalid username or password.")
     else:
