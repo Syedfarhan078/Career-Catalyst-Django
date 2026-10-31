@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from .models import MentorProfile, MentorshipRequest, MentorReview, MentorAvailability
 import re
 
@@ -84,6 +85,12 @@ class MentorshipBookingForm(forms.ModelForm):
             'requested_time': forms.TimeInput(attrs={'type': 'time'}),
             'student_message': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Describe what you would like to discuss during this session...'}),
         }
+
+    def clean_requested_date(self):
+        requested_date = self.cleaned_data.get('requested_date')
+        if requested_date and requested_date < timezone.now().date():
+            raise ValidationError("You cannot book a mentorship session for a past date.")
+        return requested_date
 
 
 class MentorReviewForm(forms.ModelForm):

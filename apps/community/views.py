@@ -3,10 +3,13 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponseForbidden, Http404
 from django.contrib import messages
 from django.db.models import Count, Q, Avg
 from django.urls import reverse
+from django.core.exceptions import ValidationError
+from django.conf import settings
+from functools import wraps
 import json
 
 from .models import (
@@ -50,6 +53,28 @@ def get_user_sidebar_context(user):
         'user_initials': user_initials,
         'target_career': target_career,
     }
+
+
+def mentor_required(view_func):
+    """
+    Decorator ensuring the user is authenticated and is an Approved & Verified mentor.
+    Redirects unapproved, pending, rejected, or blocked users to the mentor status / register page.
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+        if not hasattr(request.user, 'mentor_profile'):
+            messages.info(request, "Please register to become a mentor first.")
+            return redirect('community:mentor_register')
+        mentor = request.user.mentor_profile
+        if mentor.status != 'Approved' or not mentor.verified:
+            ctx = get_user_sidebar_context(request.user)
+            ctx['profile'] = mentor
+            ctx['mentor_profile'] = mentor
+            return render(request, "community/mentor_status.html", ctx)
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
 
 # --- COMMUNITY FORUM VIEWS (FROM SPRINT 22) ---
@@ -333,6 +358,14 @@ class MentorDetailView(DetailView):
     template_name = "community/mentor_detail.html"
     context_object_name = "mentor"
 
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        if obj.status != 'Approved' or not obj.verified:
+            user = self.request.user
+            if not user.is_authenticated or (user != obj.user and not user.is_staff):
+                raise Http404("Mentor profile is not currently public.")
+        return obj
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["availabilities"] = self.object.availabilities.all()
@@ -369,40 +402,58 @@ class MentorDetailView(DetailView):
 def mentor_register(request):
     """
     Enables professional registration as a Mentor.
-    If the user already has a MentorProfile, redirects them to their dashboard.
+    If already approved, redirects to mentor dashboard.
+    If pending or blocked, shows status.
+    If rejected, shows status unless reapply=1 or submitting POST.
     """
-    # Check if they already registered
-    try:
-        profile = request.user.mentor_profile
-        if profile.status == 'Approved':
+    existing_profile = getattr(request.user, 'mentor_profile', None)
+    if existing_profile:
+        if existing_profile.status == 'Approved':
             return redirect('community:mentor_dashboard')
-        else:
-            return render(request, "community/mentor_status.html", {"profile": profile, **get_user_sidebar_context(request.user)})
-    except MentorProfile.DoesNotExist:
-        pass
+        elif existing_profile.status in ['Pending', 'Blocked']:
+            ctx = get_user_sidebar_context(request.user)
+            ctx['profile'] = existing_profile
+            ctx['mentor_profile'] = existing_profile
+            return render(request, "community/mentor_status.html", ctx)
+        elif existing_profile.status == 'Rejected':
+            # Only show form if explicitly reapplying via GET param or submitting POST
+            if request.method == 'GET' and request.GET.get('reapply') != '1':
+                ctx = get_user_sidebar_context(request.user)
+                ctx['profile'] = existing_profile
+                ctx['mentor_profile'] = existing_profile
+                return render(request, "community/mentor_status.html", ctx)
 
     if request.method == 'POST':
         form = MentorRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
-            # Delegate to Business Logic Layer
             register_mentor_service(request.user, form.cleaned_data)
             messages.success(request, "Your application has been submitted and is pending verification.")
             return redirect('community:mentor_register')
     else:
-        form = MentorRegistrationForm()
+        if existing_profile and existing_profile.status == 'Rejected':
+            form = MentorRegistrationForm(
+                instance=existing_profile,
+                initial={
+                    'skills_csv': existing_profile.skills,
+                    'agreement': False
+                }
+            )
+        else:
+            form = MentorRegistrationForm()
 
-    return render(request, "community/mentor_register.html", {"form": form, **get_user_sidebar_context(request.user)})
+    return render(request, "community/mentor_register.html", {
+        "form": form,
+        **get_user_sidebar_context(request.user)
+    })
 
 
 @login_required
+@mentor_required
 def mentor_dashboard(request):
     """
     Dashboard for approved mentors showing analytics, booking history, and requests list.
     """
-    # Ensure they are approved mentors
-    mentor = get_object_or_404(MentorProfile, user=request.user)
-    if mentor.status != 'Approved':
-        return render(request, "community/mentor_status.html", {"profile": mentor, **get_user_sidebar_context(request.user)})
+    mentor = request.user.mentor_profile
 
     # Analytics calculation
     all_requests = MentorshipRequest.objects.filter(mentor=mentor).select_related('student')
@@ -431,8 +482,9 @@ def mentor_dashboard(request):
 
 
 @login_required
+@mentor_required
 def edit_mentor_profile(request):
-    mentor = get_object_or_404(MentorProfile, user=request.user)
+    mentor = request.user.mentor_profile
     
     if request.method == 'POST':
         form = MentorProfileEditForm(request.POST, instance=mentor)
@@ -448,8 +500,9 @@ def edit_mentor_profile(request):
 
 
 @login_required
+@mentor_required
 def manage_availability(request):
-    mentor = get_object_or_404(MentorProfile, user=request.user)
+    mentor = request.user.mentor_profile
     availabilities = mentor.availabilities.all()
 
     if request.method == 'POST':
@@ -478,8 +531,9 @@ def manage_availability(request):
 
 @login_required
 @require_POST
+@mentor_required
 def delete_availability(request, pk):
-    mentor = get_object_or_404(MentorProfile, user=request.user)
+    mentor = request.user.mentor_profile
     avail = get_object_or_404(MentorAvailability, pk=pk, mentor=mentor)
     avail.delete()
     messages.success(request, "Availability slot deleted.")
@@ -490,10 +544,15 @@ def delete_availability(request, pk):
 def book_mentorship_session(request, mentor_id):
     """
     POST-only endpoint for booking sessions.
+    Validates mentor status and handles business validation errors.
     """
     if request.method == 'POST':
         mentor = get_object_or_404(MentorProfile, pk=mentor_id)
-        
+
+        if mentor.status != 'Approved' or not mentor.verified:
+            messages.error(request, "This mentor is not currently accepting mentorship bookings.")
+            return redirect('community:mentor_list')
+
         # Prevent self-booking
         if mentor.user == request.user:
             messages.error(request, "You cannot book a session with yourself.")
@@ -501,18 +560,23 @@ def book_mentorship_session(request, mentor_id):
 
         form = MentorshipBookingForm(request.POST)
         if form.is_valid():
-            # Delegate to Business Logic Layer
-            create_mentorship_request_service(request.user, mentor, form.cleaned_data)
-            messages.success(request, "Mentorship request sent successfully! Track it in your booking history.")
+            try:
+                create_mentorship_request_service(request.user, mentor, form.cleaned_data)
+                messages.success(request, "Mentorship request sent successfully! Track it in your booking history.")
+            except ValidationError as e:
+                messages.error(request, e.message if hasattr(e, 'message') else str(e))
         else:
-            messages.error(request, "Error in booking form fields. Please select valid date/times.")
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{error}")
         return redirect('community:mentor_detail', pk=mentor.id)
     return HttpResponseForbidden()
 
 
 @login_required
+@mentor_required
 def mentor_requests_list(request):
-    mentor = get_object_or_404(MentorProfile, user=request.user)
+    mentor = request.user.mentor_profile
     requests_received = MentorshipRequest.objects.filter(mentor=mentor).select_related('student')
     
     return render(request, "community/mentor_requests.html", {
@@ -523,26 +587,30 @@ def mentor_requests_list(request):
 
 
 @login_required
+@mentor_required
 def respond_to_request(request, pk):
     """
     Mentor accepts, rejects, or completes a student booking.
     """
-    mentor = get_object_or_404(MentorProfile, user=request.user)
+    mentor = request.user.mentor_profile
     req = get_object_or_404(MentorshipRequest, pk=pk, mentor=mentor)
 
     if request.method == 'POST':
         action = request.POST.get('action') # 'accept', 'reject', 'complete'
         message = request.POST.get('response_message', '').strip()
         link = request.POST.get('meeting_link', '').strip()
-        
-        # Delegate to Business Logic Layer
-        respond_to_request_service(
-            req, 
-            action, 
-            response_message=message, 
-            meeting_link=link
-        )
-        messages.success(request, f"Request successfully marked as {action}ed.")
+
+        try:
+            respond_to_request_service(
+                req, 
+                action, 
+                response_message=message, 
+                meeting_link=link,
+                actor=request.user
+            )
+            messages.success(request, f"Request successfully marked as {action}ed.")
+        except (ValidationError, ValueError) as e:
+            messages.error(request, e.message if hasattr(e, 'message') else str(e))
         return redirect('community:mentor_requests')
     return HttpResponseForbidden()
 
@@ -564,9 +632,11 @@ def student_bookings_list(request):
 def cancel_student_booking(request, pk):
     req = get_object_or_404(MentorshipRequest, pk=pk, student=request.user)
     if req.status in ['Pending', 'Accepted']:
-        # Delegate to Business Services
-        respond_to_request_service(req, 'cancel', "Cancelled by student.")
-        messages.success(request, "Session cancelled.")
+        try:
+            respond_to_request_service(req, 'cancel', "Cancelled by student.", actor=request.user)
+            messages.success(request, "Session cancelled.")
+        except ValidationError as e:
+            messages.error(request, e.message if hasattr(e, 'message') else str(e))
     else:
         messages.error(request, "You cannot cancel this session.")
     return redirect('community:student_bookings')
@@ -578,14 +648,16 @@ def submit_mentor_review(request, mentor_id):
         mentor = get_object_or_404(MentorProfile, pk=mentor_id)
         form = MentorReviewForm(request.POST)
         if form.is_valid():
-            # Delegate to Business Services
-            submit_mentor_review_service(
-                request.user, 
-                mentor, 
-                form.cleaned_data['rating'], 
-                form.cleaned_data['comment']
-            )
-            messages.success(request, "Thank you! Your feedback has been recorded.")
+            try:
+                submit_mentor_review_service(
+                    request.user, 
+                    mentor, 
+                    form.cleaned_data['rating'], 
+                    form.cleaned_data['comment']
+                )
+                messages.success(request, "Thank you! Your feedback has been recorded.")
+            except ValidationError as e:
+                messages.error(request, e.message if hasattr(e, 'message') else str(e))
         else:
             messages.error(request, "Invalid review values.")
     return redirect('community:student_bookings')

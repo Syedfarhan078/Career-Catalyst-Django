@@ -2,6 +2,10 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.core.management import call_command
+from django.utils import timezone
+from datetime import timedelta
+from unittest.mock import patch
+from django.core.exceptions import ValidationError
 import json
 
 from .models import (
@@ -66,6 +70,14 @@ class MentorMarketplaceTests(TestCase):
             slug='general'
         )
 
+    def _get_next_date(self, target_weekday=0):
+        """Returns the next future date matching target_weekday (0=Monday)."""
+        today = timezone.now().date()
+        days_ahead = (target_weekday - today.weekday() + 7) % 7
+        if days_ahead == 0:
+            days_ahead = 7
+        return today + timedelta(days=days_ahead)
+
     def test_mentor_registration_defaults_to_pending(self):
         # Check defaults
         self.assertEqual(self.mentor_profile.status, 'Pending')
@@ -109,10 +121,11 @@ class MentorMarketplaceTests(TestCase):
 
         self.client.force_login(self.student_user)
         
-        # Book a session
+        # Book a session for next available Monday
+        booking_date = self._get_next_date(0)
         url = reverse('community:book_session', args=[self.mentor_profile.id])
         booking_data = {
-            "requested_date": "2026-08-10",
+            "requested_date": booking_date.strftime("%Y-%m-%d"),
             "requested_time": "11:00:00",
             "purpose": "Resume Review",
             "student_message": "Please review my resume details."
@@ -144,6 +157,17 @@ class MentorMarketplaceTests(TestCase):
         self.mentor_profile.status = 'Approved'
         self.mentor_profile.verified = True
         self.mentor_profile.save()
+
+        # Create completed mentorship session so review is authorized
+        booking_date = self._get_next_date(0)
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=booking_date,
+            requested_time="11:00:00",
+            purpose="Resume Review",
+            status="Completed"
+        )
 
         self.client.force_login(self.student_user)
         
@@ -201,6 +225,10 @@ class MentorMarketplaceTests(TestCase):
         self.assertEqual(req.status, 'Cancelled')
 
         # 3. delete_availability requires POST
+        self.mentor_profile.status = 'Approved'
+        self.mentor_profile.verified = True
+        self.mentor_profile.save()
+
         avail = MentorAvailability.objects.create(
             mentor=self.mentor_profile,
             day='Monday',
@@ -388,3 +416,377 @@ class MentorMarketplaceTests(TestCase):
         admin_res = self.client.get(reverse('community:admin_verify'))
         self.assertEqual(admin_res.status_code, 200)
         self.assertContains(admin_res, 'dash-shell')
+
+    def test_cannot_book_unapproved_or_unverified_mentor(self):
+        """Phase 1: Students cannot book sessions with Pending, Rejected, or Blocked mentors."""
+        self.client.force_login(self.student_user)
+        booking_date = self._get_next_date(0)
+        url = reverse('community:book_session', args=[self.mentor_profile.id])
+        booking_data = {
+            "requested_date": booking_date.strftime("%Y-%m-%d"),
+            "requested_time": "11:00:00",
+            "purpose": "Resume Review",
+            "student_message": "Testing booking unapproved mentor."
+        }
+
+        # 1. Pending mentor
+        self.mentor_profile.status = 'Pending'
+        self.mentor_profile.verified = False
+        self.mentor_profile.save()
+        res = self.client.post(url, booking_data)
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(MentorshipRequest.objects.count(), 0)
+
+        # 2. Rejected mentor
+        self.mentor_profile.status = 'Rejected'
+        self.mentor_profile.save()
+        res = self.client.post(url, booking_data)
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(MentorshipRequest.objects.count(), 0)
+
+        # 3. Blocked mentor
+        self.mentor_profile.status = 'Blocked'
+        self.mentor_profile.save()
+        res = self.client.post(url, booking_data)
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(MentorshipRequest.objects.count(), 0)
+
+    def test_mentor_endpoints_require_approved_status(self):
+        """Phase 1: Non-mentors and unapproved mentors cannot access mentor-only views."""
+        # Student user (no mentor profile)
+        self.client.force_login(self.student_user)
+        mentor_urls = [
+            reverse('community:mentor_dashboard'),
+            reverse('community:manage_availability'),
+            reverse('community:mentor_requests'),
+            reverse('community:edit_profile'),
+        ]
+        for u in mentor_urls:
+            res = self.client.get(u)
+            self.assertEqual(res.status_code, 302)
+            self.assertIn(reverse('community:mentor_register'), res.url)
+
+        # Mentor user but Rejected status
+        self.client.force_login(self.mentor_user)
+        self.mentor_profile.status = 'Rejected'
+        self.mentor_profile.verified = False
+        self.mentor_profile.save()
+        for u in mentor_urls:
+            res = self.client.get(u)
+            self.assertEqual(res.status_code, 200) # Renders mentor_status.html
+            self.assertContains(res, 'Application Declined')
+
+    def test_invalid_state_transitions_rejected(self):
+        """Phase 1: State machine transitions are strictly enforced."""
+        from .services import respond_to_request_service
+        self.mentor_profile.status = 'Approved'
+        self.mentor_profile.verified = True
+        self.mentor_profile.save()
+
+        booking_date = self._get_next_date(0)
+        req = MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=booking_date,
+            requested_time="11:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+
+        # Cannot directly complete a Pending request
+        with self.assertRaises(ValidationError):
+            respond_to_request_service(req, 'complete', 'Trying to complete pending')
+
+        # Accept request -> Accepted
+        respond_to_request_service(req, 'accept', 'Accepted session')
+        self.assertEqual(req.status, 'Accepted')
+
+        # Cannot accept an already accepted request
+        with self.assertRaises(ValidationError):
+            respond_to_request_service(req, 'accept', 'Double accept')
+
+        # Cannot reject an already accepted request
+        with self.assertRaises(ValidationError):
+            respond_to_request_service(req, 'reject', 'Reject accepted')
+
+        # Complete request -> Completed
+        respond_to_request_service(req, 'complete', 'Session done')
+        self.assertEqual(req.status, 'Completed')
+
+        # Cannot cancel or accept a Completed request
+        with self.assertRaises(ValidationError):
+            respond_to_request_service(req, 'cancel', 'Cancel completed')
+        with self.assertRaises(ValidationError):
+            respond_to_request_service(req, 'accept', 'Accept completed')
+
+    def test_cannot_accept_cancelled_request(self):
+        """Phase 1: Mentors cannot accept requests that were already cancelled."""
+        from .services import respond_to_request_service
+        self.mentor_profile.status = 'Approved'
+        self.mentor_profile.verified = True
+        self.mentor_profile.save()
+
+        booking_date = self._get_next_date(0)
+        req = MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=booking_date,
+            requested_time="11:00:00",
+            purpose="Career Guidance",
+            status="Cancelled"
+        )
+
+        with self.assertRaises(ValidationError):
+            respond_to_request_service(req, 'accept', 'Accepting cancelled request')
+
+    def test_student_cancellation_notifies_mentor(self):
+        """Phase 1: Student cancellation notifies mentor, not student."""
+        from .services import respond_to_request_service
+        self.mentor_profile.status = 'Approved'
+        self.mentor_profile.verified = True
+        self.mentor_profile.save()
+
+        booking_date = self._get_next_date(0)
+        req = MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=booking_date,
+            requested_time="11:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+
+        with patch('apps.community.services.simulate_notification') as mock_notif:
+            respond_to_request_service(req, 'cancel', 'Cancelled by student.', actor=self.student_user)
+            mock_notif.assert_called_once()
+            called_user = mock_notif.call_args[1]['user']
+            self.assertEqual(called_user, self.mentor_user)
+
+    def test_rejected_mentor_reapplication_workflow(self):
+        """Phase 1: Rejected mentor can load pre-filled form with ?reapply=1 and resubmit."""
+        self.client.force_login(self.mentor_user)
+        self.mentor_profile.status = 'Rejected'
+        self.mentor_profile.verified = False
+        self.mentor_profile.save()
+
+        # Normal GET renders status page
+        res = self.client.get(reverse('community:mentor_register'))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'Application Declined')
+
+        # GET with reapply=1 renders registration form pre-populated
+        reapply_res = self.client.get(reverse('community:mentor_register') + '?reapply=1')
+        self.assertEqual(reapply_res.status_code, 200)
+        self.assertContains(reapply_res, 'Alice Mentor')
+        self.assertContains(reapply_res, 'Staff Engineer')
+
+        # POST resubmits application and sets status back to Pending
+        post_data = {
+            'full_name': 'Alice Mentor Updated',
+            'email': 'alice@mentor.com',
+            'phone_number': '1234567890',
+            'company': 'Google Inc',
+            'designation': 'Principal Engineer',
+            'experience_years': 10,
+            'current_location': 'San Francisco, CA',
+            'bio': 'Updated bio details.',
+            'career_domains': 'Backend, Cloud',
+            'skills_csv': 'Python, Django, Go, Kubernetes',
+            'languages': 'English',
+            'available_days': 'Monday, Wednesday',
+            'available_time_slots': '10:00 AM - 12:00 PM',
+            'max_sessions_per_week': 5,
+            'mentorship_type': 'Online',
+            'agreement': 'on'
+        }
+        submit_res = self.client.post(reverse('community:mentor_register'), post_data)
+        self.assertEqual(submit_res.status_code, 302)
+
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.status, 'Pending')
+        self.assertFalse(self.mentor_profile.verified)
+        self.assertEqual(self.mentor_profile.full_name, 'Alice Mentor Updated')
+
+    def test_reviews_restricted_to_completed_sessions(self):
+        """Phase 1: Reviews cannot be submitted without a Completed session."""
+        self.mentor_profile.status = 'Approved'
+        self.mentor_profile.verified = True
+        self.mentor_profile.save()
+
+        self.client.force_login(self.student_user)
+        url = reverse('community:submit_review', args=[self.mentor_profile.id])
+        review_data = {"rating": 5, "comment": "Premature review."}
+
+        # 1. No booking at all -> rejected
+        res = self.client.post(url, review_data)
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(MentorReview.objects.count(), 0)
+
+        # 2. Pending booking -> rejected
+        booking_date = self._get_next_date(0)
+        req = MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=booking_date,
+            requested_time="11:00:00",
+            purpose="Resume Review",
+            status="Pending"
+        )
+        res = self.client.post(url, review_data)
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(MentorReview.objects.count(), 0)
+
+        # 3. Accepted booking -> rejected
+        req.status = 'Accepted'
+        req.save()
+        res = self.client.post(url, review_data)
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(MentorReview.objects.count(), 0)
+
+        # 4. Completed booking -> accepted
+        req.status = 'Completed'
+        req.save()
+        res = self.client.post(url, review_data)
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(MentorReview.objects.count(), 1)
+
+    def test_duplicate_pending_booking_prevented(self):
+        """Phase 1: Student cannot create multiple pending requests for the same mentor."""
+        self.mentor_profile.status = 'Approved'
+        self.mentor_profile.verified = True
+        self.mentor_profile.save()
+
+        self.client.force_login(self.student_user)
+        url = reverse('community:book_session', args=[self.mentor_profile.id])
+        booking_date = self._get_next_date(0)
+        data = {
+            "requested_date": booking_date.strftime("%Y-%m-%d"),
+            "requested_time": "10:00:00",
+            "purpose": "Career Guidance",
+            "student_message": "First request."
+        }
+        res1 = self.client.post(url, data)
+        self.assertEqual(res1.status_code, 302)
+        self.assertEqual(MentorshipRequest.objects.count(), 1)
+
+        # Second request while first is still Pending
+        booking_date_2 = self._get_next_date(2) # Wednesday
+        data2 = {
+            "requested_date": booking_date_2.strftime("%Y-%m-%d"),
+            "requested_time": "11:00:00",
+            "purpose": "Resume Review",
+            "student_message": "Second spam request."
+        }
+        res2 = self.client.post(url, data2)
+        self.assertEqual(res2.status_code, 302)
+        self.assertEqual(MentorshipRequest.objects.count(), 1) # Still 1
+
+    def test_slot_collision_booking_prevented(self):
+        """Phase 1: Two students cannot book the exact same date and time slot."""
+        self.mentor_profile.status = 'Approved'
+        self.mentor_profile.verified = True
+        self.mentor_profile.save()
+
+        booking_date = self._get_next_date(0)
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=booking_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+
+        # Another student attempts same slot
+        other_student = User.objects.create_user(username='other_student_jane', email='jane@test.com', password='pw')
+        self.client.force_login(other_student)
+        url = reverse('community:book_session', args=[self.mentor_profile.id])
+        data = {
+            "requested_date": booking_date.strftime("%Y-%m-%d"),
+            "requested_time": "10:00:00",
+            "purpose": "Resume Review",
+            "student_message": "Conflicting slot request."
+        }
+        res = self.client.post(url, data)
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(MentorshipRequest.objects.count(), 1) # Rejected conflict
+
+    def test_weekly_capacity_enforced(self):
+        """Phase 1: Bookings exceeding max_sessions_per_week are rejected."""
+        self.mentor_profile.status = 'Approved'
+        self.mentor_profile.verified = True
+        self.mentor_profile.max_sessions_per_week = 2
+        self.mentor_profile.save()
+
+        booking_date = self._get_next_date(0)
+        # Create 2 sessions filling capacity for that week
+        MentorshipRequest.objects.create(
+            student=User.objects.create_user(username='u1', email='u1@test.com', password='pw'),
+            mentor=self.mentor_profile,
+            requested_date=booking_date,
+            requested_time="09:00:00",
+            purpose="Career Guidance",
+            status="Accepted"
+        )
+        MentorshipRequest.objects.create(
+            student=User.objects.create_user(username='u2', email='u2@test.com', password='pw'),
+            mentor=self.mentor_profile,
+            requested_date=booking_date,
+            requested_time="11:00:00",
+            purpose="Career Guidance",
+            status="Accepted"
+        )
+
+        # 3rd student attempts to book that same week
+        self.client.force_login(self.student_user)
+        url = reverse('community:book_session', args=[self.mentor_profile.id])
+        booking_data = {
+            "requested_date": booking_date.strftime("%Y-%m-%d"),
+            "requested_time": "10:00:00",
+            "purpose": "Resume Review",
+            "student_message": "Exceeding capacity booking."
+        }
+        res = self.client.post(url, booking_data)
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(MentorshipRequest.objects.filter(mentor=self.mentor_profile).count(), 2)
+
+    def test_declared_availability_enforced(self):
+        """Phase 1: Bookings outside declared days or hours are rejected."""
+        self.mentor_profile.status = 'Approved'
+        self.mentor_profile.verified = True
+        self.mentor_profile.available_days = 'Monday, Wednesday'
+        self.mentor_profile.save()
+
+        # Create structured availability slot for Monday (10:00 to 12:00)
+        MentorAvailability.objects.create(
+            mentor=self.mentor_profile,
+            day='Monday',
+            start_time='10:00:00',
+            end_time='12:00:00',
+            max_sessions=2
+        )
+
+        self.client.force_login(self.student_user)
+        url = reverse('community:book_session', args=[self.mentor_profile.id])
+
+        # 1. Booking on wrong day (Tuesday = 1)
+        tuesday_date = self._get_next_date(1)
+        res1 = self.client.post(url, {
+            "requested_date": tuesday_date.strftime("%Y-%m-%d"),
+            "requested_time": "11:00:00",
+            "purpose": "Resume Review",
+            "student_message": "Wrong day booking."
+        })
+        self.assertEqual(res1.status_code, 302)
+        self.assertEqual(MentorshipRequest.objects.count(), 0)
+
+        # 2. Booking on Monday but outside hours (03:00 PM)
+        monday_date = self._get_next_date(0)
+        res2 = self.client.post(url, {
+            "requested_date": monday_date.strftime("%Y-%m-%d"),
+            "requested_time": "15:00:00",
+            "purpose": "Resume Review",
+            "student_message": "Outside hours booking."
+        })
+        self.assertEqual(res2.status_code, 302)
+        self.assertEqual(MentorshipRequest.objects.count(), 0)
