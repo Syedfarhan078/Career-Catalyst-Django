@@ -16,10 +16,12 @@ def workspace_context(request):
         user.mentor_profile.verified
     )
 
-    active_role = request.session.get('active_role', 'student')
+    session = getattr(request, 'session', {})
+    active_role = session.get('active_role', 'student') if hasattr(session, 'get') else 'student'
     if active_role == 'mentor' and not is_approved_mentor:
         active_role = 'student'
-        request.session['active_role'] = 'student'
+        if hasattr(session, '__setitem__'):
+            session['active_role'] = 'student'
 
     return {
         'is_approved_mentor': is_approved_mentor,

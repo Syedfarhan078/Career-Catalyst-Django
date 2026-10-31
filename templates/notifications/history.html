@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notification Center — CareerCatalyst{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+<style>
+.notif-card {
+    background: var(--dash-surface, #ffffff);
+    border: 1px solid var(--dash-border, #e2e8f0);
+    border-radius: 12px;
+    padding: 1.15rem 1.25rem;
+    transition: all 0.2s ease;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+.notif-card.unread {
+    border-left: 4px solid var(--bs-primary, #4361ee);
+    background: var(--dash-surface-active, rgba(67, 97, 238, 0.03));
+}
+.notif-icon-circle {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+.notif-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--dash-border, #e2e8f0);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+.notif-tab {
+    padding: 0.45rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--dash-text-muted, #64748b);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+.notif-tab:hover {
+    color: var(--bs-primary, #4361ee);
+    background: var(--dash-surface-hover, #f8fafc);
+}
+.notif-tab.active {
+    color: var(--bs-primary, #4361ee);
+    background: rgba(67, 97, 238, 0.1);
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Navigation Sidebar -->
+    {% if active_workspace == 'mentor' %}
+        {% include "community/partials/mentor_sidebar.html" %}
+    {% else %}
+        {% include "core/partials/dashboard_sidebar.html" %}
+    {% endif %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% if active_workspace == 'mentor' %}{% url 'community:mentor_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user.username|slice:":2"|upper }}</span>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% if active_workspace == 'mentor' %}{% url 'community:mentor_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}" class="dash-back-link mb-3">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to {% if active_workspace == 'mentor' %}Mentor Workspace{% else %}Student Dashboard{% endif %}</span>
+            </a>
+
+            <!-- Header & Actions -->
+            <div class="community-header d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+                <div>
+                    <div class="community-breadcrumbs">
+                        <a href="{% if active_workspace == 'mentor' %}{% url 'community:mentor_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}">
+                            <i class="bi bi-grid-fill me-1"></i> Workspace
+                        </a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <span>Notifications</span>
+                    </div>
+                    <h1 class="community-title">Notification Center</h1>
+                    <p class="community-subtitle">
+                        Stay informed about your session bookings, mentorship requests, and account updates.
+                    </p>
+                </div>
+
+                {% if unread_count > 0 %}
+                <div>
+                    <form method="post" action="{% url 'notifications:mark_all_as_read' %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button type="submit" class="dash-btn dash-btn-outline dash-btn-sm">
+                            <i class="bi bi-check2-all me-1 text-primary"></i> Mark All as Read
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Tabs: All vs Unread -->
+            <div class="notif-tabs">
+                <a href="?filter=all" class="notif-tab {% if filter_type != 'unread' %}active{% endif %}">
+                    <i class="bi bi-inbox me-1"></i> All Notifications
+                    <span class="badge bg-secondary-subtle text-secondary ms-1 rounded-pill">{{ total_count }}</span>
+                </a>
+                <a href="?filter=unread" class="notif-tab {% if filter_type == 'unread' %}active{% endif %}">
+                    <i class="bi bi-bell-fill me-1"></i> Unread Only
+                    {% if unread_count > 0 %}
+                    <span class="badge bg-primary text-white ms-1 rounded-pill">{{ unread_count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+
+            <!-- Notifications List -->
+            <div class="d-flex flex-column gap-3 mb-4">
+                {% for notif in page_obj %}
+                <div class="notif-card {% if not notif.is_read %}unread{% endif %}">
+                    <!-- Icon based on type -->
+                    <div class="notif-icon-circle 
+                        {% if 'accepted' in notif.notification_type or 'approved' in notif.notification_type %}bg-success-subtle text-success
+                        {% elif 'rejected' in notif.notification_type or 'blocked' in notif.notification_type or 'cancelled' in notif.notification_type %}bg-danger-subtle text-danger
+                        {% elif 'review' in notif.notification_type %}bg-warning-subtle text-warning
+                        {% else %}bg-primary-subtle text-primary{% endif %}">
+                        {% if 'accepted' in notif.notification_type or 'approved' in notif.notification_type %}
+                            <i class="bi bi-check-circle-fill"></i>
+                        {% elif 'cancelled' in notif.notification_type %}
+                            <i class="bi bi-x-circle-fill"></i>
+                        {% elif 'rejected' in notif.notification_type or 'blocked' in notif.notification_type %}
+                            <i class="bi bi-shield-x"></i>
+                        {% elif 'review' in notif.notification_type %}
+                            <i class="bi bi-star-fill"></i>
+                        {% elif 'completed' in notif.notification_type %}
+                            <i class="bi bi-award-fill"></i>
+                        {% else %}
+                            <i class="bi bi-bell-fill"></i>
+                        {% endif %}
+                    </div>
+
+                    <!-- Main Info -->
+                    <div class="flex-grow-1">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+                            <h2 class="h6 mb-0 {% if not notif.is_read %}fw-bold text-body{% else %}fw-semibold text-secondary{% endif %}">
+                                {{ notif.title }}
+                            </h2>
+                            <small class="text-muted d-flex align-items-center gap-1" style="font-size: 0.775rem;">
+                                <i class="bi bi-clock"></i> {{ notif.created_at|timesince }} ago
+                            </small>
+                        </div>
+
+                        <p class="mb-2 text-muted small lh-base">
+                            {{ notif.message }}
+                        </p>
+
+                        <!-- Actions Row -->
+                        <div class="d-flex flex-wrap align-items-center gap-2 pt-1">
+                            {% if notif.target_url %}
+                            <a href="{{ notif.target_url }}" class="dash-btn dash-btn-primary dash-btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.65rem;">
+                                <span>View Details</span>
+                                <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                            {% endif %}
+
+                            {% if not notif.is_read %}
+                            <form method="post" action="{% url 'notifications:mark_as_read' notif.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="dash-btn dash-btn-outline dash-btn-sm text-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.65rem;" title="Mark as Read">
+                                    <i class="bi bi-check2"></i> Mark read
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="badge bg-light text-muted border" style="font-size: 0.7rem;">
+                                <i class="bi bi-check2-all text-success me-1"></i> Read
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <!-- Empty State -->
+                <div class="community-card text-center py-5">
+                    <i class="bi bi-bell-slash display-4 text-muted mb-3 d-block opacity-50"></i>
+                    <h5 class="fw-semibold text-body">No notifications found</h5>
+                    <p class="text-muted small mb-3">
+                        {% if filter_type == 'unread' %}
+                        You have caught up with all your notifications! Check "All Notifications" to view your history.
+                        {% else %}
+                        You have no notifications in your history yet. When events occur, you will see alerts here.
+                        {% endif %}
+                    </p>
+                    {% if filter_type == 'unread' %}
+                    <a href="?filter=all" class="dash-btn dash-btn-outline dash-btn-sm px-3 py-2">
+                        View All Notifications
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="d-flex justify-content-center">
+                <nav aria-label="Notifications pagination">
+                    <ul class="pagination pagination-sm mb-0 gap-1">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link border" href="?page={{ page_obj.previous_page_number }}{% if filter_type %}&filter={{ filter_type }}{% endif %}">&laquo; Prev</a>
+                        </li>
+                        {% endif %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link border" href="?page={{ page_obj.next_page_number }}{% if filter_type %}&filter={{ filter_type }}{% endif %}">Next &raquo;</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+});
+</script>
+{% endblock %}

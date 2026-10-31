@@ -65,7 +65,14 @@
         <div class="d-flex align-items-center justify-content-between px-2 py-1">
             <a href="{% url 'community:edit_profile' %}" class="dash-settings-link {% if request.resolver_match.url_name == 'edit_profile' %}active{% endif %}" title="Mentor Settings">
                 <i class="bi bi-gear"></i>
-                <span>Mentor Settings</span>
+                <span>Settings</span>
+            </a>
+            <a href="{% url 'notifications:history' %}" class="dash-settings-link position-relative" title="Notifications">
+                <i class="bi bi-bell"></i>
+                <span>Alerts</span>
+                {% if unread_notifications_count > 0 %}
+                <span class="badge bg-danger rounded-pill px-1" style="font-size: 0.6rem;">{{ unread_notifications_count }}</span>
+                {% endif %}
             </a>
             <button type="button" class="dash-theme-btn" onclick="window.toggleAppTheme(event)" title="Toggle light/dark theme" aria-label="Toggle theme">
                 <i class="bi bi-circle-half"></i>

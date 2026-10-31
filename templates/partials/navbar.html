@@ -88,25 +88,73 @@
                     <li class="nav-item dropdown notifications-dropdown">
                         <a class="nav-link p-0 position-relative d-flex align-items-center justify-content-center text-secondary border-0" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 36px; height: 36px; font-size: 1.15rem;">
                             <i class="bi bi-bell"></i>
-                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle" style="transform: translate(-30%, 30%) !important;">
-                                <span class="visually-hidden">New alerts</span>
+                            {% if unread_notifications_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light" style="font-size: 0.625rem; transform: translate(-30%, 30%) !important;">
+                                {{ unread_notifications_count }}
+                                <span class="visually-hidden">unread notifications</span>
                             </span>
+                            {% endif %}
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-lg p-2" aria-labelledby="notificationDropdown" style="min-width: 280px; border-radius: 14px;">
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg p-2" aria-labelledby="notificationDropdown" style="min-width: 310px; max-width: 360px; border-radius: 14px;">
                             <li class="px-3 py-2 d-flex align-items-center justify-content-between">
                                 <span class="fw-bold small text-secondary">Notifications</span>
-                                <span class="badge bg-primary bg-opacity-10 text-primary small">1 New</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if unread_notifications_count > 0 %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary small">{{ unread_notifications_count }} New</span>
+                                    <form method="post" action="{% url 'notifications:mark_all_as_read' %}" class="d-inline m-0 p-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit" class="btn btn-link p-0 text-decoration-none text-muted" style="font-size: 0.725rem;" title="Mark all read">
+                                            Mark all read
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
                             </li>
                             <li><hr class="dropdown-divider my-1"></li>
+
+                            {% for notif in recent_notifications %}
                             <li>
-                                <a class="dropdown-item rounded-3 p-2 small d-flex align-items-start gap-2" href="{% url 'recommendation:dashboard' %}">
-                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px;">
-                                        <i class="bi bi-compass" style="font-size: 0.85rem;"></i>
+                                <a class="dropdown-item rounded-3 p-2 small d-flex align-items-start gap-2 {% if not notif.is_read %}bg-light bg-opacity-75 fw-semibold{% endif %}" href="{{ notif.target_url|default:'/notifications/' }}">
+                                    <div class="rounded-circle 
+                                        {% if 'accepted' in notif.notification_type or 'approved' in notif.notification_type %}bg-success bg-opacity-10 text-success
+                                        {% elif 'rejected' in notif.notification_type or 'blocked' in notif.notification_type or 'cancelled' in notif.notification_type %}bg-danger bg-opacity-10 text-danger
+                                        {% elif 'review' in notif.notification_type %}bg-warning bg-opacity-10 text-warning
+                                        {% else %}bg-primary bg-opacity-10 text-primary{% endif %}
+                                        d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.85rem;">
+                                        {% if 'accepted' in notif.notification_type or 'approved' in notif.notification_type %}
+                                            <i class="bi bi-check-circle"></i>
+                                        {% elif 'cancelled' in notif.notification_type %}
+                                            <i class="bi bi-x-circle"></i>
+                                        {% elif 'review' in notif.notification_type %}
+                                            <i class="bi bi-star"></i>
+                                        {% else %}
+                                            <i class="bi bi-bell"></i>
+                                        {% endif %}
                                     </div>
-                                    <div>
-                                        <div class="fw-semibold text-secondary" style="font-size: 0.8rem;">Ready for Next Roadmap?</div>
-                                        <div class="text-muted" style="font-size: 0.72rem;">Review your target learning track progress.</div>
+                                    <div class="flex-grow-1 text-truncate">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="text-truncate text-secondary" style="font-size: 0.8rem; max-width: 170px;">{{ notif.title }}</div>
+                                            <span class="text-muted" style="font-size: 0.675rem;">{{ notif.created_at|timesince }}</span>
+                                        </div>
+                                        <div class="text-muted text-truncate" style="font-size: 0.72rem;">{{ notif.message }}</div>
                                     </div>
+                                    {% if not notif.is_read %}
+                                    <span class="badge bg-primary rounded-circle p-1 align-self-center" style="width: 6px; height: 6px;"></span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            {% empty %}
+                            <li class="px-3 py-3 text-center text-muted small">
+                                <i class="bi bi-bell-slash d-block mb-1 opacity-50" style="font-size: 1.25rem;"></i>
+                                No notifications yet
+                            </li>
+                            {% endfor %}
+
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li class="px-2 pt-1 text-center">
+                                <a href="{% url 'notifications:history' %}" class="small text-decoration-none fw-semibold text-primary d-block py-1">
+                                    View All Notifications <i class="bi bi-arrow-right ms-1"></i>
                                 </a>
                             </li>
                         </ul>

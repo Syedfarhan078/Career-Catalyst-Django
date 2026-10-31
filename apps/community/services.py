@@ -3,9 +3,11 @@ from django.db import transaction
 from django.db.models import Avg, Count
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.urls import reverse
 from datetime import timedelta
 from .models import MentorProfile, MentorSkill, MentorshipRequest, MentorReview, MentorAvailability, MentorMessage
 from .utils import simulate_notification
+from apps.notifications.services import create_notification
 
 @transaction.atomic
 def register_mentor_service(user, form_cleaned_data):
@@ -50,6 +52,13 @@ def register_mentor_service(user, form_cleaned_data):
         MentorSkill.objects.create(mentor=profile, name=skill_name)
 
     # Send confirmation alert to user
+    create_notification(
+        recipient=user,
+        title="Mentorship Registration Received",
+        message="Your application has been received and is currently Pending Verification by admins.",
+        notification_type="general",
+        target_url=reverse('community:mentor_register')
+    )
     simulate_notification(
         user=user,
         subject="Mentorship Registration Received",
@@ -95,20 +104,34 @@ def review_mentor_application_service(profile, action, reviewer):
         profile.verified = True
         subject = "Mentorship Profile Approved!"
         msg = f"Congratulations {profile.full_name}, your mentorship application has been approved and activated in the marketplace."
+        n_type = 'mentorship_profile_approved'
+        target = reverse('community:mentor_dashboard')
     elif action == 'reject':
         profile.status = 'Rejected'
         profile.verified = False
         subject = "Mentorship Profile Status Update"
         msg = f"Hello {profile.full_name}, your application was rejected. Please review your credentials and submit again."
+        n_type = 'mentorship_profile_rejected'
+        target = reverse('community:mentor_register')
     elif action == 'block':
         profile.status = 'Blocked'
         profile.verified = False
         subject = "Mentorship Account Blocked"
         msg = "Your mentor profile has been blocked by administrators due to policy violations."
+        n_type = 'mentorship_profile_blocked'
+        target = reverse('community:mentor_register')
     else:
         raise ValueError(f"Invalid review action: {action}")
         
     profile.save()
+    create_notification(
+        recipient=profile.user,
+        actor=reviewer,
+        title=subject,
+        message=msg,
+        notification_type=n_type,
+        target_url=target
+    )
     simulate_notification(user=profile.user, subject=subject, message=msg)
     return profile
 
@@ -179,12 +202,30 @@ def create_mentorship_request_service(student, mentor, form_cleaned_data):
     )
 
     # Notify Mentor
+    create_notification(
+        recipient=mentor.user,
+        actor=student,
+        title="New Mentorship Request Received",
+        message=f"You received a new session request from {student.username} for {request_obj.purpose} on {request_obj.requested_date}.",
+        notification_type='mentorship_request_submitted',
+        target_url=reverse('community:mentor_requests'),
+        related_request=request_obj
+    )
     simulate_notification(
         user=mentor.user,
         subject="New Mentorship Request Received",
         message=f"You received a new session request from {student.username} for {request_obj.purpose} on {request_obj.requested_date}."
     )
     # Notify Student
+    create_notification(
+        recipient=student,
+        actor=None,
+        title="Mentorship Request Submitted",
+        message=f"Your request to book a session with {mentor.full_name} has been submitted successfully.",
+        notification_type='mentorship_request_submitted',
+        target_url=reverse('community:student_bookings'),
+        related_request=request_obj
+    )
     simulate_notification(
         user=student,
         subject="Mentorship Request Submitted",
@@ -216,6 +257,9 @@ def respond_to_request_service(request_obj, action, response_message, meeting_li
         subject = "Mentorship Request Accepted!"
         msg = f"Your session request has been accepted by {request_obj.mentor.full_name}. Meeting Link: {request_obj.meeting_link}"
         recipient = request_obj.student
+        notif_actor = actor or request_obj.mentor.user
+        notification_type = 'mentorship_request_accepted'
+        target_url = reverse('community:student_bookings')
 
     elif action == 'reject':
         if request_obj.status != 'Pending':
@@ -224,6 +268,9 @@ def respond_to_request_service(request_obj, action, response_message, meeting_li
         subject = "Mentorship Request Declined"
         msg = f"Your session request was declined by {request_obj.mentor.full_name}. Reason: {response_message}"
         recipient = request_obj.student
+        notif_actor = actor or request_obj.mentor.user
+        notification_type = 'mentorship_request_rejected'
+        target_url = reverse('community:student_bookings')
 
     elif action == 'complete':
         if request_obj.status != 'Accepted':
@@ -232,23 +279,40 @@ def respond_to_request_service(request_obj, action, response_message, meeting_li
         subject = "Mentorship Session Completed"
         msg = f"Your session with {request_obj.mentor.full_name} has been marked as Completed. Please leave a review!"
         recipient = request_obj.student
+        notif_actor = actor or request_obj.mentor.user
+        notification_type = 'mentorship_session_completed'
+        target_url = reverse('community:student_bookings')
 
     elif action == 'cancel':
         if request_obj.status not in ['Pending', 'Accepted']:
             raise ValidationError(f"Cannot cancel a session with status '{request_obj.status}'.")
         request_obj.status = 'Cancelled'
+        notification_type = 'mentorship_session_cancelled'
         if actor and actor == request_obj.student:
             subject = "Mentorship Session Cancelled by Student"
             msg = f"The mentorship session requested by {request_obj.student.username} for {request_obj.requested_date} was cancelled by the student."
             recipient = request_obj.mentor.user
+            notif_actor = request_obj.student
+            target_url = reverse('community:mentor_requests')
         else:
             subject = "Mentorship Session Cancelled"
             msg = f"The mentorship session on {request_obj.requested_date} with {request_obj.mentor.full_name} has been cancelled."
             recipient = request_obj.student
+            notif_actor = actor or request_obj.mentor.user
+            target_url = reverse('community:student_bookings')
     else:
         raise ValueError(f"Invalid response action: {action}")
 
     request_obj.save()
+    create_notification(
+        recipient=recipient,
+        actor=notif_actor,
+        title=subject,
+        message=msg,
+        notification_type=notification_type,
+        target_url=target_url,
+        related_request=request_obj
+    )
     simulate_notification(user=recipient, subject=subject, message=msg)
     return request_obj
 
@@ -283,6 +347,14 @@ def submit_mentor_review_service(student, mentor, rating, comment):
     mentor.save()
 
     # Notify Mentor
+    create_notification(
+        recipient=mentor.user,
+        actor=student,
+        title="New Review Received",
+        message=f"Student {student.username} left a {rating}-star rating on your profile.",
+        notification_type='mentor_review_received',
+        target_url=reverse('community:mentor_dashboard')
+    )
     simulate_notification(
         user=mentor.user,
         subject="New Review Received",
