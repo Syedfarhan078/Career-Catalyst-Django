@@ -11,8 +11,9 @@ import json
 from .models import (
     ForumCategory, ForumThread, ForumReply, MentorProfile, SharedProject, 
     ProjectLike, SuccessStory, MentorMessage, MentorshipRequest, 
-    MentorReview, MentorAvailability
+    MentorReview, MentorAvailability, MentorLifecycleEvent
 )
+from apps.notifications.models import Notification
 from apps.profiles.models import StudentProfile
 from .utils import calculate_mentor_match_score
 
@@ -1412,3 +1413,401 @@ class Phase4MentorLifecycleTests(TestCase):
             res = self.client.post(url)
             self.assertEqual(res.status_code, 302)
             self.assertIn('/accounts/login/', res.url)
+
+
+class Phase41LifecycleHardeningTests(TestCase):
+    """
+    Phase 4.1: Comprehensive production reliability and hardening tests:
+    - Administrative blocking auto-resolves both Pending and Accepted sessions without touching Completed ones.
+    - Repeated admin blocking is idempotent with zero duplicate notifications.
+    - Mentor-initiated cancellation of Accepted sessions via UI and service.
+    - Ownership, state validation, and non-empty cancellation reason enforcement.
+    - Student cancellation workflow remains intact.
+    - Step-down reason persistence in MentorProfile and MentorLifecycleEvent.
+    - Historical reasons and audit events preserved permanently across reactivations.
+    - Pause, resume, and block lifecycle event auditing.
+    - Rollback safety: failed transactions leave no orphan lifecycle events.
+    - Concurrency lock ordering and race condition prevention.
+    """
+    def setUp(self):
+        self.student1 = User.objects.create_user(
+            username='student_alpha',
+            email='alpha@student.com',
+            password='password123'
+        )
+        self.student2 = User.objects.create_user(
+            username='student_beta',
+            email='beta@student.com',
+            password='password123'
+        )
+        self.mentor_user = User.objects.create_user(
+            username='mentor_ada',
+            email='ada@lovelace.org',
+            password='password123'
+        )
+        self.mentor_user2 = User.objects.create_user(
+            username='mentor_charles',
+            email='charles@babbage.org',
+            password='password123'
+        )
+        self.staff_user = User.objects.create_user(
+            username='admin_staff',
+            email='admin@test.com',
+            password='password123',
+            is_staff=True
+        )
+
+        StudentProfile.objects.create(user=self.student1, preferred_domain='Backend')
+        StudentProfile.objects.create(user=self.student2, preferred_domain='AI')
+        StudentProfile.objects.create(user=self.mentor_user, preferred_domain='Full Stack')
+
+        self.mentor_profile = MentorProfile.objects.create(
+            user=self.mentor_user,
+            full_name='Ada Lovelace',
+            email='ada@lovelace.org',
+            company='Analytical Engines Inc',
+            designation='Lead Mathematician',
+            experience_years=12,
+            status='Approved',
+            verified=True,
+            available_days='Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday',
+            available_time_slots='10:00 AM - 12:00 PM',
+            max_sessions_per_week=10,
+            is_paused=False
+        )
+
+        self.mentor_profile2 = MentorProfile.objects.create(
+            user=self.mentor_user2,
+            full_name='Charles Babbage',
+            email='charles@babbage.org',
+            company='Difference Engine Corp',
+            designation='Chief Architect',
+            experience_years=15,
+            status='Approved',
+            verified=True,
+            available_days='Monday, Tuesday, Wednesday',
+            available_time_slots='10:00 AM - 12:00 PM',
+            max_sessions_per_week=5,
+            is_paused=False
+        )
+
+        self.future_date = timezone.now().date() + timedelta(days=3)
+
+    def test_admin_blocking_cancels_both_pending_and_accepted_requests(self):
+        """Phase 4.1: Admin blocking automatically resolves both Pending AND Accepted sessions."""
+        req_pending = MentorshipRequest.objects.create(
+            student=self.student1,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+        req_accepted = MentorshipRequest.objects.create(
+            student=self.student2,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="11:00:00",
+            purpose="System Design",
+            status="Accepted"
+        )
+
+        self.client.force_login(self.staff_user)
+        res = self.client.post(reverse('community:admin_action', args=[self.mentor_profile.id, 'block']))
+        self.assertRedirects(res, reverse('community:admin_verify'))
+
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.status, 'Blocked')
+        self.assertFalse(self.mentor_profile.verified)
+
+        req_pending.refresh_from_db()
+        req_accepted.refresh_from_db()
+        self.assertEqual(req_pending.status, 'Cancelled')
+        self.assertEqual(req_accepted.status, 'Cancelled')
+        self.assertIn("suspended by administrators", req_pending.mentor_response)
+        self.assertIn("suspended by administrators", req_accepted.mentor_response)
+
+        # Both students must have received cancellation notifications
+        notif_pending = Notification.objects.filter(recipient=self.student1, notification_type='mentorship_session_cancelled').first()
+        notif_accepted = Notification.objects.filter(recipient=self.student2, notification_type='mentorship_session_cancelled').first()
+        self.assertIsNotNone(notif_pending)
+        self.assertIsNotNone(notif_accepted)
+        self.assertEqual(notif_pending.actor, self.staff_user)
+        self.assertEqual(notif_accepted.actor, self.staff_user)
+
+    def test_admin_blocking_preserves_completed_and_historical_records(self):
+        """Phase 4.1: Admin blocking never modifies completed or previously cancelled sessions."""
+        req_completed = MentorshipRequest.objects.create(
+            student=self.student1,
+            mentor=self.mentor_profile,
+            requested_date=timezone.now().date() - timedelta(days=2),
+            requested_time="10:00:00",
+            purpose="Interview Prep",
+            status="Completed",
+            mentor_response="Great session!"
+        )
+        self.client.force_login(self.staff_user)
+        self.client.post(reverse('community:admin_action', args=[self.mentor_profile.id, 'block']))
+
+        req_completed.refresh_from_db()
+        self.assertEqual(req_completed.status, 'Completed')
+        self.assertEqual(req_completed.mentor_response, "Great session!")
+
+    def test_admin_blocking_idempotency_prevents_duplicate_notifications(self):
+        """Phase 4.1: Repeated admin block submissions do not generate duplicate notifications."""
+        req = MentorshipRequest.objects.create(
+            student=self.student1,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+        self.client.force_login(self.staff_user)
+
+        # First block
+        self.client.post(reverse('community:admin_action', args=[self.mentor_profile.id, 'block']))
+        initial_notif_count = Notification.objects.count()
+
+        # Second block
+        self.client.post(reverse('community:admin_action', args=[self.mentor_profile.id, 'block']))
+        second_notif_count = Notification.objects.count()
+
+        self.assertEqual(initial_notif_count, second_notif_count)
+
+    def test_mentor_can_cancel_accepted_session(self):
+        """Phase 4.1: Mentor can cancel an accepted session via POST, notifying student with reason."""
+        req = MentorshipRequest.objects.create(
+            student=self.student1,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Accepted"
+        )
+        self.client.force_login(self.mentor_user)
+
+        res = self.client.post(
+            reverse('community:respond_request', args=[req.id]),
+            {
+                'action': 'cancel',
+                'response_message': 'Emergency conference commitment, deeply apologize.'
+            }
+        )
+        self.assertRedirects(res, reverse('community:mentor_requests'))
+
+        req.refresh_from_db()
+        self.assertEqual(req.status, 'Cancelled')
+        self.assertEqual(req.mentor_response, 'Emergency conference commitment, deeply apologize.')
+
+        notif = Notification.objects.filter(recipient=self.student1, notification_type='mentorship_session_cancelled').first()
+        self.assertIsNotNone(notif)
+        self.assertEqual(notif.actor, self.mentor_user)
+        self.assertIn('Emergency conference commitment', notif.message)
+
+    def test_mentor_cancellation_requires_reason(self):
+        """Phase 4.1: Mentor cancelling an accepted session must supply an explanatory reason."""
+        req = MentorshipRequest.objects.create(
+            student=self.student1,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Accepted"
+        )
+        self.client.force_login(self.mentor_user)
+
+        res = self.client.post(
+            reverse('community:respond_request', args=[req.id]),
+            {
+                'action': 'cancel',
+                'response_message': '   '
+            }
+        )
+        self.assertRedirects(res, reverse('community:mentor_requests'))
+
+        req.refresh_from_db()
+        self.assertEqual(req.status, 'Accepted')  # Status must remain unchanged
+
+    def test_mentor_cannot_cancel_unowned_request(self):
+        """Phase 4.1: A mentor cannot cancel a session belonging to another mentor."""
+        req = MentorshipRequest.objects.create(
+            student=self.student1,
+            mentor=self.mentor_profile2,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Accepted"
+        )
+        # Login as mentor_user (not mentor_user2)
+        self.client.force_login(self.mentor_user)
+
+        res = self.client.post(
+            reverse('community:respond_request', args=[req.id]),
+            {
+                'action': 'cancel',
+                'response_message': 'Malicious cancel attempt'
+            }
+        )
+        self.assertEqual(res.status_code, 404)
+        req.refresh_from_db()
+        self.assertEqual(req.status, 'Accepted')
+
+    def test_student_cancellation_remains_functional(self):
+        """Phase 4.1: Existing student cancellation workflow remains fully functional."""
+        req = MentorshipRequest.objects.create(
+            student=self.student1,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Accepted"
+        )
+        self.client.force_login(self.student1)
+
+        res = self.client.post(reverse('community:cancel_booking', args=[req.id]))
+        self.assertRedirects(res, reverse('community:student_bookings'))
+
+        req.refresh_from_db()
+        self.assertEqual(req.status, 'Cancelled')
+
+        notif = Notification.objects.filter(recipient=self.mentor_user, notification_type='mentorship_session_cancelled').first()
+        self.assertIsNotNone(notif)
+        self.assertEqual(notif.actor, self.student1)
+
+    def test_step_down_reason_persisted_in_profile_and_event(self):
+        """Phase 4.1: Step-down reason is persisted on MentorProfile and recorded in MentorLifecycleEvent."""
+        self.client.force_login(self.mentor_user)
+        step_down_reason = "Taking an academic sabbatical to develop algorithmic proofs."
+
+        res = self.client.post(
+            reverse('community:mentor_step_down'),
+            {'reason': step_down_reason}
+        )
+        self.assertRedirects(res, reverse('dashboard'))
+
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.status, 'Inactive')
+        self.assertEqual(self.mentor_profile.step_down_reason, step_down_reason)
+
+        event = MentorLifecycleEvent.objects.filter(mentor=self.mentor_profile, event_type='step_down').first()
+        self.assertIsNotNone(event)
+        self.assertEqual(event.actor, self.mentor_user)
+        self.assertEqual(event.reason, step_down_reason)
+
+    def test_reactivation_preserves_historical_step_down_events(self):
+        """Phase 4.1: Reactivation clears current profile reason but permanently retains historical lifecycle events."""
+        # 1. Step down
+        self.client.force_login(self.mentor_user)
+        self.client.post(
+            reverse('community:mentor_step_down'),
+            {'reason': 'Temporary sabbatical.'}
+        )
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.status, 'Inactive')
+
+        # 2. Reactivate
+        res_reactivate = self.client.post(reverse('community:reactivate_mentor'), {'resume_bookings': '1'})
+        self.assertRedirects(res_reactivate, reverse('community:mentor_dashboard'))
+
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.status, 'Approved')
+        self.assertEqual(self.mentor_profile.step_down_reason, '')
+
+        # Historical step_down event must remain intact in MentorLifecycleEvent
+        hist_step_down = MentorLifecycleEvent.objects.filter(mentor=self.mentor_profile, event_type='step_down').first()
+        self.assertIsNotNone(hist_step_down)
+        self.assertEqual(hist_step_down.reason, 'Temporary sabbatical.')
+
+        # Reactivation event must be recorded
+        reactivate_event = MentorLifecycleEvent.objects.filter(mentor=self.mentor_profile, event_type='reactivate').first()
+        self.assertIsNotNone(reactivate_event)
+        self.assertEqual(reactivate_event.actor, self.mentor_user)
+
+    def test_pause_and_resume_record_lifecycle_events(self):
+        """Phase 4.1: Pause and resume operations record structured MentorLifecycleEvents."""
+        self.client.force_login(self.mentor_user)
+
+        self.client.post(reverse('community:pause_availability'))
+        pause_event = MentorLifecycleEvent.objects.filter(mentor=self.mentor_profile, event_type='pause').first()
+        self.assertIsNotNone(pause_event)
+        self.assertEqual(pause_event.actor, self.mentor_user)
+
+        self.client.post(reverse('community:resume_availability'))
+        resume_event = MentorLifecycleEvent.objects.filter(mentor=self.mentor_profile, event_type='resume').first()
+        self.assertIsNotNone(resume_event)
+        self.assertEqual(resume_event.actor, self.mentor_user)
+
+    def test_failed_step_down_does_not_create_lifecycle_event(self):
+        """Phase 4.1: When step-down fails due to active accepted sessions, no lifecycle event is recorded."""
+        MentorshipRequest.objects.create(
+            student=self.student1,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Accepted"
+        )
+        self.client.force_login(self.mentor_user)
+
+        res = self.client.post(
+            reverse('community:mentor_step_down'),
+            {'reason': 'Attempting step-down with accepted session'}
+        )
+        self.assertRedirects(res, reverse('community:mentor_step_down'))
+
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.status, 'Approved')
+
+        # No step_down event must be created
+        event_count = MentorLifecycleEvent.objects.filter(mentor=self.mentor_profile, event_type='step_down').count()
+        self.assertEqual(event_count, 0)
+
+    def test_concurrency_protection_cannot_accept_while_inactive_or_paused(self):
+        """Phase 4.1: Service layer strictly rejects accepting requests if mentor is paused or inactive."""
+        req = MentorshipRequest.objects.create(
+            student=self.student1,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+        # 1. Pause mentor
+        self.mentor_profile.is_paused = True
+        self.mentor_profile.save()
+
+        with self.assertRaises(ValidationError) as ctx:
+            from .services import respond_to_request_service
+            respond_to_request_service(req, 'accept', "Accepting while paused")
+        self.assertIn("not active, approved, and unpaused", str(ctx.exception))
+
+        # 2. Deactivate mentor
+        self.mentor_profile.status = 'Inactive'
+        self.mentor_profile.save()
+
+        with self.assertRaises(ValidationError) as ctx:
+            from .services import respond_to_request_service
+            respond_to_request_service(req, 'accept', "Accepting while inactive")
+        self.assertIn("not active, approved, and unpaused", str(ctx.exception))
+
+    def test_repeated_pause_and_resume_idempotent(self):
+        """Phase 4.1: Repeated pause or resume calls do not duplicate events or notifications."""
+        self.client.force_login(self.mentor_user)
+
+        self.client.post(reverse('community:pause_availability'))
+        pause_events_1 = MentorLifecycleEvent.objects.filter(mentor=self.mentor_profile, event_type='pause').count()
+
+        # Call pause again
+        self.client.post(reverse('community:pause_availability'))
+        pause_events_2 = MentorLifecycleEvent.objects.filter(mentor=self.mentor_profile, event_type='pause').count()
+        self.assertEqual(pause_events_1, pause_events_2)
+
+        self.client.post(reverse('community:resume_availability'))
+        resume_events_1 = MentorLifecycleEvent.objects.filter(mentor=self.mentor_profile, event_type='resume').count()
+
+        # Call resume again
+        self.client.post(reverse('community:resume_availability'))
+        resume_events_2 = MentorLifecycleEvent.objects.filter(mentor=self.mentor_profile, event_type='resume').count()
+        self.assertEqual(resume_events_1, resume_events_2)
+

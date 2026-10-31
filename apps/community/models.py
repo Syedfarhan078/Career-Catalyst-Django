@@ -159,6 +159,7 @@ class MentorProfile(models.Model):
     is_paused = models.BooleanField(default=False, help_text="True if mentor has temporarily paused accepting new booking requests.")
     paused_at = models.DateTimeField(null=True, blank=True)
     stepped_down_at = models.DateTimeField(null=True, blank=True)
+    step_down_reason = models.TextField(blank=True, default='', help_text="Reason provided during the most recent voluntary step-down.")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -272,3 +273,32 @@ class MentorAvailability(models.Model):
 
     def __str__(self):
         return f"{self.day}: {self.start_time} - {self.end_time} ({self.mentor.full_name})"
+
+
+class MentorLifecycleEvent(models.Model):
+    """
+    Audit log of all lifecycle transitions for a mentor profile.
+    Preserves historical reasons, actors, and events across state changes.
+    """
+    EVENT_CHOICES = [
+        ('pause', 'Pause Availability'),
+        ('resume', 'Resume Availability'),
+        ('step_down', 'Voluntary Step-Down'),
+        ('reactivate', 'Reactivate Profile'),
+        ('block', 'Administrative Block'),
+    ]
+
+    mentor = models.ForeignKey(MentorProfile, on_delete=models.CASCADE, related_name='lifecycle_events')
+    event_type = models.CharField(max_length=20, choices=EVENT_CHOICES)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='initiated_mentor_events')
+    reason = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['mentor', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_event_type_display()} for {self.mentor.full_name} at {self.created_at}"

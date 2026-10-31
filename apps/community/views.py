@@ -748,7 +748,7 @@ def respond_to_request(request, pk):
     req = get_object_or_404(MentorshipRequest, pk=pk, mentor=mentor)
 
     if request.method == 'POST':
-        action = request.POST.get('action') # 'accept', 'reject', 'complete'
+        action = request.POST.get('action') # 'accept', 'reject', 'complete', 'cancel'
         message = request.POST.get('response_message', '').strip()
         link = request.POST.get('meeting_link', '').strip()
 
@@ -760,7 +760,10 @@ def respond_to_request(request, pk):
                 meeting_link=link,
                 actor=request.user
             )
-            messages.success(request, f"Request successfully marked as {action}ed.")
+            if action == 'cancel':
+                messages.success(request, "Mentorship session has been cancelled.")
+            else:
+                messages.success(request, f"Request successfully marked as {action}ed.")
         except (ValidationError, ValueError) as e:
             messages.error(request, e.message if hasattr(e, 'message') else str(e))
         return redirect('community:mentor_requests')

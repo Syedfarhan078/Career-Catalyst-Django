@@ -5,7 +5,10 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.urls import reverse
 from datetime import timedelta
-from .models import MentorProfile, MentorSkill, MentorshipRequest, MentorReview, MentorAvailability, MentorMessage
+from .models import (
+    MentorProfile, MentorSkill, MentorshipRequest, MentorReview, 
+    MentorAvailability, MentorMessage, MentorLifecycleEvent
+)
 from .utils import simulate_notification
 from apps.notifications.services import create_notification
 
@@ -95,9 +98,13 @@ def review_mentor_application_service(profile, action, reviewer):
     """
     Admin reviews a mentor application.
     action can be: 'approve', 'reject', 'block'
+    Acquires row lock on MentorProfile first to maintain consistent lock ordering.
     """
     if not reviewer.is_staff and not reviewer.is_superuser:
         raise PermissionError("Only staff/admins can review mentor applications.")
+
+    # 1. Row-lock MentorProfile first (consistent order: MentorProfile -> MentorshipRequest)
+    profile = MentorProfile.objects.select_for_update().get(pk=profile.pk)
         
     if action == 'approve':
         profile.status = 'Approved'
@@ -114,6 +121,10 @@ def review_mentor_application_service(profile, action, reviewer):
         n_type = 'mentorship_profile_rejected'
         target = reverse('community:mentor_register')
     elif action == 'block':
+        # Idempotency check: if already blocked, do not duplicate notifications or cancellations
+        if profile.status == 'Blocked':
+            return profile
+
         profile.status = 'Blocked'
         profile.verified = False
         subject = "Mentorship Account Blocked"
@@ -121,21 +132,38 @@ def review_mentor_application_service(profile, action, reviewer):
         n_type = 'mentorship_profile_blocked'
         target = reverse('community:mentor_register')
 
-        # Automatically cancel pending requests and notify affected students
-        pending_requests = MentorshipRequest.objects.select_for_update().filter(mentor=profile, status='Pending')
-        for req in pending_requests:
+        # 2. Retrieve and lock ALL active (Pending and Accepted) requests
+        active_requests = MentorshipRequest.objects.select_for_update().filter(
+            mentor=profile,
+            status__in=['Pending', 'Accepted']
+        )
+        for req in active_requests:
+            prev_status = req.status
             req.status = 'Cancelled'
-            req.mentor_response = "Mentor is unavailable."
+            req.mentor_response = "Mentor account suspended by administrators."
             req.save(update_fields=['status', 'mentor_response'])
             create_notification(
                 recipient=req.student,
                 actor=reviewer,
                 title="Mentorship Request Cancelled",
-                message=f"Your pending mentorship request with {profile.full_name} was cancelled as the mentor is no longer available.",
+                message=f"Your {prev_status.lower()} mentorship session with {profile.full_name} was cancelled as the mentor account was blocked by administrators.",
                 notification_type='mentorship_session_cancelled',
                 target_url=reverse('community:student_bookings'),
                 related_request=req
             )
+            simulate_notification(
+                user=req.student,
+                subject="Mentorship Request Cancelled",
+                message=f"Your {prev_status.lower()} mentorship session with {profile.full_name} was cancelled as the mentor account was blocked by administrators."
+            )
+
+        # Audit lifecycle event
+        MentorLifecycleEvent.objects.create(
+            mentor=profile,
+            event_type='block',
+            actor=reviewer,
+            reason="Mentor account blocked by administrators due to policy violations."
+        )
     else:
         raise ValueError(f"Invalid review action: {action}")
         
@@ -259,19 +287,30 @@ def respond_to_request_service(request_obj, action, response_message, meeting_li
     """
     Responds to or updates a student request (accept/reject/complete/cancel).
     Validates state transitions and notifies the appropriate recipient.
+    Acquires row locks in consistent order: MentorProfile -> MentorshipRequest.
     """
+    # 1. Row-lock MentorProfile first (consistent order: MentorProfile -> MentorshipRequest)
+    mentor = MentorProfile.objects.select_for_update().get(pk=request_obj.mentor_id)
+
+    # 2. Row-lock MentorshipRequest second to synchronize concurrent transactions and sync latest state
+    fresh_request = MentorshipRequest.objects.select_for_update().get(pk=request_obj.pk)
+    request_obj.status = fresh_request.status
+
     if request_obj.status in ['Rejected', 'Completed', 'Cancelled']:
         raise ValidationError(f"Cannot perform '{action}' on a mentorship request that is already {request_obj.status}.")
 
-    request_obj.mentor_response = response_message
+    response_message = (response_message or '').strip()
 
     if action == 'accept':
+        if mentor.status != 'Approved' or not mentor.verified or mentor.is_paused:
+            raise ValidationError("Cannot accept a request when mentor profile is not active, approved, and unpaused.")
         if request_obj.status != 'Pending':
             raise ValidationError(f"Cannot accept a request with status '{request_obj.status}'. Only Pending requests can be accepted.")
         request_obj.status = 'Accepted'
         request_obj.meeting_link = meeting_link or ''
         request_obj.meeting_date = meeting_date or request_obj.requested_date
         request_obj.meeting_time = meeting_time or request_obj.requested_time
+        request_obj.mentor_response = response_message
         
         subject = "Mentorship Request Accepted!"
         msg = f"Your session request has been accepted by {request_obj.mentor.full_name}. Meeting Link: {request_obj.meeting_link}"
@@ -284,6 +323,7 @@ def respond_to_request_service(request_obj, action, response_message, meeting_li
         if request_obj.status != 'Pending':
             raise ValidationError(f"Cannot reject a request with status '{request_obj.status}'. Only Pending requests can be rejected.")
         request_obj.status = 'Rejected'
+        request_obj.mentor_response = response_message
         subject = "Mentorship Request Declined"
         msg = f"Your session request was declined by {request_obj.mentor.full_name}. Reason: {response_message}"
         recipient = request_obj.student
@@ -295,6 +335,7 @@ def respond_to_request_service(request_obj, action, response_message, meeting_li
         if request_obj.status != 'Accepted':
             raise ValidationError(f"Cannot complete a request with status '{request_obj.status}'. Only Accepted sessions can be marked as Completed.")
         request_obj.status = 'Completed'
+        request_obj.mentor_response = response_message
         subject = "Mentorship Session Completed"
         msg = f"Your session with {request_obj.mentor.full_name} has been marked as Completed. Please leave a review!"
         recipient = request_obj.student
@@ -305,17 +346,22 @@ def respond_to_request_service(request_obj, action, response_message, meeting_li
     elif action == 'cancel':
         if request_obj.status not in ['Pending', 'Accepted']:
             raise ValidationError(f"Cannot cancel a session with status '{request_obj.status}'.")
+        
+        if not response_message:
+            raise ValidationError("A cancellation reason or note is required.")
+
         request_obj.status = 'Cancelled'
+        request_obj.mentor_response = response_message
         notification_type = 'mentorship_session_cancelled'
         if actor and actor == request_obj.student:
             subject = "Mentorship Session Cancelled by Student"
-            msg = f"The mentorship session requested by {request_obj.student.username} for {request_obj.requested_date} was cancelled by the student."
+            msg = f"The mentorship session requested by {request_obj.student.username} for {request_obj.requested_date} was cancelled by the student. Reason: {response_message}"
             recipient = request_obj.mentor.user
             notif_actor = request_obj.student
             target_url = reverse('community:mentor_requests')
         else:
             subject = "Mentorship Session Cancelled"
-            msg = f"The mentorship session on {request_obj.requested_date} with {request_obj.mentor.full_name} has been cancelled."
+            msg = f"The mentorship session on {request_obj.requested_date} with {request_obj.mentor.full_name} has been cancelled by the mentor. Reason: {response_message}"
             recipient = request_obj.student
             notif_actor = actor or request_obj.mentor.user
             target_url = reverse('community:student_bookings')
@@ -405,7 +451,7 @@ def save_mentor_availability_service(mentor, day, start_time, end_time, max_sess
 # ==========================================
 
 @transaction.atomic
-def pause_mentor_availability_service(user):
+def pause_mentor_availability_service(user, reason=""):
     """
     Temporarily pauses an approved mentor's availability for new booking requests.
     Existing sessions, reviews, and mentor workspace access remain intact.
@@ -424,6 +470,13 @@ def pause_mentor_availability_service(user):
     mentor.paused_at = timezone.now()
     mentor.save(update_fields=['is_paused', 'paused_at'])
 
+    MentorLifecycleEvent.objects.create(
+        mentor=mentor,
+        event_type='pause',
+        actor=user,
+        reason=reason or ''
+    )
+
     create_notification(
         recipient=user,
         actor=None,
@@ -436,7 +489,7 @@ def pause_mentor_availability_service(user):
 
 
 @transaction.atomic
-def resume_mentor_availability_service(user):
+def resume_mentor_availability_service(user, reason=""):
     """
     Resumes an approved mentor's availability to accept new bookings in the marketplace.
     """
@@ -453,6 +506,13 @@ def resume_mentor_availability_service(user):
     mentor.is_paused = False
     mentor.paused_at = None
     mentor.save(update_fields=['is_paused', 'paused_at'])
+
+    MentorLifecycleEvent.objects.create(
+        mentor=mentor,
+        event_type='resume',
+        actor=user,
+        reason=reason or ''
+    )
 
     create_notification(
         recipient=user,
@@ -500,25 +560,33 @@ def execute_mentor_step_down_service(user, reason=""):
     Executes a voluntary step-down for an approved mentor.
     Prerequisite: All accepted sessions must be resolved (completed or explicitly cancelled).
     Automatically cancels all Pending requests with student notifications.
-    Transitions status to 'Inactive', preserves historical records, and notifies the mentor.
+    Transitions status to 'Inactive', persists step-down reason, records lifecycle event,
+    preserves historical records, and notifies the mentor.
     """
     if not hasattr(user, 'mentor_profile'):
         raise ValidationError("User has no mentor profile.")
 
+    # 1. Row-lock MentorProfile first (consistent order: MentorProfile -> MentorshipRequest)
     mentor = MentorProfile.objects.select_for_update().get(user=user)
     if mentor.status != 'Approved' or not mentor.verified:
         raise ValidationError("Only approved mentors can initiate step-down.")
 
-    # Concurrency check: Ensure no accepted sessions exist
-    accepted_count = MentorshipRequest.objects.filter(mentor=mentor, status='Accepted').count()
-    if accepted_count > 0:
+    # 2. Concurrency check & lock: Lock ALL active and pending requests for this mentor
+    active_and_pending_requests = list(
+        MentorshipRequest.objects.select_for_update().filter(
+            mentor=mentor,
+            status__in=['Pending', 'Accepted']
+        )
+    )
+    accepted_sessions = [r for r in active_and_pending_requests if r.status == 'Accepted']
+    if accepted_sessions:
         raise ValidationError(
-            f"Cannot step down while {accepted_count} accepted session(s) remain unresolved. "
+            f"Cannot step down while {len(accepted_sessions)} accepted session(s) remain unresolved. "
             "Please complete or cancel them before stepping down."
         )
 
-    # 1. Automatically cancel all pending requests with student notifications
-    pending_requests = MentorshipRequest.objects.select_for_update().filter(mentor=mentor, status='Pending')
+    # 3. Automatically cancel all pending requests with student notifications
+    pending_requests = [r for r in active_and_pending_requests if r.status == 'Pending']
     for req in pending_requests:
         req.status = 'Cancelled'
         req.mentor_response = "Mentor has temporarily stepped down from mentorship."
@@ -533,13 +601,22 @@ def execute_mentor_step_down_service(user, reason=""):
             related_request=req
         )
 
-    # 2. Deactivate mentor profile
+    # 4. Deactivate mentor profile and persist step-down reason
     mentor.status = 'Inactive'
     mentor.is_paused = True
     mentor.stepped_down_at = timezone.now()
-    mentor.save(update_fields=['status', 'is_paused', 'stepped_down_at'])
+    mentor.step_down_reason = reason or ''
+    mentor.save(update_fields=['status', 'is_paused', 'stepped_down_at', 'step_down_reason'])
 
-    # 3. Notify mentor
+    # 5. Persist structured lifecycle audit event
+    MentorLifecycleEvent.objects.create(
+        mentor=mentor,
+        event_type='step_down',
+        actor=user,
+        reason=reason or ''
+    )
+
+    # 6. Notify mentor
     create_notification(
         recipient=user,
         actor=None,
@@ -553,7 +630,7 @@ def execute_mentor_step_down_service(user, reason=""):
 
 
 @transaction.atomic
-def reactivate_mentor_service(user, resume_bookings=True):
+def reactivate_mentor_service(user, resume_bookings=True, reason=""):
     """
     Reactivates a previously approved mentor profile that was voluntarily stepped down (status='Inactive').
     Does not require new administrative approval.
@@ -562,6 +639,7 @@ def reactivate_mentor_service(user, resume_bookings=True):
     if not hasattr(user, 'mentor_profile'):
         raise ValidationError("No mentor profile found for this user.")
 
+    # 1. Row-lock MentorProfile
     mentor = MentorProfile.objects.select_for_update().get(user=user)
 
     if mentor.status == 'Blocked':
@@ -577,10 +655,21 @@ def reactivate_mentor_service(user, resume_bookings=True):
         mentor.status = 'Approved'
         mentor.verified = True
         mentor.stepped_down_at = None
+        mentor.step_down_reason = ''
         mentor.is_paused = not resume_bookings
         if not mentor.is_paused:
             mentor.paused_at = None
-        mentor.save(update_fields=['status', 'verified', 'stepped_down_at', 'is_paused', 'paused_at'])
+        else:
+            mentor.paused_at = timezone.now()
+        mentor.save(update_fields=['status', 'verified', 'stepped_down_at', 'step_down_reason', 'is_paused', 'paused_at'])
+
+        # Persist structured lifecycle audit event
+        MentorLifecycleEvent.objects.create(
+            mentor=mentor,
+            event_type='reactivate',
+            actor=user,
+            reason=reason or ''
+        )
 
         create_notification(
             recipient=user,

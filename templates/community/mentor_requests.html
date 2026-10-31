@@ -153,6 +153,10 @@
                                     data-req-id="{{ req.id }}" data-action="complete">
                                 <i class="bi bi-check2-all me-1"></i> Mark as Completed
                             </button>
+                            <button type="button" class="dash-btn dash-btn-outline-danger dash-btn-sm text-danger" data-bs-toggle="modal" data-bs-target="#actionModal"
+                                    data-req-id="{{ req.id }}" data-action="cancel">
+                                <i class="bi bi-x-circle me-1"></i> Cancel Session
+                            </button>
                             {% endif %}
                         </div>
                     </div>
@@ -236,18 +240,40 @@ document.addEventListener('DOMContentLoaded', function() {
             actionForm.action = `/community/mentors/dashboard/requests/${reqId}/respond/`;
             actionInput.value = action;
 
+            const submitBtn = document.getElementById('submitBtn');
+
             if (action === 'accept') {
                 modalTitle.textContent = "Accept Mentorship Session";
                 meetingLinkGroup.classList.remove('d-none');
                 if (meetingInput) meetingInput.required = true;
+                if (submitBtn) {
+                    submitBtn.textContent = "Confirm Acceptance";
+                    submitBtn.className = "dash-btn dash-btn-success dash-btn-sm px-4 fw-medium";
+                }
             } else if (action === 'reject') {
                 modalTitle.textContent = "Decline Session Request";
                 meetingLinkGroup.classList.add('d-none');
                 if (meetingInput) meetingInput.required = false;
+                if (submitBtn) {
+                    submitBtn.textContent = "Decline Request";
+                    submitBtn.className = "dash-btn dash-btn-danger dash-btn-sm px-4 fw-medium";
+                }
             } else if (action === 'complete') {
                 modalTitle.textContent = "Mark Session as Completed";
                 meetingLinkGroup.classList.add('d-none');
                 if (meetingInput) meetingInput.required = false;
+                if (submitBtn) {
+                    submitBtn.textContent = "Mark as Completed";
+                    submitBtn.className = "dash-btn dash-btn-primary dash-btn-sm px-4 fw-medium";
+                }
+            } else if (action === 'cancel') {
+                modalTitle.textContent = "Cancel Mentorship Session";
+                meetingLinkGroup.classList.add('d-none');
+                if (meetingInput) meetingInput.required = false;
+                if (submitBtn) {
+                    submitBtn.textContent = "Confirm Cancellation";
+                    submitBtn.className = "dash-btn dash-btn-danger dash-btn-sm px-4 fw-medium";
+                }
             }
         });
     }
