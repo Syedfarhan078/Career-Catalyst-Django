@@ -116,6 +116,7 @@ class MentorProfile(models.Model):
         ('Approved', 'Approved'),
         ('Rejected', 'Rejected'),
         ('Blocked', 'Blocked'),
+        ('Inactive', 'Inactive'),
     ]
     
     MENTORSHIP_TYPE_CHOICES = [
@@ -153,6 +154,11 @@ class MentorProfile(models.Model):
     total_reviews = models.IntegerField(default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     verified = models.BooleanField(default=False)
+    
+    # Mentor Lifecycle & Availability Control
+    is_paused = models.BooleanField(default=False, help_text="True if mentor has temporarily paused accepting new booking requests.")
+    paused_at = models.DateTimeField(null=True, blank=True)
+    stepped_down_at = models.DateTimeField(null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

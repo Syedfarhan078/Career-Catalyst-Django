@@ -71,6 +71,16 @@
                 <i class="bi bi-arrow-right-short ms-auto text-muted"></i>
             </a>
         </div>
+        {% elif user.mentor_profile and user.mentor_profile.status == 'Inactive' %}
+        <!-- REACTIVATE MENTOR -->
+        <div class="dash-nav-group pt-2 border-top">
+            <span class="dash-nav-label">Mentorship</span>
+            <a href="{% url 'community:mentor_register' %}" class="dash-nav-link text-primary fw-medium" title="Reactivate Mentor Profile">
+                <i class="bi bi-arrow-repeat text-primary"></i>
+                <span>Reactivate Mentor</span>
+                <i class="bi bi-arrow-right-short ms-auto text-muted"></i>
+            </a>
+        </div>
         {% endif %}
     </nav>
 

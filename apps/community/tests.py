@@ -1134,3 +1134,281 @@ class Phase2MentorWorkspaceTests(TestCase):
         self.client.force_login(self.mentor_user)
         dash_mentor = self.client.get(reverse('dashboard'))
         self.assertContains(dash_mentor, 'Switch to Mentor Workspace')
+
+
+class Phase4MentorLifecycleTests(TestCase):
+    """
+    Phase 4: Comprehensive test suite for Mentor Lifecycle:
+    Pause/Resume Availability, Step-Down Workflow, Inactive State,
+    Reactivation, and Administrative Blocking.
+    """
+    def setUp(self):
+        self.student_user = User.objects.create_user(
+            username='student_p4',
+            email='p4_student@test.com',
+            password='password123'
+        )
+        self.student_profile = StudentProfile.objects.create(
+            user=self.student_user,
+            preferred_domain='Backend'
+        )
+
+        self.mentor_user = User.objects.create_user(
+            username='mentor_p4',
+            email='p4_mentor@test.com',
+            password='password123'
+        )
+        self.mentor_student_profile = StudentProfile.objects.create(
+            user=self.mentor_user,
+            preferred_domain='DevOps',
+            career_goal='Lead Architect'
+        )
+        self.mentor_profile = MentorProfile.objects.create(
+            user=self.mentor_user,
+            full_name='Dr. Gordon Freeman',
+            email='gordon@blackmesa.gov',
+            company='Black Mesa',
+            designation='Research Fellow',
+            experience_years=10,
+            status='Approved',
+            verified=True,
+            available_days='Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday',
+            available_time_slots='10:00 AM - 12:00 PM',
+            max_sessions_per_week=10,
+            is_paused=False
+        )
+
+        self.staff_user = User.objects.create_user(
+            username='staff_p4',
+            email='staff_p4@test.com',
+            password='password123',
+            is_staff=True
+        )
+
+        self.future_date = timezone.now().date() + timedelta(days=2)
+
+    def test_pause_and_resume_availability_workflow(self):
+        """Phase 4: Approved mentor can pause availability, disappearing from marketplace, and resume."""
+        self.client.force_login(self.mentor_user)
+
+        # 1. Pause availability
+        res_pause = self.client.post(reverse('community:pause_availability'))
+        self.assertRedirects(res_pause, reverse('community:mentor_dashboard'))
+
+        self.mentor_profile.refresh_from_db()
+        self.assertTrue(self.mentor_profile.is_paused)
+        self.assertIsNotNone(self.mentor_profile.paused_at)
+
+        # 2. Marketplace excludes paused mentor
+        self.client.force_login(self.student_user)
+        market_res = self.client.get(reverse('community:mentor_list'))
+        self.assertNotContains(market_res, 'Dr. Gordon Freeman')
+
+        # 3. Direct booking attempt is rejected
+        booking_res = self.client.post(
+            reverse('community:book_session', args=[self.mentor_profile.id]),
+            {
+                "requested_date": self.future_date.strftime("%Y-%m-%d"),
+                "requested_time": "10:00:00",
+                "purpose": "Career Guidance",
+                "student_message": "Trying to book paused mentor"
+            }
+        )
+        self.assertEqual(booking_res.status_code, 302)
+        self.assertEqual(MentorshipRequest.objects.count(), 0)
+
+        # 4. Resume availability
+        self.client.force_login(self.mentor_user)
+        res_resume = self.client.post(reverse('community:resume_availability'))
+        self.assertRedirects(res_resume, reverse('community:mentor_dashboard'))
+
+        self.mentor_profile.refresh_from_db()
+        self.assertFalse(self.mentor_profile.is_paused)
+        self.assertIsNone(self.mentor_profile.paused_at)
+
+        # 5. Marketplace now displays mentor
+        self.client.force_login(self.student_user)
+        market_res2 = self.client.get(reverse('community:mentor_list'))
+        self.assertContains(market_res2, 'Dr. Gordon Freeman')
+
+    def test_pause_availability_preserves_existing_sessions(self):
+        """Phase 4: Pausing availability leaves scheduled accepted sessions intact and mentor workspace accessible."""
+        req = MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Accepted"
+        )
+        self.client.force_login(self.mentor_user)
+        self.client.post(reverse('community:pause_availability'))
+
+        # Session remains Accepted
+        req.refresh_from_db()
+        self.assertEqual(req.status, 'Accepted')
+
+        # Mentor can still access mentor dashboard
+        dash_res = self.client.get(reverse('community:mentor_dashboard'))
+        self.assertEqual(dash_res.status_code, 200)
+        self.assertContains(dash_res, 'Availability Paused')
+
+    def test_step_down_blocked_by_unresolved_accepted_sessions(self):
+        """Phase 4: Mentor cannot step down while accepted sessions remain unresolved."""
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Roadmap Discussion",
+            status="Accepted"
+        )
+        self.client.force_login(self.mentor_user)
+
+        # GET confirms step-down is blocked
+        get_res = self.client.get(reverse('community:mentor_step_down'))
+        self.assertEqual(get_res.status_code, 200)
+        self.assertFalse(get_res.context['eligible'])
+        self.assertContains(get_res, 'Step-down blocked')
+
+        # POST is rejected
+        post_res = self.client.post(reverse('community:mentor_step_down'), {'reason': 'Stepping down'})
+        self.assertRedirects(post_res, reverse('community:mentor_step_down'))
+
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.status, 'Approved')
+
+    def test_step_down_execution_cancels_pending_requests_and_notifies_students(self):
+        """Phase 4: Step-down cancels pending requests, notifies students, and sets status to Inactive."""
+        student2 = User.objects.create_user(username='student_two', email='s2@test.com', password='pw')
+
+        req1 = MentorshipRequest.objects.create(
+            student=self.student_user, mentor=self.mentor_profile,
+            requested_date=self.future_date, requested_time="10:00:00",
+            purpose="Career Guidance", status="Pending"
+        )
+        req2 = MentorshipRequest.objects.create(
+            student=student2, mentor=self.mentor_profile,
+            requested_date=self.future_date, requested_time="11:00:00",
+            purpose="Resume Review", status="Pending"
+        )
+
+        self.client.force_login(self.mentor_user)
+        res = self.client.post(reverse('community:mentor_step_down'), {'reason': 'Taking a sabbatical'})
+        self.assertRedirects(res, reverse('dashboard'))
+
+        # Mentor profile state
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.status, 'Inactive')
+        self.assertTrue(self.mentor_profile.is_paused)
+        self.assertIsNotNone(self.mentor_profile.stepped_down_at)
+
+        # Both pending requests cancelled
+        req1.refresh_from_db()
+        req2.refresh_from_db()
+        self.assertEqual(req1.status, 'Cancelled')
+        self.assertEqual(req2.status, 'Cancelled')
+
+        # Session role reset
+        self.assertEqual(self.client.session.get('active_role'), 'student')
+
+    def test_stepped_down_mentor_denied_mentor_workspace(self):
+        """Phase 4: Inactive mentors cannot access mentor workspace and are clamped to student."""
+        self.mentor_profile.status = 'Inactive'
+        self.mentor_profile.is_paused = True
+        self.mentor_profile.save()
+
+        self.client.force_login(self.mentor_user)
+
+        # Cannot switch to mentor role
+        switch_res = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
+        self.assertRedirects(switch_res, reverse('dashboard'))
+        self.assertEqual(self.client.session.get('active_role'), 'student')
+
+        # Visiting mentor dashboard renders mentor_status.html with reactivate option
+        dash_res = self.client.get(reverse('community:mentor_dashboard'))
+        self.assertEqual(dash_res.status_code, 200)
+        self.assertContains(dash_res, 'Mentor Account Inactive')
+        self.assertContains(dash_res, 'Reactivate Mentor Profile')
+
+    def test_reactivate_inactive_mentor(self):
+        """Phase 4: Inactive mentor can self-reactivate without administrative re-approval."""
+        self.mentor_profile.status = 'Inactive'
+        self.mentor_profile.is_paused = True
+        self.mentor_profile.save()
+
+        self.client.force_login(self.mentor_user)
+
+        reactivate_res = self.client.post(
+            reverse('community:reactivate_mentor'),
+            {'resume_bookings': '1'}
+        )
+        self.assertRedirects(reactivate_res, reverse('community:mentor_dashboard'))
+
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.status, 'Approved')
+        self.assertTrue(self.mentor_profile.verified)
+        self.assertFalse(self.mentor_profile.is_paused)
+        self.assertEqual(self.client.session.get('active_role'), 'mentor')
+
+    def test_reactivate_blocked_mentor_prohibited(self):
+        """Phase 4: Administratively blocked mentors cannot self-reactivate."""
+        self.mentor_profile.status = 'Blocked'
+        self.mentor_profile.verified = False
+        self.mentor_profile.save()
+
+        self.client.force_login(self.mentor_user)
+        res = self.client.post(reverse('community:reactivate_mentor'))
+        self.assertRedirects(res, reverse('dashboard'))
+
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.status, 'Blocked')
+
+    def test_admin_blocking_mentor_cancels_pending_requests(self):
+        """Phase 4: Admin blocking a mentor automatically cancels pending requests with student alerts."""
+        req = MentorshipRequest.objects.create(
+            student=self.student_user, mentor=self.mentor_profile,
+            requested_date=self.future_date, requested_time="10:00:00",
+            purpose="Career Guidance", status="Pending"
+        )
+        self.client.force_login(self.staff_user)
+
+        res = self.client.post(
+            reverse('community:admin_action', args=[self.mentor_profile.id, 'block'])
+        )
+        self.assertRedirects(res, reverse('community:admin_verify'))
+
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.status, 'Blocked')
+
+        req.refresh_from_db()
+        self.assertEqual(req.status, 'Cancelled')
+
+    def test_lifecycle_get_mutations_rejected(self):
+        """Phase 4: GET requests cannot mutate lifecycle states (require POST)."""
+        self.client.force_login(self.mentor_user)
+
+        # GET pause -> 405
+        res1 = self.client.get(reverse('community:pause_availability'))
+        self.assertEqual(res1.status_code, 405)
+
+        # GET resume -> 405
+        res2 = self.client.get(reverse('community:resume_availability'))
+        self.assertEqual(res2.status_code, 405)
+
+        # GET reactivate -> 405
+        res3 = self.client.get(reverse('community:reactivate_mentor'))
+        self.assertEqual(res3.status_code, 405)
+
+    def test_unauthenticated_lifecycle_access_redirects(self):
+        """Phase 4: Unauthenticated access to lifecycle endpoints is redirected to login."""
+        urls = [
+            reverse('community:pause_availability'),
+            reverse('community:resume_availability'),
+            reverse('community:mentor_step_down'),
+            reverse('community:reactivate_mentor'),
+        ]
+        for url in urls:
+            res = self.client.post(url)
+            self.assertEqual(res.status_code, 302)
+            self.assertIn('/accounts/login/', res.url)

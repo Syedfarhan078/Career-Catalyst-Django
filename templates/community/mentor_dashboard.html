@@ -65,6 +65,21 @@
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
+                    {% if mentor.is_paused %}
+                    <form method="post" action="{% url 'community:resume_availability' %}" class="d-inline m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="dash-btn dash-btn-sm text-white" style="background: #10B981;" title="Resume accepting session requests">
+                            <i class="bi bi-play-circle-fill me-1"></i> Resume Availability
+                        </button>
+                    </form>
+                    {% else %}
+                    <form method="post" action="{% url 'community:pause_availability' %}" class="d-inline m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="dash-btn dash-btn-outline dash-btn-sm" title="Temporarily pause incoming bookings">
+                            <i class="bi bi-pause-circle me-1"></i> Pause Requests
+                        </button>
+                    </form>
+                    {% endif %}
                     <a href="{% url 'community:mentor_mentees' %}" class="dash-btn dash-btn-outline dash-btn-sm">
                         <i class="bi bi-people me-1"></i> My Mentees
                     </a>
@@ -77,8 +92,28 @@
                     <a href="{% url 'community:mentor_requests' %}" class="dash-btn dash-btn-primary dash-btn-sm">
                         <i class="bi bi-inbox me-1"></i> Incoming Requests
                     </a>
+                    <a href="{% url 'community:mentor_step_down' %}" class="dash-btn dash-btn-outline dash-btn-sm text-danger border-danger-subtle" title="Voluntarily step down as mentor">
+                        <i class="bi bi-box-arrow-right me-1 text-danger"></i> Step Down
+                    </a>
                 </div>
             </div>
+
+            {% if mentor.is_paused %}
+            <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between p-3 rounded-3 mb-4 shadow-sm border-warning gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-pause-circle-fill fs-4 text-warning"></i>
+                    <div>
+                        <strong>Availability Paused:</strong> You are temporarily not accepting new session requests in the directory. Existing scheduled sessions remain active.
+                    </div>
+                </div>
+                <form method="post" action="{% url 'community:resume_availability' %}" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-warning text-dark fw-semibold">
+                        <i class="bi bi-play-fill me-1"></i> Resume Requests
+                    </button>
+                </form>
+            </div>
+            {% endif %}
 
             <!-- Metrics Summary Cards -->
             <div class="community-metrics-row">

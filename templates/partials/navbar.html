@@ -209,6 +209,13 @@
                                         </a>
                                     {% endif %}
                                 </li>
+                            {% elif user.mentor_profile and user.mentor_profile.status == 'Inactive' %}
+                                <li><hr class="dropdown-divider my-2"></li>
+                                <li class="px-3 py-1">
+                                    <a href="{% url 'community:mentor_register' %}" class="btn btn-sm btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2 py-1" style="font-size: 0.8rem;">
+                                        <i class="bi bi-arrow-repeat"></i> Reactivate Mentor
+                                    </a>
+                                </li>
                             {% endif %}
                             <li><hr class="dropdown-divider my-2"></li>
 

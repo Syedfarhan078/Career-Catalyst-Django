@@ -29,7 +29,10 @@ from .services import (
     register_mentor_service, update_mentor_profile_service, 
     review_mentor_application_service, create_mentorship_request_service, 
     respond_to_request_service, submit_mentor_review_service, 
-    save_mentor_availability_service
+    save_mentor_availability_service,
+    pause_mentor_availability_service, resume_mentor_availability_service,
+    get_mentor_step_down_readiness, execute_mentor_step_down_service,
+    reactivate_mentor_service
 )
 from .utils import calculate_mentor_match_score
 
@@ -86,7 +89,7 @@ class CommunityHubView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["recent_threads"] = ForumThread.objects.select_related('category', 'author', 'author__mentor_profile').order_by('-created_at')[:3]
-        context["active_mentors"] = MentorProfile.objects.filter(status='Approved', verified=True).select_related('user')[:4]
+        context["active_mentors"] = MentorProfile.objects.filter(status='Approved', verified=True, is_paused=False).select_related('user')[:4]
         context["recent_projects"] = SharedProject.objects.select_related('author').annotate(likes_count=Count('likes')).order_by('-created_at')[:3]
         context["recent_stories"] = SuccessStory.objects.all()[:3]
         
@@ -270,8 +273,8 @@ class MarketplaceListView(ListView):
     paginate_by = 9
 
     def get_queryset(self):
-        # Only public visible approved mentors
-        queryset = MentorProfile.objects.filter(status='Approved', verified=True).select_related('user').prefetch_related('mentor_skills')
+        # Only public visible approved and unpaused mentors
+        queryset = MentorProfile.objects.filter(status='Approved', verified=True, is_paused=False).select_related('user').prefetch_related('mentor_skills')
         
         # Advanced Filtering
         search_query = self.request.GET.get('search', '').strip()
@@ -410,7 +413,7 @@ def mentor_register(request):
     if existing_profile:
         if existing_profile.status == 'Approved':
             return redirect('community:mentor_dashboard')
-        elif existing_profile.status in ['Pending', 'Blocked']:
+        elif existing_profile.status in ['Pending', 'Blocked', 'Inactive']:
             ctx = get_user_sidebar_context(request.user)
             ctx['profile'] = existing_profile
             ctx['mentor_profile'] = existing_profile
@@ -546,6 +549,86 @@ def mentor_mentees_view(request):
     })
 
 
+# ==========================================
+# PHASE 4: MENTOR LIFECYCLE ENDPOINTS
+# ==========================================
+
+@login_required
+@mentor_required
+@require_POST
+def pause_availability_view(request):
+    """
+    POST-only endpoint allowing approved mentors to temporarily pause new incoming requests.
+    """
+    pause_mentor_availability_service(request.user)
+    messages.info(request, "Your mentorship availability is now paused. New booking requests are stopped, while existing sessions remain active.")
+    return redirect('community:mentor_dashboard')
+
+
+@login_required
+@mentor_required
+@require_POST
+def resume_availability_view(request):
+    """
+    POST-only endpoint allowing approved mentors to resume availability in the marketplace.
+    """
+    resume_mentor_availability_service(request.user)
+    messages.success(request, "Your mentorship availability has resumed. Your profile is now visible for new bookings in the directory.")
+    return redirect('community:mentor_dashboard')
+
+
+@login_required
+@mentor_required
+def mentor_step_down_view(request):
+    """
+    Step-down workflow view.
+    GET: Displays step-down confirmation page with outstanding sessions and readiness status.
+    POST: Validates that no accepted sessions remain, automatically cancels pending requests,
+          transitions status to 'Inactive', and returns the user to Student Workspace.
+    """
+    readiness = get_mentor_step_down_readiness(request.user)
+    mentor = request.user.mentor_profile
+
+    if request.method == 'POST':
+        try:
+            execute_mentor_step_down_service(request.user, reason=request.POST.get('reason', ''))
+            request.session['active_role'] = 'student'
+            messages.success(request, "You have stepped down from the mentor role. Your profile is now inactive and can be reactivated at any time.")
+            return redirect('dashboard')
+        except ValidationError as e:
+            messages.error(request, e.message if hasattr(e, 'message') else str(e))
+            return redirect('community:mentor_step_down')
+
+    return render(request, "community/mentor_step_down.html", {
+        "mentor": mentor,
+        "readiness": readiness,
+        "eligible": readiness['eligible'],
+        "accepted_sessions": readiness['accepted_sessions'],
+        "pending_requests": readiness['pending_requests'],
+        "accepted_count": readiness['accepted_count'],
+        "pending_count": readiness['pending_count'],
+        **get_user_sidebar_context(request.user)
+    })
+
+
+@login_required
+@require_POST
+def reactivate_mentor_view(request):
+    """
+    POST-only endpoint allowing previously approved, stepped-down mentors to self-reactivate.
+    Restores approved status, verified state, and mentor workspace access.
+    """
+    try:
+        resume_bookings = (request.POST.get('resume_bookings', '1') == '1')
+        mentor = reactivate_mentor_service(request.user, resume_bookings=resume_bookings)
+        request.session['active_role'] = 'mentor'
+        messages.success(request, "Welcome back! Your mentor profile has been reactivated.")
+        return redirect('community:mentor_dashboard')
+    except ValidationError as e:
+        messages.error(request, e.message if hasattr(e, 'message') else str(e))
+        return redirect('dashboard')
+
+
 @login_required
 @mentor_required
 def edit_mentor_profile(request):
@@ -617,6 +700,10 @@ def book_mentorship_session(request, mentor_id):
         if mentor.status != 'Approved' or not mentor.verified:
             messages.error(request, "This mentor is not currently accepting mentorship bookings.")
             return redirect('community:mentor_list')
+
+        if mentor.is_paused:
+            messages.error(request, f"{mentor.full_name} has temporarily paused accepting new mentorship bookings.")
+            return redirect('community:mentor_detail', pk=mentor.id)
 
         # Prevent self-booking
         if mentor.user == request.user:

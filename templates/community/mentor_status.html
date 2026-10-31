@@ -103,6 +103,31 @@
                             <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fw-semibold">
                                 Status: Suspended
                             </span>
+
+                        {% elif profile.status == 'Inactive' %}
+                            <div class="community-metric-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem; background: rgba(59, 130, 246, 0.1); color: #2563EB;">
+                                <i class="bi bi-person-check-fill"></i>
+                            </div>
+                            <h1 class="h4 fw-bold text-body mb-2">Mentor Account Inactive</h1>
+                            <p class="text-muted small mb-3 lh-base">
+                                You voluntarily stepped down from your mentor role. All your previous mentorship history, student reviews, and credentials remain safely preserved. You can reactivate your account at any time without submitting a new application.
+                            </p>
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2 fw-semibold mb-4 d-inline-block">
+                                Status: Inactive (Voluntary Step-Down)
+                            </span>
+
+                            <form method="post" action="{% url 'community:reactivate_mentor' %}" class="mt-2 text-start p-3 bg-light rounded-3 border">
+                                {% csrf_token %}
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="resume_bookings" value="1" id="id_resume_bookings" checked>
+                                    <label class="form-check-label small fw-medium text-body" for="id_resume_bookings">
+                                        Resume receiving new session requests immediately upon reactivation
+                                    </label>
+                                </div>
+                                <button type="submit" class="dash-btn dash-btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="bi bi-arrow-repeat"></i> Reactivate Mentor Profile
+                                </button>
+                            </form>
                         {% endif %}
 
                         <div class="pt-4 border-top mt-4">

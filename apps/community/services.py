@@ -120,6 +120,22 @@ def review_mentor_application_service(profile, action, reviewer):
         msg = "Your mentor profile has been blocked by administrators due to policy violations."
         n_type = 'mentorship_profile_blocked'
         target = reverse('community:mentor_register')
+
+        # Automatically cancel pending requests and notify affected students
+        pending_requests = MentorshipRequest.objects.select_for_update().filter(mentor=profile, status='Pending')
+        for req in pending_requests:
+            req.status = 'Cancelled'
+            req.mentor_response = "Mentor is unavailable."
+            req.save(update_fields=['status', 'mentor_response'])
+            create_notification(
+                recipient=req.student,
+                actor=reviewer,
+                title="Mentorship Request Cancelled",
+                message=f"Your pending mentorship request with {profile.full_name} was cancelled as the mentor is no longer available.",
+                notification_type='mentorship_session_cancelled',
+                target_url=reverse('community:student_bookings'),
+                related_request=req
+            )
     else:
         raise ValueError(f"Invalid review action: {action}")
         
@@ -149,6 +165,9 @@ def create_mentorship_request_service(student, mentor, form_cleaned_data):
 
     if mentor.status != 'Approved' or not mentor.verified:
         raise ValidationError("Cannot book a session with a mentor who is not currently active and approved.")
+
+    if mentor.is_paused:
+        raise ValidationError("This mentor has temporarily paused accepting new booking requests.")
 
     if mentor.user == student:
         raise ValidationError("You cannot book a mentorship session with yourself.")
@@ -379,3 +398,199 @@ def save_mentor_availability_service(mentor, day, start_time, end_time, max_sess
         }
     )
     return availability
+
+
+# ==========================================
+# PHASE 4: MENTOR LIFECYCLE SERVICES
+# ==========================================
+
+@transaction.atomic
+def pause_mentor_availability_service(user):
+    """
+    Temporarily pauses an approved mentor's availability for new booking requests.
+    Existing sessions, reviews, and mentor workspace access remain intact.
+    """
+    if not hasattr(user, 'mentor_profile'):
+        raise ValidationError("User has no mentor profile.")
+
+    mentor = MentorProfile.objects.select_for_update().get(user=user)
+    if mentor.status != 'Approved' or not mentor.verified:
+        raise ValidationError("Only approved and verified mentors can pause availability.")
+
+    if mentor.is_paused:
+        return mentor  # Idempotent
+
+    mentor.is_paused = True
+    mentor.paused_at = timezone.now()
+    mentor.save(update_fields=['is_paused', 'paused_at'])
+
+    create_notification(
+        recipient=user,
+        actor=None,
+        title="Mentorship Availability Paused",
+        message="You have temporarily paused incoming booking requests. Existing sessions remain active.",
+        notification_type='general',
+        target_url=reverse('community:mentor_dashboard')
+    )
+    return mentor
+
+
+@transaction.atomic
+def resume_mentor_availability_service(user):
+    """
+    Resumes an approved mentor's availability to accept new bookings in the marketplace.
+    """
+    if not hasattr(user, 'mentor_profile'):
+        raise ValidationError("User has no mentor profile.")
+
+    mentor = MentorProfile.objects.select_for_update().get(user=user)
+    if mentor.status != 'Approved' or not mentor.verified:
+        raise ValidationError("Only approved and verified mentors can resume availability.")
+
+    if not mentor.is_paused:
+        return mentor  # Idempotent
+
+    mentor.is_paused = False
+    mentor.paused_at = None
+    mentor.save(update_fields=['is_paused', 'paused_at'])
+
+    create_notification(
+        recipient=user,
+        actor=None,
+        title="Mentorship Availability Resumed",
+        message="Your mentor profile is now active and accepting new session requests in the marketplace.",
+        notification_type='general',
+        target_url=reverse('community:mentor_dashboard')
+    )
+    return mentor
+
+
+def get_mentor_step_down_readiness(user):
+    """
+    Checks whether a mentor is eligible to step down.
+    Returns status and outstanding request querysets.
+    """
+    if not hasattr(user, 'mentor_profile'):
+        return {
+            'eligible': False,
+            'accepted_sessions': MentorshipRequest.objects.none(),
+            'pending_requests': MentorshipRequest.objects.none(),
+            'accepted_count': 0,
+            'pending_count': 0,
+        }
+
+    mentor = user.mentor_profile
+    accepted_sessions = MentorshipRequest.objects.filter(mentor=mentor, status='Accepted').select_related('student')
+    pending_requests = MentorshipRequest.objects.filter(mentor=mentor, status='Pending').select_related('student')
+    accepted_count = accepted_sessions.count()
+    pending_count = pending_requests.count()
+
+    return {
+        'eligible': (accepted_count == 0),
+        'accepted_sessions': accepted_sessions,
+        'pending_requests': pending_requests,
+        'accepted_count': accepted_count,
+        'pending_count': pending_count,
+    }
+
+
+@transaction.atomic
+def execute_mentor_step_down_service(user, reason=""):
+    """
+    Executes a voluntary step-down for an approved mentor.
+    Prerequisite: All accepted sessions must be resolved (completed or explicitly cancelled).
+    Automatically cancels all Pending requests with student notifications.
+    Transitions status to 'Inactive', preserves historical records, and notifies the mentor.
+    """
+    if not hasattr(user, 'mentor_profile'):
+        raise ValidationError("User has no mentor profile.")
+
+    mentor = MentorProfile.objects.select_for_update().get(user=user)
+    if mentor.status != 'Approved' or not mentor.verified:
+        raise ValidationError("Only approved mentors can initiate step-down.")
+
+    # Concurrency check: Ensure no accepted sessions exist
+    accepted_count = MentorshipRequest.objects.filter(mentor=mentor, status='Accepted').count()
+    if accepted_count > 0:
+        raise ValidationError(
+            f"Cannot step down while {accepted_count} accepted session(s) remain unresolved. "
+            "Please complete or cancel them before stepping down."
+        )
+
+    # 1. Automatically cancel all pending requests with student notifications
+    pending_requests = MentorshipRequest.objects.select_for_update().filter(mentor=mentor, status='Pending')
+    for req in pending_requests:
+        req.status = 'Cancelled'
+        req.mentor_response = "Mentor has temporarily stepped down from mentorship."
+        req.save(update_fields=['status', 'mentor_response'])
+        create_notification(
+            recipient=req.student,
+            actor=user,
+            title="Mentorship Request Cancelled",
+            message=f"Your pending mentorship request with {mentor.full_name} was cancelled because the mentor has stepped down from mentorship.",
+            notification_type='mentorship_session_cancelled',
+            target_url=reverse('community:student_bookings'),
+            related_request=req
+        )
+
+    # 2. Deactivate mentor profile
+    mentor.status = 'Inactive'
+    mentor.is_paused = True
+    mentor.stepped_down_at = timezone.now()
+    mentor.save(update_fields=['status', 'is_paused', 'stepped_down_at'])
+
+    # 3. Notify mentor
+    create_notification(
+        recipient=user,
+        actor=None,
+        title="Mentor Profile Deactivated",
+        message="You have voluntarily stepped down as a mentor. Your history, reviews, and completed sessions remain preserved. You can reactivate anytime from your account settings.",
+        notification_type='general',
+        target_url=reverse('dashboard')
+    )
+
+    return mentor
+
+
+@transaction.atomic
+def reactivate_mentor_service(user, resume_bookings=True):
+    """
+    Reactivates a previously approved mentor profile that was voluntarily stepped down (status='Inactive').
+    Does not require new administrative approval.
+    Blocked or rejected profiles cannot self-reactivate.
+    """
+    if not hasattr(user, 'mentor_profile'):
+        raise ValidationError("No mentor profile found for this user.")
+
+    mentor = MentorProfile.objects.select_for_update().get(user=user)
+
+    if mentor.status == 'Blocked':
+        raise ValidationError("Your mentor account is suspended by administrators and cannot be self-reactivated.")
+    if mentor.status == 'Rejected':
+        raise ValidationError("Your mentor application was declined. Please submit a new application.")
+    if mentor.status == 'Pending':
+        raise ValidationError("Your mentor application is currently awaiting initial admin review.")
+    if mentor.status == 'Approved':
+        return mentor  # Already approved, idempotent
+
+    if mentor.status == 'Inactive':
+        mentor.status = 'Approved'
+        mentor.verified = True
+        mentor.stepped_down_at = None
+        mentor.is_paused = not resume_bookings
+        if not mentor.is_paused:
+            mentor.paused_at = None
+        mentor.save(update_fields=['status', 'verified', 'stepped_down_at', 'is_paused', 'paused_at'])
+
+        create_notification(
+            recipient=user,
+            actor=None,
+            title="Mentor Profile Reactivated!",
+            message="Your mentor profile has been reactivated. Welcome back to the CareerCatalyst Mentor Community!",
+            notification_type='general',
+            target_url=reverse('community:mentor_dashboard')
+        )
+        return mentor
+
+    raise ValidationError(f"Invalid mentor profile state for reactivation: '{mentor.status}'.")
+

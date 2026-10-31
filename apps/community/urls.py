@@ -35,6 +35,10 @@ urlpatterns = [
     path('mentors/dashboard/requests/', views.mentor_requests_list, name='mentor_requests'),
     path('mentors/dashboard/requests/<int:pk>/respond/', views.respond_to_request, name='respond_request'),
     path('mentors/dashboard/mentees/', views.mentor_mentees_view, name='mentor_mentees'),
+    path('mentors/dashboard/pause/', views.pause_availability_view, name='pause_availability'),
+    path('mentors/dashboard/resume/', views.resume_availability_view, name='resume_availability'),
+    path('mentors/dashboard/step-down/', views.mentor_step_down_view, name='mentor_step_down'),
+    path('mentors/reactivate/', views.reactivate_mentor_view, name='reactivate_mentor'),
     path('workspace/switch/', views.switch_workspace, name='switch_workspace'),
     
     # Student Booking logs

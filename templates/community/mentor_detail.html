@@ -215,6 +215,13 @@
                         <!-- Booking Action Buttons -->
                         {% if mentor.user == request.user %}
                         <button class="dash-btn dash-btn-outline dash-btn-sm w-100" disabled>You cannot book with yourself</button>
+                        {% elif mentor.is_paused %}
+                        <div class="alert alert-warning small p-2 mb-2 text-center">
+                            <i class="bi bi-pause-circle me-1"></i> This mentor has temporarily paused new session requests.
+                        </div>
+                        <button class="dash-btn dash-btn-outline dash-btn-sm w-100" disabled>
+                            <i class="bi bi-pause-circle me-1"></i> Bookings Paused
+                        </button>
                         {% else %}
                         <button class="dash-btn dash-btn-primary dash-btn-sm w-100 py-2 fw-medium mb-2" data-bs-toggle="modal" data-bs-target="#bookingModal">
                             <i class="bi bi-calendar-plus me-1"></i> Request Mentorship Session
