@@ -1,0 +1,96 @@
+{% load static %}
+<!-- Dedicated Mentor Top Navigation / Header -->
+<header class="dash-mentor-header" aria-label="Mentor Workspace Header">
+    <div class="d-flex align-items-center gap-2">
+        <!-- Mobile Drawer Toggle -->
+        <button type="button" class="dash-mobile-toggle d-lg-none" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+            <i class="bi bi-list fs-5"></i>
+        </button>
+
+        <!-- Brand logo on mobile -->
+        <a href="{% if is_approved_mentor %}{% url 'community:mentor_dashboard' %}{% else %}{% url 'community:mentor_register' %}{% endif %}" class="dash-brand d-lg-none">
+            <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+            <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1" style="font-size: 0.6rem;">MENTOR</span>
+        </a>
+
+        <!-- Desktop Workspace Identifier & Live Status Context -->
+        <div class="d-none d-lg-flex align-items-center gap-2">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.04em;">
+                <i class="bi bi-person-workspace me-1"></i> MENTOR WORKSPACE
+            </span>
+            {% if is_approved_mentor %}
+                {% if mentor.is_paused %}
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                        <i class="bi bi-pause-circle-fill me-1"></i> Availability Paused
+                    </span>
+                {% else %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                        <i class="bi bi-check-circle-fill me-1"></i> Active & Verified
+                    </span>
+                {% endif %}
+            {% else %}
+                {% with current_mentor=mentor|default:user.mentor_profile %}
+                    {% if current_mentor %}
+                        {% if current_mentor.status == 'Pending' %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                                <i class="bi bi-clock-history me-1"></i> Verification Pending
+                            </span>
+                        {% elif current_mentor.status == 'Inactive' %}
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                                <i class="bi bi-pause-circle me-1"></i> Account Inactive
+                            </span>
+                        {% elif current_mentor.status == 'Rejected' %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                                <i class="bi bi-x-circle me-1"></i> Application Declined
+                            </span>
+                        {% elif current_mentor.status == 'Blocked' %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                                <i class="bi bi-shield-slash me-1"></i> Account Suspended
+                            </span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                            <i class="bi bi-pencil-square me-1"></i> Application Onboarding
+                        </span>
+                    {% endif %}
+                {% endwith %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Header Actions (Right) -->
+    <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'community:mentor_list' %}" class="dash-btn dash-btn-outline dash-btn-sm d-none d-sm-inline-flex" title="Browse Public Mentor Directory">
+            <i class="bi bi-search me-1"></i>
+            <span>Directory</span>
+        </a>
+
+        <!-- Notifications Bell -->
+        <a href="{% url 'notifications:history' %}" class="dash-btn dash-btn-outline dash-btn-sm position-relative p-2" title="Notifications & Alerts" aria-label="Notifications">
+            <i class="bi bi-bell"></i>
+            {% if unread_notifications_count > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                    {{ unread_notifications_count }}
+                </span>
+            {% endif %}
+        </a>
+
+        <!-- Theme Toggle -->
+        <button type="button" class="dash-btn dash-btn-outline dash-btn-sm p-2" onclick="window.toggleAppTheme(event)" title="Toggle light/dark theme" aria-label="Toggle theme">
+            <i class="bi bi-circle-half"></i>
+        </button>
+
+        <!-- Mentor Avatar Badge -->
+        {% with current_mentor=mentor|default:user.mentor_profile %}
+            <div class="dash-avatar-circle ms-1" style="width: 32px; height: 32px;">
+                {% if current_mentor and current_mentor.profile_photo %}
+                    <img src="{{ current_mentor.profile_photo.url }}" alt="{{ current_mentor.full_name|default:user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none; font-size: 0.75rem;">{{ user_initials }}</span>
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        {% endwith %}
+    </div>
+</header>

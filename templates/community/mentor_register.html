@@ -16,31 +16,16 @@
 
 {% block main_wrapper %}
 <div class="dash-shell">
-    <!-- Left Navigation Sidebar -->
-    {% include "core/partials/dashboard_sidebar.html" %}
+    <!-- Dedicated Mentor Navigation Sidebar -->
+    {% include "community/partials/mentor_sidebar.html" %}
 
     <!-- Backdrop Overlay for Mobile Drawer -->
     <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
     <!-- Main Workspace Area -->
     <div class="dash-main">
-        <!-- Top Header Bar on Mobile -->
-        <header class="dash-mobile-header" aria-label="Mobile Header">
-            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
-                <i class="bi bi-list"></i>
-            </button>
-            <a href="{% url 'dashboard' %}" class="dash-brand">
-                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
-                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
-            </a>
-            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
-                {% if profile.profile_picture %}
-                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
-                {% else %}
-                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
-                {% endif %}
-            </div>
-        </header>
+        <!-- Dedicated Mentor Top Header (Desktop & Mobile) -->
+        {% include "community/partials/mentor_header.html" %}
 
         <!-- Main Content Area -->
         <main class="dash-content">
@@ -53,11 +38,11 @@
             <!-- Header & Breadcrumbs -->
             <div class="community-header mb-4">
                 <div class="community-breadcrumbs">
-                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <a href="{% url 'community:mentor_register' %}"><i class="bi bi-person-badge me-1"></i> Mentor Workspace</a>
                     <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
                     <a href="{% url 'community:mentor_list' %}">Mentors</a>
                     <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
-                    <span>Mentor Registration</span>
+                    <span>Mentor Application</span>
                 </div>
                 <h1 class="community-title">Register as an Industry Mentor</h1>
                 <p class="community-subtitle">
@@ -183,6 +168,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('sidebarCloseBtn');
     const sidebar = document.querySelector('.dash-sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     if (toggleBtn && sidebar && overlay) {
@@ -194,6 +180,12 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebar.classList.remove('open');
             overlay.classList.remove('active');
         });
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+        }
     }
 });
 </script>

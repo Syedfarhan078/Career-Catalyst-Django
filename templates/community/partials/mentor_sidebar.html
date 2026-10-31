@@ -3,7 +3,7 @@
 <aside class="dash-sidebar mentor-sidebar" id="dashboardSidebar" aria-label="Mentor Application Sidebar">
     <!-- Sidebar Header / Brand -->
     <div class="dash-sidebar-header">
-        <a href="{% url 'community:mentor_dashboard' %}" class="dash-brand d-flex align-items-center">
+        <a href="{% if is_approved_mentor %}{% url 'community:mentor_dashboard' %}{% else %}{% url 'community:mentor_register' %}{% endif %}" class="dash-brand d-flex align-items-center">
             <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="28" height="28">
             <span class="ms-1">Career<span class="dash-brand-accent">Catalyst</span></span>
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2 px-2 py-0.5 fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em;">MENTOR</span>
@@ -18,6 +18,7 @@
         <!-- MENTOR WORKSPACE -->
         <div class="dash-nav-group">
             <span class="dash-nav-label">Mentorship Portal</span>
+            {% if is_approved_mentor %}
             <a href="{% url 'community:mentor_dashboard' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'mentor_dashboard' %}active{% endif %}">
                 <i class="bi bi-grid-fill"></i>
                 <span>Mentor Overview</span>
@@ -25,27 +26,65 @@
             <a href="{% url 'community:mentor_requests' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'mentor_requests' %}active{% endif %}">
                 <i class="bi bi-inbox-fill"></i>
                 <span>Incoming Requests</span>
+                {% if pending_sessions and pending_sessions > 0 %}
+                <span class="badge bg-primary rounded-pill ms-auto" style="font-size: 0.65rem;">{{ pending_sessions }}</span>
+                {% endif %}
             </a>
             <a href="{% url 'community:mentor_mentees' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'mentor_mentees' %}active{% endif %}">
                 <i class="bi bi-people-fill"></i>
                 <span>My Mentees</span>
             </a>
+            {% else %}
+            <a href="{% url 'community:mentor_register' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'mentor_register' %}active{% endif %}">
+                <i class="bi bi-card-checklist"></i>
+                <span>Application Status</span>
+            </a>
+            <div class="dash-nav-link text-muted opacity-75" style="cursor: not-allowed;" title="Feature locked until application verification">
+                <i class="bi bi-inbox"></i>
+                <span>Incoming Requests</span>
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle ms-auto" style="font-size: 0.6rem;"><i class="bi bi-lock-fill"></i> Locked</span>
+            </div>
+            <div class="dash-nav-link text-muted opacity-75" style="cursor: not-allowed;" title="Feature locked until application verification">
+                <i class="bi bi-people"></i>
+                <span>My Mentees</span>
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle ms-auto" style="font-size: 0.6rem;"><i class="bi bi-lock-fill"></i> Locked</span>
+            </div>
+            {% endif %}
         </div>
 
         <!-- OPERATIONS & REPUTATION -->
         <div class="dash-nav-group">
-            <span class="dash-nav-label">Operations</span>
+            <span class="dash-nav-label">Operations & Directory</span>
+            {% if is_approved_mentor %}
             <a href="{% url 'community:manage_availability' %}" class="dash-nav-link {% if 'availability' in request.path %}active{% endif %}">
                 <i class="bi bi-calendar3"></i>
                 <span>Availability Slots</span>
             </a>
             <a href="{% url 'community:edit_profile' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'edit_profile' %}active{% endif %}">
                 <i class="bi bi-person-badge"></i>
-                <span>Mentor Profile</span>
+                <span>My Mentor Profile</span>
             </a>
+            {% else %}
+            <div class="dash-nav-link text-muted opacity-75" style="cursor: not-allowed;" title="Feature locked until application verification">
+                <i class="bi bi-calendar3"></i>
+                <span>Availability Slots</span>
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle ms-auto" style="font-size: 0.6rem;"><i class="bi bi-lock-fill"></i> Locked</span>
+            </div>
+            <a href="{% url 'community:mentor_register' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'mentor_register' %}active{% endif %}">
+                <i class="bi bi-person-badge"></i>
+                <span>Application Details</span>
+            </a>
+            {% endif %}
             <a href="{% url 'community:mentor_list' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'mentor_list' %}active{% endif %}">
                 <i class="bi bi-shop"></i>
-                <span>Browse Directory</span>
+                <span>Mentor Directory</span>
+            </a>
+            <a href="{% url 'notifications:history' %}" class="dash-nav-link {% if 'notifications' in request.path %}active{% endif %}">
+                <i class="bi bi-bell"></i>
+                <span>Notifications</span>
+                {% if unread_notifications_count > 0 %}
+                <span class="badge bg-danger rounded-pill ms-auto" style="font-size: 0.65rem;">{{ unread_notifications_count }}</span>
+                {% endif %}
             </a>
         </div>
     </nav>
@@ -53,10 +92,17 @@
     <!-- Sidebar Bottom: Theme & User Card -->
     <div class="dash-sidebar-footer">
         <div class="d-flex align-items-center justify-content-between px-2 py-1">
+            {% if is_approved_mentor %}
             <a href="{% url 'community:edit_profile' %}" class="dash-settings-link {% if request.resolver_match.url_name == 'edit_profile' %}active{% endif %}" title="Mentor Settings">
                 <i class="bi bi-gear"></i>
                 <span>Settings</span>
             </a>
+            {% else %}
+            <a href="{% url 'community:mentor_register' %}" class="dash-settings-link" title="Application Status">
+                <i class="bi bi-gear"></i>
+                <span>Settings</span>
+            </a>
+            {% endif %}
             <a href="{% url 'notifications:history' %}" class="dash-settings-link position-relative" title="Notifications">
                 <i class="bi bi-bell"></i>
                 <span>Alerts</span>
@@ -69,25 +115,35 @@
             </button>
         </div>
 
+        {% with current_mentor=mentor|default:user.mentor_profile %}
         <div class="dash-user-badge">
             <div class="dash-avatar-circle">
-                {% if mentor.profile_photo %}
-                    <img src="{{ mentor.profile_photo.url }}" alt="{{ mentor.full_name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                {% if current_mentor and current_mentor.profile_photo %}
+                    <img src="{{ current_mentor.profile_photo.url }}" alt="{{ current_mentor.full_name|default:user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <span class="dash-avatar-initials" style="display: none;">{{ user_initials }}</span>
                 {% else %}
                     <span class="dash-avatar-initials">{{ user_initials }}</span>
                 {% endif %}
             </div>
             <div class="dash-user-info">
-                <div class="dash-user-name">{{ mentor.full_name|default:user.username }}</div>
-                <div class="dash-user-sub text-primary fw-semibold text-truncate" title="{{ mentor.designation }} at {{ mentor.company }}">
-                    {{ mentor.designation|default:"Verified Mentor" }}{% if mentor.company %} &bull; {{ mentor.company }}{% endif %}
+                <div class="dash-user-name">{{ current_mentor.full_name|default:user.username }}</div>
+                {% if is_approved_mentor %}
+                <div class="dash-user-sub text-primary fw-semibold text-truncate" title="{{ current_mentor.designation }} at {{ current_mentor.company }}">
+                    {{ current_mentor.designation|default:"Verified Mentor" }}{% if current_mentor.company %} &bull; {{ current_mentor.company }}{% endif %}
                 </div>
+                {% else %}
+                <div class="dash-user-sub text-truncate">
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-1.5 py-0.5" style="font-size: 0.62rem;">
+                        {{ current_mentor.status|default:"Pending" }}
+                    </span>
+                </div>
+                {% endif %}
             </div>
             <a href="{% url 'logout' %}" class="dash-logout-icon-btn" title="Sign out" aria-label="Sign out">
                 <i class="bi bi-box-arrow-right"></i>
             </a>
         </div>
+        {% endwith %}
 
         <!-- Dedicated Mobile Sign Out Action -->
         <a href="{% url 'logout' %}" class="dash-logout-mobile-btn" aria-label="Sign out">

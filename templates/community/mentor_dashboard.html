@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Mentor Portal Dashboard — CareerCatalyst{% endblock %}
+{% block title %}Mentor Workspace Dashboard — CareerCatalyst{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
-<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.2">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.2">
 {% endblock %}
 
-{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{# Override public marketing navbar, footer, and chatbot for authenticated mentor workspace shell #}
 {% block navbar %}{% endblock %}
 {% block footer %}{% endblock %}
 {% block chatbot %}{% endblock %}
@@ -23,78 +23,73 @@
 
     <!-- Main Workspace Area -->
     <div class="dash-main">
-        <!-- Top Header Bar on Mobile -->
-        <header class="dash-mobile-header" aria-label="Mobile Header">
-            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
-                <i class="bi bi-list"></i>
-            </button>
-            <a href="{% url 'dashboard' %}" class="dash-brand">
-                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
-                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
-            </a>
-            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
-                {% if profile.profile_picture %}
-                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
-                {% else %}
-                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
-                {% endif %}
-            </div>
-        </header>
+        <!-- Dedicated Mentor Top Header (Desktop & Mobile) -->
+        {% include "community/partials/mentor_header.html" %}
 
         <!-- Main Content Area -->
         <main class="dash-content">
-            <!-- Back Navigation -->
-            <a href="{% url 'community:mentor_list' %}" class="dash-back-link mb-3">
-                <i class="bi bi-arrow-left"></i>
-                <span>Back to Mentors Directory</span>
-            </a>
+            <!-- Breadcrumbs -->
+            <div class="community-breadcrumbs mb-3">
+                <a href="{% url 'community:mentor_dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Mentor Workspace</a>
+                <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                <span>Overview Dashboard</span>
+            </div>
 
-            <!-- Header & Breadcrumbs -->
-            <div class="community-header d-flex flex-wrap align-items-center justify-content-between gap-3">
-                <div>
-                    <div class="community-breadcrumbs">
-                        <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
-                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
-                        <a href="{% url 'community:mentor_list' %}">Mentors</a>
-                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
-                        <span>Mentor Portal</span>
+            <!-- Welcome Section -->
+            <div class="mentor-welcome-header mb-4">
+                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                            <h1 class="h3 fw-bold mb-0 text-body">Welcome back, {{ mentor.full_name }}</h1>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                                <i class="bi bi-patch-check-fill me-1"></i> Verified Mentor
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-2">
+                            {{ mentor.designation }} at <strong>{{ mentor.company }}</strong>
+                            {% if mentor.experience_years %}&bull; {{ mentor.experience_years }} years experience{% endif %}
+                            {% if mentor.current_location %}&bull; <i class="bi bi-geo-alt"></i> {{ mentor.current_location }}{% endif %}
+                        </p>
+                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                            {% for domain in mentor.get_domains_list %}
+                            <span class="badge bg-body-secondary text-body border px-2 py-1" style="font-size: 0.7rem;">{{ domain }}</span>
+                            {% endfor %}
+                        </div>
                     </div>
-                    <h1 class="community-title">Mentor Operations Dashboard</h1>
-                    <p class="community-subtitle">
-                        Welcome, {{ mentor.full_name }}! Review incoming candidate requests, manage your availability calendar, and track reviews.
-                    </p>
-                </div>
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    {% if mentor.is_paused %}
-                    <form method="post" action="{% url 'community:resume_availability' %}" class="d-inline m-0">
-                        {% csrf_token %}
-                        <button type="submit" class="dash-btn dash-btn-sm text-white" style="background: #10B981;" title="Resume accepting session requests">
-                            <i class="bi bi-play-circle-fill me-1"></i> Resume Availability
-                        </button>
-                    </form>
-                    {% else %}
-                    <form method="post" action="{% url 'community:pause_availability' %}" class="d-inline m-0">
-                        {% csrf_token %}
-                        <button type="submit" class="dash-btn dash-btn-outline dash-btn-sm" title="Temporarily pause incoming bookings">
-                            <i class="bi bi-pause-circle me-1"></i> Pause Requests
-                        </button>
-                    </form>
-                    {% endif %}
-                    <a href="{% url 'community:mentor_mentees' %}" class="dash-btn dash-btn-outline dash-btn-sm">
-                        <i class="bi bi-people me-1"></i> My Mentees
-                    </a>
-                    <a href="{% url 'community:edit_profile' %}" class="dash-btn dash-btn-outline dash-btn-sm">
-                        <i class="bi bi-pencil me-1"></i> Edit Profile
-                    </a>
-                    <a href="{% url 'community:manage_availability' %}" class="dash-btn dash-btn-outline dash-btn-sm">
-                        <i class="bi bi-calendar-week me-1"></i> Availability Slots
-                    </a>
-                    <a href="{% url 'community:mentor_requests' %}" class="dash-btn dash-btn-primary dash-btn-sm">
-                        <i class="bi bi-inbox me-1"></i> Incoming Requests
-                    </a>
-                    <a href="{% url 'community:mentor_step_down' %}" class="dash-btn dash-btn-outline dash-btn-sm text-danger border-danger-subtle" title="Voluntarily step down as mentor">
-                        <i class="bi bi-box-arrow-right me-1 text-danger"></i> Step Down
-                    </a>
+
+                    <!-- Quick Actions Toolbar -->
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        {% if mentor.is_paused %}
+                        <form method="post" action="{% url 'community:resume_availability' %}" class="d-inline m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="dash-btn dash-btn-sm text-white" style="background: #10B981;" title="Resume accepting incoming session requests">
+                                <i class="bi bi-play-circle-fill me-1"></i> Resume Availability
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'community:pause_availability' %}" class="d-inline m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="dash-btn dash-btn-outline dash-btn-sm" title="Temporarily pause incoming bookings">
+                                <i class="bi bi-pause-circle me-1"></i> Pause Requests
+                            </button>
+                        </form>
+                        {% endif %}
+                        <a href="{% url 'community:mentor_requests' %}" class="dash-btn dash-btn-primary dash-btn-sm">
+                            <i class="bi bi-inbox me-1"></i> Incoming Requests
+                        </a>
+                        <a href="{% url 'community:manage_availability' %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                            <i class="bi bi-calendar-week me-1"></i> Manage Availability
+                        </a>
+                        <a href="{% url 'community:mentor_mentees' %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                            <i class="bi bi-people me-1"></i> Mentees
+                        </a>
+                        <a href="{% url 'community:edit_profile' %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                            <i class="bi bi-pencil me-1"></i> Edit Profile
+                        </a>
+                        <a href="{% url 'community:mentor_step_down' %}" class="dash-btn dash-btn-outline dash-btn-sm text-danger border-danger-subtle" title="Voluntarily step down as mentor">
+                            <i class="bi bi-box-arrow-right me-1"></i> Step Down
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -115,8 +110,18 @@
             </div>
             {% endif %}
 
-            <!-- Metrics Summary Cards -->
-            <div class="community-metrics-row">
+            <!-- Overview Metrics Row -->
+            <div class="community-metrics-row mb-4">
+                <div class="community-metric-card">
+                    <div class="community-metric-icon amber">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                    <div>
+                        <div class="community-metric-val">{{ pending_sessions }}</div>
+                        <div class="community-metric-lbl">Pending Requests</div>
+                    </div>
+                </div>
+
                 <div class="community-metric-card">
                     <div class="community-metric-icon blue">
                         <i class="bi bi-people-fill"></i>
@@ -138,38 +143,28 @@
                 </div>
 
                 <div class="community-metric-card">
-                    <div class="community-metric-icon amber">
-                        <i class="bi bi-hourglass-split"></i>
-                    </div>
-                    <div>
-                        <div class="community-metric-val">{{ pending_sessions }}</div>
-                        <div class="community-metric-lbl">Pending Review</div>
-                    </div>
-                </div>
-
-                <div class="community-metric-card">
                     <div class="community-metric-icon purple">
                         <i class="bi bi-star-fill text-warning"></i>
                     </div>
                     <div>
                         <div class="community-metric-val">{{ mentor.rating|default:"0.0" }} ★</div>
-                        <div class="community-metric-lbl">Average Rating</div>
+                        <div class="community-metric-lbl">{{ mentor.total_reviews }} Reviews</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Two-Column Layout -->
+            <!-- Two-Column Workspace Layout -->
             <div class="row g-4">
-                <!-- Left: Recent Requests & Completeness -->
+                <!-- Left Column: Recent Requests & Mentee Overview -->
                 <div class="col-lg-8">
-                    <!-- Pending Requests Card -->
+                    <!-- Recent Mentorship Requests Card -->
                     <div class="community-card mb-4">
-                        <div class="community-card-header">
-                            <h2 class="community-card-title">
-                                <i class="bi bi-bell text-warning"></i> Recent Session Requests
+                        <div class="community-card-header d-flex align-items-center justify-content-between">
+                            <h2 class="community-card-title mb-0">
+                                <i class="bi bi-bell text-warning me-1"></i> Recent Mentorship Requests
                             </h2>
                             <a href="{% url 'community:mentor_requests' %}" class="text-decoration-none small text-primary fw-medium">
-                                Manage Requests ({{ pending_sessions }}) <i class="bi bi-arrow-right"></i>
+                                Manage All ({{ pending_sessions }} pending) <i class="bi bi-arrow-right"></i>
                             </a>
                         </div>
 
@@ -177,61 +172,142 @@
                             {% for req in recent_requests %}
                             <div class="p-3 border rounded-3 bg-body-tertiary d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                                 <div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.725rem;">
                                             {{ req.purpose }}
                                         </span>
-                                        <span class="small fw-semibold text-body">From candidate: {{ req.student.username }}</span>
+                                        {% if req.status == 'Pending' %}
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle" style="font-size: 0.725rem;">
+                                            Pending Review
+                                        </span>
+                                        {% elif req.status == 'Accepted' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.725rem;">
+                                            Accepted
+                                        </span>
+                                        {% elif req.status == 'Completed' %}
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle" style="font-size: 0.725rem;">
+                                            Completed
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" style="font-size: 0.725rem;">
+                                            {{ req.status }}
+                                        </span>
+                                        {% endif %}
+                                        <span class="small fw-semibold text-body">Student: {{ req.student.username }}</span>
                                     </div>
                                     <p class="text-muted small mb-2 lh-base">{{ req.student_message|truncatewords:18 }}</p>
-                                    <div class="d-flex gap-3 small text-muted">
-                                        <span><i class="bi bi-calendar me-1"></i>{{ req.requested_date }}</span>
+                                    <div class="d-flex gap-3 small text-muted flex-wrap">
+                                        <span><i class="bi bi-calendar me-1"></i>Session: {{ req.requested_date }}</span>
+                                        {% if req.requested_time %}
                                         <span><i class="bi bi-clock me-1"></i>{{ req.requested_time|time:"g:i A" }}</span>
+                                        {% endif %}
+                                        <span><i class="bi bi-clock-history me-1"></i>Requested: {{ req.created_at|date:"M d, Y" }}</span>
                                     </div>
                                 </div>
                                 <div class="align-self-end align-self-md-center">
                                     <a href="{% url 'community:mentor_requests' %}" class="dash-btn dash-btn-outline dash-btn-sm">
-                                        Respond
+                                        View Details
                                     </a>
                                 </div>
                             </div>
                             {% empty %}
                             <div class="text-center py-4 text-muted">
                                 <i class="bi bi-check-all fs-2 d-block mb-1 text-success"></i>
-                                <p class="mb-0">All pending requests have been reviewed!</p>
+                                <p class="mb-0">No incoming session requests at this time.</p>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
 
-                    <!-- Profile Completeness Card -->
-                    <div class="community-card p-4 bg-primary-subtle border-primary-subtle">
-                        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-                            <div>
-                                <h3 class="h6 fw-bold text-primary mb-1">Mentor Profile Completeness</h3>
-                                <p class="text-muted small mb-2">
-                                    A 100% complete profile improves matching rank and candidate booking conversion.
-                                </p>
-                                <div class="progress" style="height: 8px; width: 280px; max-width: 100%;">
-                                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ profile_completion }}%;" aria-valuenow="{{ profile_completion }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    <!-- Mentee Overview Card -->
+                    <div class="community-card mb-4">
+                        <div class="community-card-header d-flex align-items-center justify-content-between">
+                            <h2 class="community-card-title mb-0">
+                                <i class="bi bi-people text-primary me-1"></i> Mentee Overview
+                            </h2>
+                            <a href="{% url 'community:mentor_mentees' %}" class="text-decoration-none small text-primary fw-medium">
+                                View All Mentees ({{ active_mentees }}) <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+
+                        <div class="d-flex flex-column gap-3">
+                            {% for mentee_req in recent_mentees %}
+                            <div class="p-3 border rounded-3 bg-body-tertiary d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="fw-semibold text-body">{{ mentee_req.student.username }}</span>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.7rem;">
+                                            {{ mentee_req.purpose }}
+                                        </span>
+                                    </div>
+                                    <div class="d-flex gap-3 small text-muted">
+                                        <span><i class="bi bi-calendar-event me-1"></i>{{ mentee_req.requested_date }}</span>
+                                        {% if mentee_req.requested_time %}
+                                        <span><i class="bi bi-clock me-1"></i>{{ mentee_req.requested_time|time:"g:i A" }}</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                                <small class="text-muted mt-1 d-block">{{ profile_completion }}% complete</small>
+                                <div>
+                                    <a href="{% url 'community:mentor_mentees' %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                                        Mentee Details
+                                    </a>
+                                </div>
                             </div>
-                            <div>
-                                <a href="{% url 'community:edit_profile' %}" class="dash-btn dash-btn-primary dash-btn-sm">
-                                    Update Profile
-                                </a>
+                            {% empty %}
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-people fs-2 d-block mb-1 text-muted"></i>
+                                <p class="mb-0">No active mentees yet. Accept incoming requests to start mentoring students.</p>
                             </div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
 
-                <!-- Right: Recent Reviews -->
+                <!-- Right Column: Profile Completeness, Feedback & Availability -->
                 <div class="col-lg-4">
+                    <!-- Profile Completeness Card -->
+                    <div class="community-card p-4 mb-4 bg-primary-subtle border-primary-subtle">
+                        <h3 class="h6 fw-bold text-primary mb-1">Mentor Profile Completeness</h3>
+                        <p class="text-muted small mb-2">
+                            A complete profile improves matching rank and candidate booking conversion.
+                        </p>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ profile_completion }}%;" aria-valuenow="{{ profile_completion }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <small class="text-muted">{{ profile_completion }}% complete</small>
+                            <a href="{% url 'community:edit_profile' %}" class="small text-primary fw-medium text-decoration-none">
+                                Edit Profile &rarr;
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Availability Summary Card -->
+                    <div class="community-card mb-4">
+                        <div class="community-card-header d-flex align-items-center justify-content-between">
+                            <h2 class="community-card-title mb-0">
+                                <i class="bi bi-calendar3 text-primary me-1"></i> Availability Slots
+                            </h2>
+                            <a href="{% url 'community:manage_availability' %}" class="text-decoration-none small text-primary fw-medium">
+                                Manage <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                        <div class="p-3 bg-body-tertiary rounded-3 border mb-3">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="small text-muted">Configured Slots</span>
+                                <span class="fw-bold text-body">{{ mentor.availabilities.count }} slot(s)</span>
+                            </div>
+                        </div>
+                        <a href="{% url 'community:manage_availability' %}" class="dash-btn dash-btn-outline dash-btn-sm w-100 text-center">
+                            <i class="bi bi-plus-circle me-1"></i> Configure Time Slots
+                        </a>
+                    </div>
+
+                    <!-- Recent Feedback Card -->
                     <div class="community-card">
                         <div class="community-card-header">
-                            <h2 class="community-card-title">
-                                <i class="bi bi-chat-heart text-success"></i> Recent Feedback
+                            <h2 class="community-card-title mb-0">
+                                <i class="bi bi-chat-heart text-success me-1"></i> Recent Feedback
                             </h2>
                         </div>
                         <div class="d-flex flex-column gap-3">
@@ -265,6 +341,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('sidebarCloseBtn');
     const sidebar = document.querySelector('.dash-sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     if (toggleBtn && sidebar && overlay) {
@@ -276,6 +353,12 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebar.classList.remove('open');
             overlay.classList.remove('active');
         });
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+        }
     }
 });
 </script>

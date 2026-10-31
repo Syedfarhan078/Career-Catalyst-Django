@@ -23,23 +23,8 @@
 
     <!-- Main Workspace Area -->
     <div class="dash-main">
-        <!-- Top Header Bar on Mobile -->
-        <header class="dash-mobile-header" aria-label="Mobile Header">
-            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
-                <i class="bi bi-list"></i>
-            </button>
-            <a href="{% url 'dashboard' %}" class="dash-brand">
-                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
-                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
-            </a>
-            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
-                {% if profile.profile_picture %}
-                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
-                {% else %}
-                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
-                {% endif %}
-            </div>
-        </header>
+        <!-- Dedicated Mentor Top Header (Desktop & Mobile) -->
+        {% include "community/partials/mentor_header.html" %}
 
         <!-- Main Content Area -->
         <main class="dash-content">
@@ -52,11 +37,9 @@
             <!-- Header & Breadcrumbs -->
             <div class="community-header mb-4">
                 <div class="community-breadcrumbs">
-                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                    <a href="{% url 'community:mentor_dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Mentor Workspace</a>
                     <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
-                    <a href="{% url 'community:mentor_list' %}">Mentors</a>
-                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
-                    <a href="{% url 'community:mentor_dashboard' %}">Dashboard</a>
+                    <a href="{% url 'community:mentor_dashboard' %}">Overview</a>
                     <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
                     <span>Session Requests</span>
                 </div>

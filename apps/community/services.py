@@ -17,11 +17,10 @@ def register_mentor_service(user, form_cleaned_data):
     """
     Creates a new MentorProfile for a user and sets it to 'Pending' verification.
     Also parses the skills_csv and populates MentorSkill models.
-    Ensures user.role is set to 'mentor'.
+    Enforces that user.role must be 'mentor'.
     """
-    if getattr(user, 'role', None) != 'mentor':
-        user.role = 'mentor'
-        user.save(update_fields=['role'])
+    if getattr(user, 'role', 'student') != 'mentor':
+        raise ValidationError("Only accounts with the Mentor role can submit a mentor application.")
 
     skills_csv = form_cleaned_data.pop('skills_csv', '')
     

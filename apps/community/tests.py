@@ -16,6 +16,7 @@ from .models import (
 from apps.notifications.models import Notification
 from apps.profiles.models import StudentProfile
 from .utils import calculate_mentor_match_score
+from .services import register_mentor_service
 
 User = get_user_model()
 
@@ -1133,6 +1134,202 @@ class Phase2MentorWorkspaceTests(TestCase):
         self.client.force_login(self.student_user)
         dash_student = self.client.get(reverse('dashboard'))
         self.assertNotContains(dash_student, 'Switch to Mentor Workspace')
+
+    def test_approved_mentor_accesses_dedicated_mentor_dashboard(self):
+        """Phase 2: Approved & Verified mentor accesses dedicated Mentor Dashboard with real DB metrics."""
+        self.client.force_login(self.mentor_user)
+        res = self.client.get(reverse('community:mentor_dashboard'))
+        self.assertEqual(res.status_code, 200)
+        self.assertTemplateUsed(res, 'community/mentor_dashboard.html')
+
+        # Shell and Header elements
+        self.assertContains(res, 'mentor-sidebar')
+        self.assertContains(res, 'dash-mentor-header')
+        self.assertContains(res, 'MENTOR WORKSPACE')
+        self.assertContains(res, 'Welcome back, Dr. Elena Vance')
+        self.assertContains(res, 'Verified Mentor')
+
+        # Real metric indicators and sections
+        self.assertContains(res, 'Pending Requests')
+        self.assertContains(res, 'Active Mentees')
+        self.assertContains(res, 'Completed Sessions')
+        self.assertNotContains(res, 'Weekly Capacity')
+        self.assertContains(res, 'Recent Mentorship Requests')
+        self.assertContains(res, 'Mentee Overview')
+
+        # Quick action links
+        self.assertContains(res, reverse('community:mentor_requests'))
+        self.assertContains(res, reverse('community:manage_availability'))
+        self.assertContains(res, reverse('community:mentor_mentees'))
+        self.assertContains(res, reverse('community:edit_profile'))
+
+        # Strictly isolated from Student navigation
+        self.assertNotContains(res, 'Engineering Student')
+        self.assertNotContains(res, 'href="/guidance/"')
+
+    def test_pending_mentor_sees_pending_status_dashboard_and_features_locked(self):
+        """Phase 2: Pending mentor receives dedicated Mentor Workspace with locked feature indicators."""
+        self.mentor_profile.status = 'Pending'
+        self.mentor_profile.verified = False
+        self.mentor_profile.save()
+
+        self.client.force_login(self.mentor_user)
+
+        # Visiting mentor dashboard routes to mentor_status.html
+        res = self.client.get(reverse('community:mentor_dashboard'))
+        self.assertEqual(res.status_code, 200)
+        self.assertTemplateUsed(res, 'community/mentor_status.html')
+
+        # Dedicated mentor workspace shell
+        self.assertContains(res, 'mentor-sidebar')
+        self.assertContains(res, 'dash-mentor-header')
+        self.assertContains(res, 'Verification Pending')
+        self.assertContains(res, 'Submitted Application Summary')
+        self.assertContains(res, 'Feature Status')
+        self.assertContains(res, 'Locked')
+
+        # Neutral status copy without unsupported 24-48 hour turnaround promises
+        self.assertContains(res, 'Your mentor application is currently under review. You will be notified when its status changes.')
+        self.assertNotContains(res, '24 to 48 business hours')
+        self.assertNotContains(res, '24–48 business hours')
+
+        # Management endpoints are blocked and render status experience
+        for url_name in ['community:mentor_requests', 'community:manage_availability', 'community:mentor_mentees', 'community:edit_profile']:
+            mgmt_res = self.client.get(reverse(url_name))
+            self.assertEqual(mgmt_res.status_code, 200)
+            self.assertTemplateUsed(mgmt_res, 'community/mentor_status.html')
+
+    def test_student_cannot_access_mentor_registration_page_get(self):
+        """Phase 2.1: Student cannot access mentor registration page via GET and is redirected to student dashboard."""
+        self.client.force_login(self.student_user)
+        res = self.client.get(reverse('community:mentor_register'))
+        self.assertEqual(res.status_code, 302)
+        self.assertRedirects(res, reverse('dashboard'))
+
+    def test_student_cannot_submit_mentor_application_post_or_create_profile(self):
+        """Phase 2.1: Student cannot submit a mentor application via POST, creating no MentorProfile and keeping role as student."""
+        self.client.force_login(self.student_user)
+        post_data = {
+            'full_name': 'Sneaky Student',
+            'email': 'student2@test.com',
+            'phone_number': '1234567890',
+            'company': 'Unauthorized Inc',
+            'designation': 'Software Engineer',
+            'experience_years': 4,
+            'current_location': 'San Francisco',
+            'bio': 'Attempting student conversion',
+            'career_domains': 'Backend',
+            'skills_csv': 'Python, Django',
+            'languages': 'English',
+            'available_days': 'Monday',
+            'available_time_slots': '10:00 AM - 12:00 PM',
+            'mentorship_type': 'Online',
+            'agreement': True,
+        }
+        res = self.client.post(reverse('community:mentor_register'), post_data)
+        self.assertEqual(res.status_code, 302)
+        self.assertRedirects(res, reverse('dashboard'))
+
+        # DB must not have a MentorProfile for this student
+        self.assertFalse(MentorProfile.objects.filter(user=self.student_user).exists())
+        self.student_user.refresh_from_db()
+        self.assertEqual(self.student_user.role, 'student')
+
+    def test_register_mentor_service_blocks_student_role(self):
+        """Phase 2.1: register_mentor_service rejects student accounts with ValidationError."""
+        form_data = {
+            'full_name': 'Direct Student',
+            'email': 'student2@test.com',
+            'phone_number': '1234567890',
+            'company': 'Direct Test',
+            'designation': 'Engineer',
+            'experience_years': 2,
+            'current_location': 'Remote',
+            'bio': 'Direct service test',
+            'career_domains': 'Cloud',
+            'skills_csv': 'AWS',
+            'languages': 'English',
+            'available_days': 'Friday',
+            'available_time_slots': '2:00 PM - 4:00 PM',
+            'mentorship_type': 'Online',
+        }
+        with self.assertRaises(ValidationError) as ctx:
+            register_mentor_service(self.student_user, form_data)
+        self.assertIn("Only accounts with the Mentor role can submit a mentor application.", str(ctx.exception))
+        self.assertFalse(MentorProfile.objects.filter(user=self.student_user).exists())
+        self.student_user.refresh_from_db()
+        self.assertEqual(self.student_user.role, 'student')
+
+    def test_mentor_without_profile_can_access_mentor_registration(self):
+        """Phase 2.1: Mentor account without a MentorProfile can access the application form."""
+        new_mentor = User.objects.create_user(
+            username='fresh_mentor_p21',
+            email='fresh_mentor@test.com',
+            password='password123',
+            role='mentor'
+        )
+        self.client.force_login(new_mentor)
+        res = self.client.get(reverse('community:mentor_register'))
+        self.assertEqual(res.status_code, 200)
+        self.assertTemplateUsed(res, 'community/mentor_register.html')
+
+    def test_student_cannot_access_mentor_dashboard(self):
+        """Phase 2: Student accounts are blocked from accessing Mentor Dashboard and management endpoints."""
+        self.client.force_login(self.student_user)
+
+        res_dash = self.client.get(reverse('community:mentor_dashboard'))
+        self.assertEqual(res_dash.status_code, 302)
+        self.assertIn(reverse('community:mentor_register'), res_dash.url)
+
+        for url_name in ['community:mentor_requests', 'community:manage_availability', 'community:mentor_mentees']:
+            res = self.client.get(reverse(url_name))
+            self.assertEqual(res.status_code, 302)
+            self.assertIn(reverse('community:mentor_register'), res.url)
+
+    def test_existing_student_dashboard_remains_accessible_to_students(self):
+        """Phase 2: Existing Student Dashboard remains fully functional and accessible for student accounts."""
+        self.client.force_login(self.student_user)
+        res = self.client.get(reverse('dashboard'))
+        self.assertEqual(res.status_code, 200)
+        self.assertTemplateUsed(res, 'core/dashboard.html')
+        self.assertEqual(res.context['active_workspace'], 'student')
+        self.assertFalse(res.context['is_approved_mentor'])
+
+    def test_rejected_inactive_and_blocked_mentor_dedicated_workspace_experiences(self):
+        """Phase 2: Rejected, Inactive, and Blocked mentors see their dedicated status experiences."""
+        self.client.force_login(self.mentor_user)
+
+        # 1. Rejected
+        self.mentor_profile.status = 'Rejected'
+        self.mentor_profile.verified = False
+        self.mentor_profile.save()
+        res_rej = self.client.get(reverse('community:mentor_dashboard'))
+        self.assertEqual(res_rej.status_code, 200)
+        self.assertTemplateUsed(res_rej, 'community/mentor_status.html')
+        self.assertContains(res_rej, 'Application Declined')
+        self.assertContains(res_rej, 'Resubmit Application')
+        self.assertContains(res_rej, 'mentor-sidebar')
+
+        # 2. Inactive
+        self.mentor_profile.status = 'Inactive'
+        self.mentor_profile.save()
+        res_inact = self.client.get(reverse('community:mentor_dashboard'))
+        self.assertEqual(res_inact.status_code, 200)
+        self.assertTemplateUsed(res_inact, 'community/mentor_status.html')
+        self.assertContains(res_inact, 'Mentor Account Inactive')
+        self.assertContains(res_inact, 'Reactivate Mentor Profile')
+        self.assertContains(res_inact, 'name="resume_bookings"')
+        self.assertContains(res_inact, 'mentor-sidebar')
+
+        # 3. Blocked
+        self.mentor_profile.status = 'Blocked'
+        self.mentor_profile.save()
+        res_blk = self.client.get(reverse('community:mentor_dashboard'))
+        self.assertEqual(res_blk.status_code, 200)
+        self.assertTemplateUsed(res_blk, 'community/mentor_status.html')
+        self.assertContains(res_blk, 'Account Blocked')
+        self.assertNotContains(res_blk, 'Reactivate Mentor Profile')
+        self.assertContains(res_blk, 'mentor-sidebar')
 
 
 class Phase4MentorLifecycleTests(TestCase):

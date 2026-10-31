@@ -77,6 +77,7 @@ def mentor_required(view_func):
         if mentor.status != 'Approved' or not mentor.verified:
             ctx = get_user_sidebar_context(request.user)
             ctx['profile'] = mentor
+            ctx['mentor'] = mentor
             ctx['mentor_profile'] = mentor
             return render(request, "community/mentor_status.html", ctx)
         return view_func(request, *args, **kwargs)
@@ -408,10 +409,15 @@ class MentorDetailView(DetailView):
 def mentor_register(request):
     """
     Enables professional registration as a Mentor.
+    Students are strictly prevented from accessing or submitting mentor applications.
     If already approved, redirects to mentor dashboard.
     If pending or blocked, shows status.
     If rejected, shows status unless reapply=1 or submitting POST.
     """
+    if getattr(request.user, 'role', 'student') != 'mentor':
+        messages.warning(request, "Student accounts cannot access the mentor application workflow.")
+        return redirect('dashboard')
+
     existing_profile = getattr(request.user, 'mentor_profile', None)
     if existing_profile:
         if existing_profile.status == 'Approved':
@@ -419,6 +425,7 @@ def mentor_register(request):
         elif existing_profile.status in ['Pending', 'Blocked', 'Inactive']:
             ctx = get_user_sidebar_context(request.user)
             ctx['profile'] = existing_profile
+            ctx['mentor'] = existing_profile
             ctx['mentor_profile'] = existing_profile
             return render(request, "community/mentor_status.html", ctx)
         elif existing_profile.status == 'Rejected':
@@ -426,6 +433,7 @@ def mentor_register(request):
             if request.method == 'GET' and request.GET.get('reapply') != '1':
                 ctx = get_user_sidebar_context(request.user)
                 ctx['profile'] = existing_profile
+                ctx['mentor'] = existing_profile
                 ctx['mentor_profile'] = existing_profile
                 return render(request, "community/mentor_status.html", ctx)
 
@@ -449,6 +457,7 @@ def mentor_register(request):
 
     return render(request, "community/mentor_register.html", {
         "form": form,
+        "mentor": existing_profile,
         **get_user_sidebar_context(request.user)
     })
 
@@ -493,8 +502,9 @@ def mentor_dashboard(request):
     pending_sessions = all_requests.filter(status='Pending').count()
     active_mentees = all_requests.filter(status='Accepted').values('student').distinct().count()
     
-    recent_requests = all_requests.filter(status='Pending')[:5]
+    recent_requests = all_requests.order_by('-created_at')[:5]
     recent_reviews = mentor.reviews.select_related('student').all()[:5]
+    recent_mentees = all_requests.filter(status='Accepted').order_by('-requested_date')[:4]
 
     # Simple completeness check
     fields = ['profile_photo', 'linkedin_url', 'github_url', 'portfolio_url', 'bio']
@@ -509,6 +519,7 @@ def mentor_dashboard(request):
         "active_mentees": active_mentees,
         "recent_requests": recent_requests,
         "recent_reviews": recent_reviews,
+        "recent_mentees": recent_mentees,
         "profile_completion": profile_completion,
         **get_user_sidebar_context(request.user)
     })

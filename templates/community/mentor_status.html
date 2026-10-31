@@ -4,120 +4,266 @@
 {% block title %}Mentor Application Status — CareerCatalyst{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
-<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.2">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.2">
 {% endblock %}
 
-{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{# Override public marketing navbar, footer, and chatbot for authenticated mentor workspace shell #}
 {% block navbar %}{% endblock %}
 {% block footer %}{% endblock %}
 {% block chatbot %}{% endblock %}
 
 {% block main_wrapper %}
 <div class="dash-shell">
-    <!-- Left Navigation Sidebar -->
-    {% include "core/partials/dashboard_sidebar.html" %}
+    <!-- Dedicated Mentor Navigation Sidebar -->
+    {% include "community/partials/mentor_sidebar.html" %}
 
     <!-- Backdrop Overlay for Mobile Drawer -->
     <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
     <!-- Main Workspace Area -->
     <div class="dash-main">
-        <!-- Top Header Bar on Mobile -->
-        <header class="dash-mobile-header" aria-label="Mobile Header">
-            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
-                <i class="bi bi-list"></i>
-            </button>
-            <a href="{% url 'dashboard' %}" class="dash-brand">
-                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
-                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
-            </a>
-            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
-                {% if profile.profile_picture %}
-                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
-                {% else %}
-                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
-                {% endif %}
-            </div>
-        </header>
+        <!-- Dedicated Mentor Top Header (Desktop & Mobile) -->
+        {% include "community/partials/mentor_header.html" %}
 
         <!-- Main Content Area -->
         <main class="dash-content">
-            <!-- Back Navigation -->
-            <a href="{% url 'community:mentor_list' %}" class="dash-back-link mb-3">
-                <i class="bi bi-arrow-left"></i>
-                <span>Back to Mentors Directory</span>
-            </a>
-
-            <!-- Header & Breadcrumbs -->
-            <div class="community-header mb-4">
-                <div class="community-breadcrumbs">
-                    <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
-                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
-                    <a href="{% url 'community:mentor_list' %}">Mentors</a>
-                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
-                    <span>Application Status</span>
-                </div>
+            <!-- Breadcrumbs -->
+            <div class="community-breadcrumbs mb-3">
+                <a href="{% url 'community:mentor_register' %}"><i class="bi bi-person-badge me-1"></i> Mentor Workspace</a>
+                <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                <span>Application & Profile Status</span>
             </div>
 
+            {% with current_mentor=mentor|default:profile %}
             <div class="row justify-content-center">
-                <div class="col-lg-6">
-                    <div class="community-card text-center p-5">
-                        {% if profile.status == 'Pending' %}
-                            <div class="community-metric-icon amber mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem;">
-                                <i class="bi bi-clock-history"></i>
+                <div class="col-lg-10 col-xl-9">
+                    {% if current_mentor.status == 'Pending' %}
+                        <!-- ========================================== -->
+                        <!-- PENDING MENTOR DASHBOARD EXPERIENCE       -->
+                        <!-- ========================================== -->
+                        <div class="mentor-welcome-header mb-4">
+                            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                                <div>
+                                    <h1 class="h3 fw-bold mb-1 text-body">Welcome, {{ current_mentor.full_name|default:user.username }}</h1>
+                                    <p class="text-muted small mb-0">
+                                        Your mentor profile application has been recorded and is currently in verification review.
+                                    </p>
+                                </div>
+                                <div>
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 fw-semibold fs-6">
+                                        <i class="bi bi-clock-history me-1"></i> Verification Pending
+                                    </span>
+                                </div>
                             </div>
-                            <h1 class="h4 fw-bold text-body mb-2">Verification Pending</h1>
-                            <p class="text-muted small mb-4 lh-base">
-                                Your mentor profile application has been recorded and is currently being verified by CareerCatalyst administrators. You will be notified once reviewed.
-                            </p>
-                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 fw-semibold">
-                                Status: Pending Admin Review
-                            </span>
+                        </div>
 
-                        {% elif profile.status == 'Rejected' %}
+                        <!-- Status Notice Banner -->
+                        <div class="alert alert-warning border-warning d-flex align-items-start gap-3 p-3 rounded-3 mb-4 shadow-sm">
+                            <i class="bi bi-hourglass-split fs-4 text-warning mt-1"></i>
+                            <div>
+                                <h2 class="h6 fw-bold mb-1 text-body">Administrator Review in Progress</h2>
+                                <p class="small text-body-secondary mb-0 lh-base">
+                                    Your mentor application is currently under review. You will be notified when its status changes.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row g-4 mb-4">
+                            <!-- Application Submission Summary -->
+                            <div class="col-md-7">
+                                <div class="community-card h-100 p-4">
+                                    <h2 class="h6 fw-bold text-body mb-3 pb-2 border-bottom">
+                                        <i class="bi bi-file-earmark-person text-primary me-1"></i> Submitted Application Summary
+                                    </h2>
+                                    <div class="d-flex flex-column gap-3 small">
+                                        <div class="d-flex justify-content-between">
+                                            <span class="text-muted">Applicant Name</span>
+                                            <span class="fw-semibold text-body">{{ current_mentor.full_name }}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span class="text-muted">Designation & Company</span>
+                                            <span class="fw-semibold text-body">{{ current_mentor.designation }} at {{ current_mentor.company }}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span class="text-muted">Experience</span>
+                                            <span class="fw-semibold text-body">{{ current_mentor.experience_years }} years</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span class="text-muted">Location</span>
+                                            <span class="fw-semibold text-body">{{ current_mentor.current_location }}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span class="text-muted">Application Date</span>
+                                            <span class="fw-semibold text-body">{{ current_mentor.created_at|date:"F d, Y" }}</span>
+                                        </div>
+                                        {% if current_mentor.career_domains %}
+                                        <div class="pt-2 border-top">
+                                            <span class="text-muted d-block mb-1">Career Domains</span>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                {% for d in current_mentor.get_domains_list %}
+                                                <span class="badge bg-body-secondary text-body border" style="font-size: 0.7rem;">{{ d }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        {% if current_mentor.skills %}
+                                        <div class="pt-2 border-top">
+                                            <span class="text-muted d-block mb-1">Key Skills</span>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                {% for s in current_mentor.get_skills_list %}
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.7rem;">{{ s }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Locked Features & Explanation -->
+                            <div class="col-md-5">
+                                <div class="community-card h-100 p-4">
+                                    <h2 class="h6 fw-bold text-body mb-3 pb-2 border-bottom">
+                                        <i class="bi bi-shield-lock text-warning me-1"></i> Feature Status
+                                    </h2>
+                                    <div class="d-flex flex-column gap-3 mb-3">
+                                        <div class="p-2 rounded bg-body-tertiary border d-flex align-items-center justify-content-between">
+                                            <span class="small fw-medium"><i class="bi bi-inbox text-muted me-2"></i>Requests Management</span>
+                                            <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;"><i class="bi bi-lock-fill"></i> Locked</span>
+                                        </div>
+                                        <div class="p-2 rounded bg-body-tertiary border d-flex align-items-center justify-content-between">
+                                            <span class="small fw-medium"><i class="bi bi-people text-muted me-2"></i>Mentee Management</span>
+                                            <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;"><i class="bi bi-lock-fill"></i> Locked</span>
+                                        </div>
+                                        <div class="p-2 rounded bg-body-tertiary border d-flex align-items-center justify-content-between">
+                                            <span class="small fw-medium"><i class="bi bi-calendar3 text-muted me-2"></i>Availability Slots</span>
+                                            <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;"><i class="bi bi-lock-fill"></i> Locked</span>
+                                        </div>
+                                    </div>
+                                    <div class="p-3 bg-light rounded-3 border">
+                                        <p class="small text-muted mb-0 lh-base">
+                                            <strong>Why are these features locked?</strong> To protect candidate safety and guarantee verified industry mentorship, session scheduling and booking features are activated upon administrative review.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Available Actions Card -->
+                        <div class="community-card p-4">
+                            <h2 class="h6 fw-bold text-body mb-3">What You Can Do Now</h2>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <a href="{% url 'community:mentor_list' %}" class="p-3 border rounded-3 bg-body-tertiary d-block text-decoration-none h-100">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <i class="bi bi-shop text-primary fs-5"></i>
+                                            <span class="fw-semibold text-body">Browse Mentor Directory</span>
+                                        </div>
+                                        <p class="small text-muted mb-0">Explore existing verified mentors across tech, engineering, and product tracks.</p>
+                                    </a>
+                                </div>
+                                <div class="col-sm-6">
+                                    <a href="{% url 'notifications:history' %}" class="p-3 border rounded-3 bg-body-tertiary d-block text-decoration-none h-100">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <i class="bi bi-bell text-warning fs-5"></i>
+                                            <span class="fw-semibold text-body">Check Notifications</span>
+                                        </div>
+                                        <p class="small text-muted mb-0">View system notices and stay alerted when your application review is complete.</p>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% elif current_mentor.status == 'Rejected' %}
+                        <!-- ========================================== -->
+                        <!-- REJECTED MENTOR EXPERIENCE                 -->
+                        <!-- ========================================== -->
+                        <div class="community-card text-center p-5">
                             <div class="community-metric-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem; background: rgba(239, 68, 68, 0.1); color: #DC2626;">
                                 <i class="bi bi-x-circle-fill"></i>
                             </div>
                             <h1 class="h4 fw-bold text-body mb-2">Application Declined</h1>
-                            <p class="text-muted small mb-4 lh-base">
+                            <p class="text-muted small mb-4 lh-base" style="max-width: 580px; margin: 0 auto;">
                                 Your application was not approved at this time. Please verify your background credentials, LinkedIn URL, and portfolio links before reapplying.
                             </p>
-                            <div class="d-flex flex-column gap-2 align-items-center">
+                            <div class="d-flex flex-column gap-2 align-items-center mb-4">
                                 <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fw-semibold">
                                     Status: Declined
                                 </span>
-                                <a href="{% url 'community:mentor_register' %}?reapply=1" class="dash-btn dash-btn-primary dash-btn-sm px-4 py-2 mt-3">
-                                    Resubmit Application
+                                <a href="{% url 'community:mentor_register' %}?reapply=1" class="dash-btn dash-btn-primary px-4 py-2 mt-2">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Resubmit Application
                                 </a>
                             </div>
+                            <div class="pt-3 border-top">
+                                <a href="{% url 'community:mentor_list' %}" class="text-decoration-none small text-muted">
+                                    <i class="bi bi-arrow-left me-1"></i> Browse Mentor Directory
+                                </a>
+                            </div>
+                        </div>
 
-                        {% elif profile.status == 'Blocked' %}
+                    {% elif current_mentor.status == 'Blocked' %}
+                        <!-- ========================================== -->
+                        <!-- BLOCKED MENTOR EXPERIENCE                  -->
+                        <!-- ========================================== -->
+                        <div class="community-card text-center p-5">
                             <div class="community-metric-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem; background: rgba(239, 68, 68, 0.1); color: #DC2626;">
                                 <i class="bi bi-shield-slash-fill"></i>
                             </div>
                             <h1 class="h4 fw-bold text-body mb-2">Account Blocked</h1>
-                            <p class="text-muted small mb-4 lh-base">
-                                Your mentor profile has been suspended by system administrators due to community policy violations.
+                            <p class="text-muted small mb-4 lh-base" style="max-width: 560px; margin: 0 auto;">
+                                Your mentor profile has been suspended by system administrators due to community policy violations. Mentor functionality, incoming requests, and session bookings are disabled.
                             </p>
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fw-semibold">
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fw-semibold mb-3">
                                 Status: Suspended
                             </span>
-
-                        {% elif profile.status == 'Inactive' %}
-                            <div class="community-metric-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem; background: rgba(59, 130, 246, 0.1); color: #2563EB;">
-                                <i class="bi bi-person-check-fill"></i>
+                            <div class="pt-3 border-top mt-4">
+                                <a href="{% url 'community:mentor_list' %}" class="text-decoration-none small text-muted">
+                                    <i class="bi bi-arrow-left me-1"></i> Browse Mentor Directory
+                                </a>
                             </div>
-                            <h1 class="h4 fw-bold text-body mb-2">Mentor Account Inactive</h1>
-                            <p class="text-muted small mb-3 lh-base">
-                                You voluntarily stepped down from your mentor role. All your previous mentorship history, student reviews, and credentials remain safely preserved. You can reactivate your account at any time without submitting a new application.
-                            </p>
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2 fw-semibold mb-4 d-inline-block">
-                                Status: Inactive (Voluntary Step-Down)
-                            </span>
+                        </div>
 
-                            <form method="post" action="{% url 'community:reactivate_mentor' %}" class="mt-2 text-start p-3 bg-light rounded-3 border">
+                    {% elif current_mentor.status == 'Inactive' %}
+                        <!-- ========================================== -->
+                        <!-- INACTIVE MENTOR EXPERIENCE (STEP-DOWN)     -->
+                        <!-- ========================================== -->
+                        <div class="community-card p-4 p-md-5">
+                            <div class="text-center mb-4">
+                                <div class="community-metric-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem; background: rgba(59, 130, 246, 0.1); color: #2563EB;">
+                                    <i class="bi bi-pause-circle-fill"></i>
+                                </div>
+                                <h1 class="h4 fw-bold text-body mb-2">Mentor Account Inactive</h1>
+                                <p class="text-muted small mb-3 lh-base" style="max-width: 620px; margin: 0 auto;">
+                                    You voluntarily stepped down from your mentor role. All your previous mentorship history, student reviews, and credentials remain safely preserved. You can reactivate your account at any time without submitting a new application.
+                                </p>
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2 fw-semibold mb-3 d-inline-block">
+                                    Status: Inactive (Voluntary Step-Down)
+                                </span>
+                            </div>
+
+                            {% if current_mentor.stepped_down_at %}
+                            <div class="p-3 bg-body-tertiary rounded-3 border mb-4 text-start">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small text-muted">Step-Down Recorded</span>
+                                    <span class="small fw-semibold text-body">{{ current_mentor.stepped_down_at|date:"F d, Y - g:i A" }}</span>
+                                </div>
+                                {% if current_mentor.step_down_reason %}
+                                <div class="mt-2 pt-2 border-top">
+                                    <span class="small text-muted d-block">Reason:</span>
+                                    <span class="small text-body">{{ current_mentor.step_down_reason }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                            <!-- Preserved Reactivation Form -->
+                            <form method="post" action="{% url 'community:reactivate_mentor' %}" class="text-start p-4 bg-light rounded-3 border">
                                 {% csrf_token %}
+                                <h2 class="h6 fw-bold text-body mb-2">Reactivate Your Mentor Workspace</h2>
+                                <p class="small text-muted mb-3">
+                                    Restoring your profile restores your verified mentor status and unlocks your requests, mentee management, and booking calendar.
+                                </p>
                                 <div class="form-check mb-3">
                                     <input class="form-check-input" type="checkbox" name="resume_bookings" value="1" id="id_resume_bookings" checked>
                                     <label class="form-check-label small fw-medium text-body" for="id_resume_bookings">
@@ -128,16 +274,17 @@
                                     <i class="bi bi-arrow-repeat"></i> Reactivate Mentor Profile
                                 </button>
                             </form>
-                        {% endif %}
 
-                        <div class="pt-4 border-top mt-4">
-                            <a href="{% url 'community:mentor_list' %}" class="text-decoration-none small text-muted">
-                                <i class="bi bi-arrow-left me-1"></i> Browse Mentor Directory
-                            </a>
+                            <div class="pt-4 border-top mt-4 text-center">
+                                <a href="{% url 'community:mentor_list' %}" class="text-decoration-none small text-muted">
+                                    <i class="bi bi-arrow-left me-1"></i> Browse Mentor Directory
+                                </a>
+                            </div>
                         </div>
-                    </div>
+                    {% endif %}
                 </div>
             </div>
+            {% endwith %}
         </main>
     </div>
 </div>
@@ -147,6 +294,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const closeBtn = document.getElementById('sidebarCloseBtn');
     const sidebar = document.querySelector('.dash-sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     if (toggleBtn && sidebar && overlay) {
@@ -158,6 +306,12 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebar.classList.remove('open');
             overlay.classList.remove('active');
         });
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            });
+        }
     }
 });
 </script>
