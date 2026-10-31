@@ -15,8 +15,8 @@
 
 {% block main_wrapper %}
 <div class="dash-shell">
-    <!-- Left Navigation Sidebar -->
-    {% include "core/partials/dashboard_sidebar.html" %}
+    <!-- Dedicated Mentor Navigation Sidebar -->
+    {% include "community/partials/mentor_sidebar.html" %}
 
     <!-- Backdrop Overlay for Mobile Drawer -->
     <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
@@ -65,6 +65,9 @@
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <a href="{% url 'community:mentor_mentees' %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                        <i class="bi bi-people me-1"></i> My Mentees
+                    </a>
                     <a href="{% url 'community:edit_profile' %}" class="dash-btn dash-btn-outline dash-btn-sm">
                         <i class="bi bi-pencil me-1"></i> Edit Profile
                     </a>
@@ -80,22 +83,22 @@
             <!-- Metrics Summary Cards -->
             <div class="community-metrics-row">
                 <div class="community-metric-card">
+                    <div class="community-metric-icon blue">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div>
+                        <div class="community-metric-val">{{ active_mentees }}</div>
+                        <div class="community-metric-lbl">Active Mentees</div>
+                    </div>
+                </div>
+
+                <div class="community-metric-card">
                     <div class="community-metric-icon green">
                         <i class="bi bi-check2-circle"></i>
                     </div>
                     <div>
                         <div class="community-metric-val">{{ total_sessions }}</div>
                         <div class="community-metric-lbl">Completed Sessions</div>
-                    </div>
-                </div>
-
-                <div class="community-metric-card">
-                    <div class="community-metric-icon blue">
-                        <i class="bi bi-calendar2-check"></i>
-                    </div>
-                    <div>
-                        <div class="community-metric-val">{{ upcoming_sessions }}</div>
-                        <div class="community-metric-lbl">Upcoming Sessions</div>
                     </div>
                 </div>
 

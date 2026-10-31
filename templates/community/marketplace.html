@@ -59,9 +59,15 @@
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
+                    {% if is_approved_mentor %}
+                    <a href="{% url 'community:mentor_dashboard' %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                        <i class="bi bi-speedometer2 me-1"></i> Mentor Dashboard
+                    </a>
+                    {% else %}
                     <a href="{% url 'community:mentor_register' %}" class="dash-btn dash-btn-outline dash-btn-sm">
                         <i class="bi bi-person-workspace me-1"></i> Apply as Mentor
                     </a>
+                    {% endif %}
                     <a href="{% url 'community:student_bookings' %}" class="dash-btn dash-btn-primary dash-btn-sm">
                         <i class="bi bi-calendar-check me-1"></i> My Sessions
                     </a>

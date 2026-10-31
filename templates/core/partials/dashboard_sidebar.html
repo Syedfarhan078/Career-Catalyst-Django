@@ -60,6 +60,18 @@
                 <span>Mentors</span>
             </a>
         </div>
+
+        {% if is_approved_mentor %}
+        <!-- WORKSPACE SWITCH -->
+        <div class="dash-nav-group pt-2 border-top">
+            <span class="dash-nav-label">Workspace Mode</span>
+            <a href="{% url 'community:switch_workspace' %}?role=mentor" class="dash-nav-link text-primary fw-medium" title="Switch to Mentor Workspace">
+                <i class="bi bi-person-workspace text-primary"></i>
+                <span>Mentor Workspace</span>
+                <i class="bi bi-arrow-right-short ms-auto text-muted"></i>
+            </a>
+        </div>
+        {% endif %}
     </nav>
 
     <!-- Sidebar Bottom: Settings, Theme & User Card -->

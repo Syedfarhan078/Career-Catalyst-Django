@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Mentees — CareerCatalyst{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+{% endblock %}
+
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Dedicated Mentor Navigation Sidebar -->
+    {% include "community/partials/mentor_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Top Header Bar on Mobile -->
+        <header class="dash-mobile-header" aria-label="Mobile Header">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <a href="{% url 'community:mentor_dashboard' %}" class="dash-brand">
+                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+            </a>
+            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                {% if mentor.profile_photo %}
+                    <img src="{{ mentor.profile_photo.url }}" alt="{{ mentor.full_name }}">
+                {% else %}
+                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+                <div>
+                    <div class="community-breadcrumbs">
+                        <a href="{% url 'community:mentor_dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Mentor Portal</a>
+                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                        <span>My Mentees</span>
+                    </div>
+                    <h1 class="community-title">Active & Historical Mentees</h1>
+                    <p class="community-subtitle">
+                        Manage your mentorship relationships, access direct conversations, and monitor student progress.
+                    </p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{% url 'community:mentor_requests' %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                        <i class="bi bi-inbox me-1"></i> View Requests
+                    </a>
+                    <a href="{% url 'community:mentor_dashboard' %}" class="dash-btn dash-btn-primary dash-btn-sm">
+                        <i class="bi bi-grid me-1"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Summary Metrics Cards -->
+            <div class="community-metrics-row mb-4">
+                <div class="community-metric-card">
+                    <div class="community-metric-icon blue">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div>
+                        <div class="community-metric-val">{{ active_mentees_count }}</div>
+                        <div class="community-metric-lbl">Active Mentees</div>
+                    </div>
+                </div>
+
+                <div class="community-metric-card">
+                    <div class="community-metric-icon green">
+                        <i class="bi bi-check2-all"></i>
+                    </div>
+                    <div>
+                        <div class="community-metric-val">{{ total_completed_count }}</div>
+                        <div class="community-metric-lbl">Completed Relationships</div>
+                    </div>
+                </div>
+
+                <div class="community-metric-card">
+                    <div class="community-metric-icon purple">
+                        <i class="bi bi-calendar2-week"></i>
+                    </div>
+                    <div>
+                        <div class="community-metric-val">{{ mentorships.count }}</div>
+                        <div class="community-metric-lbl">Total Sessions Managed</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Navigation Tabs -->
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-4 flex-wrap gap-2">
+                <div class="nav nav-pills gap-1">
+                    <a href="?filter=all" class="nav-link py-1 px-3 rounded-pill {% if current_filter == 'all' or not current_filter %}active{% endif %}" style="font-size: 0.85rem;">
+                        All Relationships
+                    </a>
+                    <a href="?filter=active" class="nav-link py-1 px-3 rounded-pill {% if current_filter == 'active' %}active{% endif %}" style="font-size: 0.85rem;">
+                        Active ({{ active_mentees_count }})
+                    </a>
+                    <a href="?filter=completed" class="nav-link py-1 px-3 rounded-pill {% if current_filter == 'completed' %}active{% endif %}" style="font-size: 0.85rem;">
+                        Completed ({{ total_completed_count }})
+                    </a>
+                </div>
+            </div>
+
+            <!-- Mentees List -->
+            <div class="d-flex flex-column gap-3">
+                {% for req in mentorships %}
+                <div class="community-card p-3 p-md-4">
+                    <div class="d-flex flex-column flex-md-row align-items-start justify-content-between gap-3">
+                        <div class="d-flex align-items-start gap-3">
+                            <!-- Student Avatar -->
+                            <div class="dash-avatar-circle flex-shrink-0" style="width: 48px; height: 48px; font-size: 1.1rem;">
+                                {% if req.student.studentprofile.profile_picture %}
+                                    <img src="{{ req.student.studentprofile.profile_picture.url }}" alt="{{ req.student.username }}">
+                                {% else %}
+                                    <span class="dash-avatar-initials">{{ req.student.username|slice:":2"|upper }}</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Student Info -->
+                            <div>
+                                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                    <h2 class="h6 fw-bold text-body mb-0">{{ req.student.first_name|default:req.student.username }} {{ req.student.last_name }}</h2>
+                                    {% if req.status == 'Accepted' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.72rem;">
+                                            <i class="bi bi-circle-fill me-1" style="font-size: 0.45rem;"></i> Active Relationship
+                                        </span>
+                                    {% elif req.status == 'Completed' %}
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5" style="font-size: 0.72rem;">
+                                            <i class="bi bi-check-circle-fill me-1"></i> Completed
+                                        </span>
+                                    {% endif %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5" style="font-size: 0.72rem;">
+                                        {{ req.purpose }}
+                                    </span>
+                                </div>
+
+                                <div class="small text-muted mb-2">
+                                    {% if req.student.studentprofile.career_goal %}
+                                        <i class="bi bi-compass me-1"></i> Target: <strong class="text-body">{{ req.student.studentprofile.career_goal }}</strong>
+                                    {% elif req.student.studentprofile.preferred_domain %}
+                                        <i class="bi bi-compass me-1"></i> Domain: <strong class="text-body">{{ req.student.studentprofile.preferred_domain }}</strong>
+                                    {% else %}
+                                        <i class="bi bi-person me-1"></i> Aspiring Professional
+                                    {% endif %}
+                                    <span class="mx-2">&bull;</span>
+                                    <i class="bi bi-calendar3 me-1"></i> Session: {{ req.requested_date }} at {{ req.requested_time|time:"g:i A" }}
+                                </div>
+
+                                {% if req.student_message %}
+                                <div class="p-2 px-3 rounded-2 bg-body-tertiary small text-muted border mb-2 lh-base" style="max-width: 650px;">
+                                    <span class="fw-medium text-body">Discussion Topic:</span> {{ req.student_message|truncatewords:25 }}
+                                </div>
+                                {% endif %}
+
+                                {% if req.meeting_link %}
+                                <div class="small text-primary mb-1">
+                                    <i class="bi bi-camera-video-fill me-1"></i>
+                                    <a href="{{ req.meeting_link }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none fw-medium">
+                                        Open Session Room <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem;"></i>
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex align-items-center gap-2 flex-wrap flex-shrink-0 align-self-end align-self-md-center">
+                            <a href="{% url 'community:mentor_chat' req.student.id %}" class="dash-btn dash-btn-primary dash-btn-sm">
+                                <i class="bi bi-chat-dots-fill me-1"></i> Open Chat
+                            </a>
+                            <a href="{% url 'community:mentor_requests' %}" class="dash-btn dash-btn-outline dash-btn-sm" title="View Full Request Details">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="community-card text-center py-5">
+                    <div class="community-metric-icon mx-auto mb-3" style="width: 56px; height: 56px; font-size: 1.75rem; background: rgba(59, 130, 246, 0.1); color: #2563EB;">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h2 class="h5 fw-bold text-body mb-2">No Mentees Found</h2>
+                    <p class="text-muted small mb-4 lh-base" style="max-width: 440px; margin: 0 auto;">
+                        {% if current_filter == 'active' %}
+                            You do not currently have any active mentees. Accept pending requests to begin mentoring candidates.
+                        {% elif current_filter == 'completed' %}
+                            You have not marked any mentorship sessions as completed yet.
+                        {% else %}
+                            Students who book and have their sessions accepted by you will appear here with direct communication channels.
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'community:mentor_requests' %}" class="dash-btn dash-btn-primary dash-btn-sm px-4 py-2">
+                        <i class="bi bi-inbox me-1"></i> Check Incoming Requests
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.querySelector('.dash-sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+});
+</script>
+{% endblock %}

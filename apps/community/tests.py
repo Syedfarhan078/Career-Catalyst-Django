@@ -790,3 +790,347 @@ class MentorMarketplaceTests(TestCase):
         })
         self.assertEqual(res2.status_code, 302)
         self.assertEqual(MentorshipRequest.objects.count(), 0)
+
+
+class Phase2MentorWorkspaceTests(TestCase):
+    """
+    Phase 2: Comprehensive test suite for Dedicated Mentor Workspace,
+    workspace switching, session security, mentor shell isolation, and mentees view.
+    """
+    def setUp(self):
+        self.student_user = User.objects.create_user(
+            username='student_phase2',
+            email='student2@test.com',
+            password='password123'
+        )
+        self.student_profile = StudentProfile.objects.create(
+            user=self.student_user,
+            preferred_domain='Backend',
+            skills='Python, Django'
+        )
+
+        self.mentor_user = User.objects.create_user(
+            username='mentor_phase2',
+            email='mentor2@test.com',
+            password='password123'
+        )
+        self.mentor_student_profile = StudentProfile.objects.create(
+            user=self.mentor_user,
+            preferred_domain='Fullstack',
+            career_goal='Principal Engineer',
+            skills='Python, React, AWS'
+        )
+        self.mentor_profile = MentorProfile.objects.create(
+            user=self.mentor_user,
+            full_name='Dr. Elena Vance',
+            email='elena@mentor.com',
+            phone_number='9876543210',
+            company='Black Mesa Labs',
+            designation='Research Director',
+            experience_years=12,
+            current_location='New Mexico, USA',
+            bio='Physics and engineering mentor.',
+            career_domains='Backend, Cloud',
+            skills='Python, Django, AWS, Distributed Systems',
+            languages='English',
+            available_days='Monday, Tuesday, Wednesday, Thursday, Friday',
+            available_time_slots='10:00 AM - 12:00 PM',
+            status='Approved',
+            verified=True,
+            max_sessions_per_week=5
+        )
+
+    def test_default_workspace_for_student_is_student(self):
+        """Phase 2: Default workspace for regular student is 'student'."""
+        self.client.force_login(self.student_user)
+        res = self.client.get(reverse('dashboard'))
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(res.context['is_approved_mentor'])
+        self.assertEqual(res.context['active_workspace'], 'student')
+
+    def test_approved_mentor_can_switch_workspaces_roundtrip(self):
+        """Phase 2: Approved mentors can switch to mentor workspace and back to student workspace."""
+        self.client.force_login(self.mentor_user)
+
+        # 1. Switch to mentor workspace
+        res = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
+        self.assertRedirects(res, reverse('community:mentor_dashboard'))
+        self.assertEqual(self.client.session.get('active_role'), 'mentor')
+
+        # Verify mentor dashboard loads successfully
+        dash_res = self.client.get(reverse('community:mentor_dashboard'))
+        self.assertEqual(dash_res.status_code, 200)
+        self.assertTrue(dash_res.context['is_approved_mentor'])
+        self.assertEqual(dash_res.context['active_workspace'], 'mentor')
+
+        # 2. Switch back to student workspace
+        res_back = self.client.post(reverse('community:switch_workspace'), {'role': 'student'})
+        self.assertRedirects(res_back, reverse('dashboard'))
+        self.assertEqual(self.client.session.get('active_role'), 'student')
+
+    def test_unapproved_users_cannot_switch_to_mentor_workspace(self):
+        """Phase 2: Students and unapproved applicants cannot switch to mentor workspace."""
+        # 1. Regular student
+        self.client.force_login(self.student_user)
+        res = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
+        self.assertRedirects(res, reverse('dashboard'))
+        self.assertEqual(self.client.session.get('active_role'), 'student')
+
+        # 2. Pending mentor
+        self.mentor_profile.status = 'Pending'
+        self.mentor_profile.verified = False
+        self.mentor_profile.save()
+        self.client.force_login(self.mentor_user)
+
+        res_pending = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
+        self.assertRedirects(res_pending, reverse('dashboard'))
+        self.assertEqual(self.client.session.get('active_role'), 'student')
+
+        # 3. Rejected mentor
+        self.mentor_profile.status = 'Rejected'
+        self.mentor_profile.save()
+        res_rejected = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
+        self.assertRedirects(res_rejected, reverse('dashboard'))
+        self.assertEqual(self.client.session.get('active_role'), 'student')
+
+        # 4. Blocked mentor
+        self.mentor_profile.status = 'Blocked'
+        self.mentor_profile.save()
+        res_blocked = self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
+        self.assertRedirects(res_blocked, reverse('dashboard'))
+        self.assertEqual(self.client.session.get('active_role'), 'student')
+
+    def test_tampered_session_clamped_and_denied_access(self):
+        """Phase 2: Forging session active_role='mentor' is clamped and rejected by backend guards."""
+        self.client.force_login(self.student_user)
+        session = self.client.session
+        session['active_role'] = 'mentor'
+        session.save()
+
+        # Context processor detects unauthorized role and clamps to 'student'
+        dash_res = self.client.get(reverse('dashboard'))
+        self.assertEqual(dash_res.status_code, 200)
+        self.assertEqual(dash_res.context['active_workspace'], 'student')
+        self.assertFalse(dash_res.context['is_approved_mentor'])
+
+        # Attempting direct access to mentor views is blocked by @mentor_required
+        protected_urls = [
+            reverse('community:mentor_dashboard'),
+            reverse('community:mentor_mentees'),
+            reverse('community:mentor_requests'),
+            reverse('community:manage_availability'),
+            reverse('community:edit_profile'),
+        ]
+        for url in protected_urls:
+            res = self.client.get(url)
+            self.assertEqual(res.status_code, 302)
+            self.assertIn(reverse('community:mentor_register'), res.url)
+
+    def test_mentor_views_render_dedicated_mentor_shell(self):
+        """Phase 2: Mentor views render mentor sidebar and identity without student navigation."""
+        self.client.force_login(self.mentor_user)
+
+        views_to_check = [
+            reverse('community:mentor_dashboard'),
+            reverse('community:mentor_mentees'),
+            reverse('community:mentor_requests'),
+            reverse('community:manage_availability'),
+            reverse('community:edit_profile'),
+        ]
+
+        for url in views_to_check:
+            res = self.client.get(url)
+            self.assertEqual(res.status_code, 200, f"Failed accessing {url}")
+            # Mentor shell elements
+            self.assertContains(res, 'mentor-sidebar')
+            self.assertContains(res, 'Mentor Application Sidebar')
+            self.assertContains(res, 'Mentorship Portal')
+            self.assertContains(res, 'Dr. Elena Vance')
+            self.assertContains(res, 'Black Mesa Labs')
+            # Must NOT contain student-specific sidebar links
+            self.assertNotContains(res, 'href="/guidance/"')
+            self.assertNotContains(res, 'Engineering Student')
+
+    def test_mentor_mentees_view_display_and_filtering(self):
+        """Phase 2: mentor_mentees_view displays accepted/completed mentees and supports status filter."""
+        student_a = User.objects.create_user(username='mentee_a', email='a@test.com', password='pw')
+        student_b = User.objects.create_user(username='mentee_b', email='b@test.com', password='pw')
+        student_c = User.objects.create_user(username='mentee_c', email='c@test.com', password='pw')
+        student_d = User.objects.create_user(username='mentee_d', email='d@test.com', password='pw')
+
+        # 1. Accepted request
+        MentorshipRequest.objects.create(
+            student=student_a,
+            mentor=self.mentor_profile,
+            requested_date=timezone.now().date(),
+            requested_time="10:00:00",
+            purpose="System Design",
+            status="Accepted"
+        )
+        # 2. Completed request
+        MentorshipRequest.objects.create(
+            student=student_b,
+            mentor=self.mentor_profile,
+            requested_date=timezone.now().date(),
+            requested_time="11:00:00",
+            purpose="Resume Review",
+            status="Completed"
+        )
+        # 3. Pending request (should not appear in mentees list)
+        MentorshipRequest.objects.create(
+            student=student_c,
+            mentor=self.mentor_profile,
+            requested_date=timezone.now().date(),
+            requested_time="14:00:00",
+            purpose="Career Advice",
+            status="Pending"
+        )
+        # 4. Cancelled request (should not appear)
+        MentorshipRequest.objects.create(
+            student=student_d,
+            mentor=self.mentor_profile,
+            requested_date=timezone.now().date(),
+            requested_time="15:00:00",
+            purpose="Interview Prep",
+            status="Cancelled"
+        )
+
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:mentor_mentees')
+
+        # All mentees (Accepted + Completed)
+        res_all = self.client.get(url)
+        self.assertEqual(res_all.status_code, 200)
+        self.assertContains(res_all, 'mentee_a')
+        self.assertContains(res_all, 'mentee_b')
+        self.assertNotContains(res_all, 'mentee_c')
+        self.assertNotContains(res_all, 'mentee_d')
+
+        # Active filter
+        res_active = self.client.get(url, {'filter': 'active'})
+        self.assertEqual(res_active.status_code, 200)
+        self.assertContains(res_active, 'mentee_a')
+        self.assertNotContains(res_active, 'mentee_b')
+
+        # Completed filter
+        res_completed = self.client.get(url, {'filter': 'completed'})
+        self.assertEqual(res_completed.status_code, 200)
+        self.assertContains(res_completed, 'mentee_b')
+        self.assertNotContains(res_completed, 'mentee_a')
+
+    def test_mentor_dashboard_active_mentees_metric(self):
+        """Phase 2: mentor_dashboard accurately calculates distinct active mentees."""
+        student_x = User.objects.create_user(username='st_x', email='x@test.com', password='pw')
+        student_y = User.objects.create_user(username='st_y', email='y@test.com', password='pw')
+
+        # Two accepted sessions with student_x
+        MentorshipRequest.objects.create(
+            student=student_x, mentor=self.mentor_profile,
+            requested_date=timezone.now().date(), requested_time="09:00:00",
+            purpose="One", status="Accepted"
+        )
+        MentorshipRequest.objects.create(
+            student=student_x, mentor=self.mentor_profile,
+            requested_date=timezone.now().date(), requested_time="10:00:00",
+            purpose="Two", status="Accepted"
+        )
+        # One accepted session with student_y
+        MentorshipRequest.objects.create(
+            student=student_y, mentor=self.mentor_profile,
+            requested_date=timezone.now().date(), requested_time="11:00:00",
+            purpose="Three", status="Accepted"
+        )
+
+        self.client.force_login(self.mentor_user)
+        res = self.client.get(reverse('community:mentor_dashboard'))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['active_mentees'], 2)
+
+    def test_core_dashboard_redirects_approved_mentor_in_mentor_workspace(self):
+        """Phase 2: Core /dashboard/ redirects to mentor dashboard when active_role is 'mentor'."""
+        self.client.force_login(self.mentor_user)
+        session = self.client.session
+        session['active_role'] = 'mentor'
+        session.save()
+
+        res = self.client.get(reverse('dashboard'))
+        self.assertRedirects(res, reverse('community:mentor_dashboard'))
+
+        # When switched to 'student', renders normal student dashboard
+        session['active_role'] = 'student'
+        session.save()
+        res_student = self.client.get(reverse('dashboard'))
+        self.assertEqual(res_student.status_code, 200)
+
+    def test_marketplace_cta_adapts_for_mentor_and_student(self):
+        """Phase 2: Directory CTA shows 'Mentor Dashboard' for mentors, 'Apply as Mentor' for students."""
+        # 1. Regular student
+        self.client.force_login(self.student_user)
+        res_student = self.client.get(reverse('community:mentor_list'))
+        self.assertEqual(res_student.status_code, 200)
+        self.assertContains(res_student, 'Apply as Mentor')
+        self.assertNotContains(res_student, 'Mentor Dashboard')
+
+        # 2. Approved mentor
+        self.client.force_login(self.mentor_user)
+        res_mentor = self.client.get(reverse('community:mentor_list'))
+        self.assertEqual(res_mentor.status_code, 200)
+        self.assertContains(res_mentor, 'Mentor Dashboard')
+        self.assertNotContains(res_mentor, 'Apply as Mentor')
+
+    def test_workspace_switch_preserves_session_and_student_data(self):
+        """Phase 2: Switching workspaces does not log the user out and preserves user profile data."""
+        self.client.force_login(self.mentor_user)
+        self.assertEqual(int(self.client.session['_auth_user_id']), self.mentor_user.pk)
+
+        # Switch to mentor
+        self.client.post(reverse('community:switch_workspace'), {'role': 'mentor'})
+        self.assertEqual(int(self.client.session['_auth_user_id']), self.mentor_user.pk)
+
+        # Switch to student
+        self.client.post(reverse('community:switch_workspace'), {'role': 'student'})
+        self.assertEqual(int(self.client.session['_auth_user_id']), self.mentor_user.pk)
+
+        # Verify StudentProfile is fully intact
+        self.mentor_student_profile.refresh_from_db()
+        self.assertEqual(self.mentor_student_profile.preferred_domain, 'Fullstack')
+        self.assertEqual(self.mentor_student_profile.career_goal, 'Principal Engineer')
+
+    def test_navbar_renders_workspace_switcher_for_mentors_only(self):
+        """Phase 2: Navbar includes workspace switcher UI elements only for approved mentors."""
+        from django.template.loader import render_to_string
+        from django.test import RequestFactory
+        factory = RequestFactory()
+
+        # 1. Regular student in navbar
+        request_student = factory.get('/')
+        request_student.user = self.student_user
+        request_student.session = self.client.session
+        html_student = render_to_string('partials/navbar.html', {
+            'user': self.student_user,
+            'is_approved_mentor': False,
+            'active_workspace': 'student',
+        }, request=request_student)
+        self.assertNotIn('Mentor Workspace', html_student)
+        self.assertNotIn('/community/workspace/switch/', html_student)
+
+        # 2. Approved mentor in navbar
+        request_mentor = factory.get('/')
+        request_mentor.user = self.mentor_user
+        request_mentor.session = self.client.session
+        html_mentor = render_to_string('partials/navbar.html', {
+            'user': self.mentor_user,
+            'is_approved_mentor': True,
+            'active_workspace': 'student',
+        }, request=request_mentor)
+        self.assertIn('Mentor Workspace', html_mentor)
+        self.assertIn('/community/workspace/switch/?role=mentor', html_mentor)
+
+        # 3. Student dashboard sidebar shows workspace mode toggle only to approved mentors
+        self.client.force_login(self.student_user)
+        dash_student = self.client.get(reverse('dashboard'))
+        self.assertNotContains(dash_student, 'Switch to Mentor Workspace')
+
+        self.client.force_login(self.mentor_user)
+        dash_mentor = self.client.get(reverse('dashboard'))
+        self.assertContains(dash_mentor, 'Switch to Mentor Workspace')

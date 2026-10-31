@@ -34,6 +34,8 @@ urlpatterns = [
     path('mentors/dashboard/availability/delete/<int:pk>/', views.delete_availability, name='delete_availability'),
     path('mentors/dashboard/requests/', views.mentor_requests_list, name='mentor_requests'),
     path('mentors/dashboard/requests/<int:pk>/respond/', views.respond_to_request, name='respond_request'),
+    path('mentors/dashboard/mentees/', views.mentor_mentees_view, name='mentor_mentees'),
+    path('workspace/switch/', views.switch_workspace, name='switch_workspace'),
     
     # Student Booking logs
     path('student/bookings/', views.student_bookings_list, name='student_bookings'),

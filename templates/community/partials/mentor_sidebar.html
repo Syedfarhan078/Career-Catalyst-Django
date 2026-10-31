@@ -1,0 +1,101 @@
+{% load static %}
+<!-- CareerCatalyst Dedicated Mentor Application Sidebar -->
+<aside class="dash-sidebar mentor-sidebar" id="dashboardSidebar" aria-label="Mentor Application Sidebar">
+    <!-- Sidebar Header / Brand -->
+    <div class="dash-sidebar-header">
+        <a href="{% url 'community:mentor_dashboard' %}" class="dash-brand d-flex align-items-center">
+            <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="28" height="28">
+            <span class="ms-1">Career<span class="dash-brand-accent">Catalyst</span></span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2 px-2 py-0.5 fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em;">MENTOR</span>
+        </a>
+        <button type="button" class="dash-sidebar-close" id="sidebarCloseBtn" aria-label="Close navigation sidebar">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <!-- Navigation Groups -->
+    <nav class="dash-sidebar-nav">
+        <!-- MENTOR WORKSPACE -->
+        <div class="dash-nav-group">
+            <span class="dash-nav-label">Mentorship Portal</span>
+            <a href="{% url 'community:mentor_dashboard' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'mentor_dashboard' %}active{% endif %}">
+                <i class="bi bi-grid-fill"></i>
+                <span>Mentor Overview</span>
+            </a>
+            <a href="{% url 'community:mentor_requests' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'mentor_requests' %}active{% endif %}">
+                <i class="bi bi-inbox-fill"></i>
+                <span>Incoming Requests</span>
+            </a>
+            <a href="{% url 'community:mentor_mentees' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'mentor_mentees' %}active{% endif %}">
+                <i class="bi bi-people-fill"></i>
+                <span>My Mentees</span>
+            </a>
+        </div>
+
+        <!-- OPERATIONS & REPUTATION -->
+        <div class="dash-nav-group">
+            <span class="dash-nav-label">Operations</span>
+            <a href="{% url 'community:manage_availability' %}" class="dash-nav-link {% if 'availability' in request.path %}active{% endif %}">
+                <i class="bi bi-calendar3"></i>
+                <span>Availability Slots</span>
+            </a>
+            <a href="{% url 'community:edit_profile' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'edit_profile' %}active{% endif %}">
+                <i class="bi bi-person-badge"></i>
+                <span>Mentor Profile</span>
+            </a>
+            <a href="{% url 'community:mentor_list' %}" class="dash-nav-link {% if request.resolver_match.url_name == 'mentor_list' %}active{% endif %}">
+                <i class="bi bi-shop"></i>
+                <span>Browse Directory</span>
+            </a>
+        </div>
+
+        <!-- WORKSPACE SWITCH -->
+        <div class="dash-nav-group pt-2 border-top">
+            <span class="dash-nav-label">Workspace Mode</span>
+            <a href="{% url 'community:switch_workspace' %}?role=student" class="dash-nav-link text-primary fw-medium" title="Switch to Student Workspace">
+                <i class="bi bi-mortarboard-fill text-primary"></i>
+                <span>Student Workspace</span>
+                <i class="bi bi-arrow-right-short ms-auto text-muted"></i>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Sidebar Bottom: Theme & User Card -->
+    <div class="dash-sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between px-2 py-1">
+            <a href="{% url 'community:edit_profile' %}" class="dash-settings-link {% if request.resolver_match.url_name == 'edit_profile' %}active{% endif %}" title="Mentor Settings">
+                <i class="bi bi-gear"></i>
+                <span>Mentor Settings</span>
+            </a>
+            <button type="button" class="dash-theme-btn" onclick="window.toggleAppTheme(event)" title="Toggle light/dark theme" aria-label="Toggle theme">
+                <i class="bi bi-circle-half"></i>
+            </button>
+        </div>
+
+        <div class="dash-user-badge">
+            <div class="dash-avatar-circle">
+                {% if mentor.profile_photo %}
+                    <img src="{{ mentor.profile_photo.url }}" alt="{{ mentor.full_name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none;">{{ user_initials }}</span>
+                {% else %}
+                    <span class="dash-avatar-initials">{{ user_initials }}</span>
+                {% endif %}
+            </div>
+            <div class="dash-user-info">
+                <div class="dash-user-name">{{ mentor.full_name|default:user.username }}</div>
+                <div class="dash-user-sub text-primary fw-semibold text-truncate" title="{{ mentor.designation }} at {{ mentor.company }}">
+                    {{ mentor.designation|default:"Verified Mentor" }}{% if mentor.company %} &bull; {{ mentor.company }}{% endif %}
+                </div>
+            </div>
+            <a href="{% url 'logout' %}" class="dash-logout-icon-btn" title="Sign out" aria-label="Sign out">
+                <i class="bi bi-box-arrow-right"></i>
+            </a>
+        </div>
+
+        <!-- Dedicated Mobile Sign Out Action -->
+        <a href="{% url 'logout' %}" class="dash-logout-mobile-btn" aria-label="Sign out">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+        </a>
+    </div>
+</aside>

@@ -117,9 +117,13 @@ def review_mentor_application_service(profile, action, reviewer):
 def create_mentorship_request_service(student, mentor, form_cleaned_data):
     """
     Creates a new MentorshipRequest for a student to a mentor.
+    Serializes concurrent bookings using select_for_update row locking.
     Enforces active mentor verification, self-booking prevention, duplicate pending request
     prevention, slot conflict prevention, weekly capacity, and declared availability.
     """
+    # Concurrency Protection: acquire row-level lock on the mentor profile
+    mentor = MentorProfile.objects.select_for_update().get(pk=mentor.pk)
+
     if mentor.status != 'Approved' or not mentor.verified:
         raise ValidationError("Cannot book a session with a mentor who is not currently active and approved.")
 

@@ -448,11 +448,34 @@ def mentor_register(request):
 
 
 @login_required
+def switch_workspace(request):
+    """
+    Switches active workspace between Student and Mentor.
+    Validates mentor status before allowing 'mentor' role.
+    """
+    role = request.GET.get('role') or request.POST.get('role')
+    if role == 'mentor':
+        if hasattr(request.user, 'mentor_profile') and request.user.mentor_profile.status == 'Approved' and request.user.mentor_profile.verified:
+            request.session['active_role'] = 'mentor'
+            messages.success(request, "Switched to Mentor Workspace.")
+            return redirect('community:mentor_dashboard')
+        else:
+            messages.error(request, "You must be an approved mentor to access the Mentor Workspace.")
+            request.session['active_role'] = 'student'
+            return redirect('dashboard')
+    else:
+        request.session['active_role'] = 'student'
+        messages.success(request, "Switched to Student Workspace.")
+        return redirect('dashboard')
+
+
+@login_required
 @mentor_required
 def mentor_dashboard(request):
     """
     Dashboard for approved mentors showing analytics, booking history, and requests list.
     """
+    request.session['active_role'] = 'mentor'
     mentor = request.user.mentor_profile
 
     # Analytics calculation
@@ -460,6 +483,7 @@ def mentor_dashboard(request):
     total_sessions = all_requests.filter(status='Completed').count()
     upcoming_sessions = all_requests.filter(status='Accepted').count()
     pending_sessions = all_requests.filter(status='Pending').count()
+    active_mentees = all_requests.filter(status='Accepted').values('student').distinct().count()
     
     recent_requests = all_requests.filter(status='Pending')[:5]
     recent_reviews = mentor.reviews.select_related('student').all()[:5]
@@ -474,9 +498,50 @@ def mentor_dashboard(request):
         "total_sessions": total_sessions,
         "upcoming_sessions": upcoming_sessions,
         "pending_sessions": pending_sessions,
+        "active_mentees": active_mentees,
         "recent_requests": recent_requests,
         "recent_reviews": recent_reviews,
         "profile_completion": profile_completion,
+        **get_user_sidebar_context(request.user)
+    })
+
+
+@login_required
+@mentor_required
+def mentor_mentees_view(request):
+    """
+    Dedicated view for mentors to track active and historical mentees.
+    Displays candidates with Accepted or Completed requests.
+    """
+    request.session['active_role'] = 'mentor'
+    mentor = request.user.mentor_profile
+    requests_qs = MentorshipRequest.objects.filter(
+        mentor=mentor,
+        status__in=['Accepted', 'Completed']
+    ).select_related('student', 'student__studentprofile').order_by('-requested_date', '-requested_time')
+
+    filter_status = request.GET.get('filter', 'all')
+    if filter_status == 'active':
+        requests_qs = requests_qs.filter(status='Accepted')
+    elif filter_status == 'completed':
+        requests_qs = requests_qs.filter(status='Completed')
+
+    active_mentees_count = MentorshipRequest.objects.filter(
+        mentor=mentor,
+        status='Accepted'
+    ).values('student').distinct().count()
+
+    total_completed_count = MentorshipRequest.objects.filter(
+        mentor=mentor,
+        status='Completed'
+    ).count()
+
+    return render(request, "community/mentor_mentees.html", {
+        "mentor": mentor,
+        "mentorships": requests_qs,
+        "active_mentees_count": active_mentees_count,
+        "total_completed_count": total_completed_count,
+        "current_filter": filter_status,
         **get_user_sidebar_context(request.user)
     })
 

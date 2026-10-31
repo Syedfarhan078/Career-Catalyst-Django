@@ -15,8 +15,12 @@
 
 {% block main_wrapper %}
 <div class="dash-shell">
-    <!-- Left Navigation Sidebar -->
-    {% include "core/partials/dashboard_sidebar.html" %}
+    <!-- Dynamic Workspace Navigation Sidebar -->
+    {% if is_mentor or active_workspace == 'mentor' %}
+        {% include "community/partials/mentor_sidebar.html" %}
+    {% else %}
+        {% include "core/partials/dashboard_sidebar.html" %}
+    {% endif %}
 
     <!-- Backdrop Overlay for Mobile Drawer -->
     <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
