@@ -33,7 +33,8 @@ from .services import (
     review_mentor_application_service, create_mentorship_request_service, 
     respond_to_request_service, submit_mentor_review_service, 
     save_mentor_availability_service, conclude_mentorship_service,
-    generate_mentor_bookable_slots,
+    generate_mentor_bookable_slots, generate_mentor_bookable_slots_with_status,
+    BOOKING_HORIZON_DAYS,
     pause_mentor_availability_service, resume_mentor_availability_service,
     get_mentor_step_down_readiness, execute_mentor_step_down_service,
     reactivate_mentor_service, get_student_profile_for_mentor
@@ -846,14 +847,16 @@ def mentor_available_slots_view(request, mentor_id):
         return JsonResponse({'error': 'Invalid date format. Expected YYYY-MM-DD.'}, status=400)
 
     today = timezone.now().date()
-    if target_date < today or target_date > today + timedelta(days=14):
-        return JsonResponse({'error': 'Date must be within the rolling 14-day booking horizon.'}, status=400)
+    if target_date < today or target_date > today + timedelta(days=BOOKING_HORIZON_DAYS):
+        return JsonResponse({'error': f'Date must be within the rolling {BOOKING_HORIZON_DAYS}-day booking horizon.'}, status=400)
 
-    slots = generate_mentor_bookable_slots(mentor, target_date)
+    slots, reason, message = generate_mentor_bookable_slots_with_status(mentor, target_date)
     return JsonResponse({
         'mentor_id': mentor.id,
         'date': date_str,
-        'slots': slots
+        'slots': slots,
+        'reason': reason,
+        'message': message
     })
 
 

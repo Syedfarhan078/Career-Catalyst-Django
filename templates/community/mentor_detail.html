@@ -430,7 +430,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 } else {
                     slotsPlaceholder.classList.remove('d-none');
-                    slotsPlaceholder.innerHTML = '<i class="bi bi-info-circle me-1 text-warning"></i> No available slots on this date. Mentor may be fully booked or unavailable.';
+                    const reasonMsg = data.message || 'No available slots on this date. Mentor may be fully booked or unavailable.';
+                    slotsPlaceholder.innerHTML = `<i class="bi bi-info-circle me-1 text-warning"></i> ${reasonMsg}`;
                 }
             } catch (err) {
                 slotsPlaceholder.classList.remove('d-none');

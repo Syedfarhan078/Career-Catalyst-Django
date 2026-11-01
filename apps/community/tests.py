@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.core.management import call_command
 from django.utils import timezone
-from datetime import timedelta
+from datetime import datetime, date, time, timedelta
 from unittest.mock import patch
 from django.core.exceptions import ValidationError
 import json
@@ -3275,6 +3275,378 @@ class MentorshipBookingRulesTests(TestCase):
 
         req_a.refresh_from_db()
         self.assertEqual(req_a.status, 'Pending')
+
+
+class MentorshipBookingAvailabilityBugRegressionTests(TestCase):
+    """
+    Focused regression test suite for CareerCatalyst Phase 4 availability bug.
+    Verifies:
+    1. Saturday availability generates valid 45-minute slots.
+    2. Sunday availability generates valid 45-minute slots.
+    3. Multiple availability windows (e.g. 10:00 AM-12:00 PM and 7:00 PM-9:00 PM) handled correctly.
+    4. Date with no configured availability returns no slots with meaningful status.
+    5. Existing Accepted bookings remove conflicting slots.
+    6. Pending requests reserve slots.
+    7. Expired Pending requests no longer block slots.
+    8. Weekly capacity restrictions correctly applied.
+    9. Four-hour same-day advance notice respected.
+    10. API endpoint and frontend date format consistency.
+    11. Valid available slot selection and submission end-to-end.
+    12. Backend rejects manually submitted unavailable or invalid slots.
+    """
+    def setUp(self):
+        self.student = User.objects.create_user(
+            username='student_avail_tester',
+            email='avail_tester@test.com',
+            password='password123',
+            role='student'
+        )
+        self.student_profile = StudentProfile.objects.create(
+            user=self.student,
+            preferred_domain='Full Stack',
+            skills='Python, Django'
+        )
+        self.other_student = User.objects.create_user(
+            username='student_other',
+            email='other@test.com',
+            password='password123',
+            role='student'
+        )
+
+        self.mentor_user = User.objects.create_user(
+            username='mentor_weekend_pro',
+            email='mentor_weekend@test.com',
+            password='password123',
+            role='mentor'
+        )
+        self.mentor = MentorProfile.objects.create(
+            user=self.mentor_user,
+            full_name='Weekend Mentor',
+            email='mentor_weekend@test.com',
+            phone_number='9876543210',
+            company='Tech Solutions',
+            designation='Principal Engineer',
+            experience_years=10,
+            status='Approved',
+            verified=True,
+            max_sessions_per_week=5,
+            available_days='Saturday, Sunday',
+            available_time_slots='10:00 AM–12:00 PM and 7:00 PM–9:00 PM'
+        )
+
+        # Calculate next Saturday and Sunday within 14-day horizon
+        today = timezone.now().date()
+        days_until_sat = (5 - today.weekday()) % 7
+        if days_until_sat == 0:
+            days_until_sat = 7
+        self.next_saturday = today + timedelta(days=days_until_sat)
+        self.next_sunday = self.next_saturday + timedelta(days=1)
+
+    def test_01_saturday_single_window_generates_valid_45_minute_slots(self):
+        """Saturday single window (10:00-12:00) generates 2 45-min slots; 30 min remainder discarded."""
+        from .services import generate_mentor_bookable_slots
+        mentor = MentorProfile.objects.create(
+            user=User.objects.create_user('m_sat_single', 'msat@test.com', 'pass123', role='mentor'),
+            full_name='Saturday Single Mentor',
+            status='Approved',
+            verified=True,
+            max_sessions_per_week=5
+        )
+        MentorAvailability.objects.create(
+            mentor=mentor,
+            day='Saturday',
+            start_time=time(10, 0),
+            end_time=time(12, 0)
+        )
+        slots = generate_mentor_bookable_slots(mentor, self.next_saturday)
+        self.assertEqual(len(slots), 2)
+        self.assertEqual(slots[0]['start_time'], '10:00:00')
+        self.assertEqual(slots[0]['end_time'], '10:45:00')
+        self.assertEqual(slots[0]['display'], '10:00 AM - 10:45 AM')
+        self.assertEqual(slots[1]['start_time'], '10:45:00')
+        self.assertEqual(slots[1]['end_time'], '11:30:00')
+        self.assertEqual(slots[1]['display'], '10:45 AM - 11:30 AM')
+
+    def test_02_sunday_single_window_generates_valid_45_minute_slots(self):
+        """Sunday single window (14:00-16:00) generates 2 45-min slots; 30 min remainder discarded."""
+        from .services import generate_mentor_bookable_slots
+        mentor = MentorProfile.objects.create(
+            user=User.objects.create_user('m_sun_single', 'msun@test.com', 'pass123', role='mentor'),
+            full_name='Sunday Single Mentor',
+            status='Approved',
+            verified=True,
+            max_sessions_per_week=5
+        )
+        MentorAvailability.objects.create(
+            mentor=mentor,
+            day='Sunday',
+            start_time=time(14, 0),
+            end_time=time(16, 0)
+        )
+        slots = generate_mentor_bookable_slots(mentor, self.next_sunday)
+        self.assertEqual(len(slots), 2)
+        self.assertEqual(slots[0]['start_time'], '14:00:00')
+        self.assertEqual(slots[0]['end_time'], '14:45:00')
+        self.assertEqual(slots[1]['start_time'], '14:45:00')
+        self.assertEqual(slots[1]['end_time'], '15:30:00')
+
+    def test_03_multiple_availability_windows_saturday_and_sunday(self):
+        """Both windows (10:00-12:00 and 7:00-9:00 PM) on Saturday and Sunday generate 4 slots each."""
+        from .services import generate_mentor_bookable_slots, generate_mentor_bookable_slots_with_status
+        # Tests parsing of "10:00 AM–12:00 PM and 7:00 PM–9:00 PM" with en-dash and 'and' separator
+        sat_slots, sat_reason, sat_msg = generate_mentor_bookable_slots_with_status(self.mentor, self.next_saturday)
+        self.assertEqual(sat_reason, 'available')
+        self.assertEqual(len(sat_slots), 4)
+        times = [s['start_time'] for s in sat_slots]
+        self.assertEqual(times, ['10:00:00', '10:45:00', '19:00:00', '19:45:00'])
+
+        sun_slots, sun_reason, sun_msg = generate_mentor_bookable_slots_with_status(self.mentor, self.next_sunday)
+        self.assertEqual(sun_reason, 'available')
+        self.assertEqual(len(sun_slots), 4)
+        sun_times = [s['start_time'] for s in sun_slots]
+        self.assertEqual(sun_times, ['10:00:00', '10:45:00', '19:00:00', '19:45:00'])
+
+        # Also test structured MentorAvailability records with multiple windows for same day
+        structured_mentor = MentorProfile.objects.create(
+            user=User.objects.create_user('m_struct_multi', 'mstruct@test.com', 'pass123', role='mentor'),
+            full_name='Structured Multi-window Mentor',
+            status='Approved',
+            verified=True,
+            max_sessions_per_week=5
+        )
+        MentorAvailability.objects.create(
+            mentor=structured_mentor,
+            day='Saturday',
+            start_time=time(10, 0),
+            end_time=time(12, 0)
+        )
+        MentorAvailability.objects.create(
+            mentor=structured_mentor,
+            day='Saturday',
+            start_time=time(19, 0),
+            end_time=time(21, 0)
+        )
+        struct_slots = generate_mentor_bookable_slots(structured_mentor, self.next_saturday)
+        self.assertEqual(len(struct_slots), 4)
+        self.assertEqual([s['start_time'] for s in struct_slots], ['10:00:00', '10:45:00', '19:00:00', '19:45:00'])
+
+    def test_04_date_with_no_configured_availability_returns_no_slots(self):
+        """Date with no configured availability returns no slots with 'no_availability' reason."""
+        from .services import generate_mentor_bookable_slots_with_status
+        # Find a Wednesday within 14 days
+        today = timezone.now().date()
+        days_until_wed = (2 - today.weekday()) % 7
+        if days_until_wed == 0:
+            days_until_wed = 7
+        wednesday = today + timedelta(days=days_until_wed)
+
+        slots, reason, msg = generate_mentor_bookable_slots_with_status(self.mentor, wednesday)
+        self.assertEqual(slots, [])
+        self.assertEqual(reason, 'no_availability')
+        self.assertIn("has no scheduled availability on Wednesdays", msg)
+
+    def test_05_existing_accepted_booking_removes_conflicting_slot(self):
+        """Accepted booking removes only its own 45-minute slot from bookable slots."""
+        from .services import generate_mentor_bookable_slots
+        MentorshipRequest.objects.create(
+            student=self.other_student,
+            mentor=self.mentor,
+            requested_date=self.next_saturday,
+            requested_time="10:00:00",
+            purpose="System Design",
+            status="Accepted",
+            accepted_at=timezone.now()
+        )
+        slots = generate_mentor_bookable_slots(self.mentor, self.next_saturday)
+        self.assertEqual(len(slots), 3)
+        times = [s['start_time'] for s in slots]
+        self.assertNotIn('10:00:00', times)
+        self.assertIn('10:45:00', times)
+        self.assertIn('19:00:00', times)
+        self.assertIn('19:45:00', times)
+
+    def test_06_pending_request_reserves_slot(self):
+        """Active Pending request reserves its slot and prevents others from seeing it."""
+        from .services import generate_mentor_bookable_slots
+        MentorshipRequest.objects.create(
+            student=self.other_student,
+            mentor=self.mentor,
+            requested_date=self.next_saturday,
+            requested_time="19:00:00",
+            purpose="Resume Review",
+            status="Pending"
+        )
+        slots = generate_mentor_bookable_slots(self.mentor, self.next_saturday)
+        self.assertEqual(len(slots), 3)
+        times = [s['start_time'] for s in slots]
+        self.assertNotIn('19:00:00', times)
+        self.assertIn('10:00:00', times)
+
+    def test_07_expired_pending_request_no_longer_blocks_slot(self):
+        """Pending request older than 24 hours expires and does not block the slot."""
+        from .services import generate_mentor_bookable_slots
+        expired_req = MentorshipRequest.objects.create(
+            student=self.other_student,
+            mentor=self.mentor,
+            requested_date=self.next_saturday,
+            requested_time="19:00:00",
+            purpose="Mock Interview",
+            status="Pending"
+        )
+        # Manually backdate created_at to 25 hours ago
+        MentorshipRequest.objects.filter(pk=expired_req.pk).update(
+            created_at=timezone.now() - timedelta(hours=25)
+        )
+        slots = generate_mentor_bookable_slots(self.mentor, self.next_saturday)
+        self.assertEqual(len(slots), 4)
+        times = [s['start_time'] for s in slots]
+        self.assertIn('19:00:00', times)
+
+    def test_08_weekly_capacity_restrictions_applied(self):
+        """When mentor's weekly capacity is reached, slot generation returns capacity_reached."""
+        from .services import generate_mentor_bookable_slots_with_status
+        self.mentor.max_sessions_per_week = 2
+        self.mentor.save()
+
+        # Create 2 accepted bookings in the same week as next_saturday
+        sat_start_of_week = self.next_saturday - timedelta(days=self.next_saturday.weekday())
+        accepted_time = timezone.make_aware(datetime.combine(sat_start_of_week, time(12, 0)))
+
+        MentorshipRequest.objects.create(
+            student=self.other_student,
+            mentor=self.mentor,
+            requested_date=self.next_saturday,
+            requested_time="10:00:00",
+            purpose="Resume Review",
+            status="Accepted",
+            accepted_at=accepted_time
+        )
+        MentorshipRequest.objects.create(
+            student=self.other_student,
+            mentor=self.mentor,
+            requested_date=self.next_saturday,
+            requested_time="10:45:00",
+            purpose="Career Guidance",
+            status="Accepted",
+            accepted_at=accepted_time
+        )
+
+        slots, reason, msg = generate_mentor_bookable_slots_with_status(self.mentor, self.next_saturday)
+        self.assertEqual(slots, [])
+        self.assertEqual(reason, 'capacity_reached')
+        self.assertIn("reached their maximum booking capacity", msg)
+
+    def test_09_four_hour_same_day_advance_notice_respected(self):
+        """Same-day booking enforces 4-hour advance notice, excluding past/near slots."""
+        from .services import generate_mentor_bookable_slots
+        today = timezone.now().date()
+        today_day_name = today.strftime('%A')
+
+        # Configure mentor with availability today: morning window and far future window
+        same_day_mentor = MentorProfile.objects.create(
+            user=User.objects.create_user('m_sameday', 'msameday@test.com', 'pass123', role='mentor'),
+            full_name='Same Day Mentor',
+            status='Approved',
+            verified=True,
+            max_sessions_per_week=10
+        )
+        MentorAvailability.objects.create(
+            mentor=same_day_mentor,
+            day=today_day_name,
+            start_time=time(0, 0),
+            end_time=time(23, 59)
+        )
+        slots = generate_mentor_bookable_slots(same_day_mentor, today)
+        now = timezone.now()
+        tz = timezone.get_current_timezone()
+        min_notice_dt = now + timedelta(hours=4)
+
+        for slot in slots:
+            slot_t = datetime.strptime(slot['start_time'], '%H:%M:%S').time()
+            slot_dt = timezone.make_aware(datetime.combine(today, slot_t), timezone=tz)
+            self.assertGreaterEqual(slot_dt, min_notice_dt)
+
+    def test_10_api_date_format_and_availability_endpoint_e2e(self):
+        """Availability JSON endpoint validates date format and returns structured metadata."""
+        self.client.force_login(self.student)
+        url = reverse('community:mentor_available_slots', args=[self.mentor.id])
+
+        # Valid YYYY-MM-DD request
+        res = self.client.get(f"{url}?date={self.next_saturday.strftime('%Y-%m-%d')}")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['mentor_id'], self.mentor.id)
+        self.assertEqual(data['date'], self.next_saturday.strftime('%Y-%m-%d'))
+        self.assertEqual(data['reason'], 'available')
+        self.assertEqual(len(data['slots']), 4)
+
+        # Invalid format (e.g. DD/MM/YYYY)
+        res_bad = self.client.get(f"{url}?date=07/11/2026")
+        self.assertEqual(res_bad.status_code, 400)
+        self.assertIn("Invalid date format", res_bad.json()['error'])
+
+        # Past date
+        past_date = (timezone.now().date() - timedelta(days=2)).strftime('%Y-%m-%d')
+        res_past = self.client.get(f"{url}?date={past_date}")
+        self.assertEqual(res_past.status_code, 400)
+
+        # Date outside 14-day horizon
+        future_out = (timezone.now().date() + timedelta(days=16)).strftime('%Y-%m-%d')
+        res_out = self.client.get(f"{url}?date={future_out}")
+        self.assertEqual(res_out.status_code, 400)
+
+    def test_11_valid_available_slot_selection_and_submission_e2e(self):
+        """Student selects available slot and submits request successfully with Pending status."""
+        self.client.force_login(self.student)
+        book_url = reverse('community:book_session', args=[self.mentor.id])
+
+        post_data = {
+            'requested_date': self.next_saturday.strftime('%Y-%m-%d'),
+            'requested_time': '10:00:00',
+            'purpose': 'Career Guidance',
+            'student_message': 'Looking forward to discussing career options.'
+        }
+        res = self.client.post(book_url, post_data, follow=True)
+        self.assertEqual(res.status_code, 200)
+
+        created_req = MentorshipRequest.objects.filter(
+            student=self.student,
+            mentor=self.mentor,
+            requested_date=self.next_saturday,
+            requested_time='10:00:00'
+        ).first()
+        self.assertIsNotNone(created_req)
+        self.assertEqual(created_req.status, 'Pending')
+        self.assertEqual(created_req.purpose, 'Career Guidance')
+
+    def test_12_backend_rejects_manually_submitted_unavailable_or_invalid_slots(self):
+        """Backend rejects arbitrary or invalid times that are not valid 45-minute available slots."""
+        # Ensure no prior pending requests block the validation
+        MentorshipRequest.objects.filter(student=self.student, mentor=self.mentor).delete()
+
+        self.client.force_login(self.student)
+        book_url = reverse('community:book_session', args=[self.mentor.id])
+
+        # 1. Arbitrary unaligned time within availability window (10:15 instead of 10:00 or 10:45)
+        res_bad_time = self.client.post(book_url, {
+            'requested_date': self.next_saturday.strftime('%Y-%m-%d'),
+            'requested_time': '10:15:00',
+            'purpose': 'Career Guidance',
+            'student_message': 'Arbitrary time attempt'
+        }, follow=True)
+        self.assertContains(res_bad_time, "is not available or is outside the mentor&#x27;s schedule")
+        self.assertFalse(MentorshipRequest.objects.filter(student=self.student, requested_time='10:15:00').exists())
+
+        # 2. Time completely outside mentor schedule (e.g. 03:00 AM)
+        res_outside = self.client.post(book_url, {
+            'requested_date': self.next_saturday.strftime('%Y-%m-%d'),
+            'requested_time': '03:00:00',
+            'purpose': 'Career Guidance',
+            'student_message': 'Outside schedule attempt'
+        }, follow=True)
+        self.assertContains(res_outside, "is not available or is outside the mentor&#x27;s schedule")
+        self.assertFalse(MentorshipRequest.objects.filter(student=self.student, requested_time='03:00:00').exists())
+
 
 
 

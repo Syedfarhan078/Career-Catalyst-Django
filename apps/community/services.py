@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from datetime import datetime, date, time, timedelta
+import re
 from .models import (
     MentorProfile, MentorSkill, MentorshipRequest, MentorReview, 
     MentorAvailability, MentorMessage, MentorLifecycleEvent
@@ -35,12 +36,60 @@ def _parse_time_str(t_str):
     if isinstance(t_str, time):
         return t_str
     t_str = str(t_str).strip()
-    for fmt in ('%I:%M %p', '%I:%M%p', '%H:%M:%S', '%H:%M'):
+    for fmt in ('%I:%M %p', '%I:%M%p', '%I %p', '%I%p', '%H:%M:%S', '%H:%M'):
         try:
             return datetime.strptime(t_str, fmt).time()
         except ValueError:
             pass
     return None
+
+
+def parse_time_ranges(slots_str):
+    """
+    Parses a string containing one or more time ranges into a list of (start_time, end_time) tuples.
+    Supports single or multiple windows, with separators such as commas, semicolons, newlines, or 'and',
+    and range dashes including hyphens, en-dashes, em-dashes, or 'to'.
+    Example: '10:00 AM - 12:00 PM, 7:00 PM - 9:00 PM' -> [(10:00, 12:00), (19:00, 21:00)]
+    """
+    if not slots_str:
+        return []
+    windows = []
+    raw_ranges = re.split(r'[,;\n]|(?:\band\b)', str(slots_str), flags=re.IGNORECASE)
+    for raw in raw_ranges:
+        raw = raw.strip()
+        if not raw:
+            continue
+        parts = re.split(r'\s*(?:[-–—]|(?:\bto\b))\s*', raw, flags=re.IGNORECASE)
+        if len(parts) == 2:
+            st = _parse_time_str(parts[0])
+            et = _parse_time_str(parts[1])
+            if st and et and st < et:
+                windows.append((st, et))
+    return windows
+
+
+def get_mentor_availability_windows(mentor, day_name):
+    """
+    Returns a list of (start_time, end_time) tuples for the mentor on day_name (e.g. 'Saturday').
+    Checks structured MentorAvailability records first; falls back to available_days / available_time_slots.
+    """
+    windows = []
+    avail_records = mentor.availabilities.filter(day=day_name).order_by('start_time')
+    for avail in avail_records:
+        st = _parse_time_str(avail.start_time)
+        et = _parse_time_str(avail.end_time)
+        if st and et and st < et:
+            windows.append((st, et))
+
+    if windows:
+        return windows
+
+    if mentor.available_days:
+        allowed_days = [d.strip().lower() for d in mentor.available_days.split(',') if d.strip()]
+        if day_name.lower() in allowed_days and mentor.available_time_slots:
+            windows = parse_time_ranges(mentor.available_time_slots)
+
+    return windows
 
 
 def is_request_expired(request_obj):
@@ -127,56 +176,45 @@ def get_mentor_weekly_booking_count(mentor, target_date):
     return qualifying_requests.count()
 
 
-def generate_mentor_bookable_slots(mentor, target_date):
+def generate_mentor_bookable_slots_with_status(mentor, target_date):
     """
     Generates dynamic 45-minute bookable slots for a mentor on target_date.
+    Returns a tuple: (slots, reason_code, message).
     Rules:
     - Mentor must be Approved, verified, and not is_paused.
     - target_date must be within rolling 14-day horizon (today to today + 14 days).
     - Today requires minimum 4 hours notice.
-    - Slices availability window into 45-minute slots (incomplete remaining time discarded).
+    - Slices all mentor availability windows into 45-minute slots (incomplete remaining time discarded).
     - Excludes slots overlapping Accepted bookings.
     - Excludes slots reserved by active (non-expired) Pending requests.
     - Excludes slots if weekly booking capacity for that week is reached.
     """
-    if mentor.status != 'Approved' or not mentor.verified or mentor.is_paused:
-        return []
+    if mentor.status != 'Approved' or not mentor.verified:
+        return [], 'mentor_unavailable', 'This mentor is not currently accepting mentorship bookings.'
+
+    if mentor.is_paused:
+        return [], 'mentor_paused', f'{mentor.full_name} has temporarily paused accepting new booking requests.'
 
     now = timezone.now()
     today = now.date()
     target_d = target_date.date() if isinstance(target_date, datetime) else target_date
 
     # 14-day horizon check
-    if target_d < today or target_d > today + timedelta(days=BOOKING_HORIZON_DAYS):
-        return []
+    if target_d < today:
+        return [], 'past_date', 'Cannot book sessions for past dates.'
+    if target_d > today + timedelta(days=BOOKING_HORIZON_DAYS):
+        return [], 'outside_horizon', f'Date is outside the rolling {BOOKING_HORIZON_DAYS}-day booking horizon.'
 
     # Weekly booking capacity check
     if get_mentor_weekly_booking_count(mentor, target_d) >= mentor.max_sessions_per_week:
-        return []
+        return [], 'capacity_reached', f'{mentor.full_name} has reached their maximum booking capacity ({mentor.max_sessions_per_week} sessions) for this week.'
 
     day_name = target_d.strftime('%A')
-
-    # Mentor availability window for this weekday
-    window_start = None
-    window_end = None
-
-    avail = mentor.availabilities.filter(day=day_name).first()
-    if avail:
-        window_start = avail.start_time
-        window_end = avail.end_time
-    elif mentor.available_days:
-        allowed_days = [d.strip().lower() for d in mentor.available_days.split(',') if d.strip()]
-        if day_name.lower() in allowed_days and mentor.available_time_slots and '-' in mentor.available_time_slots:
-            parts = mentor.available_time_slots.split('-')
-            window_start = _parse_time_str(parts[0])
-            window_end = _parse_time_str(parts[1])
-
-    if not window_start or not window_end or window_start >= window_end:
-        return []
+    windows = get_mentor_availability_windows(mentor, day_name)
+    if not windows:
+        return [], 'no_availability', f'{mentor.full_name} has no scheduled availability on {day_name}s.'
 
     tz = timezone.get_current_timezone()
-    start_dt = timezone.make_aware(datetime.combine(target_d, window_start), timezone=tz)
-    end_dt = timezone.make_aware(datetime.combine(target_d, window_end), timezone=tz)
     min_notice_dt = now + timedelta(hours=MINIMUM_NOTICE_HOURS)
 
     # Fetch day's existing Accepted and Pending requests
@@ -200,38 +238,67 @@ def generate_mentor_bookable_slots(mentor, target_date):
         taken_slots.append((req_start, req_end))
 
     generated_slots = []
-    current_slot_start = start_dt
     slot_delta = timedelta(minutes=SESSION_DURATION_MINUTES)
+    skipped_notice_count = 0
+    skipped_taken_count = 0
+    total_potential_slots = 0
 
-    while current_slot_start + slot_delta <= end_dt:
-        current_slot_end = current_slot_start + slot_delta
+    for win_start, win_end in windows:
+        start_dt = timezone.make_aware(datetime.combine(target_d, win_start), timezone=tz)
+        end_dt = timezone.make_aware(datetime.combine(target_d, win_end), timezone=tz)
 
-        # Check advance notice if booking for today (both are tz-aware)
-        if target_d == today and current_slot_start < min_notice_dt:
+        current_slot_start = start_dt
+        while current_slot_start + slot_delta <= end_dt:
+            total_potential_slots += 1
+            current_slot_end = current_slot_start + slot_delta
+
+            # Check advance notice if booking for today (both are tz-aware)
+            if target_d == today and current_slot_start < min_notice_dt:
+                skipped_notice_count += 1
+                current_slot_start = current_slot_end
+                continue
+
+            # Check overlap with any taken slot
+            overlaps = False
+            for taken_start, taken_end in taken_slots:
+                if max(current_slot_start, taken_start) < min(current_slot_end, taken_end):
+                    overlaps = True
+                    break
+
+            if overlaps:
+                skipped_taken_count += 1
+            else:
+                start_str = current_slot_start.strftime('%I:%M %p').lstrip('0')
+                end_str = current_slot_end.strftime('%I:%M %p').lstrip('0')
+                generated_slots.append({
+                    'start_time': current_slot_start.time().strftime('%H:%M:%S'),
+                    'end_time': current_slot_end.time().strftime('%H:%M:%S'),
+                    'start_display': start_str,
+                    'end_display': end_str,
+                    'display': f"{start_str} - {end_str}"
+                })
+
             current_slot_start = current_slot_end
-            continue
 
-        # Check overlap with any taken slot
-        overlaps = False
-        for taken_start, taken_end in taken_slots:
-            if max(current_slot_start, taken_start) < min(current_slot_end, taken_end):
-                overlaps = True
-                break
+    if generated_slots:
+        return generated_slots, 'available', f'{len(generated_slots)} slots available.'
 
-        if not overlaps:
-            start_str = current_slot_start.strftime('%I:%M %p').lstrip('0')
-            end_str = current_slot_end.strftime('%I:%M %p').lstrip('0')
-            generated_slots.append({
-                'start_time': current_slot_start.time().strftime('%H:%M:%S'),
-                'end_time': current_slot_end.time().strftime('%H:%M:%S'),
-                'start_display': start_str,
-                'end_display': end_str,
-                'display': f"{start_str} - {end_str}"
-            })
+    if total_potential_slots > 0 and skipped_notice_count == total_potential_slots:
+        return [], 'notice_required', 'Same-day bookings require at least 4 hours advance notice. All remaining slots for today have passed.'
 
-        current_slot_start = current_slot_end
+    if total_potential_slots > 0 and (skipped_taken_count + skipped_notice_count) == total_potential_slots:
+        return [], 'all_slots_reserved', 'All time slots on this date are already reserved or booked.'
 
-    return generated_slots
+    return [], 'no_valid_slots', 'No available 45-minute slots on this date.'
+
+
+def generate_mentor_bookable_slots(mentor, target_date):
+    """
+    Generates dynamic 45-minute bookable slots for a mentor on target_date.
+    Wrapper for generate_mentor_bookable_slots_with_status.
+    """
+    slots, _, _ = generate_mentor_bookable_slots_with_status(mentor, target_date)
+    return slots
 
 @transaction.atomic
 def register_mentor_service(user, form_cleaned_data):
@@ -473,23 +540,6 @@ def create_mentorship_request_service(student, mentor, form_cleaned_data):
         for s in available_slots
     )
 
-    if not is_valid_slot and not mentor.availabilities.exists():
-        # Fallback for legacy mentors who haven't configured structured MentorAvailability
-        day_name = requested_date.strftime('%A')
-        allowed_days = [d.strip().lower() for d in (mentor.available_days or '').split(',') if d.strip()]
-        if day_name.lower() in allowed_days and mentor.available_time_slots and '-' in mentor.available_time_slots:
-            parts = mentor.available_time_slots.split('-')
-            win_start = _parse_time_str(parts[0])
-            win_end = _parse_time_str(parts[1])
-            if win_start and win_end:
-                tz = timezone.get_current_timezone()
-                req_start_dt = timezone.make_aware(datetime.combine(requested_date, requested_time), timezone=tz)
-                req_end_dt = req_start_dt + timedelta(minutes=SESSION_DURATION_MINUTES)
-                win_start_dt = timezone.make_aware(datetime.combine(requested_date, win_start), timezone=tz)
-                win_end_dt = timezone.make_aware(datetime.combine(requested_date, win_end), timezone=tz)
-                if req_start_dt >= win_start_dt and req_end_dt <= win_end_dt:
-                    is_valid_slot = True
-
     if not is_valid_slot:
         raise ValidationError(f"The requested time ({requested_time.strftime('%I:%M %p')}) is not available or is outside the mentor's schedule.")
 
@@ -579,33 +629,28 @@ def respond_to_request_service(request_obj, action, response_message, meeting_li
         if not target_booking_time:
             raise ValidationError("Invalid booking time.")
         day_name = target_booking_date.strftime('%A')
-        win_start = None
-        win_end = None
+        windows = get_mentor_availability_windows(mentor, day_name)
 
-        avail = mentor.availabilities.filter(day=day_name).first()
-        if avail:
-            win_start = _parse_time_str(avail.start_time)
-            win_end = _parse_time_str(avail.end_time)
-        elif mentor.available_days:
-            allowed_days = [d.strip().lower() for d in mentor.available_days.split(',') if d.strip()]
-            if day_name.lower() in allowed_days and mentor.available_time_slots and '-' in mentor.available_time_slots:
-                parts = mentor.available_time_slots.split('-')
-                win_start = _parse_time_str(parts[0])
-                win_end = _parse_time_str(parts[1])
-
-        if not win_start or not win_end or win_start >= win_end:
+        if not windows:
             raise ValidationError(f"Cannot accept request: You no longer have availability configured for {day_name}s.")
 
         tz = timezone.get_current_timezone()
         req_start_dt = timezone.make_aware(datetime.combine(target_booking_date, target_booking_time), timezone=tz)
         req_end_dt = req_start_dt + timedelta(minutes=SESSION_DURATION_MINUTES)
-        win_start_dt = timezone.make_aware(datetime.combine(target_booking_date, win_start), timezone=tz)
-        win_end_dt = timezone.make_aware(datetime.combine(target_booking_date, win_end), timezone=tz)
 
-        if req_start_dt < win_start_dt or req_end_dt > win_end_dt:
+        fits_any_window = False
+        for win_start, win_end in windows:
+            win_start_dt = timezone.make_aware(datetime.combine(target_booking_date, win_start), timezone=tz)
+            win_end_dt = timezone.make_aware(datetime.combine(target_booking_date, win_end), timezone=tz)
+            if req_start_dt >= win_start_dt and req_end_dt <= win_end_dt:
+                fits_any_window = True
+                break
+
+        if not fits_any_window:
+            windows_str = ", ".join(f"{w[0].strftime('%I:%M %p')} - {w[1].strftime('%I:%M %p')}" for w in windows)
             raise ValidationError(
                 f"Cannot accept request: The requested session ({target_booking_time.strftime('%I:%M %p')}) "
-                f"no longer fits within your availability window for {day_name}s ({win_start.strftime('%I:%M %p')} - {win_end.strftime('%I:%M %p')})."
+                f"no longer fits within your availability window for {day_name}s ({windows_str})."
             )
 
         # Check for conflicting Accepted bookings for this mentor on the same date/time
