@@ -6,7 +6,6 @@
         <a href="{% if is_approved_mentor %}{% url 'community:mentor_dashboard' %}{% else %}{% url 'community:mentor_register' %}{% endif %}" class="dash-brand d-flex align-items-center flex-nowrap" style="gap: 0.45rem;">
             <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="26" height="26">
             <span class="ms-1" style="font-size: 0.95rem;">Career<span class="dash-brand-accent">Catalyst</span></span>
-            <span class="mentor-brand-badge ms-1">MENTOR</span>
         </a>
         <button type="button" class="dash-sidebar-close" id="sidebarCloseBtn" aria-label="Close navigation sidebar">
             <i class="bi bi-x-lg"></i>
