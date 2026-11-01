@@ -3,10 +3,10 @@
 <aside class="dash-sidebar mentor-sidebar" id="dashboardSidebar" aria-label="Mentor Application Sidebar">
     <!-- Sidebar Header / Brand -->
     <div class="dash-sidebar-header">
-        <a href="{% if is_approved_mentor %}{% url 'community:mentor_dashboard' %}{% else %}{% url 'community:mentor_register' %}{% endif %}" class="dash-brand d-flex align-items-center">
-            <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="28" height="28">
-            <span class="ms-1">Career<span class="dash-brand-accent">Catalyst</span></span>
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-2 px-2 py-0.5 fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em;">MENTOR</span>
+        <a href="{% if is_approved_mentor %}{% url 'community:mentor_dashboard' %}{% else %}{% url 'community:mentor_register' %}{% endif %}" class="dash-brand d-flex align-items-center flex-nowrap" style="gap: 0.45rem;">
+            <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="26" height="26">
+            <span class="ms-1" style="font-size: 0.95rem;">Career<span class="dash-brand-accent">Catalyst</span></span>
+            <span class="mentor-brand-badge ms-1">MENTOR</span>
         </a>
         <button type="button" class="dash-sidebar-close" id="sidebarCloseBtn" aria-label="Close navigation sidebar">
             <i class="bi bi-x-lg"></i>
@@ -92,17 +92,10 @@
     <!-- Sidebar Bottom: Theme & User Card -->
     <div class="dash-sidebar-footer">
         <div class="d-flex align-items-center justify-content-between px-2 py-1">
-            {% if is_approved_mentor %}
             <a href="{% url 'community:edit_profile' %}" class="dash-settings-link {% if request.resolver_match.url_name == 'edit_profile' %}active{% endif %}" title="Mentor Settings">
                 <i class="bi bi-gear"></i>
                 <span>Settings</span>
             </a>
-            {% else %}
-            <a href="{% url 'community:mentor_register' %}" class="dash-settings-link" title="Application Status">
-                <i class="bi bi-gear"></i>
-                <span>Settings</span>
-            </a>
-            {% endif %}
             <a href="{% url 'notifications:history' %}" class="dash-settings-link position-relative" title="Notifications">
                 <i class="bi bi-bell"></i>
                 <span>Alerts</span>

@@ -16,42 +16,42 @@
 
         <!-- Desktop Workspace Identifier & Live Status Context -->
         <div class="d-none d-lg-flex align-items-center gap-2">
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.04em;">
+            <span class="mentor-header-workspace-pill">
                 <i class="bi bi-person-workspace me-1"></i> MENTOR WORKSPACE
             </span>
             {% with current_mentor=mentor_profile|default:user.mentor_profile %}
             {% if is_approved_mentor %}
                 {% if current_mentor and current_mentor.is_paused %}
-                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                        <i class="bi bi-pause-circle-fill me-1"></i> Availability Paused
+                    <span class="mentor-status-indicator paused" title="Incoming bookings are temporarily paused">
+                        <span class="status-dot"></span> Bookings Paused
                     </span>
                 {% else %}
-                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                        <i class="bi bi-check-circle-fill me-1"></i> Active & Verified
+                    <span class="mentor-status-indicator active" title="Active & verified mentor">
+                        <span class="status-dot"></span> Accepting Bookings
                     </span>
                 {% endif %}
             {% else %}
                 {% if current_mentor %}
                     {% if current_mentor.status == 'Pending' %}
-                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                            <i class="bi bi-clock-history me-1"></i> Verification Pending
+                        <span class="mentor-status-indicator pending" title="Application is pending administrative verification">
+                            <span class="status-dot"></span> Verification Pending
                         </span>
                     {% elif current_mentor.status == 'Inactive' %}
-                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                            <i class="bi bi-pause-circle me-1"></i> Account Inactive
+                        <span class="mentor-status-indicator inactive">
+                            <span class="status-dot"></span> Account Inactive
                         </span>
                     {% elif current_mentor.status == 'Rejected' %}
-                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                            <i class="bi bi-x-circle me-1"></i> Application Declined
+                        <span class="mentor-status-indicator rejected">
+                            <span class="status-dot"></span> Application Declined
                         </span>
                     {% elif current_mentor.status == 'Blocked' %}
-                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                            <i class="bi bi-shield-slash me-1"></i> Account Suspended
+                        <span class="mentor-status-indicator blocked">
+                            <span class="status-dot"></span> Account Suspended
                         </span>
                     {% endif %}
                 {% else %}
-                    <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                        <i class="bi bi-pencil-square me-1"></i> Application Onboarding
+                    <span class="mentor-status-indicator pending">
+                        <span class="status-dot"></span> Application Onboarding
                     </span>
                 {% endif %}
             {% endif %}
@@ -76,21 +76,67 @@
             {% endif %}
         </a>
 
+        <!-- Settings Direct Quick Action -->
+        {% if is_approved_mentor %}
+        <a href="{% url 'community:edit_profile' %}" class="dash-btn dash-btn-outline dash-btn-sm p-2 d-none d-sm-inline-flex" title="Mentor Settings" aria-label="Settings">
+            <i class="bi bi-gear"></i>
+        </a>
+        {% endif %}
+
         <!-- Theme Toggle -->
         <button type="button" class="dash-btn dash-btn-outline dash-btn-sm p-2" onclick="window.toggleAppTheme(event)" title="Toggle light/dark theme" aria-label="Toggle theme">
             <i class="bi bi-circle-half"></i>
         </button>
 
-        <!-- Mentor Avatar Badge -->
+        <!-- Mentor Avatar Dropdown Menu -->
         {% with current_mentor=mentor_profile|default:user.mentor_profile %}
-            <div class="dash-avatar-circle ms-1" style="width: 32px; height: 32px;">
-                {% if current_mentor and current_mentor.profile_photo %}
-                    <img src="{{ current_mentor.profile_photo.url }}" alt="{{ current_mentor.full_name|default:user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <span class="dash-avatar-initials" style="display: none; font-size: 0.75rem;">{{ user_initials }}</span>
+        <div class="dropdown ms-1">
+            <button class="dash-avatar-btn p-0 border-0 bg-transparent dropdown-toggle" type="button" id="mentorUserMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="User Account Menu">
+                <div class="dash-avatar-circle" style="width: 32px; height: 32px;">
+                    {% if current_mentor and current_mentor.profile_photo %}
+                        <img src="{{ current_mentor.profile_photo.url }}" alt="{{ current_mentor.full_name|default:user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <span class="dash-avatar-initials" style="display: none; font-size: 0.75rem;">{{ user_initials }}</span>
+                    {% else %}
+                        <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                    {% endif %}
+                </div>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border py-2" aria-labelledby="mentorUserMenuDropdown" style="min-width: 210px; font-size: 0.85rem;">
+                <li class="px-3 py-1.5 border-bottom mb-1">
+                    <div class="fw-semibold text-body text-truncate">{{ current_mentor.full_name|default:user.username }}</div>
+                    <div class="text-muted small text-truncate">{{ current_mentor.designation|default:"Verified Mentor" }}</div>
+                </li>
+                {% if is_approved_mentor %}
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{% url 'community:mentor_dashboard' %}">
+                        <i class="bi bi-grid text-muted"></i> Overview Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{% url 'community:edit_profile' %}">
+                        <i class="bi bi-gear text-muted"></i> Mentor Settings
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{% url 'community:manage_availability' %}">
+                        <i class="bi bi-calendar3 text-muted"></i> Availability Slots
+                    </a>
+                </li>
                 {% else %}
-                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5" href="{% url 'community:mentor_register' %}">
+                        <i class="bi bi-card-checklist text-muted"></i> Application Status
+                    </a>
+                </li>
                 {% endif %}
-            </div>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-1.5 text-danger" href="{% url 'logout' %}">
+                        <i class="bi bi-box-arrow-right"></i> Sign Out
+                    </a>
+                </li>
+            </ul>
+        </div>
         {% endwith %}
     </div>
 </header>

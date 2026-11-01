@@ -52,6 +52,11 @@ class MentorRegistrationForm(forms.ModelForm):
 
 
 class MentorProfileEditForm(forms.ModelForm):
+    profile_photo = forms.ImageField(
+        required=False,
+        label="Profile Photo",
+        help_text="Upload a professional photo (JPG, PNG). Square aspect ratio recommended."
+    )
     skills_csv = forms.CharField(
         required=True,
         widget=forms.TextInput(),
@@ -61,7 +66,7 @@ class MentorProfileEditForm(forms.ModelForm):
     class Meta:
         model = MentorProfile
         fields = [
-            'full_name', 'email', 'phone_number', 'company', 'designation', 
+            'profile_photo', 'full_name', 'email', 'phone_number', 'company', 'designation', 
             'experience_years', 'current_location', 'bio', 'career_domains',
             'linkedin_url', 'github_url', 'portfolio_url',
             'languages', 'available_days', 'available_time_slots', 

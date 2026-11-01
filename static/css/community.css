@@ -675,6 +675,249 @@
     padding: 1.25rem;
 }
 
+/* Mentor Brand Badge in Sidebar */
+.mentor-brand-badge {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--dash-primary-subtle, rgba(59, 130, 246, 0.12));
+    color: var(--dash-primary, #3B82F6);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    line-height: 1.1;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Header Workspace Pill & Status Indicators */
+.mentor-header-workspace-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--dash-primary, #3B82F6);
+    background: var(--dash-primary-subtle, rgba(59, 130, 246, 0.1));
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 6px;
+    padding: 0.28rem 0.65rem;
+}
+
+.mentor-status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    background: var(--dash-surface-muted, #F1F5F9);
+    border: 1px solid var(--dash-border, #E2E8F0);
+    color: var(--dash-text-muted, #64748B);
+}
+
+.mentor-status-indicator .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.mentor-status-indicator.active .status-dot {
+    background: #10B981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+.mentor-status-indicator.paused .status-dot {
+    background: #F59E0B;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+
+.mentor-status-indicator.pending .status-dot {
+    background: #3B82F6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+.mentor-status-indicator.inactive .status-dot,
+.mentor-status-indicator.rejected .status-dot,
+.mentor-status-indicator.blocked .status-dot {
+    background: #EF4444;
+}
+
+/* Avatar Dropdown in Header */
+.dash-avatar-btn {
+    cursor: pointer;
+    border-radius: 50%;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.dash-avatar-btn:hover {
+    transform: scale(1.05);
+}
+.dash-avatar-btn::after {
+    display: none !important;
+}
+
+/* Domain Tags */
+.mentor-domain-pill {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--dash-text-muted);
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    border-radius: 9999px;
+    padding: 0.2rem 0.65rem;
+    line-height: 1.2;
+}
+
+/* Mentor Student Link */
+.mentor-student-link {
+    color: var(--dash-text);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.15s ease;
+}
+.mentor-student-link:hover {
+    color: var(--dash-primary);
+}
+
+/* Slot item in availability card */
+.mentor-slot-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.75rem;
+    border-radius: var(--dash-radius-sm, 6px);
+    background: var(--dash-surface-muted);
+    border: 1px solid var(--dash-border);
+    font-size: 0.78rem;
+    color: var(--dash-text);
+}
+.mentor-slot-pill .day {
+    font-weight: 600;
+}
+.mentor-slot-pill .time {
+    color: var(--dash-text-muted);
+}
+
+/* Enhanced Dashboard Metric Card */
+.mentor-metric-card {
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding: 1.25rem 1.35rem;
+    box-shadow: var(--dash-shadow-card);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+.mentor-metric-card:hover {
+    border-color: var(--dash-border-strong);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+.mentor-metric-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.85rem;
+}
+.mentor-metric-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+}
+.mentor-metric-icon.amber {
+    background: rgba(245, 158, 11, 0.12);
+    color: #F59E0B;
+}
+.mentor-metric-icon.blue {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3B82F6;
+}
+.mentor-metric-icon.green {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10B981;
+}
+.mentor-metric-icon.purple {
+    background: rgba(168, 85, 247, 0.12);
+    color: #A855F7;
+}
+.mentor-metric-val {
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+.mentor-metric-lbl {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--dash-text-muted);
+    margin-top: 0.25rem;
+}
+.mentor-metric-caption {
+    font-size: 0.72rem;
+    color: var(--dash-text-subtle, #94A3B8);
+    margin-top: 0.35rem;
+}
+
+/* Quote/Message Box in Requests */
+.mentor-message-bubble {
+    background: var(--dash-surface-muted);
+    border-left: 3px solid var(--dash-primary);
+    border-radius: 0 var(--dash-radius-sm) var(--dash-radius-sm) 0;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.82rem;
+    color: var(--dash-text-muted);
+    font-style: italic;
+    line-height: 1.45;
+}
+
+/* Settings Tabs in Mentor Settings */
+.mentor-settings-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--dash-border);
+    margin-bottom: 1.75rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.mentor-settings-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--dash-text-muted);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    cursor: pointer;
+}
+.mentor-settings-tab:hover {
+    color: var(--dash-text);
+}
+.mentor-settings-tab.active {
+    color: var(--dash-primary);
+    border-bottom-color: var(--dash-primary);
+    font-weight: 600;
+}
+
 /* --------------------------------------------------------------------------
    11. REDUCED MOTION PREFERENCE
    -------------------------------------------------------------------------- */

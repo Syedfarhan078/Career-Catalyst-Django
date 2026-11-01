@@ -1395,6 +1395,128 @@ class Phase2MentorWorkspaceTests(TestCase):
         self.assertNotContains(res_blk, 'Reactivate Mentor Profile')
         self.assertContains(res_blk, 'mentor-sidebar')
 
+    def test_mentor_settings_view_and_profile_update(self):
+        """Mentor Settings view loads with tabs and processes profile update successfully."""
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:edit_profile')
+
+        # 1. GET requests loads settings with tabs
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        self.assertTemplateUsed(res, 'community/edit_mentor_profile.html')
+        self.assertContains(res, 'Mentor Settings &amp; Profile')
+        self.assertContains(res, 'Mentor Profile')
+        self.assertContains(res, 'Account Credentials')
+        self.assertContains(res, 'Password &amp; Security')
+        self.assertContains(res, 'Booking Rules')
+
+        # 2. POST update_profile
+        post_data = {
+            'action': 'update_profile',
+            'full_name': 'Dr. Elena Updated',
+            'email': 'elena_updated@blackmesa.gov',
+            'phone_number': '555-987-6543',
+            'company': 'Aperture Science',
+            'designation': 'Principal Scientist',
+            'experience_years': 15,
+            'current_location': 'Sector C',
+            'bio': 'Pioneering dimensional travel and quantum computing architectures.',
+            'career_domains': 'Quantum Computing, Distributed Systems',
+            'skills_csv': 'Quantum, Rust, Python, Go',
+            'languages': 'English, French',
+            'available_days': 'Tuesday, Thursday',
+            'available_time_slots': '10:00 AM - 12:00 PM',
+            'max_sessions_per_week': 6,
+            'mentorship_type': 'Online',
+        }
+        res_post = self.client.post(url, post_data)
+        self.assertEqual(res_post.status_code, 302)
+
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.company, 'Aperture Science')
+        self.assertEqual(self.mentor_profile.designation, 'Principal Scientist')
+        self.assertEqual(self.mentor_profile.max_sessions_per_week, 6)
+
+    def test_mentor_settings_account_and_security_update(self):
+        """Mentor Settings allows updating account credentials and password change."""
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:edit_profile')
+
+        # 1. Update account details
+        res_acct = self.client.post(url, {
+            'action': 'update_account',
+            'first_name': 'Elena',
+            'last_name': 'Vance',
+            'email': 'elena.vance.new@test.com'
+        })
+        self.assertEqual(res_acct.status_code, 302)
+        self.mentor_user.refresh_from_db()
+        self.assertEqual(self.mentor_user.first_name, 'Elena')
+        self.assertEqual(self.mentor_user.last_name, 'Vance')
+        self.assertEqual(self.mentor_user.email, 'elena.vance.new@test.com')
+
+        # 2. Change password
+        res_pwd = self.client.post(url, {
+            'action': 'change_password',
+            'old_password': 'password123',
+            'new_password1': 'NewSecurePass2026!',
+            'new_password2': 'NewSecurePass2026!'
+        })
+        self.assertEqual(res_pwd.status_code, 302)
+        self.mentor_user.refresh_from_db()
+        self.assertTrue(self.mentor_user.check_password('NewSecurePass2026!'))
+
+    def test_mentor_settings_booking_preferences_update(self):
+        """Mentor Settings allows adjusting max weekly booking capacity."""
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:edit_profile')
+
+        res = self.client.post(url, {
+            'action': 'update_preferences',
+            'max_sessions_per_week': 8,
+        })
+        self.assertEqual(res.status_code, 302)
+        self.mentor_profile.refresh_from_db()
+        self.assertEqual(self.mentor_profile.max_sessions_per_week, 8)
+
+    def test_mentor_dashboard_settings_integration_and_clean_ui(self):
+        """Mentor Dashboard integrates settings link, dropdown, and clean natural layout without AI artifacts."""
+        # Create a pending request to verify student link rendering
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=timezone.now().date(),
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            student_message="Hello mentor, looking forward to guidance.",
+            status="Pending"
+        )
+        self.client.force_login(self.mentor_user)
+        res = self.client.get(reverse('community:mentor_dashboard'))
+        self.assertEqual(res.status_code, 200)
+
+        # Settings links
+        self.assertContains(res, reverse('community:edit_profile'))
+        self.assertContains(res, 'Settings')
+        self.assertContains(res, 'Mentor Settings')
+
+        # Refined natural touches
+        self.assertContains(res, 'mentor-domain-pill')
+        self.assertContains(res, 'mentor-student-link')
+        self.assertContains(res, 'mentor-metric-card')
+        self.assertNotContains(res, 'onmouseover=')
+        self.assertNotContains(res, 'onmouseout=')
+
+    def test_student_dashboard_remains_strictly_unmodified(self):
+        """Student Dashboard remains completely untouched and dedicated to student experience."""
+        self.client.force_login(self.student_user)
+        res = self.client.get(reverse('dashboard'))
+        self.assertEqual(res.status_code, 200)
+        self.assertTemplateUsed(res, 'core/dashboard.html')
+        self.assertContains(res, 'Your Career Journey')
+        self.assertNotContains(res, 'dash-mentor-header')
+        self.assertNotContains(res, 'mentor-sidebar')
+
 
 class Phase4MentorLifecycleTests(TestCase):
     """

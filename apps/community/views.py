@@ -20,7 +20,8 @@ from .models import (
     MentorshipRequest, MentorReview, MentorAvailability
 )
 from apps.profiles.models import StudentProfile
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
 
 # Import Clean Architecture Layer
 from .forms import (
@@ -680,19 +681,92 @@ def reactivate_mentor_view(request):
 @login_required
 @mentor_required
 def edit_mentor_profile(request):
+    """
+    Dedicated Mentor Workspace Settings & Profile view.
+    Enables mentors to manage their professional bio, avatar, skills, weekly booking capacity,
+    account credentials, and password security in one unified interface.
+    """
     mentor = request.user.mentor_profile
+    active_tab = request.GET.get('tab', 'profile')
+    if active_tab not in ['profile', 'account', 'security', 'preferences']:
+        active_tab = 'profile'
     
-    if request.method == 'POST':
-        form = MentorProfileEditForm(request.POST, instance=mentor)
-        if form.is_valid():
-            # Delegate to Business Services
-            update_mentor_profile_service(mentor, form.cleaned_data)
-            messages.success(request, "Profile updated successfully.")
-            return redirect('community:mentor_dashboard')
-    else:
-        form = MentorProfileEditForm(instance=mentor, initial={'skills_csv': mentor.skills})
+    form = MentorProfileEditForm(instance=mentor, initial={'skills_csv': mentor.skills})
+    password_form = PasswordChangeForm(user=request.user)
 
-    return render(request, "community/edit_mentor_profile.html", {"form": form, "mentor": mentor, **get_user_sidebar_context(request.user)})
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'update_account':
+            active_tab = 'account'
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            email = request.POST.get('email', '').strip()
+
+            if email:
+                # Check email uniqueness across other users
+                User = get_user_model()
+                if User.objects.filter(email__iexact=email).exclude(pk=request.user.pk).exists():
+                    messages.error(request, "This email address is already in use by another account.")
+                else:
+                    request.user.first_name = first_name
+                    request.user.last_name = last_name
+                    request.user.email = email
+                    request.user.save()
+
+                    # Keep mentor profile sync
+                    if first_name or last_name:
+                        mentor.full_name = f"{first_name} {last_name}".strip()
+                    mentor.email = email
+                    mentor.save()
+                    messages.success(request, "Account details updated successfully.")
+                    return redirect(f"{reverse('community:edit_profile')}?tab=account")
+            else:
+                messages.error(request, "A valid email address is required.")
+
+        elif action == 'change_password':
+            active_tab = 'security'
+            password_form = PasswordChangeForm(user=request.user, data=request.POST)
+            if password_form.is_valid():
+                user = password_form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, "Your password has been changed successfully.")
+                return redirect(f"{reverse('community:edit_profile')}?tab=security")
+            else:
+                messages.error(request, "Please correct the password errors below.")
+
+        elif action == 'update_preferences':
+            active_tab = 'preferences'
+            try:
+                max_sessions = int(request.POST.get('max_sessions_per_week', mentor.max_sessions_per_week))
+                if 1 <= max_sessions <= 50:
+                    mentor.max_sessions_per_week = max_sessions
+                    mentor.save()
+                    messages.success(request, "Booking capacity preferences saved.")
+                else:
+                    messages.error(request, "Weekly sessions limit must be between 1 and 50.")
+            except ValueError:
+                messages.error(request, "Invalid number for weekly sessions limit.")
+            return redirect(f"{reverse('community:edit_profile')}?tab=preferences")
+
+        else:
+            # Default or action == 'update_profile'
+            active_tab = 'profile'
+            form = MentorProfileEditForm(request.POST, request.FILES, instance=mentor)
+            if form.is_valid():
+                update_mentor_profile_service(mentor, form.cleaned_data)
+                messages.success(request, "Mentor profile updated successfully.")
+                return redirect(f"{reverse('community:edit_profile')}?tab=profile")
+            else:
+                messages.error(request, "Please check the profile fields below for errors.")
+
+    return render(request, "community/edit_mentor_profile.html", {
+        "form": form,
+        "password_form": password_form,
+        "mentor": mentor,
+        "active_tab": active_tab,
+        **get_user_sidebar_context(request.user)
+    })
 
 
 @login_required

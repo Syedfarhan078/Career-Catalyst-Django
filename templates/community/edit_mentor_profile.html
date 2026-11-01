@@ -2,11 +2,11 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}Edit Mentor Profile — CareerCatalyst{% endblock %}
+{% block title %}Mentor Workspace Settings &amp; Profile — CareerCatalyst{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
-<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.2">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.2">
 {% endblock %}
 
 {# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
@@ -42,19 +42,74 @@
                     <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
                     <a href="{% url 'community:mentor_dashboard' %}">Overview</a>
                     <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
-                    <span>Edit Profile</span>
+                    <span>Mentor Settings &amp; Profile</span>
                 </div>
-                <h1 class="community-title">Edit Mentor Profile</h1>
+                <h1 class="community-title">Mentor Settings &amp; Profile</h1>
                 <p class="community-subtitle">
-                    Keep your professional role, employer details, domain tags, and scheduling rules up to date.
+                    Manage your public mentor identity, scheduling limits, account credentials, and security.
                 </p>
             </div>
 
+            <!-- Messages Feedback -->
+            {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show border-0 shadow-sm rounded-3 py-2 px-3 small d-flex align-items-center justify-content-between" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill text-success{% elif message.tags == 'error' or message.tags == 'danger' %}bi-exclamation-triangle-fill text-danger{% else %}bi-info-circle-fill text-primary{% endif %}"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.5rem;"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Settings Tab Navigation Bar -->
+            <div class="mentor-settings-tabs" role="tablist">
+                <a href="?tab=profile" class="mentor-settings-tab {% if active_tab == 'profile' %}active{% endif %}">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Mentor Profile</span>
+                </a>
+                <a href="?tab=account" class="mentor-settings-tab {% if active_tab == 'account' %}active{% endif %}">
+                    <i class="bi bi-person-gear"></i>
+                    <span>Account Credentials</span>
+                </a>
+                <a href="?tab=security" class="mentor-settings-tab {% if active_tab == 'security' %}active{% endif %}">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Password &amp; Security</span>
+                </a>
+                <a href="?tab=preferences" class="mentor-settings-tab {% if active_tab == 'preferences' %}active{% endif %}">
+                    <i class="bi bi-sliders"></i>
+                    <span>Booking Rules</span>
+                </a>
+            </div>
+
             <div class="row justify-content-center">
-                <div class="col-lg-9">
-                    <div class="community-card">
-                        <form method="POST">
+                <div class="col-lg-10 col-xl-9">
+                    <!-- TAB 1: MENTOR PROFILE -->
+                    {% if active_tab == 'profile' %}
+                    <div class="community-card p-4">
+                        <form method="POST" enctype="multipart/form-data">
                             {% csrf_token %}
+                            <input type="hidden" name="action" value="update_profile">
+
+                            <!-- Photo & Quick Overview -->
+                            <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3 pb-3 mb-4 border-bottom">
+                                <div class="dash-avatar-circle" style="width: 72px; height: 72px; font-size: 1.5rem; flex-shrink: 0;">
+                                    {% if mentor.profile_photo %}
+                                    <img src="{{ mentor.profile_photo.url }}" alt="{{ mentor.full_name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <span class="dash-avatar-initials" style="display: none;">{{ user_initials }}</span>
+                                    {% else %}
+                                    <span class="dash-avatar-initials">{{ user_initials }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h2 class="h6 fw-bold mb-1 text-body">Profile Photo</h2>
+                                    <p class="text-muted small mb-2">Upload a professional headshot to display in the public Mentor Directory.</p>
+                                    {{ form.profile_photo|as_crispy_field }}
+                                </div>
+                            </div>
 
                             <h2 class="h6 fw-bold text-primary mb-3 pb-2 border-bottom">
                                 1. Personal &amp; Contact Details
@@ -139,11 +194,125 @@
                                     Cancel
                                 </a>
                                 <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm px-4 py-2 fw-medium">
-                                    <i class="bi bi-check2 me-1"></i> Save Changes
+                                    <i class="bi bi-check2 me-1"></i> Save Profile Changes
                                 </button>
                             </div>
                         </form>
                     </div>
+
+                    <!-- TAB 2: ACCOUNT CREDENTIALS -->
+                    {% elif active_tab == 'account' %}
+                    <div class="community-card p-4">
+                        <h2 class="h6 fw-bold text-body mb-3 pb-2 border-bottom">
+                            <i class="bi bi-person-gear text-primary me-2"></i>Account Information
+                        </h2>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_account">
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">First Name</label>
+                                    <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}" placeholder="Your first name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Last Name</label>
+                                    <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}" placeholder="Your last name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Username</label>
+                                    <input type="text" class="form-control bg-body-tertiary" value="{{ user.username }}" readonly disabled>
+                                    <div class="form-text small">Account usernames cannot be modified.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Email Address <span class="text-danger">*</span></label>
+                                    <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-end pt-3 border-top">
+                                <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm px-4 py-2 fw-medium">
+                                    <i class="bi bi-check2 me-1"></i> Update Account Details
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- TAB 3: PASSWORD & SECURITY -->
+                    {% elif active_tab == 'security' %}
+                    <div class="community-card p-4">
+                        <h2 class="h6 fw-bold text-body mb-3 pb-2 border-bottom">
+                            <i class="bi bi-shield-lock text-primary me-2"></i>Change Account Password
+                        </h2>
+                        <p class="text-muted small mb-4">
+                            Ensure your account is using a strong password. You will stay signed in after updating your credentials.
+                        </p>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="change_password">
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-12">
+                                    {{ password_form|crispy }}
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-end pt-3 border-top">
+                                <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm px-4 py-2 fw-medium">
+                                    <i class="bi bi-shield-check me-1"></i> Change Password
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- TAB 4: PREFERENCES & BOOKING RULES -->
+                    {% elif active_tab == 'preferences' %}
+                    <div class="community-card p-4 mb-4">
+                        <h2 class="h6 fw-bold text-body mb-3 pb-2 border-bottom">
+                            <i class="bi bi-sliders text-primary me-2"></i>Booking Capacity &amp; Directory Preferences
+                        </h2>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_preferences">
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Maximum Sessions Per Week</label>
+                                    <input type="number" name="max_sessions_per_week" class="form-control" value="{{ mentor.max_sessions_per_week }}" min="1" max="50">
+                                    <div class="form-text small">Accepted student sessions that count toward your active weekly capacity.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Recurring Slot Windows</label>
+                                    <div class="p-2.5 rounded-2 border bg-body-tertiary d-flex align-items-center justify-content-between">
+                                        <span class="small text-body">{{ mentor.availabilities.count }} slot window(s) configured</span>
+                                        <a href="{% url 'community:manage_availability' %}" class="small text-primary text-decoration-none fw-semibold">
+                                            Manage Slots &rarr;
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-end pt-3 border-top">
+                                <button type="submit" class="dash-btn dash-btn-primary dash-btn-sm px-4 py-2 fw-medium">
+                                    <i class="bi bi-check2 me-1"></i> Save Preferences
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Danger Zone / Step Down -->
+                    <div class="community-card p-4 border-danger-subtle bg-danger-subtle bg-opacity-10">
+                        <h2 class="h6 fw-bold text-danger mb-2">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> Voluntarily Step Down as Mentor
+                        </h2>
+                        <p class="text-muted small mb-3">
+                            Need a break from industry mentorship? Stepping down unlists your profile from the public directory and pauses incoming booking requests while keeping your completed history intact.
+                        </p>
+                        <a href="{% url 'community:mentor_step_down' %}" class="dash-btn dash-btn-outline dash-btn-sm text-danger border-danger-subtle">
+                            <i class="bi bi-box-arrow-right me-1"></i> Proceed to Step Down
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </main>

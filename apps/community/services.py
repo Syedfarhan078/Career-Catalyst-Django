@@ -304,6 +304,8 @@ def update_mentor_profile_service(profile, form_cleaned_data):
     skills_csv = form_cleaned_data.pop('skills_csv', '')
     
     for key, value in form_cleaned_data.items():
+        if key == 'profile_photo' and not value:
+            continue
         setattr(profile, key, value)
     
     profile.skills = skills_csv
