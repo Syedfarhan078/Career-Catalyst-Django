@@ -1,9 +1,11 @@
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Avg, Count
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
+from django.http import Http404
 from django.utils import timezone
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 from datetime import timedelta
 from .models import (
     MentorProfile, MentorSkill, MentorshipRequest, MentorReview, 
@@ -11,6 +13,11 @@ from .models import (
 )
 from .utils import simulate_notification
 from apps.notifications.services import create_notification
+from apps.profiles.models import StudentProfile, StudentProject, StudentCertification
+from apps.roadmaps.models import RoadmapCertificate
+from apps.roadmaps.services import get_user_earned_skills_set
+
+User = get_user_model()
 
 @transaction.atomic
 def register_mentor_service(user, form_cleaned_data):
@@ -686,4 +693,234 @@ def reactivate_mentor_service(user, resume_bookings=True, reason=""):
         return mentor
 
     raise ValidationError(f"Invalid mentor profile state for reactivation: '{mentor.status}'.")
+
+
+# ==============================================================================
+# PHASE 3: MENTOR ACCESS TO STUDENT PROFILES (AUTHORIZATION & SANITIZATION)
+# ==============================================================================
+
+def can_mentor_view_student_profile(mentor_profile, student_user):
+    """
+    Evaluates whether an approved mentor has authorization to view a candidate student profile.
+    
+    Access Rules:
+    - User account must have role == 'mentor'.
+    - MentorProfile must be Approved and verified.
+    - Mentorship relationship check: There must exist at least one MentorshipRequest
+      between mentor_profile and student_user with status in ['Pending', 'Accepted', 'Completed'].
+    - If candidate has only Rejected or Cancelled requests, access is denied.
+    - If multiple requests exist, access is granted if at least one request qualifies.
+    
+    Returns:
+        tuple: (is_authorized: bool, reason: str, relationship_meta: Optional[dict])
+    """
+    if not mentor_profile:
+        return False, "Mentor profile not found.", None
+    
+    user = getattr(mentor_profile, 'user', None)
+    if not user or getattr(user, 'role', 'student') != 'mentor':
+        return False, "Only mentor accounts can access student profiles in the mentor workspace.", None
+
+    if mentor_profile.status != 'Approved' or not mentor_profile.verified:
+        return False, f"Mentor profile is {mentor_profile.status} or unverified.", None
+
+    student_id = getattr(student_user, 'id', student_user)
+
+    qualifying_requests = MentorshipRequest.objects.filter(
+        mentor=mentor_profile,
+        student_id=student_id,
+        status__in=['Pending', 'Accepted', 'Completed']
+    ).order_by('-created_at')
+
+    if not qualifying_requests.exists():
+        return False, "No active, pending, or completed mentorship request exists between mentor and student.", None
+
+    # Determine primary relationship context
+    # Priority: Accepted (Active) > Pending > Completed (Historical)
+    accepted_req = qualifying_requests.filter(status='Accepted').first()
+    pending_req = qualifying_requests.filter(status='Pending').first()
+    completed_req = qualifying_requests.filter(status='Completed').first()
+
+    if accepted_req:
+        primary_req = accepted_req
+        rel_type = 'active'
+        is_historical = False
+        can_respond = False
+        can_chat = True
+    elif pending_req:
+        primary_req = pending_req
+        rel_type = 'pending'
+        is_historical = False
+        can_respond = True
+        can_chat = False
+    elif completed_req:
+        primary_req = completed_req
+        rel_type = 'historical'
+        is_historical = True
+        can_respond = False
+        can_chat = False
+    else:
+        return False, "No qualifying mentorship relationship.", None
+
+    relationship_meta = {
+        'status': primary_req.status,
+        'type': rel_type,
+        'is_historical': is_historical,
+        'can_respond': can_respond,
+        'can_chat': can_chat,
+        'request_id': primary_req.id,
+        'purpose': primary_req.purpose,
+        'student_message': primary_req.student_message,
+        'mentor_response': primary_req.mentor_response,
+        'requested_date': primary_req.requested_date,
+        'requested_time': primary_req.requested_time,
+        'meeting_link': primary_req.meeting_link,
+        'created_at': primary_req.created_at,
+        'all_qualifying_count': qualifying_requests.count(),
+    }
+
+    return True, "Authorized", relationship_meta
+
+
+def get_student_profile_for_mentor(mentor_profile, student_id):
+    """
+    Retrieves and sanitizes student academic and professional profile data for an approved mentor.
+    Enforces strict relationship-based authorization and returns ONLY whitelisted fields.
+    
+    Prevents student ID enumeration by raising Http404 consistently for:
+    - Non-existent student IDs
+    - Existing student IDs with no qualifying relationship
+    - Students with only Rejected or Cancelled requests
+    
+    STRICT PRIVACY: NEVER exposes private fields: phone_number, date_of_birth, gender, expected_salary, email, credential_id.
+    Safely handles students without a completed StudentProfile record.
+    """
+    if not mentor_profile or mentor_profile.status != 'Approved' or not mentor_profile.verified:
+        raise PermissionDenied("Mentor profile is not approved and verified.")
+
+    # 1. Enforce relationship authorization directly on student_id BEFORE probing User existence to prevent ID enumeration
+    qualifying_requests = MentorshipRequest.objects.filter(
+        mentor=mentor_profile,
+        student_id=student_id,
+        status__in=['Pending', 'Accepted', 'Completed']
+    ).order_by('-created_at')
+
+    if not qualifying_requests.exists():
+        raise Http404("No qualifying mentorship relationship found for the specified student.")
+
+    # 2. Only after relationship check succeeds, retrieve the student user
+    student_user = get_object_or_404(User, id=student_id)
+
+    # 3. Retrieve relationship metadata
+    is_authorized, reason, rel_meta = can_mentor_view_student_profile(mentor_profile, student_user)
+    if not is_authorized:
+        raise Http404(reason)
+    
+    sp = getattr(student_user, 'studentprofile', None)
+    
+    full_name = student_user.get_full_name().strip()
+    if not full_name:
+        full_name = student_user.username
+    
+    first_initial = (student_user.first_name[:1] if student_user.first_name else student_user.username[:1]).upper()
+    last_initial = (student_user.last_name[:1] if student_user.last_name else "").upper()
+    initials = f"{first_initial}{last_initial}" if last_initial else student_user.username[:2].upper()
+
+    profile_picture_url = None
+    if sp and sp.profile_picture:
+        try:
+            profile_picture_url = sp.profile_picture.url
+        except Exception:
+            profile_picture_url = None
+    elif getattr(student_user, 'profile_picture', None):
+        try:
+            profile_picture_url = student_user.profile_picture.url
+        except Exception:
+            profile_picture_url = None
+
+    # Sanitized Whitelist: Student Overview & Academic (email strictly excluded)
+    student_data = {
+        'id': student_user.id,
+        'username': student_user.username,
+        'first_name': student_user.first_name,
+        'last_name': student_user.last_name,
+        'full_name': full_name,
+        'initials': initials,
+        'profile_picture_url': profile_picture_url,
+        'bio': sp.bio if sp else "",
+        'career_goal': sp.career_goal if sp else "",
+        'current_skill_level': sp.current_skill_level if sp else "Beginner",
+        'preferred_domain': sp.preferred_domain if sp else "",
+        'preferred_location': sp.preferred_location if sp else "",
+        'college': sp.college if sp else "",
+        'university': sp.university if sp else "",
+        'degree': sp.degree if sp else "",
+        'branch': sp.branch if sp else "",
+        'semester': sp.semester if sp else None,
+        'graduation_year': sp.graduation_year if sp else None,
+        'cgpa': float(sp.cgpa) if (sp and sp.cgpa is not None) else None,
+        'github': sp.github if sp else "",
+        'linkedin': sp.linkedin if sp else "",
+        'portfolio': sp.portfolio if sp else "",
+        'leetcode': sp.leetcode if sp else "",
+        'hackerrank': sp.hackerrank if sp else "",
+    }
+
+    # Technical Skills Inventory
+    self_reported_skills = sp.get_skills_list if sp else []
+    roadmap_earned_skills = sorted(list(get_user_earned_skills_set(student_user)))
+
+    # Student Projects
+    projects_data = []
+    if sp:
+        for proj in sp.projects.all():
+            projects_data.append({
+                'title': proj.title,
+                'description': proj.description,
+                'technologies_list': proj.technologies_list,
+                'github_url': proj.github_url,
+                'live_demo_url': proj.live_demo_url,
+                'start_date': proj.start_date,
+                'end_date': proj.end_date,
+                'is_current': proj.is_current,
+            })
+
+    # External Certifications (credential_id strictly excluded)
+    certifications_data = []
+    if sp:
+        for cert in sp.certifications.all():
+            certifications_data.append({
+                'name': cert.name,
+                'organization': cert.organization,
+                'issue_date': cert.issue_date,
+                'expiration_date': cert.expiration_date,
+                'skills_list': cert.skills_list,
+                'credential_url': cert.credential_url,
+            })
+
+    # Roadmap Certificates (valid certificates only)
+    roadmap_certificates_data = []
+    rc_qs = RoadmapCertificate.objects.filter(
+        user=student_user, 
+        is_valid=True
+    ).select_related('career_path')
+    for rc in rc_qs:
+        roadmap_certificates_data.append({
+            'certificate_id': rc.certificate_id,
+            'career_path_name': rc.career_path.name,
+            'issued_at': rc.issued_at,
+            'total_topics_completed': rc.total_topics_completed,
+            'skills_list': rc.get_skills_list(),
+        })
+
+    return {
+        'student': student_data,
+        'self_reported_skills': self_reported_skills,
+        'roadmap_earned_skills': roadmap_earned_skills,
+        'projects': projects_data,
+        'certifications': certifications_data,
+        'roadmap_certificates': roadmap_certificates_data,
+        'relationship': rel_meta,
+    }
+
 

@@ -14,7 +14,7 @@ from .models import (
     MentorReview, MentorAvailability, MentorLifecycleEvent
 )
 from apps.notifications.models import Notification
-from apps.profiles.models import StudentProfile
+from apps.profiles.models import StudentProfile, StudentProject, StudentCertification
 from .utils import calculate_mentor_match_score
 from .services import register_mentor_service
 
@@ -2008,4 +2008,447 @@ class Phase41LifecycleHardeningTests(TestCase):
         self.client.post(reverse('community:resume_availability'))
         resume_events_2 = MentorLifecycleEvent.objects.filter(mentor=self.mentor_profile, event_type='resume').count()
         self.assertEqual(resume_events_1, resume_events_2)
+
+
+class MentorStudentProfileAccessTests(TestCase):
+    """
+    Phase 3: Comprehensive Test Suite for Mentor Access to Student Profiles.
+    Verifies relationship-based authorization, privacy protection, and UI integration.
+    """
+    def setUp(self):
+        self.mentor_user = User.objects.create_user(
+            username='mentor_sophia',
+            email='sophia@mentor.com',
+            password='password123',
+            role='mentor'
+        )
+        self.mentor_profile = MentorProfile.objects.create(
+            user=self.mentor_user,
+            full_name='Sophia Mentor',
+            email='sophia@mentor.com',
+            phone_number='1234567890',
+            company='Google',
+            designation='Principal Engineer',
+            experience_years=10,
+            current_location='New York, NY',
+            status='Approved',
+            verified=True
+        )
+
+        self.student_user = User.objects.create_user(
+            username='student_kevin',
+            email='kevin@student.com',
+            password='password123',
+            role='student',
+            first_name='Kevin',
+            last_name='Zhang'
+        )
+        self.student_profile = StudentProfile.objects.create(
+            user=self.student_user,
+            phone_number='+1-555-0199',
+            date_of_birth='2001-05-20',
+            gender='Male',
+            expected_salary=120000.00,
+            bio='Aspiring distributed systems engineer.',
+            college='Stanford University',
+            university='Stanford',
+            degree='B.S.',
+            branch='Computer Science',
+            semester=7,
+            graduation_year=2027,
+            cgpa=3.95,
+            career_goal='Cloud Architect',
+            current_skill_level='Intermediate',
+            preferred_domain='Distributed Systems',
+            preferred_location='San Francisco, CA',
+            skills='Go, Python, Kubernetes, Kafka',
+            github='https://github.com/kevinzhang',
+            linkedin='https://linkedin.com/in/kevinzhang',
+            portfolio='https://kevinzhang.dev'
+        )
+
+        self.project = StudentProject.objects.create(
+            profile=self.student_profile,
+            title='Raft Consensus Cluster',
+            description='Distributed consensus engine in Go.',
+            technologies_used='Go, gRPC, Docker',
+            github_url='https://github.com/kevinzhang/raft-go'
+        )
+
+        self.cert = StudentCertification.objects.create(
+            profile=self.student_profile,
+            name='AWS Certified Solutions Architect',
+            organization='Amazon Web Services',
+            credential_id='AWS-CSA-998877'
+        )
+
+        self.future_date = (timezone.now() + timedelta(days=5)).date()
+
+    def test_approved_mentor_can_view_student_with_pending_request(self):
+        """Approved mentor can view profile of candidate with a pending mentorship request."""
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="14:00:00",
+            purpose="Career Guidance",
+            student_message="Need advice on cloud systems architecture.",
+            status="Pending"
+        )
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:mentor_student_profile', args=[self.student_user.id])
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Kevin Zhang")
+        self.assertContains(res, "Pending Mentorship Request")
+        self.assertContains(res, "Need advice on cloud systems architecture.")
+        self.assertContains(res, "Stanford University")
+        self.assertContains(res, "Raft Consensus Cluster")
+        self.assertContains(res, "AWS Certified Solutions Architect")
+
+    def test_approved_mentor_can_view_student_with_accepted_request(self):
+        """Approved mentor can view profile of an active mentee with direct chat link."""
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="15:00:00",
+            purpose="Interview Preparation",
+            status="Accepted",
+            meeting_link="https://meet.google.com/xyz-uvw-rst"
+        )
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:mentor_student_profile', args=[self.student_user.id])
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Active Mentee")
+        self.assertContains(res, "Open Direct Chat")
+        self.assertContains(res, "https://meet.google.com/xyz-uvw-rst")
+
+    def test_relationship_priority_completed_only_shows_historical(self):
+        """Case C: Completed-only requests produce Historical Mentee status with no booking actions."""
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Resume Review",
+            status="Completed"
+        )
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:mentor_student_profile', args=[self.student_user.id])
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Historical Mentee")
+        self.assertContains(res, "Read-Only Archive")
+        # Ensure no booking response form, accept/decline, or session modification actions exist
+        self.assertNotContains(res, "Review & Respond in Requests")
+        self.assertNotContains(res, "Accept Request")
+        self.assertNotContains(res, "Decline")
+        self.assertNotContains(res, "Cancel Session")
+
+    def test_relationship_priority_accepted_and_completed_shows_active(self):
+        """Case A: Accepted + Completed requests produce Active Mentee status and NOT Historical Mentee."""
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="09:00:00",
+            purpose="Resume Review",
+            status="Completed"
+        )
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="15:00:00",
+            purpose="Career Guidance",
+            status="Accepted"
+        )
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:mentor_student_profile', args=[self.student_user.id])
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Active Mentee")
+        self.assertNotContains(res, "Historical Mentee")
+
+    def test_relationship_priority_pending_and_completed_shows_pending(self):
+        """Case B: Pending + Completed requests produce Pending status and NOT Historical Mentee."""
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="09:00:00",
+            purpose="Resume Review",
+            status="Completed"
+        )
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="14:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:mentor_student_profile', args=[self.student_user.id])
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Pending Mentorship Request")
+        self.assertNotContains(res, "Historical Mentee")
+
+    def test_relationship_priority_rejected_or_cancelled_plus_completed_shows_historical(self):
+        """Cases D & E: Rejected + Completed and Cancelled + Completed show Historical Mentee."""
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="09:00:00",
+            purpose="Resume Review",
+            status="Rejected"
+        )
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Completed"
+        )
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:mentor_student_profile', args=[self.student_user.id])
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Historical Mentee")
+
+    def test_nonexistent_and_unrelated_student_id_returns_404(self):
+        """Prevent ID enumeration: nonexistent student ID and unrelated student ID both return HTTP 404."""
+        self.client.force_login(self.mentor_user)
+
+        # 1. Nonexistent student ID returns 404
+        url_nonexistent = reverse('community:mentor_student_profile', args=[999999])
+        res_nonexistent = self.client.get(url_nonexistent)
+        self.assertEqual(res_nonexistent.status_code, 404)
+
+        # 2. Existing unrelated student ID returns 404
+        unrelated_student = User.objects.create_user(
+            username='stranger_dan',
+            email='dan@student.com',
+            password='password123',
+            role='student'
+        )
+        url_unrelated = reverse('community:mentor_student_profile', args=[unrelated_student.id])
+        res_unrelated = self.client.get(url_unrelated)
+        self.assertEqual(res_unrelated.status_code, 404)
+
+    def test_mentor_denied_when_only_rejected_or_cancelled_request(self):
+        """Case F: Approved mentor receives HTTP 404 if only Rejected, Cancelled, or both requests exist."""
+        # Rejected only -> 404
+        req = MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Rejected"
+        )
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:mentor_student_profile', args=[self.student_user.id])
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 404)
+
+        # Cancelled only -> 404
+        req.status = "Cancelled"
+        req.save()
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 404)
+
+        # Both Rejected and Cancelled -> 404
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="11:00:00",
+            purpose="Interview Preparation",
+            status="Rejected"
+        )
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 404)
+
+    def test_qualifying_request_overrides_rejected_or_cancelled_request(self):
+        """Access is granted if at least one qualifying request exists, even if an older request was rejected."""
+        # Older rejected request
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="09:00:00",
+            purpose="Resume Review",
+            status="Rejected"
+        )
+        # Newer accepted request
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="16:00:00",
+            purpose="Career Guidance",
+            status="Accepted"
+        )
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:mentor_student_profile', args=[self.student_user.id])
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Active Mentee")
+
+    def test_student_account_cannot_access_mentor_student_profile_endpoint(self):
+        """User with Student role is redirected and cannot access mentor student profile view."""
+        self.client.force_login(self.student_user)
+        url = reverse('community:mentor_student_profile', args=[self.student_user.id])
+        res = self.client.get(url)
+
+        # Redirected via mentor_required decorator
+        self.assertEqual(res.status_code, 302)
+
+    def test_unapproved_or_inactive_or_blocked_mentor_cannot_view_profile(self):
+        """Mentors in Pending, Inactive, or Blocked states cannot access student profiles."""
+        from django.core.exceptions import PermissionDenied
+        from .services import get_student_profile_for_mentor
+
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:mentor_student_profile', args=[self.student_user.id])
+
+        # 1. Inactive status -> intercepted by mentor_required, renders mentor_status.html
+        self.mentor_profile.status = 'Inactive'
+        self.mentor_profile.save()
+        res = self.client.get(url)
+        self.assertTemplateUsed(res, 'community/mentor_status.html')
+        self.assertNotContains(res, 'Candidate Profile')
+        self.assertNotContains(res, 'Stanford University')
+        with self.assertRaises(PermissionDenied):
+            get_student_profile_for_mentor(self.mentor_profile, self.student_user.id)
+
+        # 2. Blocked status -> intercepted by mentor_required, renders mentor_status.html
+        self.mentor_profile.status = 'Blocked'
+        self.mentor_profile.save()
+        res = self.client.get(url)
+        self.assertTemplateUsed(res, 'community/mentor_status.html')
+        self.assertNotContains(res, 'Candidate Profile')
+        with self.assertRaises(PermissionDenied):
+            get_student_profile_for_mentor(self.mentor_profile, self.student_user.id)
+
+        # 3. Pending status -> intercepted by mentor_required, renders mentor_status.html
+        self.mentor_profile.status = 'Pending'
+        self.mentor_profile.verified = False
+        self.mentor_profile.save()
+        res = self.client.get(url)
+        self.assertTemplateUsed(res, 'community/mentor_status.html')
+        self.assertNotContains(res, 'Candidate Profile')
+        with self.assertRaises(PermissionDenied):
+            get_student_profile_for_mentor(self.mentor_profile, self.student_user.id)
+
+    def test_sensitive_fields_strictly_excluded_from_profile_view(self):
+        """
+        Phase 3.1: Sensitive and unapproved fields must NEVER appear in context or rendered HTML.
+        Specifically: email, credential_id, phone_number, date_of_birth, gender, expected_salary.
+        """
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="11:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:mentor_student_profile', args=[self.student_user.id])
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, 200)
+
+        # 1. Unapproved Phase 3 fields: email and credential_id
+        self.assertNotContains(res, "kevin@student.com")
+        self.assertNotIn('email', res.context['student'])
+        self.assertNotContains(res, "AWS-CSA-998877")
+        self.assertNotIn('credential_id', res.context['certifications'][0])
+
+        # 2. Strictly private personal fields
+        self.assertNotContains(res, "+1-555-0199")
+        self.assertNotIn('phone_number', res.context['student'])
+        self.assertNotContains(res, "2001-05-20")
+        self.assertNotIn('date_of_birth', res.context['student'])
+        self.assertNotIn('gender', res.context['student'])
+        self.assertNotContains(res, "120000")
+        self.assertNotIn('expected_salary', res.context['student'])
+        self.assertNotContains(res, "Expected Salary")
+
+    def test_student_without_profile_handled_gracefully(self):
+        """Students without a StudentProfile record can still be viewed without throwing errors."""
+        new_student = User.objects.create_user(
+            username='student_noprofile',
+            email='noprofile@student.com',
+            password='password123',
+            role='student',
+            first_name='Alex',
+            last_name='Taylor'
+        )
+        MentorshipRequest.objects.create(
+            student=new_student,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="11:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+        self.client.force_login(self.mentor_user)
+        url = reverse('community:mentor_student_profile', args=[new_student.id])
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Alex Taylor")
+        self.assertContains(res, "No professional summary provided")
+
+    def test_profile_links_present_in_requests_mentees_and_dashboard(self):
+        """Profile view links are rendered in requests list, mentees directory, and dashboard preview."""
+        MentorshipRequest.objects.create(
+            student=self.student_user,
+            mentor=self.mentor_profile,
+            requested_date=self.future_date,
+            requested_time="11:00:00",
+            purpose="Career Guidance",
+            status="Accepted"
+        )
+        self.client.force_login(self.mentor_user)
+        profile_url = reverse('community:mentor_student_profile', args=[self.student_user.id])
+
+        # 1. Requests list
+        res_req = self.client.get(reverse('community:mentor_requests'))
+        self.assertEqual(res_req.status_code, 200)
+        self.assertContains(res_req, profile_url)
+
+        # 2. Mentees directory
+        res_mentees = self.client.get(reverse('community:mentor_mentees'))
+        self.assertEqual(res_mentees.status_code, 200)
+        self.assertContains(res_mentees, profile_url)
+
+        # 3. Mentor dashboard
+        res_dash = self.client.get(reverse('community:mentor_dashboard'))
+        self.assertEqual(res_dash.status_code, 200)
+        self.assertContains(res_dash, profile_url)
+
 

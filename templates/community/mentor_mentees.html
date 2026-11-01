@@ -117,7 +117,11 @@
                             <!-- Student Info -->
                             <div>
                                 <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                                    <h2 class="h6 fw-bold text-body mb-0">{{ req.student.first_name|default:req.student.username }} {{ req.student.last_name }}</h2>
+                                    <h2 class="h6 fw-bold text-body mb-0">
+                                        <a href="{% url 'community:mentor_student_profile' req.student.id %}" class="text-body text-decoration-none" style="transition: color 0.15s ease;" onmouseover="this.style.color='#4f46e5'" onmouseout="this.style.color='inherit'">
+                                            {{ req.student.first_name|default:req.student.username }} {{ req.student.last_name }}
+                                        </a>
+                                    </h2>
                                     {% if req.status == 'Accepted' %}
                                         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5" style="font-size: 0.72rem;">
                                             <i class="bi bi-circle-fill me-1" style="font-size: 0.45rem;"></i> Active Relationship
@@ -163,6 +167,9 @@
 
                         <!-- Action Buttons -->
                         <div class="d-flex align-items-center gap-2 flex-wrap flex-shrink-0 align-self-end align-self-md-center">
+                            <a href="{% url 'community:mentor_student_profile' req.student.id %}" class="dash-btn dash-btn-outline dash-btn-sm" title="View Candidate Profile">
+                                <i class="bi bi-person-badge me-1"></i> View Profile
+                            </a>
                             <a href="{% url 'community:mentor_chat' req.student.id %}" class="dash-btn dash-btn-primary dash-btn-sm">
                                 <i class="bi bi-chat-dots-fill me-1"></i> Open Chat
                             </a>

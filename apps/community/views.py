@@ -32,7 +32,7 @@ from .services import (
     save_mentor_availability_service,
     pause_mentor_availability_service, resume_mentor_availability_service,
     get_mentor_step_down_readiness, execute_mentor_step_down_service,
-    reactivate_mentor_service
+    reactivate_mentor_service, get_student_profile_for_mentor
 )
 from .utils import calculate_mentor_match_score
 
@@ -565,6 +565,25 @@ def mentor_mentees_view(request):
     })
 
 
+@login_required
+@mentor_required
+def mentor_student_profile_view(request, student_id):
+    """
+    Mentor Workspace view allowing approved mentors to inspect student profile details
+    for candidates with pending, active, or completed mentorship requests.
+    Enforces relationship-based access authorization and strict data sanitization.
+    """
+    request.session['active_role'] = 'mentor'
+    mentor = request.user.mentor_profile
+    profile_data = get_student_profile_for_mentor(mentor, student_id)
+
+    return render(request, "community/mentor_student_profile.html", {
+        "mentor": mentor,
+        **profile_data,
+        **get_user_sidebar_context(request.user)
+    })
+
+
 # ==========================================
 # PHASE 4: MENTOR LIFECYCLE ENDPOINTS
 # ==========================================
@@ -745,7 +764,7 @@ def book_mentorship_session(request, mentor_id):
 @mentor_required
 def mentor_requests_list(request):
     mentor = request.user.mentor_profile
-    requests_received = MentorshipRequest.objects.filter(mentor=mentor).select_related('student')
+    requests_received = MentorshipRequest.objects.filter(mentor=mentor).select_related('student', 'student__studentprofile').order_by('-created_at')
     
     return render(request, "community/mentor_requests.html", {
         "requests": requests_received,

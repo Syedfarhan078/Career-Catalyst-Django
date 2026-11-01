@@ -1,0 +1,541 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ student.full_name }} — Candidate Profile | CareerCatalyst Mentor Workspace{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/community.css' %}?v=1.0">
+<link rel="stylesheet" href="{% static 'css/settings.css' %}?v=1.0">
+{% endblock %}
+
+{# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block chatbot %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="dash-shell">
+    <!-- Dedicated Mentor Navigation Sidebar -->
+    {% include "community/partials/mentor_sidebar.html" %}
+
+    <!-- Backdrop Overlay for Mobile Drawer -->
+    <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Main Workspace Area -->
+    <div class="dash-main">
+        <!-- Dedicated Mentor Top Header (Desktop & Mobile) -->
+        {% include "community/partials/mentor_header.html" %}
+
+        <!-- Main Content Area -->
+        <main class="dash-content">
+            <!-- Back Navigation -->
+            {% if relationship.is_historical %}
+            <a href="{% url 'community:mentor_mentees' %}?filter=completed" class="dash-back-link mb-3">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Historical Mentees</span>
+            </a>
+            {% elif relationship.status == 'Accepted' %}
+            <a href="{% url 'community:mentor_mentees' %}" class="dash-back-link mb-3">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to My Mentees</span>
+            </a>
+            {% else %}
+            <a href="{% url 'community:mentor_requests' %}" class="dash-back-link mb-3">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Mentorship Requests</span>
+            </a>
+            {% endif %}
+
+            <!-- Header & Breadcrumbs -->
+            <div class="community-header mb-4">
+                <div class="community-breadcrumbs">
+                    <a href="{% url 'community:mentor_dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Mentor Workspace</a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    {% if relationship.is_historical or relationship.status == 'Accepted' %}
+                        <a href="{% url 'community:mentor_mentees' %}">Mentees</a>
+                    {% else %}
+                        <a href="{% url 'community:mentor_requests' %}">Requests</a>
+                    {% endif %}
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                    <span>Candidate Profile: {{ student.full_name }}</span>
+                </div>
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div>
+                        <h1 class="community-title">{{ student.full_name }}</h1>
+                        <p class="community-subtitle">
+                            Candidate academic record, technical competencies, and mentorship relationship details.
+                        </p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        {% if relationship.can_chat %}
+                        <a href="{% url 'community:mentor_chat' student.id %}" class="dash-btn dash-btn-primary dash-btn-sm">
+                            <i class="bi bi-chat-dots-fill me-1"></i> Open Chat
+                        </a>
+                        {% endif %}
+                        {% if relationship.can_respond %}
+                        <a href="{% url 'community:mentor_requests' %}" class="dash-btn dash-btn-primary dash-btn-sm">
+                            <i class="bi bi-check2-circle me-1"></i> Respond in Requests
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'community:mentor_dashboard' %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                            <i class="bi bi-grid me-1"></i> Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contextual Relationship Banner -->
+            {% if relationship.is_historical %}
+            <div class="alert alert-secondary border d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center p-3 rounded-3 mb-4 shadow-sm gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="dash-avatar-circle flex-shrink-0 bg-secondary text-white" style="width: 44px; height: 44px; font-size: 1.25rem;">
+                        <i class="bi bi-archive-fill"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <span class="badge bg-secondary text-white px-3 py-1 rounded-pill fw-semibold">
+                                <i class="bi bi-clock-history me-1"></i> Historical Mentee
+                            </span>
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-0.5">
+                                {{ relationship.purpose }}
+                            </span>
+                        </div>
+                        <p class="mb-0 small text-body">
+                            <strong>Historical Read-Only Access:</strong> This mentorship session was successfully completed on {{ relationship.requested_date }}. Profile details are maintained for your records. No booking or session modifications can be made.
+                        </p>
+                    </div>
+                </div>
+                <div class="text-nowrap">
+                    <span class="badge bg-light text-secondary border px-3 py-2">Read-Only Archive</span>
+                </div>
+            </div>
+
+            {% elif relationship.status == 'Accepted' %}
+            <div class="alert alert-success border border-success-subtle d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center p-3 rounded-3 mb-4 shadow-sm gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="dash-avatar-circle flex-shrink-0 bg-success text-white" style="width: 44px; height: 44px; font-size: 1.25rem;">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <span class="badge bg-success text-white px-3 py-1 rounded-pill fw-semibold">
+                                <i class="bi bi-person-check-fill me-1"></i> Active Mentee
+                            </span>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5">
+                                {{ relationship.purpose }}
+                            </span>
+                        </div>
+                        <p class="mb-1 small text-body">
+                            Scheduled session on <strong>{{ relationship.requested_date }}</strong>
+                            {% if relationship.requested_time %} at <strong>{{ relationship.requested_time|time:"g:i A" }}</strong>{% endif %}.
+                        </p>
+                        {% if relationship.meeting_link %}
+                        <div class="small text-success">
+                            <i class="bi bi-camera-video-fill me-1"></i> Meeting Link: 
+                            <a href="{{ relationship.meeting_link }}" target="_blank" rel="noopener noreferrer" class="fw-bold text-success text-decoration-underline">
+                                {{ relationship.meeting_link }}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap flex-shrink-0">
+                    <a href="{% url 'community:mentor_chat' student.id %}" class="dash-btn dash-btn-success dash-btn-sm text-white">
+                        <i class="bi bi-chat-dots-fill me-1"></i> Open Direct Chat
+                    </a>
+                    <a href="{% url 'community:mentor_requests' %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                        <i class="bi bi-inbox me-1"></i> Manage Session
+                    </a>
+                </div>
+            </div>
+
+            {% elif relationship.status == 'Pending' %}
+            <div class="alert alert-warning border border-warning-subtle d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center p-3 rounded-3 mb-4 shadow-sm gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="dash-avatar-circle flex-shrink-0 bg-warning text-dark" style="width: 44px; height: 44px; font-size: 1.25rem;">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <span class="badge bg-warning text-dark px-3 py-1 rounded-pill fw-semibold">
+                                <i class="bi bi-clock me-1"></i> Pending Mentorship Request
+                            </span>
+                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-2 py-0.5">
+                                {{ relationship.purpose }}
+                            </span>
+                        </div>
+                        <p class="mb-1 small text-body">
+                            Requested for <strong>{{ relationship.requested_date }}</strong>
+                            {% if relationship.requested_time %} at <strong>{{ relationship.requested_time|time:"g:i A" }}</strong>{% endif %}.
+                        </p>
+                        {% if relationship.student_message %}
+                        <div class="p-2 px-3 rounded-2 bg-light border small text-muted mt-2" style="max-width: 650px;">
+                            <strong class="text-body">Candidate Note:</strong> {{ relationship.student_message }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap flex-shrink-0">
+                    <a href="{% url 'community:mentor_requests' %}" class="dash-btn dash-btn-primary dash-btn-sm">
+                        <i class="bi bi-check2-circle me-1"></i> Review & Respond in Requests
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Main Profile Grid -->
+            <div class="row g-4">
+                <!-- Left Column: Student Summary Card -->
+                <div class="col-lg-4">
+                    <div class="settings-card text-center">
+                        <!-- Avatar -->
+                        <div class="mb-3 d-flex justify-content-center">
+                            {% if student.profile_picture_url %}
+                                <img src="{{ student.profile_picture_url }}" alt="{{ student.username }}" class="settings-avatar-preview" style="width: 110px; height: 110px;">
+                            {% else %}
+                                <div class="settings-avatar-initials" style="width: 110px; height: 110px; font-size: 2rem;">
+                                    {{ student.initials }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <h2 class="h5 fw-bold text-body mb-1">{{ student.full_name }}</h2>
+                        <p class="text-muted small mb-2">@{{ student.username }}</p>
+
+                        {% if student.career_goal %}
+                            <div class="mb-3">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill small">
+                                    <i class="bi bi-bullseye me-1"></i> {{ student.career_goal }}
+                                </span>
+                            </div>
+                        {% endif %}
+
+                        <div class="row g-2 text-center pt-3 border-top border-subtle mb-3">
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-light border">
+                                    <div class="small text-muted" style="font-size: 0.75rem;">Skill Level</div>
+                                    <div class="fw-bold text-body small">{{ student.current_skill_level|default:"Beginner" }}</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-light border">
+                                    <div class="small text-muted" style="font-size: 0.75rem;">Grad Year</div>
+                                    <div class="fw-bold text-body small">{{ student.graduation_year|default:"N/A" }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bio / Professional Summary -->
+                        <div class="text-start mb-4">
+                            <label class="settings-label">Professional Summary</label>
+                            <p class="small text-muted mb-0 lh-base">
+                                {{ student.bio|default:"No professional summary provided by the student." }}
+                            </p>
+                        </div>
+
+                        <!-- External Links -->
+                        <div class="text-start pt-3 border-top border-subtle">
+                            <label class="settings-label mb-2">Connected Links</label>
+                            <div class="d-flex flex-column gap-2">
+                                {% if student.github %}
+                                    <a href="{{ student.github }}" target="_blank" rel="noopener noreferrer" class="settings-btn-outline d-flex align-items-center justify-content-between text-decoration-none py-2 px-3 small">
+                                        <span><i class="bi bi-github me-2"></i> GitHub</span>
+                                        <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                                    </a>
+                                {% endif %}
+                                {% if student.linkedin %}
+                                    <a href="{{ student.linkedin }}" target="_blank" rel="noopener noreferrer" class="settings-btn-outline d-flex align-items-center justify-content-between text-decoration-none py-2 px-3 small">
+                                        <span><i class="bi bi-linkedin me-2 text-primary"></i> LinkedIn</span>
+                                        <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                                    </a>
+                                {% endif %}
+                                {% if student.portfolio %}
+                                    <a href="{{ student.portfolio }}" target="_blank" rel="noopener noreferrer" class="settings-btn-outline d-flex align-items-center justify-content-between text-decoration-none py-2 px-3 small">
+                                        <span><i class="bi bi-globe me-2 text-info"></i> Portfolio</span>
+                                        <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                                    </a>
+                                {% endif %}
+                                {% if student.leetcode %}
+                                    <a href="{{ student.leetcode }}" target="_blank" rel="noopener noreferrer" class="settings-btn-outline d-flex align-items-center justify-content-between text-decoration-none py-2 px-3 small">
+                                        <span><i class="bi bi-code-slash me-2 text-warning"></i> LeetCode</span>
+                                        <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                                    </a>
+                                {% endif %}
+                                {% if student.hackerrank %}
+                                    <a href="{{ student.hackerrank }}" target="_blank" rel="noopener noreferrer" class="settings-btn-outline d-flex align-items-center justify-content-between text-decoration-none py-2 px-3 small">
+                                        <span><i class="bi bi-trophy me-2 text-success"></i> HackerRank</span>
+                                        <i class="bi bi-box-arrow-up-right small text-muted"></i>
+                                    </a>
+                                {% endif %}
+                                {% if not student.github and not student.linkedin and not student.portfolio and not student.leetcode and not student.hackerrank %}
+                                    <div class="text-muted small">No connected links provided.</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Detailed Academic, Skills & Portfolio Sections -->
+                <div class="col-lg-8">
+                    <!-- Academic Qualifications -->
+                    <div class="settings-card mb-4">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-mortarboard text-primary"></i>
+                                Academic Qualifications
+                            </h3>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="small text-muted">College / Institution</div>
+                                <div class="fw-semibold text-body">{{ student.college|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="small text-muted">University</div>
+                                <div class="fw-semibold text-body">{{ student.university|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Degree</div>
+                                <div class="fw-semibold text-body">{{ student.degree|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Branch / Field</div>
+                                <div class="fw-semibold text-body">{{ student.branch|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="small text-muted">Semester</div>
+                                <div class="fw-semibold text-body">
+                                    {% if student.semester %}Semester {{ student.semester }}{% else %}Not specified{% endif %}
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="small text-muted">Graduation Year</div>
+                                <div class="fw-semibold text-body">{{ student.graduation_year|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="small text-muted">CGPA</div>
+                                <div class="fw-bold text-primary fs-6">
+                                    {% if student.cgpa %}{{ student.cgpa|floatformat:2 }} / 10.0{% else %}Not specified{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Career Preferences -->
+                    <div class="settings-card mb-4">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-compass text-primary"></i>
+                                Career Preferences
+                            </h3>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="small text-muted">Target Career Goal</div>
+                                <div class="fw-semibold text-body">{{ student.career_goal|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="small text-muted">Current Skill Level</div>
+                                <div class="fw-semibold text-body">{{ student.current_skill_level|default:"Beginner" }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="small text-muted">Preferred Domain</div>
+                                <div class="fw-semibold text-body">{{ student.preferred_domain|default:"Not specified" }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="small text-muted">Preferred Location</div>
+                                <div class="fw-semibold text-body">{{ student.preferred_location|default:"Not specified" }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Technical Skills Inventory -->
+                    <div class="settings-card mb-4">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title">
+                                <i class="bi bi-cpu text-primary"></i>
+                                Technical Skills Inventory
+                            </h3>
+                        </div>
+
+                        <!-- Self-Reported Skills -->
+                        <div class="mb-3">
+                            <div class="small fw-semibold text-secondary mb-2">
+                                <i class="bi bi-person me-1"></i> Self-Reported Skills
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for skill in self_reported_skills %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill small">
+                                        {{ skill }}
+                                    </span>
+                                {% empty %}
+                                    <div class="text-muted small">No self-reported skills provided by candidate.</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Roadmap Earned Skills -->
+                        <div class="pt-3 border-top border-subtle">
+                            <div class="small fw-semibold text-secondary mb-2">
+                                <i class="bi bi-mortarboard text-success me-1"></i> Verified via Roadmaps
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for skill in roadmap_earned_skills %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill small">
+                                        <i class="bi bi-check2 me-1"></i> {{ skill }}
+                                    </span>
+                                {% empty %}
+                                    <div class="text-muted small">No roadmap-verified skills recorded yet.</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Projects & Applied Work -->
+                    <div class="settings-card mb-4">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title mb-0">
+                                <i class="bi bi-folder-check text-primary"></i>
+                                Projects & Applied Work
+                            </h3>
+                        </div>
+
+                        {% if projects %}
+                            <div class="d-flex flex-column gap-3">
+                                {% for proj in projects %}
+                                    <div class="p-3 rounded bg-light border">
+                                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1 mb-2">
+                                            <h4 class="h6 fw-bold mb-0 text-body">{{ proj.title }}</h4>
+                                            {% if proj.is_current %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill small">In Progress</span>
+                                            {% elif proj.start_date or proj.end_date %}
+                                                <span class="text-muted small">
+                                                    {{ proj.start_date|date:"M Y"|default:"" }} {% if proj.start_date and proj.end_date %}&ndash;{% endif %} {{ proj.end_date|date:"M Y"|default:"" }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if proj.description %}
+                                            <p class="small text-muted mb-2 lh-base">{{ proj.description }}</p>
+                                        {% endif %}
+
+                                        {% if proj.technologies_list %}
+                                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                                {% for t in proj.technologies_list %}
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill small" style="font-size: 0.75rem;">
+                                                        {{ t }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="d-flex gap-3 small pt-1">
+                                            {% if proj.github_url %}
+                                                <a href="{{ proj.github_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-body fw-semibold d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-github"></i> Repository <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if proj.live_demo_url %}
+                                                <a href="{{ proj.live_demo_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-primary fw-semibold d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-globe"></i> Live Demo <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-muted small py-2">
+                                No portfolio projects documented by this candidate.
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Certifications & Verified Credentials -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3 class="settings-card-title mb-0">
+                                <i class="bi bi-award text-primary"></i>
+                                Certifications & Credentials
+                            </h3>
+                        </div>
+
+                        {% if roadmap_certificates or certifications %}
+                            <div class="d-flex flex-column gap-3">
+                                {% for rcert in roadmap_certificates %}
+                                    <div class="p-3 rounded bg-light border border-primary-subtle" style="border-left: 4px solid #4f46e5 !important;">
+                                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1 mb-1">
+                                            <h4 class="h6 fw-bold mb-0 text-body">
+                                                {{ rcert.career_path_name }} Track Mastery
+                                            </h4>
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill small">
+                                                <i class="bi bi-patch-check-fill me-1"></i> CareerCatalyst Verified
+                                            </span>
+                                        </div>
+
+                                        <div class="small text-muted mb-2">
+                                            Issued {{ rcert.issued_at|date:"M Y" }} &middot; Certificate ID: <code class="text-body fw-bold">{{ rcert.certificate_id }}</code> &middot; {{ rcert.total_topics_completed }} Topics Mastered
+                                        </div>
+
+                                        {% if rcert.skills_list %}
+                                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                                {% for sk in rcert.skills_list %}
+                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-pill small" style="font-size: 0.75rem;">
+                                                        {{ sk }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="d-flex gap-3 pt-1">
+                                            <a href="{% url 'roadmaps:verify_certificate' rcert.certificate_id %}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-primary small fw-semibold d-inline-flex align-items-center gap-1">
+                                                <i class="bi bi-shield-check"></i> Verify Credential <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+
+                                {% for cert in certifications %}
+                                    <div class="p-3 rounded bg-light border">
+                                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1 mb-1">
+                                            <h4 class="h6 fw-bold mb-0 text-body">{{ cert.name }}</h4>
+                                            <span class="small text-muted">{{ cert.organization }}</span>
+                                        </div>
+
+                                        <div class="small text-muted mb-2">
+                                            {% if cert.issue_date %}Issued {{ cert.issue_date|date:"M Y" }}{% endif %}
+                                        </div>
+
+                                        {% if cert.skills_list %}
+                                            <div class="d-flex flex-wrap gap-1 mb-2">
+                                                {% for sk in cert.skills_list %}
+                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-pill small" style="font-size: 0.75rem;">
+                                                        {{ sk }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+
+                                        {% if cert.credential_url %}
+                                            <div class="pt-1">
+                                                <a href="{{ cert.credential_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-primary small fw-semibold d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-patch-check"></i> View Verification Credential <i class="bi bi-box-arrow-up-right" style="font-size: 0.7rem;"></i>
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-muted small py-2">
+                                No certifications or verified credentials found.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
