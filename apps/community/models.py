@@ -231,6 +231,7 @@ class MentorshipRequest(models.Model):
     meeting_date = models.DateField(blank=True, null=True)
     meeting_time = models.TimeField(blank=True, null=True)
     
+    accepted_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

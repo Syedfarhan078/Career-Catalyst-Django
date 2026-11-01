@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from datetime import datetime, timedelta
 from .models import MentorProfile, MentorshipRequest, MentorReview, MentorAvailability
 import re
 
@@ -88,8 +89,12 @@ class MentorshipBookingForm(forms.ModelForm):
 
     def clean_requested_date(self):
         requested_date = self.cleaned_data.get('requested_date')
-        if requested_date and requested_date < timezone.now().date():
-            raise ValidationError("You cannot book a mentorship session for a past date.")
+        if requested_date:
+            today = timezone.now().date()
+            if requested_date < today:
+                raise ValidationError("You cannot book a mentorship session for a past date.")
+            if requested_date > today + timedelta(days=14):
+                raise ValidationError("You can only book mentorship sessions up to 14 days in advance.")
         return requested_date
 
 
@@ -116,6 +121,11 @@ class MentorAvailabilityForm(forms.ModelForm):
         cleaned_data = super().clean()
         start = cleaned_data.get('start_time')
         end = cleaned_data.get('end_time')
-        if start and end and start >= end:
-            raise ValidationError("End time must be after start time.")
+        if start and end:
+            if start >= end:
+                raise ValidationError("End time must be after start time.")
+            start_dt = datetime.combine(timezone.now().date(), start)
+            end_dt = datetime.combine(timezone.now().date(), end)
+            if (end_dt - start_dt).total_seconds() < 45 * 60:
+                raise ValidationError("Availability window must accommodate at least one complete 45-minute session.")
         return cleaned_data

@@ -9,7 +9,9 @@ from django.db.models import Count, Q, Avg
 from django.urls import reverse
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from django.utils import timezone
 from functools import wraps
+from datetime import datetime, date, timedelta
 import json
 
 from .models import (
@@ -29,7 +31,8 @@ from .services import (
     register_mentor_service, update_mentor_profile_service, 
     review_mentor_application_service, create_mentorship_request_service, 
     respond_to_request_service, submit_mentor_review_service, 
-    save_mentor_availability_service,
+    save_mentor_availability_service, conclude_mentorship_service,
+    generate_mentor_bookable_slots,
     pause_mentor_availability_service, resume_mentor_availability_service,
     get_mentor_step_down_readiness, execute_mentor_step_down_service,
     reactivate_mentor_service, get_student_profile_for_mentor
@@ -401,6 +404,10 @@ class MentorDetailView(DetailView):
         else:
             context["has_accepted_booking"] = False
 
+        today = timezone.now().date()
+        context["today_date"] = today.strftime('%Y-%m-%d')
+        context["max_booking_date"] = (today + timedelta(days=14)).strftime('%Y-%m-%d')
+
         context.update(get_user_sidebar_context(self.request.user))
         return context
 
@@ -691,16 +698,19 @@ def manage_availability(request):
     if request.method == 'POST':
         form = MentorAvailabilityForm(request.POST)
         if form.is_valid():
-            # Delegate to Business Logic Layer
-            save_mentor_availability_service(
-                mentor,
-                form.cleaned_data['day'],
-                form.cleaned_data['start_time'],
-                form.cleaned_data['end_time'],
-                form.cleaned_data['max_sessions']
-            )
-            messages.success(request, "Availability slot added successfully.")
-            return redirect('community:manage_availability')
+            try:
+                # Delegate to Business Logic Layer
+                save_mentor_availability_service(
+                    mentor,
+                    form.cleaned_data['day'],
+                    form.cleaned_data['start_time'],
+                    form.cleaned_data['end_time'],
+                    form.cleaned_data.get('max_sessions', 1)
+                )
+                messages.success(request, "Availability slot added successfully.")
+                return redirect('community:manage_availability')
+            except ValidationError as e:
+                messages.error(request, e.message if hasattr(e, 'message') else str(e))
     else:
         form = MentorAvailabilityForm()
 
@@ -718,9 +728,71 @@ def manage_availability(request):
 def delete_availability(request, pk):
     mentor = request.user.mentor_profile
     avail = get_object_or_404(MentorAvailability, pk=pk, mentor=mentor)
+
+    # Existing booking protection
+    upcoming_conflicts = MentorshipRequest.objects.filter(
+        mentor=mentor,
+        status='Accepted',
+        requested_date__gte=timezone.now().date()
+    )
+    has_conflict = any(req.requested_date.strftime('%A') == avail.day for req in upcoming_conflicts)
+    if has_conflict:
+        messages.error(request, f"Cannot remove availability for {avail.day}: You have upcoming accepted mentorship sessions scheduled on this day.")
+        return redirect('community:manage_availability')
+
     avail.delete()
     messages.success(request, "Availability slot deleted.")
     return redirect('community:manage_availability')
+
+
+@login_required
+def mentor_available_slots_view(request, mentor_id):
+    """
+    Lightweight JSON endpoint: returns 45-minute available booking slots for a mentor on a specific date.
+    GET /community/mentors/<int:mentor_id>/available-slots/?date=YYYY-MM-DD
+    """
+    if getattr(request.user, 'role', 'student') != 'student':
+        return JsonResponse({'error': 'Only student accounts can book mentorship sessions.'}, status=403)
+
+    mentor = get_object_or_404(MentorProfile, pk=mentor_id)
+    date_str = request.GET.get('date', '').strip()
+
+    if not date_str:
+        return JsonResponse({'error': 'A date parameter (YYYY-MM-DD) is required.'}, status=400)
+
+    try:
+        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return JsonResponse({'error': 'Invalid date format. Expected YYYY-MM-DD.'}, status=400)
+
+    today = timezone.now().date()
+    if target_date < today or target_date > today + timedelta(days=14):
+        return JsonResponse({'error': 'Date must be within the rolling 14-day booking horizon.'}, status=400)
+
+    slots = generate_mentor_bookable_slots(mentor, target_date)
+    return JsonResponse({
+        'mentor_id': mentor.id,
+        'date': date_str,
+        'slots': slots
+    })
+
+
+@login_required
+@require_POST
+@mentor_required
+def conclude_mentorship_view(request, student_id):
+    """
+    Dedicated action for mentors to conclude an active mentorship relationship with a student.
+    Cancels outstanding Accepted bookings and Pending requests between them.
+    Preserves historical Completed sessions and profile access.
+    """
+    reason = request.POST.get('reason', '').strip()
+    try:
+        conclude_mentorship_service(request.user, student_id, reason=reason)
+        messages.success(request, "Mentorship relationship concluded successfully.")
+    except ValidationError as e:
+        messages.error(request, e.message if hasattr(e, 'message') else str(e))
+    return redirect('community:mentor_mentees')
 
 
 @login_required

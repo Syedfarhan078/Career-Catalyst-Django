@@ -173,12 +173,52 @@
                             <a href="{% url 'community:mentor_chat' req.student.id %}" class="dash-btn dash-btn-primary dash-btn-sm">
                                 <i class="bi bi-chat-dots-fill me-1"></i> Open Chat
                             </a>
+                            {% if req.status == 'Accepted' %}
+                            <button type="button" class="dash-btn dash-btn-outline dash-btn-sm text-danger border-danger-subtle" data-bs-toggle="modal" data-bs-target="#concludeModal{{ req.student.id }}" title="Conclude Ongoing Mentorship">
+                                <i class="bi bi-x-circle me-1"></i> Conclude
+                            </button>
+                            {% endif %}
                             <a href="{% url 'community:mentor_requests' %}" class="dash-btn dash-btn-outline dash-btn-sm" title="View Full Request Details">
                                 <i class="bi bi-eye"></i>
                             </a>
                         </div>
                     </div>
                 </div>
+
+                {% if req.status == 'Accepted' %}
+                <!-- Conclude Mentorship Modal -->
+                <div class="modal fade" id="concludeModal{{ req.student.id }}" tabindex="-1" aria-labelledby="concludeModalLabel{{ req.student.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header border-bottom">
+                                <h5 class="modal-title h6 fw-bold" id="concludeModalLabel{{ req.student.id }}">
+                                    <i class="bi bi-person-x me-1 text-danger"></i> Conclude Mentorship
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form method="POST" action="{% url 'community:conclude_mentorship' req.student.id %}">
+                                {% csrf_token %}
+                                <div class="modal-body">
+                                    <p class="small text-muted mb-3">
+                                        Are you sure you want to conclude the active mentorship relationship with <strong>{{ req.student.first_name|default:req.student.username }}</strong>?
+                                    </p>
+                                    <p class="small text-muted mb-3">
+                                        This will cancel any pending or upcoming sessions between you, while preserving all completed session records and historical candidate notes. The student will be freed to seek another active mentor.
+                                    </p>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-body">Optional Note or Reason</label>
+                                        <textarea name="reason" rows="3" class="form-control form-control-sm" placeholder="Provide any concluding notes or advice for the student..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-top">
+                                    <button type="button" class="dash-btn dash-btn-outline dash-btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="dash-btn dash-btn-danger dash-btn-sm fw-medium">Conclude Mentorship</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
                 {% empty %}
                 <div class="community-card text-center py-5">
                     <div class="community-metric-icon mx-auto mb-3" style="width: 56px; height: 56px; font-size: 1.75rem; background: rgba(59, 130, 246, 0.1); color: #2563EB;">

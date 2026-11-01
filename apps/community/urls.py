@@ -26,6 +26,7 @@ urlpatterns = [
     path('mentors/register/', views.mentor_register, name='mentor_register'),
     path('mentors/<int:pk>/', views.MentorDetailView.as_view(), name='mentor_detail'),
     path('mentors/<int:mentor_id>/book/', views.book_mentorship_session, name='book_session'),
+    path('mentors/<int:mentor_id>/available-slots/', views.mentor_available_slots_view, name='mentor_available_slots'),
     
     # Mentor Dashboard Management
     path('mentors/dashboard/', views.mentor_dashboard, name='mentor_dashboard'),
@@ -36,6 +37,7 @@ urlpatterns = [
     path('mentors/dashboard/requests/<int:pk>/respond/', views.respond_to_request, name='respond_request'),
     path('mentors/dashboard/mentees/', views.mentor_mentees_view, name='mentor_mentees'),
     path('mentors/students/<int:student_id>/profile/', views.mentor_student_profile_view, name='mentor_student_profile'),
+    path('mentors/students/<int:student_id>/conclude/', views.conclude_mentorship_view, name='conclude_mentorship'),
     path('mentors/dashboard/pause/', views.pause_availability_view, name='pause_availability'),
     path('mentors/dashboard/resume/', views.resume_availability_view, name='resume_availability'),
     path('mentors/dashboard/step-down/', views.mentor_step_down_view, name='mentor_step_down'),

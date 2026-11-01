@@ -286,13 +286,21 @@
                     </p>
                     
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-body">Requested Date</label>
-                        {{ booking_form.requested_date }}
+                        <label class="form-label small fw-semibold text-body" for="id_requested_date">Select Date (Next 14 Days)</label>
+                        <input type="date" name="requested_date" id="id_requested_date" class="form-control form-control-sm" min="{{ today_date }}" max="{{ max_booking_date }}" required>
+                        <div class="form-text text-muted" style="font-size: 0.75rem;">Mentorship sessions are fixed at 45 minutes in duration.</div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-body">Requested Time</label>
-                        {{ booking_form.requested_time }}
+                        <label class="form-label small fw-semibold text-body">Available 45-Minute Time Slots</label>
+                        <input type="hidden" name="requested_time" id="id_requested_time" required>
+                        <div id="slots-container" class="p-2 border rounded-3 bg-body-tertiary">
+                            <p class="text-muted small mb-0 text-center py-2" id="slots-placeholder">
+                                <i class="bi bi-calendar3 me-1"></i> Pick a date above to view available 45-minute slots.
+                            </p>
+                            <div id="slots-list" class="d-flex flex-wrap gap-2 d-none"></div>
+                        </div>
+                        <div id="slots-error" class="text-danger small mt-1 d-none"></div>
                     </div>
 
                     <div class="mb-3">
@@ -330,6 +338,87 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebar.classList.remove('open');
             overlay.classList.remove('active');
         });
+    }
+
+    const dateInput = document.getElementById('id_requested_date');
+    const slotsPlaceholder = document.getElementById('slots-placeholder');
+    const slotsList = document.getElementById('slots-list');
+    const slotsError = document.getElementById('slots-error');
+    const requestedTimeInput = document.getElementById('id_requested_time');
+    const bookingForm = document.querySelector('form[action*="book"]');
+
+    if (dateInput) {
+        dateInput.addEventListener('change', async () => {
+            const selectedDate = dateInput.value;
+            requestedTimeInput.value = '';
+            if (!selectedDate) {
+                slotsPlaceholder.classList.remove('d-none');
+                slotsPlaceholder.innerHTML = '<i class="bi bi-calendar3 me-1"></i> Pick a date above to view available 45-minute slots.';
+                slotsList.classList.add('d-none');
+                slotsList.innerHTML = '';
+                return;
+            }
+
+            slotsPlaceholder.classList.remove('d-none');
+            slotsPlaceholder.innerHTML = '<div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div> Loading available slots...';
+            slotsList.classList.add('d-none');
+            slotsList.innerHTML = '';
+            slotsError.classList.add('d-none');
+
+            try {
+                const resp = await fetch(`{% url 'community:mentor_available_slots' mentor.id %}?date=${selectedDate}`);
+                const data = await resp.json();
+                if (!resp.ok) {
+                    slotsPlaceholder.classList.remove('d-none');
+                    slotsPlaceholder.innerHTML = `<span class="text-danger small">${data.error || 'Failed to fetch slots.'}</span>`;
+                    return;
+                }
+
+                if (data.slots && data.slots.length > 0) {
+                    slotsPlaceholder.classList.add('d-none');
+                    slotsList.classList.remove('d-none');
+                    slotsList.innerHTML = '';
+
+                    data.slots.forEach(slot => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-sm btn-outline-primary slot-btn py-1 px-2';
+                        btn.style.fontSize = '0.8rem';
+                        btn.dataset.time = slot.start_time;
+                        btn.textContent = slot.display || `${slot.start_display} - ${slot.end_display}`;
+
+                        btn.addEventListener('click', () => {
+                            document.querySelectorAll('.slot-btn').forEach(b => {
+                                b.classList.remove('btn-primary', 'text-white');
+                                b.classList.add('btn-outline-primary');
+                            });
+                            btn.classList.remove('btn-outline-primary');
+                            btn.classList.add('btn-primary', 'text-white');
+                            requestedTimeInput.value = slot.start_time;
+                            slotsError.classList.add('d-none');
+                        });
+
+                        slotsList.appendChild(btn);
+                    });
+                } else {
+                    slotsPlaceholder.classList.remove('d-none');
+                    slotsPlaceholder.innerHTML = '<i class="bi bi-info-circle me-1 text-warning"></i> No available slots on this date. Mentor may be fully booked or unavailable.';
+                }
+            } catch (err) {
+                slotsPlaceholder.classList.remove('d-none');
+                slotsPlaceholder.innerHTML = '<span class="text-danger small">Error loading availability. Please try again.</span>';
+            }
+        });
+
+        if (bookingForm) {
+            bookingForm.addEventListener('submit', (e) => {
+                if (!requestedTimeInput.value) {
+                    e.preventDefault();
+                    slotsError.textContent = 'Please select an available 45-minute time slot before submitting.';
+                    slotsError.classList.remove('d-none');
+                }
+            });
+        }
     }
 });
 </script>

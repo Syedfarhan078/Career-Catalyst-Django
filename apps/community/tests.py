@@ -2452,3 +2452,643 @@ class MentorStudentProfileAccessTests(TestCase):
         self.assertContains(res_dash, profile_url)
 
 
+class MentorshipBookingRulesTests(TestCase):
+    def setUp(self):
+        self.student_a = User.objects.create_user(
+            username='student_a',
+            email='student_a@test.com',
+            password='password123',
+            role='student'
+        )
+        self.student_b = User.objects.create_user(
+            username='student_b',
+            email='student_b@test.com',
+            password='password123',
+            role='student'
+        )
+        self.mentor_user_1 = User.objects.create_user(
+            username='mentor_one',
+            email='mentor1@test.com',
+            password='password123',
+            role='mentor'
+        )
+        self.mentor_user_2 = User.objects.create_user(
+            username='mentor_two',
+            email='mentor2@test.com',
+            password='password123',
+            role='mentor'
+        )
+
+        self.mentor_1 = MentorProfile.objects.create(
+            user=self.mentor_user_1,
+            full_name='Mentor One',
+            email='mentor1@test.com',
+            phone_number='1111111111',
+            company='Company A',
+            designation='Lead Architect',
+            experience_years=10,
+            status='Approved',
+            verified=True,
+            max_sessions_per_week=2,
+            available_days='Monday, Tuesday, Wednesday, Thursday, Friday'
+        )
+
+        self.mentor_2 = MentorProfile.objects.create(
+            user=self.mentor_user_2,
+            full_name='Mentor Two',
+            email='mentor2@test.com',
+            phone_number='2222222222',
+            company='Company B',
+            designation='Engineering Director',
+            experience_years=12,
+            status='Approved',
+            verified=True,
+            max_sessions_per_week=3,
+            available_days='Monday, Tuesday, Wednesday, Thursday, Friday'
+        )
+
+        # Base future date 3 days from now
+        self.future_date = timezone.now().date() + timedelta(days=3)
+        self.future_day_name = self.future_date.strftime('%A')
+
+        # Create MentorAvailability for mentor_1 (10:00 to 13:00 - 180 min -> 4 slots)
+        self.avail_1 = MentorAvailability.objects.create(
+            mentor=self.mentor_1,
+            day=self.future_day_name,
+            start_time=timezone.datetime.strptime('10:00:00', '%H:%M:%S').time(),
+            end_time=timezone.datetime.strptime('13:00:00', '%H:%M:%S').time()
+        )
+
+        # Create MentorAvailability for mentor_2 (14:00 to 16:00 - 120 min -> 2 slots)
+        self.avail_2 = MentorAvailability.objects.create(
+            mentor=self.mentor_2,
+            day=self.future_day_name,
+            start_time=timezone.datetime.strptime('14:00:00', '%H:%M:%S').time(),
+            end_time=timezone.datetime.strptime('16:00:00', '%H:%M:%S').time()
+        )
+
+    def test_one_active_mentor_auto_cancels_competing_pending_requests(self):
+        """First mentor accepting cancels all other pending requests from that student."""
+        from .services import respond_to_request_service
+
+        req_1 = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Resume Review",
+            status="Pending"
+        )
+        req_2 = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_2,
+            requested_date=self.future_date,
+            requested_time="14:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+
+        # Mentor 1 accepts
+        respond_to_request_service(req_1, action='accept', response_message="Welcome!", meeting_link="https://meet.google.com/xyz")
+        req_1.refresh_from_db()
+        req_2.refresh_from_db()
+
+        self.assertEqual(req_1.status, 'Accepted')
+        self.assertIsNotNone(req_1.accepted_at)
+        self.assertEqual(req_2.status, 'Cancelled')
+        self.assertIn("accepted another mentorship session", req_2.mentor_response)
+
+    def test_second_mentor_cannot_accept_already_cancelled_request(self):
+        """Second mentor cannot accept an automatically cancelled request."""
+        from .services import respond_to_request_service
+
+        req_1 = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Resume Review",
+            status="Pending"
+        )
+        req_2 = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_2,
+            requested_date=self.future_date,
+            requested_time="14:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+
+        respond_to_request_service(req_1, action='accept', response_message="Welcome!")
+        req_2.refresh_from_db()
+        self.assertEqual(req_2.status, 'Cancelled')
+
+        with self.assertRaises(ValidationError) as cm:
+            respond_to_request_service(req_2, action='accept', response_message="I also accept!")
+        self.assertIn("already Cancelled", str(cm.exception))
+
+    def test_mentor_cannot_accept_request_if_student_has_active_accepted_mentor(self):
+        """Mentor cannot accept a new request if student already has an active Accepted relationship."""
+        from .services import respond_to_request_service
+
+        # Active relationship with mentor 1
+        MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Resume Review",
+            status="Accepted",
+            accepted_at=timezone.now()
+        )
+
+        # Later request to mentor 2
+        req_2 = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_2,
+            requested_date=self.future_date,
+            requested_time="14:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+
+        with self.assertRaises(ValidationError) as cm:
+            respond_to_request_service(req_2, action='accept', response_message="Accepting")
+        self.assertIn("already has an active mentorship relationship", str(cm.exception))
+
+    def test_conclude_mentorship_frees_student_and_preserves_completed_history(self):
+        """Concluding mentorship cancels active sessions, preserves completed sessions, and frees student."""
+        from .services import conclude_mentorship_service, respond_to_request_service, can_mentor_view_student_profile
+
+        # Historical completed session
+        past_completed = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date - timedelta(days=7),
+            requested_time="10:00:00",
+            purpose="Resume Review",
+            status="Completed",
+            accepted_at=timezone.now() - timedelta(days=8)
+        )
+
+        # Ongoing active accepted session
+        active_req = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Interview Prep",
+            status="Accepted",
+            accepted_at=timezone.now()
+        )
+
+        # Mentor 1 explicitly concludes mentorship
+        conclude_mentorship_service(self.mentor_user_1, self.student_a.id, reason="Goals reached")
+
+        active_req.refresh_from_db()
+        past_completed.refresh_from_db()
+
+        self.assertEqual(active_req.status, 'Cancelled')
+        self.assertIn("Mentorship concluded by mentor", active_req.mentor_response)
+        self.assertEqual(past_completed.status, 'Completed')
+
+        # Historical profile access preserved for mentor 1
+        is_auth, _, meta = can_mentor_view_student_profile(self.mentor_1, self.student_a)
+        self.assertTrue(is_auth)
+        self.assertTrue(meta['is_historical'])
+
+        # Now Mentor 2 is free to accept a request from student_a
+        req_2 = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_2,
+            requested_date=self.future_date,
+            requested_time="14:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+        respond_to_request_service(req_2, action='accept', response_message="Welcome!")
+        req_2.refresh_from_db()
+        self.assertEqual(req_2.status, 'Accepted')
+
+    def test_weekly_capacity_counting_rules(self):
+        """Accepted and Completed consume capacity; Pending, Rejected, and Cancelled do not."""
+        from .services import get_mentor_weekly_booking_count, respond_to_request_service
+
+        today = timezone.now().date()
+        self.assertEqual(get_mentor_weekly_booking_count(self.mentor_1, today), 0)
+
+        # Pending -> does NOT count
+        p_req = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Resume Review",
+            status="Pending"
+        )
+        self.assertEqual(get_mentor_weekly_booking_count(self.mentor_1, today), 0)
+
+        # Rejected -> does NOT count
+        MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:45:00",
+            purpose="Career Guidance",
+            status="Rejected"
+        )
+        self.assertEqual(get_mentor_weekly_booking_count(self.mentor_1, today), 0)
+
+        # Cancelled -> does NOT count
+        MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="11:30:00",
+            purpose="Project Review",
+            status="Cancelled"
+        )
+        self.assertEqual(get_mentor_weekly_booking_count(self.mentor_1, today), 0)
+
+        # Accepted -> counts (1)
+        MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="12:15:00",
+            purpose="Career Guidance",
+            status="Accepted",
+            accepted_at=timezone.now()
+        )
+        self.assertEqual(get_mentor_weekly_booking_count(self.mentor_1, today), 1)
+
+        # Completed -> counts (2)
+        MentorshipRequest.objects.create(
+            student=self.student_b,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Completed",
+            accepted_at=timezone.now()
+        )
+        self.assertEqual(get_mentor_weekly_booking_count(self.mentor_1, today), 2)
+
+        # Mentor 1 capacity is 2. Accepting another request must fail
+        with self.assertRaises(ValidationError) as cm:
+            respond_to_request_service(p_req, action='accept', response_message="Cannot accept")
+        self.assertIn("Weekly booking capacity reached", str(cm.exception))
+
+    def test_acceptance_in_different_week_counted_correctly(self):
+        """A session accepted in a previous week does not count towards this week's capacity."""
+        from .services import get_mentor_weekly_booking_count
+
+        today = timezone.now().date()
+        two_weeks_ago = timezone.now() - timedelta(days=14)
+
+        MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=today - timedelta(days=14),
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Accepted",
+            accepted_at=two_weeks_ago
+        )
+
+        self.assertEqual(get_mentor_weekly_booking_count(self.mentor_1, today), 0)
+        self.assertEqual(get_mentor_weekly_booking_count(self.mentor_1, two_weeks_ago.date()), 1)
+
+    def test_legacy_record_without_accepted_at_uses_fallback(self):
+        """Legacy Accepted records without accepted_at use requested_date for week determination."""
+        from .services import get_mentor_weekly_booking_count
+
+        today = timezone.now().date()
+        MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=today,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Accepted",
+            accepted_at=None
+        )
+        self.assertEqual(get_mentor_weekly_booking_count(self.mentor_1, today), 1)
+
+    def test_slot_generation_slicing_and_discarding_incomplete_time(self):
+        """180-min window produces 4 slots; 120-min window produces 2 slots and discards incomplete time."""
+        from .services import generate_mentor_bookable_slots
+
+        # mentor_1: 10:00 to 13:00 (180 min) -> 4 slots: 10:00, 10:45, 11:30, 12:15
+        slots_1 = generate_mentor_bookable_slots(self.mentor_1, self.future_date)
+        self.assertEqual(len(slots_1), 4)
+        start_times_1 = [s['start_time'] for s in slots_1]
+        self.assertEqual(start_times_1, ['10:00:00', '10:45:00', '11:30:00', '12:15:00'])
+
+        # mentor_2: 14:00 to 16:00 (120 min) -> 2 slots: 14:00, 14:45. 15:30-16:00 (30 min) discarded
+        slots_2 = generate_mentor_bookable_slots(self.mentor_2, self.future_date)
+        self.assertEqual(len(slots_2), 2)
+        start_times_2 = [s['start_time'] for s in slots_2]
+        self.assertEqual(start_times_2, ['14:00:00', '14:45:00'])
+
+    def test_pending_slot_reservation_and_24h_expiry(self):
+        """Pending requests temporarily reserve their slot; expired requests (>24h) release it."""
+        from .services import generate_mentor_bookable_slots, is_request_expired, respond_to_request_service
+
+        slots_before = generate_mentor_bookable_slots(self.mentor_1, self.future_date)
+        self.assertEqual(len(slots_1 := slots_before), 4)
+
+        # Student A submits pending request for 10:00:00
+        req = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Resume Review",
+            status="Pending"
+        )
+
+        # Slot is now reserved and excluded
+        slots_after = generate_mentor_bookable_slots(self.mentor_1, self.future_date)
+        self.assertEqual(len(slots_after), 3)
+        self.assertNotIn('10:00:00', [s['start_time'] for s in slots_after])
+
+        # Simulate 25 hours elapsed
+        with patch('django.utils.timezone.now', return_value=timezone.now() + timedelta(hours=25)):
+            self.assertTrue(is_request_expired(req))
+            # Slot is released and becomes available again
+            slots_expired = generate_mentor_bookable_slots(self.mentor_1, self.future_date)
+            self.assertEqual(len(slots_expired), 4)
+            self.assertIn('10:00:00', [s['start_time'] for s in slots_expired])
+
+            # Mentor cannot accept expired request
+            with self.assertRaises(ValidationError) as cm:
+                respond_to_request_service(req, action='accept', response_message="Accepting late")
+            self.assertIn("expired", str(cm.exception).lower())
+
+    def test_accepted_slots_unavailable_completed_rejected_cancelled_available(self):
+        """Accepted slots are unavailable; Completed, Rejected, and Cancelled do not block slots."""
+        from .services import generate_mentor_bookable_slots
+
+        # Accepted booking on 10:00:00
+        MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Accepted",
+            accepted_at=timezone.now()
+        )
+        # Cancelled booking on 10:45:00
+        MentorshipRequest.objects.create(
+            student=self.student_b,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:45:00",
+            purpose="Career Guidance",
+            status="Cancelled"
+        )
+        # Rejected booking on 11:30:00
+        MentorshipRequest.objects.create(
+            student=self.student_b,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="11:30:00",
+            purpose="Career Guidance",
+            status="Rejected"
+        )
+
+        slots = generate_mentor_bookable_slots(self.mentor_1, self.future_date)
+        times = [s['start_time'] for s in slots]
+
+        self.assertNotIn('10:00:00', times)
+        self.assertIn('10:45:00', times)
+        self.assertIn('11:30:00', times)
+        self.assertIn('12:15:00', times)
+
+    def test_paused_mentor_does_not_expose_bookable_slots(self):
+        """Paused mentors return no bookable slots."""
+        from .services import generate_mentor_bookable_slots
+
+        self.mentor_1.is_paused = True
+        self.mentor_1.save()
+        slots = generate_mentor_bookable_slots(self.mentor_1, self.future_date)
+        self.assertEqual(slots, [])
+
+    def test_student_booking_interface_slots_endpoint(self):
+        """Available-slots endpoint returns slots for student and enforces authorization."""
+        self.client.force_login(self.student_a)
+        url = reverse('community:mentor_available_slots', args=[self.mentor_1.id])
+        res = self.client.get(f"{url}?date={self.future_date.strftime('%Y-%m-%d')}")
+
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(len(data['slots']), 4)
+
+        # Mentor account cannot call endpoint (student authorization required)
+        self.client.force_login(self.mentor_user_1)
+        res_mentor = self.client.get(f"{url}?date={self.future_date.strftime('%Y-%m-%d')}")
+        self.assertEqual(res_mentor.status_code, 403)
+
+    def test_arbitrary_time_submission_rejected(self):
+        """Submitting an arbitrary time outside generated 45-minute slots is rejected."""
+        self.client.force_login(self.student_a)
+        url = reverse('community:book_session', args=[self.mentor_1.id])
+        data = {
+            'requested_date': self.future_date.strftime('%Y-%m-%d'),
+            'requested_time': '10:17:00',  # Arbitrary time
+            'purpose': 'Resume Review',
+            'student_message': 'Can we meet at 10:17?'
+        }
+        res = self.client.post(url, data)
+        self.assertEqual(res.status_code, 302)
+        # Should not create request
+        self.assertFalse(MentorshipRequest.objects.filter(requested_time='10:17:00').exists())
+
+    def test_availability_window_conflict_protection(self):
+        """Updating or deleting availability that conflicts with existing Accepted sessions is prevented."""
+        from .services import save_mentor_availability_service
+
+        # Create Accepted session at 10:00 AM on future_date
+        MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Resume Review",
+            status="Accepted",
+            accepted_at=timezone.now()
+        )
+
+        # Mentor attempts to shift availability to afternoon (14:00 to 17:00)
+        with self.assertRaises(ValidationError) as cm:
+            save_mentor_availability_service(
+                self.mentor_1,
+                day=self.future_day_name,
+                start_time=timezone.datetime.strptime('14:00:00', '%H:%M:%S').time(),
+                end_time=timezone.datetime.strptime('17:00:00', '%H:%M:%S').time()
+            )
+        self.assertIn("existing accepted booking", str(cm.exception))
+
+        # Deleting availability via view is also blocked
+        self.client.force_login(self.mentor_user_1)
+        del_url = reverse('community:delete_availability', args=[self.avail_1.id])
+        res_del = self.client.post(del_url)
+        self.assertEqual(res_del.status_code, 302)
+        self.assertTrue(MentorAvailability.objects.filter(id=self.avail_1.id).exists())
+
+    def test_same_day_slot_generation_tz_aware_and_notice(self):
+        """Same-day slot generation compares timezone-aware datetimes without TypeError and enforces 4-hour notice."""
+        from .services import generate_mentor_bookable_slots
+        from datetime import time, datetime
+
+        now = timezone.now()
+        today = now.date()
+        today_day_name = today.strftime('%A')
+
+        # Configure mentor availability for today covering the entire day
+        MentorAvailability.objects.filter(mentor=self.mentor_1, day=today_day_name).delete()
+        MentorAvailability.objects.create(
+            mentor=self.mentor_1,
+            day=today_day_name,
+            start_time=time(0, 0),
+            end_time=time(23, 45)
+        )
+
+        slots = generate_mentor_bookable_slots(self.mentor_1, today)
+        self.assertIsInstance(slots, list)
+
+        min_notice_dt = now + timedelta(hours=4)
+        tz = timezone.get_current_timezone()
+
+        for slot in slots:
+            slot_time = timezone.datetime.strptime(slot['start_time'], '%H:%M:%S').time()
+            slot_dt = timezone.make_aware(datetime.combine(today, slot_time), timezone=tz)
+            self.assertGreaterEqual(slot_dt, min_notice_dt)
+
+    def test_available_slots_get_endpoint_is_read_only_and_does_not_mutate_expired_request(self):
+        """GET request to available-slots is strictly read-only and does not mutate expired requests."""
+        from apps.notifications.models import Notification
+
+        # Create an expired pending request on future_date at 10:00 AM
+        req = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Guidance",
+            status="Pending"
+        )
+        # Backdate created_at to 25 hours ago
+        MentorshipRequest.objects.filter(pk=req.pk).update(
+            created_at=timezone.now() - timedelta(hours=25)
+        )
+        req.refresh_from_db()
+
+        initial_notif_count = Notification.objects.filter(recipient=self.student_a).count()
+
+        # Student calls GET endpoint to retrieve available slots
+        self.client.force_login(self.student_a)
+        url = reverse('community:mentor_available_slots', args=[self.mentor_1.id])
+        res = self.client.get(f"{url}?date={self.future_date.strftime('%Y-%m-%d')}")
+        self.assertEqual(res.status_code, 200)
+
+        data = res.json()
+        slot_times = [s['start_time'] for s in data['slots']]
+        # Because the pending request is expired, its slot (10:00:00) is released in memory
+        self.assertIn('10:00:00', slot_times)
+
+        # Database record must NOT be mutated during the GET request
+        req.refresh_from_db()
+        self.assertEqual(req.status, 'Pending')
+
+        # No notifications were dispatched during GET
+        final_notif_count = Notification.objects.filter(recipient=self.student_a).count()
+        self.assertEqual(final_notif_count, initial_notif_count)
+
+    def test_cannot_accept_request_if_availability_window_deleted(self):
+        """Mentor cannot accept a pending request if the availability window was deleted."""
+        from .services import respond_to_request_service
+
+        req = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Resume Review",
+            status="Pending"
+        )
+
+        # Delete availability for this day
+        MentorAvailability.objects.filter(mentor=self.mentor_1, day=self.future_day_name).delete()
+        self.mentor_1.available_days = ""
+        self.mentor_1.save()
+
+        with self.assertRaises(ValidationError) as cm:
+            respond_to_request_service(req, action='accept', response_message="Accepted")
+        self.assertIn("no longer have availability configured", str(cm.exception))
+
+        req.refresh_from_db()
+        self.assertEqual(req.status, 'Pending')
+
+    def test_cannot_accept_request_if_availability_window_shortened(self):
+        """Mentor cannot accept a pending request if the availability window was shortened/shifted."""
+        from .services import respond_to_request_service
+
+        req = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Resume Review",
+            status="Pending"
+        )
+
+        # Shift availability window to afternoon (14:00 to 17:00), so 10:00 is outside
+        MentorAvailability.objects.filter(mentor=self.mentor_1, day=self.future_day_name).update(
+            start_time=timezone.datetime.strptime('14:00:00', '%H:%M:%S').time(),
+            end_time=timezone.datetime.strptime('17:00:00', '%H:%M:%S').time()
+        )
+
+        with self.assertRaises(ValidationError) as cm:
+            respond_to_request_service(req, action='accept', response_message="Accepted")
+        self.assertIn("no longer fits within your availability window", str(cm.exception))
+
+        req.refresh_from_db()
+        self.assertEqual(req.status, 'Pending')
+
+    def test_cannot_accept_request_if_conflicting_accepted_booking_exists(self):
+        """Mentor cannot accept a pending request if an accepted booking now conflicts with it."""
+        from .services import respond_to_request_service
+
+        # Already accepted booking for student_b
+        MentorshipRequest.objects.create(
+            student=self.student_b,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Career Advice",
+            status="Accepted",
+            accepted_at=timezone.now()
+        )
+
+        # Pending request for student_a at same slot
+        req_a = MentorshipRequest.objects.create(
+            student=self.student_a,
+            mentor=self.mentor_1,
+            requested_date=self.future_date,
+            requested_time="10:00:00",
+            purpose="Resume Review",
+            status="Pending"
+        )
+
+        with self.assertRaises(ValidationError) as cm:
+            respond_to_request_service(req_a, action='accept', response_message="Accepted")
+        self.assertIn("already have an accepted mentorship booking at this time", str(cm.exception))
+
+        req_a.refresh_from_db()
+        self.assertEqual(req_a.status, 'Pending')
+
+
+

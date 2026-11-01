@@ -1,12 +1,12 @@
 from django.shortcuts import get_object_or_404
 from django.db import transaction
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Q
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.http import Http404
 from django.utils import timezone
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from datetime import timedelta
+from datetime import datetime, date, time, timedelta
 from .models import (
     MentorProfile, MentorSkill, MentorshipRequest, MentorReview, 
     MentorAvailability, MentorMessage, MentorLifecycleEvent
@@ -18,6 +18,220 @@ from apps.roadmaps.models import RoadmapCertificate
 from apps.roadmaps.services import get_user_earned_skills_set
 
 User = get_user_model()
+
+# Platform Constants for Mentorship Bookings
+SESSION_DURATION_MINUTES = 45
+PENDING_RESERVATION_HOURS = 24
+MINIMUM_NOTICE_HOURS = 4
+BOOKING_HORIZON_DAYS = 14
+
+
+def _parse_time_str(t_str):
+    """
+    Parses string or time object into datetime.time.
+    """
+    if not t_str:
+        return None
+    if isinstance(t_str, time):
+        return t_str
+    t_str = str(t_str).strip()
+    for fmt in ('%I:%M %p', '%I:%M%p', '%H:%M:%S', '%H:%M'):
+        try:
+            return datetime.strptime(t_str, fmt).time()
+        except ValueError:
+            pass
+    return None
+
+
+def is_request_expired(request_obj):
+    """
+    Checks if a Pending request has passed its 24-hour reservation window or session start time.
+    """
+    if request_obj.status != 'Pending':
+        return False
+    now = timezone.now()
+    if now - request_obj.created_at >= timedelta(hours=PENDING_RESERVATION_HOURS):
+        return True
+    req_time = _parse_time_str(request_obj.requested_time)
+    if not req_time:
+        return False
+    tz = timezone.get_current_timezone()
+    session_start = timezone.make_aware(datetime.combine(request_obj.requested_date, req_time), timezone=tz)
+    if session_start <= now:
+        return True
+    return False
+
+
+def expire_pending_request_if_needed(request_obj):
+    """
+    Lazily transitions an expired Pending request into Cancelled state with notification.
+    Safe for concurrent calls using atomic conditional update.
+    Returns True if expired and transitioned (or already transitioned), False otherwise.
+    """
+    if not is_request_expired(request_obj):
+        return False
+
+    # Atomic conditional update prevents race conditions and duplicate notifications
+    updated = MentorshipRequest.objects.filter(
+        pk=request_obj.pk,
+        status='Pending'
+    ).update(
+        status='Cancelled',
+        mentor_response="Request expired after 24 hours without mentor acceptance."
+    )
+    if updated:
+        request_obj.status = 'Cancelled'
+        request_obj.mentor_response = "Request expired after 24 hours without mentor acceptance."
+        create_notification(
+            recipient=request_obj.student,
+            actor=None,
+            title="Mentorship Request Expired",
+            message=f"Your session request to {request_obj.mentor.full_name} for {request_obj.requested_date} expired without response.",
+            notification_type='mentorship_session_cancelled',
+            target_url=reverse('community:student_bookings'),
+            related_request=request_obj
+        )
+        simulate_notification(
+            user=request_obj.student,
+            subject="Mentorship Request Expired",
+            message=f"Your session request to {request_obj.mentor.full_name} for {request_obj.requested_date} expired without response."
+        )
+    else:
+        # If another process/thread already transitioned it, refresh instance
+        request_obj.refresh_from_db(fields=['status', 'mentor_response'])
+    return True
+
+
+def get_mentor_weekly_booking_count(mentor, target_date):
+    """
+    Calculates total Accepted and Completed sessions for a mentor in the Monday-Sunday week of target_date.
+    - Accepted sessions count towards the week of accepted_at (or target_date week for legacy).
+    - Completed sessions count towards the week in which they were accepted.
+    - Pending requests do NOT count.
+    - Rejected / Cancelled requests do NOT count.
+    - Legacy records without accepted_at fall back to requested_date.
+    Count each qualifying booking exactly once.
+    """
+    target_d = target_date.date() if isinstance(target_date, datetime) else target_date
+    start_of_week = target_d - timedelta(days=target_d.weekday())
+    end_of_week = start_of_week + timedelta(days=6)
+
+    qualifying_requests = MentorshipRequest.objects.filter(
+        mentor=mentor,
+        status__in=['Accepted', 'Completed']
+    ).filter(
+        Q(accepted_at__isnull=False, accepted_at__date__gte=start_of_week, accepted_at__date__lte=end_of_week) |
+        Q(accepted_at__isnull=True, requested_date__gte=start_of_week, requested_date__lte=end_of_week)
+    ).distinct()
+
+    return qualifying_requests.count()
+
+
+def generate_mentor_bookable_slots(mentor, target_date):
+    """
+    Generates dynamic 45-minute bookable slots for a mentor on target_date.
+    Rules:
+    - Mentor must be Approved, verified, and not is_paused.
+    - target_date must be within rolling 14-day horizon (today to today + 14 days).
+    - Today requires minimum 4 hours notice.
+    - Slices availability window into 45-minute slots (incomplete remaining time discarded).
+    - Excludes slots overlapping Accepted bookings.
+    - Excludes slots reserved by active (non-expired) Pending requests.
+    - Excludes slots if weekly booking capacity for that week is reached.
+    """
+    if mentor.status != 'Approved' or not mentor.verified or mentor.is_paused:
+        return []
+
+    now = timezone.now()
+    today = now.date()
+    target_d = target_date.date() if isinstance(target_date, datetime) else target_date
+
+    # 14-day horizon check
+    if target_d < today or target_d > today + timedelta(days=BOOKING_HORIZON_DAYS):
+        return []
+
+    # Weekly booking capacity check
+    if get_mentor_weekly_booking_count(mentor, target_d) >= mentor.max_sessions_per_week:
+        return []
+
+    day_name = target_d.strftime('%A')
+
+    # Mentor availability window for this weekday
+    window_start = None
+    window_end = None
+
+    avail = mentor.availabilities.filter(day=day_name).first()
+    if avail:
+        window_start = avail.start_time
+        window_end = avail.end_time
+    elif mentor.available_days:
+        allowed_days = [d.strip().lower() for d in mentor.available_days.split(',') if d.strip()]
+        if day_name.lower() in allowed_days and mentor.available_time_slots and '-' in mentor.available_time_slots:
+            parts = mentor.available_time_slots.split('-')
+            window_start = _parse_time_str(parts[0])
+            window_end = _parse_time_str(parts[1])
+
+    if not window_start or not window_end or window_start >= window_end:
+        return []
+
+    tz = timezone.get_current_timezone()
+    start_dt = timezone.make_aware(datetime.combine(target_d, window_start), timezone=tz)
+    end_dt = timezone.make_aware(datetime.combine(target_d, window_end), timezone=tz)
+    min_notice_dt = now + timedelta(hours=MINIMUM_NOTICE_HOURS)
+
+    # Fetch day's existing Accepted and Pending requests
+    existing_requests = MentorshipRequest.objects.filter(
+        mentor=mentor,
+        requested_date=target_d,
+        status__in=['Accepted', 'Pending']
+    )
+
+    taken_slots = []
+    for req in existing_requests:
+        if req.status == 'Pending':
+            # Pure read-only check: unblock slot in memory without mutating DB or sending notifications during GET
+            if is_request_expired(req):
+                continue
+        req_time = _parse_time_str(req.requested_time)
+        if not req_time:
+            continue
+        req_start = timezone.make_aware(datetime.combine(target_d, req_time), timezone=tz)
+        req_end = req_start + timedelta(minutes=SESSION_DURATION_MINUTES)
+        taken_slots.append((req_start, req_end))
+
+    generated_slots = []
+    current_slot_start = start_dt
+    slot_delta = timedelta(minutes=SESSION_DURATION_MINUTES)
+
+    while current_slot_start + slot_delta <= end_dt:
+        current_slot_end = current_slot_start + slot_delta
+
+        # Check advance notice if booking for today (both are tz-aware)
+        if target_d == today and current_slot_start < min_notice_dt:
+            current_slot_start = current_slot_end
+            continue
+
+        # Check overlap with any taken slot
+        overlaps = False
+        for taken_start, taken_end in taken_slots:
+            if max(current_slot_start, taken_start) < min(current_slot_end, taken_end):
+                overlaps = True
+                break
+
+        if not overlaps:
+            start_str = current_slot_start.strftime('%I:%M %p').lstrip('0')
+            end_str = current_slot_end.strftime('%I:%M %p').lstrip('0')
+            generated_slots.append({
+                'start_time': current_slot_start.time().strftime('%H:%M:%S'),
+                'end_time': current_slot_end.time().strftime('%H:%M:%S'),
+                'start_display': start_str,
+                'end_display': end_str,
+                'display': f"{start_str} - {end_str}"
+            })
+
+        current_slot_start = current_slot_end
+
+    return generated_slots
 
 @transaction.atomic
 def register_mentor_service(user, form_cleaned_data):
@@ -197,7 +411,7 @@ def create_mentorship_request_service(student, mentor, form_cleaned_data):
     Creates a new MentorshipRequest for a student to a mentor.
     Serializes concurrent bookings using select_for_update row locking.
     Enforces active mentor verification, self-booking prevention, duplicate pending request
-    prevention, slot conflict prevention, weekly capacity, and declared availability.
+    prevention, rolling 14-day horizon, weekly capacity, and 45-minute slot validity.
     """
     # Concurrency Protection: acquire row-level lock on the mentor profile
     mentor = MentorProfile.objects.select_for_update().get(pk=mentor.pk)
@@ -214,40 +428,68 @@ def create_mentorship_request_service(student, mentor, form_cleaned_data):
     requested_date = form_cleaned_data.get('requested_date')
     requested_time = form_cleaned_data.get('requested_time')
 
-    if requested_date < timezone.now().date():
+    today = timezone.now().date()
+    if requested_date < today:
         raise ValidationError("You cannot book a mentorship session for a past date.")
 
-    # 1. Prevent duplicate pending requests from the same student to this mentor
-    if MentorshipRequest.objects.filter(student=student, mentor=mentor, status='Pending').exists():
-        raise ValidationError("You already have a pending mentorship request with this mentor. Please await their response before booking another session.")
+    if requested_date > today + timedelta(days=BOOKING_HORIZON_DAYS):
+        raise ValidationError(f"You can only book sessions up to {BOOKING_HORIZON_DAYS} days in advance.")
 
-    # 2. Prevent slot collision (same mentor, date, and time already requested or accepted)
-    if MentorshipRequest.objects.filter(mentor=mentor, requested_date=requested_date, requested_time=requested_time, status__in=['Pending', 'Accepted']).exists():
+    # 1. Prevent duplicate active pending requests from the same student to this mentor
+    existing_student_pending = MentorshipRequest.objects.filter(
+        student=student,
+        mentor=mentor,
+        status='Pending'
+    )
+    for p_req in existing_student_pending:
+        if not expire_pending_request_if_needed(p_req):
+            raise ValidationError("You already have a pending mentorship request with this mentor. Please await their response before booking another session.")
+
+    # 2. Prevent slot collision (active Pending or Accepted booking on this date and time)
+    active_slot_requests = MentorshipRequest.objects.filter(
+        mentor=mentor,
+        requested_date=requested_date,
+        requested_time=requested_time,
+        status__in=['Pending', 'Accepted']
+    )
+    for a_req in active_slot_requests:
+        if a_req.status == 'Pending':
+            if expire_pending_request_if_needed(a_req):
+                continue
         raise ValidationError("This mentor already has a session booked or requested for this date and time.")
 
     # 3. Enforce weekly capacity limit (max_sessions_per_week)
-    start_of_week = requested_date - timedelta(days=requested_date.weekday())
-    end_of_week = start_of_week + timedelta(days=6)
-    weekly_count = MentorshipRequest.objects.filter(
-        mentor=mentor,
-        requested_date__range=[start_of_week, end_of_week],
-        status__in=['Pending', 'Accepted']
-    ).count()
-    if weekly_count >= mentor.max_sessions_per_week:
-        raise ValidationError(f"This mentor has reached their maximum booking capacity ({mentor.max_sessions_per_week} sessions) for the week of {start_of_week.strftime('%b %d, %Y')}.")
+    if get_mentor_weekly_booking_count(mentor, requested_date) >= mentor.max_sessions_per_week:
+        raise ValidationError(f"This mentor has reached their maximum booking capacity ({mentor.max_sessions_per_week} sessions) for this week.")
 
-    # 4. Enforce declared availability
-    day_name = requested_date.strftime('%A')
-    if mentor.availabilities.exists():
-        day_slots = mentor.availabilities.filter(day=day_name)
-        if not day_slots.exists():
-            raise ValidationError(f"This mentor is not available on {day_name}s.")
-        if not any(slot.start_time <= requested_time <= slot.end_time for slot in day_slots):
-            raise ValidationError(f"The requested time ({requested_time.strftime('%I:%M %p')}) is outside the mentor's declared availability for {day_name}.")
-    elif mentor.available_days:
-        allowed_days = [d.strip().lower() for d in mentor.available_days.split(',') if d.strip()]
-        if day_name.lower() not in allowed_days:
-            raise ValidationError(f"This mentor is not available on {day_name}s. Available days: {mentor.available_days}.")
+    # 4. Enforce valid 45-minute slot from mentor's availability
+    available_slots = generate_mentor_bookable_slots(mentor, requested_date)
+    req_time_str = requested_time.strftime('%H:%M:%S')
+    req_time_hm = requested_time.strftime('%H:%M')
+    is_valid_slot = any(
+        s['start_time'] == req_time_str or s['start_time'][:5] == req_time_hm
+        for s in available_slots
+    )
+
+    if not is_valid_slot and not mentor.availabilities.exists():
+        # Fallback for legacy mentors who haven't configured structured MentorAvailability
+        day_name = requested_date.strftime('%A')
+        allowed_days = [d.strip().lower() for d in (mentor.available_days or '').split(',') if d.strip()]
+        if day_name.lower() in allowed_days and mentor.available_time_slots and '-' in mentor.available_time_slots:
+            parts = mentor.available_time_slots.split('-')
+            win_start = _parse_time_str(parts[0])
+            win_end = _parse_time_str(parts[1])
+            if win_start and win_end:
+                tz = timezone.get_current_timezone()
+                req_start_dt = timezone.make_aware(datetime.combine(requested_date, requested_time), timezone=tz)
+                req_end_dt = req_start_dt + timedelta(minutes=SESSION_DURATION_MINUTES)
+                win_start_dt = timezone.make_aware(datetime.combine(requested_date, win_start), timezone=tz)
+                win_end_dt = timezone.make_aware(datetime.combine(requested_date, win_end), timezone=tz)
+                if req_start_dt >= win_start_dt and req_end_dt <= win_end_dt:
+                    is_valid_slot = True
+
+    if not is_valid_slot:
+        raise ValidationError(f"The requested time ({requested_time.strftime('%I:%M %p')}) is not available or is outside the mentor's schedule.")
 
     request_obj = MentorshipRequest.objects.create(
         student=student,
@@ -297,17 +539,23 @@ def create_mentorship_request_service(student, mentor, form_cleaned_data):
 def respond_to_request_service(request_obj, action, response_message, meeting_link=None, meeting_date=None, meeting_time=None, actor=None):
     """
     Responds to or updates a student request (accept/reject/complete/cancel).
-    Validates state transitions and notifies the appropriate recipient.
-    Acquires row locks in consistent order: MentorProfile -> MentorshipRequest.
+    Validates state transitions, enforces one active mentor rule, weekly booking capacity,
+    and notifies the appropriate recipient.
+    Acquires row locks in consistent order: MentorProfile -> Student User -> MentorshipRequest.
     """
-    # 1. Row-lock MentorProfile first (consistent order: MentorProfile -> MentorshipRequest)
+    # 1. Row-lock MentorProfile first
     mentor = MentorProfile.objects.select_for_update().get(pk=request_obj.mentor_id)
 
-    # 2. Row-lock MentorshipRequest second to synchronize concurrent transactions and sync latest state
+    # 2. Row-lock Student User second to serialize concurrent multi-mentor acceptances
+    student_user = User.objects.select_for_update().get(pk=request_obj.student_id)
+
+    # 3. Row-lock MentorshipRequest third to synchronize latest state
     fresh_request = MentorshipRequest.objects.select_for_update().get(pk=request_obj.pk)
     request_obj.status = fresh_request.status
 
     if request_obj.status in ['Rejected', 'Completed', 'Cancelled']:
+        if request_obj.status == 'Cancelled' and 'expired' in (fresh_request.mentor_response or '').lower():
+            raise ValidationError("This request has expired. Please ask the student to submit a new request.")
         raise ValidationError(f"Cannot perform '{action}' on a mentorship request that is already {request_obj.status}.")
 
     response_message = (response_message or '').strip()
@@ -317,15 +565,120 @@ def respond_to_request_service(request_obj, action, response_message, meeting_li
             raise ValidationError("Cannot accept a request when mentor profile is not active, approved, and unpaused.")
         if request_obj.status != 'Pending':
             raise ValidationError(f"Cannot accept a request with status '{request_obj.status}'. Only Pending requests can be accepted.")
+
+        # Check expiry
+        if is_request_expired(request_obj):
+            expire_pending_request_if_needed(request_obj)
+            raise ValidationError("This request has expired. Please ask the student to submit a new request.")
+
+        # Revalidate that mentor still has recurring availability covering this requested date/time
+        target_booking_date = meeting_date or request_obj.requested_date
+        target_booking_time = _parse_time_str(meeting_time or request_obj.requested_time)
+        if not target_booking_time:
+            raise ValidationError("Invalid booking time.")
+        day_name = target_booking_date.strftime('%A')
+        win_start = None
+        win_end = None
+
+        avail = mentor.availabilities.filter(day=day_name).first()
+        if avail:
+            win_start = _parse_time_str(avail.start_time)
+            win_end = _parse_time_str(avail.end_time)
+        elif mentor.available_days:
+            allowed_days = [d.strip().lower() for d in mentor.available_days.split(',') if d.strip()]
+            if day_name.lower() in allowed_days and mentor.available_time_slots and '-' in mentor.available_time_slots:
+                parts = mentor.available_time_slots.split('-')
+                win_start = _parse_time_str(parts[0])
+                win_end = _parse_time_str(parts[1])
+
+        if not win_start or not win_end or win_start >= win_end:
+            raise ValidationError(f"Cannot accept request: You no longer have availability configured for {day_name}s.")
+
+        tz = timezone.get_current_timezone()
+        req_start_dt = timezone.make_aware(datetime.combine(target_booking_date, target_booking_time), timezone=tz)
+        req_end_dt = req_start_dt + timedelta(minutes=SESSION_DURATION_MINUTES)
+        win_start_dt = timezone.make_aware(datetime.combine(target_booking_date, win_start), timezone=tz)
+        win_end_dt = timezone.make_aware(datetime.combine(target_booking_date, win_end), timezone=tz)
+
+        if req_start_dt < win_start_dt or req_end_dt > win_end_dt:
+            raise ValidationError(
+                f"Cannot accept request: The requested session ({target_booking_time.strftime('%I:%M %p')}) "
+                f"no longer fits within your availability window for {day_name}s ({win_start.strftime('%I:%M %p')} - {win_end.strftime('%I:%M %p')})."
+            )
+
+        # Check for conflicting Accepted bookings for this mentor on the same date/time
+        conflicting_booking = MentorshipRequest.objects.filter(
+            mentor=mentor,
+            requested_date=target_booking_date,
+            status='Accepted'
+        ).exclude(pk=request_obj.pk)
+
+        for c_req in conflicting_booking:
+            c_time = _parse_time_str(c_req.requested_time)
+            if not c_time:
+                continue
+            c_start = timezone.make_aware(datetime.combine(c_req.requested_date, c_time), timezone=tz)
+            c_end = c_start + timedelta(minutes=SESSION_DURATION_MINUTES)
+            if max(req_start_dt, c_start) < min(req_end_dt, c_end):
+                raise ValidationError(
+                    f"Cannot accept request: You already have an accepted mentorship booking at this time "
+                    f"({c_time.strftime('%I:%M %p')} on {target_booking_date})."
+                )
+
+        # One Active Mentor Rule: A student cannot have more than one active Accepted mentor
+        other_active_mentor = MentorshipRequest.objects.filter(
+            student=student_user,
+            status='Accepted'
+        ).exclude(mentor=mentor).exists()
+        if other_active_mentor:
+            raise ValidationError("This student already has an active mentorship relationship with another mentor.")
+
+        # Weekly capacity check for acceptance
+        now_date = timezone.now().date()
+        if get_mentor_weekly_booking_count(mentor, now_date) >= mentor.max_sessions_per_week:
+            raise ValidationError("Weekly booking capacity reached.")
+
         request_obj.status = 'Accepted'
+        request_obj.accepted_at = timezone.now()
         request_obj.meeting_link = meeting_link or ''
         request_obj.meeting_date = meeting_date or request_obj.requested_date
         request_obj.meeting_time = meeting_time or request_obj.requested_time
         request_obj.mentor_response = response_message
-        
+        request_obj.save()
+
+        # Automatically cancel all other Pending requests of this student
+        competing_pending = MentorshipRequest.objects.select_for_update().filter(
+            student=student_user,
+            status='Pending'
+        ).exclude(pk=request_obj.pk)
+
+        cancelled_count = 0
+        for comp_req in competing_pending:
+            comp_req.status = 'Cancelled'
+            comp_req.mentor_response = "The student accepted another mentorship session."
+            comp_req.save(update_fields=['status', 'mentor_response'])
+            cancelled_count += 1
+            create_notification(
+                recipient=comp_req.mentor.user,
+                actor=student_user,
+                title="Mentorship Request Cancelled",
+                message=f"Mentorship request from {student_user.username} for {comp_req.requested_date} was automatically cancelled because the student accepted another mentorship session.",
+                notification_type='mentorship_session_cancelled',
+                target_url=reverse('community:mentor_requests'),
+                related_request=comp_req
+            )
+            simulate_notification(
+                user=comp_req.mentor.user,
+                subject="Mentorship Request Cancelled",
+                message=f"Mentorship request from {student_user.username} for {comp_req.requested_date} was automatically cancelled because the student accepted another mentorship session."
+            )
+
         subject = "Mentorship Request Accepted!"
-        msg = f"Your session request has been accepted by {request_obj.mentor.full_name}. Meeting Link: {request_obj.meeting_link}"
-        recipient = request_obj.student
+        if cancelled_count > 0:
+            msg = f"Your session request has been accepted by {request_obj.mentor.full_name}. Meeting Link: {request_obj.meeting_link}. Note: {cancelled_count} other pending mentorship request(s) were automatically cancelled."
+        else:
+            msg = f"Your session request has been accepted by {request_obj.mentor.full_name}. Meeting Link: {request_obj.meeting_link}"
+        recipient = student_user
         notif_actor = actor or request_obj.mentor.user
         notification_type = 'mentorship_request_accepted'
         target_url = reverse('community:student_bookings')
@@ -335,9 +688,10 @@ def respond_to_request_service(request_obj, action, response_message, meeting_li
             raise ValidationError(f"Cannot reject a request with status '{request_obj.status}'. Only Pending requests can be rejected.")
         request_obj.status = 'Rejected'
         request_obj.mentor_response = response_message
+        request_obj.save()
         subject = "Mentorship Request Declined"
         msg = f"Your session request was declined by {request_obj.mentor.full_name}. Reason: {response_message}"
-        recipient = request_obj.student
+        recipient = student_user
         notif_actor = actor or request_obj.mentor.user
         notification_type = 'mentorship_request_rejected'
         target_url = reverse('community:student_bookings')
@@ -347,9 +701,10 @@ def respond_to_request_service(request_obj, action, response_message, meeting_li
             raise ValidationError(f"Cannot complete a request with status '{request_obj.status}'. Only Accepted sessions can be marked as Completed.")
         request_obj.status = 'Completed'
         request_obj.mentor_response = response_message
+        request_obj.save()
         subject = "Mentorship Session Completed"
         msg = f"Your session with {request_obj.mentor.full_name} has been marked as Completed. Please leave a review!"
-        recipient = request_obj.student
+        recipient = student_user
         notif_actor = actor or request_obj.mentor.user
         notification_type = 'mentorship_session_completed'
         target_url = reverse('community:student_bookings')
@@ -363,23 +718,23 @@ def respond_to_request_service(request_obj, action, response_message, meeting_li
 
         request_obj.status = 'Cancelled'
         request_obj.mentor_response = response_message
+        request_obj.save()
         notification_type = 'mentorship_session_cancelled'
-        if actor and actor == request_obj.student:
+        if actor and actor == student_user:
             subject = "Mentorship Session Cancelled by Student"
-            msg = f"The mentorship session requested by {request_obj.student.username} for {request_obj.requested_date} was cancelled by the student. Reason: {response_message}"
+            msg = f"The mentorship session requested by {student_user.username} for {request_obj.requested_date} was cancelled by the student. Reason: {response_message}"
             recipient = request_obj.mentor.user
-            notif_actor = request_obj.student
+            notif_actor = student_user
             target_url = reverse('community:mentor_requests')
         else:
             subject = "Mentorship Session Cancelled"
             msg = f"The mentorship session on {request_obj.requested_date} with {request_obj.mentor.full_name} has been cancelled by the mentor. Reason: {response_message}"
-            recipient = request_obj.student
+            recipient = student_user
             notif_actor = actor or request_obj.mentor.user
             target_url = reverse('community:student_bookings')
     else:
         raise ValueError(f"Invalid response action: {action}")
 
-    request_obj.save()
     create_notification(
         recipient=recipient,
         actor=notif_actor,
@@ -441,10 +796,44 @@ def submit_mentor_review_service(student, mentor, rating, comment):
 
 
 @transaction.atomic
-def save_mentor_availability_service(mentor, day, start_time, end_time, max_sessions):
+def save_mentor_availability_service(mentor, day, start_time, end_time, max_sessions=1):
     """
     Saves or updates a day's time range slot in MentorAvailability.
+    Enforces that the window accommodates at least one 45-minute session and
+    does not conflict with upcoming accepted sessions.
     """
+    start_time = _parse_time_str(start_time)
+    end_time = _parse_time_str(end_time)
+    if not start_time or not end_time or start_time >= end_time:
+        raise ValidationError("End time must be after start time.")
+
+    start_dt = datetime.combine(date.today(), start_time)
+    end_dt = datetime.combine(date.today(), end_time)
+    if (end_dt - start_dt).total_seconds() < SESSION_DURATION_MINUTES * 60:
+        raise ValidationError("Availability window must accommodate at least one complete 45-minute session.")
+
+    # Check for conflicts with existing Accepted bookings on this weekday
+    upcoming_accepted = MentorshipRequest.objects.filter(
+        mentor=mentor,
+        status='Accepted',
+        requested_date__gte=timezone.now().date()
+    )
+    tz = timezone.get_current_timezone()
+    for req in upcoming_accepted:
+        if req.requested_date.strftime('%A') == day:
+            req_time = _parse_time_str(req.requested_time)
+            if not req_time:
+                continue
+            req_start = timezone.make_aware(datetime.combine(req.requested_date, req_time), timezone=tz)
+            req_end = req_start + timedelta(minutes=SESSION_DURATION_MINUTES)
+            window_start_dt = timezone.make_aware(datetime.combine(req.requested_date, start_time), timezone=tz)
+            window_end_dt = timezone.make_aware(datetime.combine(req.requested_date, end_time), timezone=tz)
+            if req_start < window_start_dt or req_end > window_end_dt:
+                raise ValidationError(
+                    f"Cannot update availability for {day}: You have an existing accepted booking on "
+                    f"{req.requested_date} at {req_time.strftime('%I:%M %p')} that would fall outside the new window."
+                )
+
     availability, created = MentorAvailability.objects.update_or_create(
         mentor=mentor,
         day=day,
@@ -455,6 +844,77 @@ def save_mentor_availability_service(mentor, day, start_time, end_time, max_sess
         }
     )
     return availability
+
+
+@transaction.atomic
+def conclude_mentorship_service(mentor_user, student_id, reason=""):
+    """
+    Explicitly concludes the ongoing mentorship relationship between a mentor and student.
+    - Cancels outstanding Accepted bookings and Pending requests between them.
+    - Preserves historical Completed sessions, reviews, and profile access.
+    - Frees the student to establish an active mentorship relationship with another mentor.
+    """
+    if not hasattr(mentor_user, 'mentor_profile'):
+        raise ValidationError("User has no mentor profile.")
+
+    mentor = MentorProfile.objects.select_for_update().get(user=mentor_user)
+    if mentor.status != 'Approved' or not mentor.verified:
+        raise ValidationError("Only approved and verified mentors can conclude mentorship.")
+
+    student = User.objects.select_for_update().get(pk=student_id)
+
+    # Active Accepted bookings and Pending requests between this pair
+    active_requests = MentorshipRequest.objects.select_for_update().filter(
+        mentor=mentor,
+        student=student,
+        status__in=['Accepted', 'Pending']
+    )
+
+    if not active_requests.exists():
+        has_history = MentorshipRequest.objects.filter(
+            mentor=mentor,
+            student=student
+        ).exists()
+        if not has_history:
+            raise ValidationError("No mentorship relationship found with this student.")
+        # If they had only completed sessions, active relationship is already concluded
+        return
+
+    reason_text = f"Mentorship concluded by mentor. {reason}".strip()
+    for req in active_requests:
+        req.status = 'Cancelled'
+        req.mentor_response = reason_text
+        req.save(update_fields=['status', 'mentor_response'])
+
+    # Send notification to student
+    create_notification(
+        recipient=student,
+        actor=mentor_user,
+        title="Mentorship Concluded",
+        message=f"Your mentorship with {mentor.full_name} has concluded. You are now free to request another mentor.",
+        notification_type='mentorship_session_cancelled',
+        target_url=reverse('community:mentor_list')
+    )
+    simulate_notification(
+        user=student,
+        subject="Mentorship Concluded",
+        message=f"Your mentorship with {mentor.full_name} has concluded. You are now free to request another mentor."
+    )
+
+    # Send confirmation to mentor
+    create_notification(
+        recipient=mentor_user,
+        actor=None,
+        title="Mentorship Concluded",
+        message=f"Mentorship relationship with {student.username} has been concluded.",
+        notification_type='mentorship_session_completed',
+        target_url=reverse('community:mentor_mentees')
+    )
+    simulate_notification(
+        user=mentor_user,
+        subject="Mentorship Concluded",
+        message=f"Mentorship relationship with {student.username} has been concluded."
+    )
 
 
 # ==========================================
