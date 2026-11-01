@@ -48,17 +48,23 @@ def get_user_sidebar_context(user):
     across the Community & Mentors workspace.
     """
     if not user or not user.is_authenticated:
-        return {'profile': None, 'user_initials': '', 'target_career': ''}
+        return {'profile': None, 'mentor_profile': None, 'user_initials': '', 'target_career': ''}
     profile = getattr(user, 'studentprofile', None)
+    mentor_profile = getattr(user, 'mentor_profile', None)
     first_initial = (user.first_name[:1] if user.first_name else user.username[:1]).upper()
     last_initial = (user.last_name[:1] if user.last_name else "").upper()
     user_initials = f"{first_initial}{last_initial}" if last_initial else (user.username[:2].upper())
     target_career = profile.career_goal.strip() if (profile and profile.career_goal) else ""
-    return {
+    ctx = {
         'profile': profile,
+        'mentor_profile': mentor_profile,
         'user_initials': user_initials,
         'target_career': target_career,
     }
+    if getattr(user, 'role', 'student') == 'mentor' and mentor_profile:
+        if mentor_profile.status == 'Approved':
+            ctx['pending_sessions'] = MentorshipRequest.objects.filter(mentor=mentor_profile, status='Pending').count()
+    return ctx
 
 
 def mentor_required(view_func):

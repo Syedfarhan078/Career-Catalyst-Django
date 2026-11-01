@@ -15,43 +15,59 @@
 
 {% block main_wrapper %}
 <div class="dash-shell">
-    <!-- Left Navigation Sidebar -->
-    {% include "core/partials/dashboard_sidebar.html" %}
+    <!-- Navigation Sidebar -->
+    {% if active_workspace == 'mentor' %}
+        {% include "community/partials/mentor_sidebar.html" %}
+    {% else %}
+        {% include "core/partials/dashboard_sidebar.html" %}
+    {% endif %}
 
     <!-- Backdrop Overlay for Mobile Drawer -->
     <div class="dash-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
     <!-- Main Workspace Area -->
     <div class="dash-main">
-        <!-- Top Header Bar on Mobile -->
-        <header class="dash-mobile-header" aria-label="Mobile Header">
-            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
-                <i class="bi bi-list"></i>
-            </button>
-            <a href="{% url 'dashboard' %}" class="dash-brand">
-                <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
-                <span>Career<span class="dash-brand-accent">Catalyst</span></span>
-            </a>
-            <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
-                {% if profile.profile_picture %}
-                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
-                {% else %}
-                    <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
-                {% endif %}
-            </div>
-        </header>
+        {% if active_workspace == 'mentor' %}
+            {% include "community/partials/mentor_header.html" %}
+        {% else %}
+            <!-- Top Header Bar on Mobile (Student Workspace) -->
+            <header class="dash-mobile-header" aria-label="Mobile Header">
+                <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+                    <i class="bi bi-list"></i>
+                </button>
+                <a href="{% url 'dashboard' %}" class="dash-brand">
+                    <img src="{% static 'images/favicon.png' %}" alt="CareerCatalyst Logo" width="24" height="24">
+                    <span>Career<span class="dash-brand-accent">Catalyst</span></span>
+                </a>
+                <div class="dash-avatar-circle" style="width: 30px; height: 30px;">
+                    {% if profile.profile_picture %}
+                        <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}">
+                    {% else %}
+                        <span class="dash-avatar-initials" style="font-size: 0.75rem;">{{ user_initials }}</span>
+                    {% endif %}
+                </div>
+            </header>
+        {% endif %}
 
         <!-- Main Content Area -->
         <main class="dash-content">
             <!-- Header & Breadcrumbs -->
-            <div class="community-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="community-header d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
                 <div>
-                    <div class="community-breadcrumbs">
-                        <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
-                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
-                        <a href="{% url 'community:hub' %}">Community</a>
-                        <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
-                        <span>Mentors</span>
+                    <div class="community-breadcrumbs mb-1">
+                        {% if active_workspace == 'mentor' %}
+                            <a href="{% if is_approved_mentor %}{% url 'community:mentor_dashboard' %}{% else %}{% url 'community:mentor_register' %}{% endif %}">
+                                <i class="bi bi-grid-fill me-1"></i> Mentor Workspace
+                            </a>
+                            <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                            <span>Mentor Directory</span>
+                        {% else %}
+                            <a href="{% url 'dashboard' %}"><i class="bi bi-grid-fill me-1"></i> Workspace</a>
+                            <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                            <a href="{% url 'community:hub' %}">Community</a>
+                            <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                            <span>Mentors</span>
+                        {% endif %}
                     </div>
                     <h1 class="community-title">Mentor Directory & Marketplace</h1>
                     <p class="community-subtitle">
@@ -59,22 +75,28 @@
                     </p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    {% if is_approved_mentor %}
-                    <a href="{% url 'community:mentor_dashboard' %}" class="dash-btn dash-btn-outline dash-btn-sm">
-                        <i class="bi bi-speedometer2 me-1"></i> Mentor Dashboard
-                    </a>
+                    {% if active_workspace == 'mentor' %}
+                        {% if is_approved_mentor %}
+                        <a href="{% url 'community:mentor_dashboard' %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                            <i class="bi bi-speedometer2 me-1"></i> Mentor Dashboard
+                        </a>
+                        {% else %}
+                        <a href="{% url 'community:mentor_register' %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                            <i class="bi bi-card-checklist me-1"></i> Application Status
+                        </a>
+                        {% endif %}
                     {% else %}
-                    <a href="{% url 'community:mentor_register' %}" class="dash-btn dash-btn-outline dash-btn-sm">
-                        <i class="bi bi-person-workspace me-1"></i> Apply as Mentor
-                    </a>
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'community:student_bookings' %}" class="dash-btn dash-btn-primary dash-btn-sm">
+                            <i class="bi bi-calendar-check me-1"></i> My Sessions
+                        </a>
+                        {% endif %}
                     {% endif %}
-                    <a href="{% url 'community:student_bookings' %}" class="dash-btn dash-btn-primary dash-btn-sm">
-                        <i class="bi bi-calendar-check me-1"></i> My Sessions
-                    </a>
                 </div>
             </div>
 
-            <!-- Workspace Navigation Tabs -->
+            {% if active_workspace != 'mentor' %}
+            <!-- Workspace Navigation Tabs (Student Community) -->
             <nav class="community-nav-tabs" aria-label="Community Sections">
                 <a href="{% url 'community:hub' %}" class="community-nav-tab">
                     <i class="bi bi-house-door"></i> Hub Overview
@@ -95,6 +117,7 @@
                     <i class="bi bi-calendar-check"></i> My Bookings
                 </a>
             </nav>
+            {% endif %}
 
             <!-- Search & Filters + Mentors Grid -->
             <div class="row g-4">

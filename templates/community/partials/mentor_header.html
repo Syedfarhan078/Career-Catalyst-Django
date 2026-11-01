@@ -19,8 +19,9 @@
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.04em;">
                 <i class="bi bi-person-workspace me-1"></i> MENTOR WORKSPACE
             </span>
+            {% with current_mentor=mentor_profile|default:user.mentor_profile %}
             {% if is_approved_mentor %}
-                {% if mentor.is_paused %}
+                {% if current_mentor and current_mentor.is_paused %}
                     <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
                         <i class="bi bi-pause-circle-fill me-1"></i> Availability Paused
                     </span>
@@ -30,32 +31,31 @@
                     </span>
                 {% endif %}
             {% else %}
-                {% with current_mentor=mentor|default:user.mentor_profile %}
-                    {% if current_mentor %}
-                        {% if current_mentor.status == 'Pending' %}
-                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                                <i class="bi bi-clock-history me-1"></i> Verification Pending
-                            </span>
-                        {% elif current_mentor.status == 'Inactive' %}
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                                <i class="bi bi-pause-circle me-1"></i> Account Inactive
-                            </span>
-                        {% elif current_mentor.status == 'Rejected' %}
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                                <i class="bi bi-x-circle me-1"></i> Application Declined
-                            </span>
-                        {% elif current_mentor.status == 'Blocked' %}
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                                <i class="bi bi-shield-slash me-1"></i> Account Suspended
-                            </span>
-                        {% endif %}
-                    {% else %}
-                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                            <i class="bi bi-pencil-square me-1"></i> Application Onboarding
+                {% if current_mentor %}
+                    {% if current_mentor.status == 'Pending' %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                            <i class="bi bi-clock-history me-1"></i> Verification Pending
+                        </span>
+                    {% elif current_mentor.status == 'Inactive' %}
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                            <i class="bi bi-pause-circle me-1"></i> Account Inactive
+                        </span>
+                    {% elif current_mentor.status == 'Rejected' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                            <i class="bi bi-x-circle me-1"></i> Application Declined
+                        </span>
+                    {% elif current_mentor.status == 'Blocked' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                            <i class="bi bi-shield-slash me-1"></i> Account Suspended
                         </span>
                     {% endif %}
-                {% endwith %}
+                {% else %}
+                    <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                        <i class="bi bi-pencil-square me-1"></i> Application Onboarding
+                    </span>
+                {% endif %}
             {% endif %}
+            {% endwith %}
         </div>
     </div>
 
@@ -82,7 +82,7 @@
         </button>
 
         <!-- Mentor Avatar Badge -->
-        {% with current_mentor=mentor|default:user.mentor_profile %}
+        {% with current_mentor=mentor_profile|default:user.mentor_profile %}
             <div class="dash-avatar-circle ms-1" style="width: 32px; height: 32px;">
                 {% if current_mentor and current_mentor.profile_photo %}
                     <img src="{{ current_mentor.profile_photo.url }}" alt="{{ current_mentor.full_name|default:user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">

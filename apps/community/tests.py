@@ -1067,13 +1067,15 @@ class Phase2MentorWorkspaceTests(TestCase):
         self.assertRedirects(res_student, reverse('community:mentor_dashboard'))
 
     def test_marketplace_cta_adapts_for_mentor_and_student(self):
-        """Phase 2: Directory CTA shows 'Mentor Dashboard' for mentors, 'Apply as Mentor' for students."""
+        """Directory CTA shows 'Mentor Dashboard' for mentors; 'Apply as Mentor' is removed from student view."""
         # 1. Regular student
         self.client.force_login(self.student_user)
         res_student = self.client.get(reverse('community:mentor_list'))
         self.assertEqual(res_student.status_code, 200)
-        self.assertContains(res_student, 'Apply as Mentor')
+        self.assertNotContains(res_student, 'Apply as Mentor')
         self.assertNotContains(res_student, 'Mentor Dashboard')
+        self.assertContains(res_student, 'My Sessions')
+        self.assertContains(res_student, 'id="dashboardSidebar"')
 
         # 2. Approved mentor
         self.client.force_login(self.mentor_user)
@@ -1081,6 +1083,68 @@ class Phase2MentorWorkspaceTests(TestCase):
         self.assertEqual(res_mentor.status_code, 200)
         self.assertContains(res_mentor, 'Mentor Dashboard')
         self.assertNotContains(res_mentor, 'Apply as Mentor')
+        self.assertNotContains(res_mentor, 'My Sessions')
+        self.assertContains(res_mentor, 'mentor-sidebar')
+        self.assertContains(res_mentor, 'dash-mentor-header')
+
+    def test_mentor_workspace_directory_navigation_and_layout(self):
+        """Mentor navigating to directory remains in Mentor Workspace layout without student redirect."""
+        self.client.force_login(self.mentor_user)
+        res = self.client.get(reverse('community:mentor_list'))
+        self.assertEqual(res.status_code, 200)
+        # Retains mentor workspace layout
+        self.assertContains(res, 'mentor-sidebar')
+        self.assertContains(res, 'dash-mentor-header')
+        self.assertContains(res, 'Mentor Workspace')
+        self.assertContains(res, 'Mentor Directory')
+        # Does NOT render student workspace tabs or student sidebar
+        self.assertNotContains(res, 'aria-label="Main Application Sidebar"')
+        self.assertNotContains(res, 'My Roadmap')
+        self.assertNotContains(res, 'class="community-nav-tabs"')
+        self.assertNotContains(res, 'Apply as Mentor')
+
+    def test_pending_mentor_retains_mentor_workspace_layout_on_directory(self):
+        """Pending mentor visiting directory retains mentor workspace and shows application status CTA."""
+        pending_user = User.objects.create_user(
+            username='pending_mentor_user',
+            email='pending_mentor@test.com',
+            password='password123',
+            role='mentor'
+        )
+        MentorProfile.objects.create(
+            user=pending_user,
+            full_name='Pending Mentor',
+            email='pending_mentor@test.com',
+            phone_number='9999999999',
+            company='Pending Co',
+            designation='Engineer',
+            experience_years=2,
+            status='Pending',
+            verified=False
+        )
+        self.client.force_login(pending_user)
+        res = self.client.get(reverse('community:mentor_list'))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'mentor-sidebar')
+        self.assertContains(res, 'dash-mentor-header')
+        self.assertContains(res, 'Application Status')
+        self.assertNotContains(res, 'Apply as Mentor')
+
+    def test_mentor_detail_page_retains_mentor_workspace_layout(self):
+        """Mentor viewing a mentor detail page retains mentor workspace layout with booking restricted."""
+        self.client.force_login(self.mentor_user)
+        res = self.client.get(reverse('community:mentor_detail', args=[self.mentor_profile.id]))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'mentor-sidebar')
+        self.assertContains(res, 'dash-mentor-header')
+        self.assertContains(res, 'Edit My Mentor Profile')
+
+    def test_unauthenticated_user_accesses_directory(self):
+        """Unauthenticated user accessing directory is redirected to login under existing auth rules."""
+        self.client.logout()
+        res = self.client.get(reverse('community:mentor_list'))
+        self.assertEqual(res.status_code, 302)
+        self.assertIn(reverse('login'), res.url)
 
     def test_workspace_switch_preserves_session_and_student_data(self):
         """Phase 1.1: Cross-role switching is prevented; legacy student data remains intact."""

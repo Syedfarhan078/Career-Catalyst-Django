@@ -115,7 +115,7 @@
             </button>
         </div>
 
-        {% with current_mentor=mentor|default:user.mentor_profile %}
+        {% with current_mentor=mentor_profile|default:user.mentor_profile %}
         <div class="dash-user-badge">
             <div class="dash-avatar-circle">
                 {% if current_mentor and current_mentor.profile_photo %}
