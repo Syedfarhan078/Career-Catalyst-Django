@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
@@ -456,9 +458,13 @@ def mentor_register(request):
     if request.method == 'POST':
         form = MentorRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
-            register_mentor_service(request.user, form.cleaned_data)
-            messages.success(request, "Your application has been submitted and is pending verification.")
-            return redirect('community:mentor_register')
+            try:
+                register_mentor_service(request.user, form.cleaned_data)
+                messages.success(request, "Your application has been submitted and is pending verification.")
+                return redirect('community:mentor_register')
+            except Exception as e:
+                logger.exception("Failed to register mentor: %s", e)
+                messages.error(request, f"Unable to submit application: {e}. Please check your Cloudinary configuration.")
     else:
         if existing_profile and existing_profile.status == 'Rejected':
             form = MentorRegistrationForm(
@@ -756,9 +762,16 @@ def edit_mentor_profile(request):
             active_tab = 'profile'
             form = MentorProfileEditForm(request.POST, request.FILES, instance=mentor)
             if form.is_valid():
-                update_mentor_profile_service(mentor, form.cleaned_data)
-                messages.success(request, "Mentor profile updated successfully.")
-                return redirect(f"{reverse('community:edit_profile')}?tab=profile")
+                try:
+                    update_mentor_profile_service(mentor, form.cleaned_data)
+                    if 'profile_photo' in request.FILES and mentor.profile_photo:
+                        request.user.profile_picture.name = mentor.profile_photo.name
+                        request.user.save(update_fields=['profile_picture'])
+                    messages.success(request, "Mentor profile updated successfully.")
+                    return redirect(f"{reverse('community:edit_profile')}?tab=profile")
+                except Exception as e:
+                    logger.exception("Failed to update mentor profile: %s", e)
+                    messages.error(request, f"Unable to save profile photo: {e}. Please check your Cloudinary configuration.")
             else:
                 messages.error(request, "Please check the profile fields below for errors.")
 
