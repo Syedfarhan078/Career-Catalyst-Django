@@ -17,4 +17,8 @@ urlpatterns = [
     path('password_reset/done/', RedirectView.as_view(pattern_name='login', permanent=False), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', views.CustomPasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('reset/done/', RedirectView.as_view(pattern_name='login', permanent=False), name='password_reset_complete'),
+    # Google OAuth 2.0 / OpenID Connect Flow
+    path('google/login/', views.google_login_view, name='google_login'),
+    path('google/callback/', views.google_callback_view, name='google_callback'),
+    path('google/choose-role/', views.google_choose_role_view, name='google_choose_role'),
 ]

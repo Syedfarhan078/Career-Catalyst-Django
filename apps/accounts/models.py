@@ -65,3 +65,22 @@ class EmailOTP(models.Model):
 
     def __str__(self):
         return f"OTP for {self.user.email} (verified: {self.is_verified})"
+
+
+class GoogleIdentity(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='google_identities')
+    provider = models.CharField(max_length=50, default='google')
+    provider_user_id = models.CharField(max_length=255, db_index=True)
+    email_at_link = models.EmailField(max_length=320)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['provider', 'provider_user_id'], name='unique_provider_user_id'),
+            models.UniqueConstraint(fields=['user', 'provider'], name='unique_user_provider'),
+        ]
+
+    def __str__(self):
+        return f"{self.provider}:{self.provider_user_id} -> {self.user.username}"
+

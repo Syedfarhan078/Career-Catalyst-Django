@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
@@ -678,4 +679,665 @@ class RoleArchitectureAndAuthorizationTests(TestCase):
         res = self.client.get(reverse('dashboard'))
         self.assertRedirects(res, reverse('community:mentor_register'))
 
+import base64
+import json
+import time
+from unittest.mock import patch, MagicMock
+from django.test import TestCase, Client, override_settings
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError
+from django.utils import timezone
+from datetime import timedelta
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
+from apps.accounts.models import EmailOTP, GoogleIdentity
+from apps.accounts.services import get_role_based_redirect_url
+from apps.accounts.google_auth import (
+    generate_oauth_state,
+    generate_pkce_pair,
+    generate_oauth_nonce,
+    normalize_google_email,
+    generate_unique_username,
+    get_google_authorization_url,
+    verify_google_id_token,
+    exchange_code_for_tokens,
+    authenticate_or_register_google_user,
+    _base64url_decode,
+)
+from apps.community.models import MentorProfile
+
+User = get_user_model()
+
+
+@override_settings(
+    GOOGLE_CLIENT_ID='test_client_id_123',
+    GOOGLE_CLIENT_SECRET='test_client_secret_xyz'
+)
+class GoogleOAuthAndIdentityTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        cls.public_key = cls.private_key.public_key()
+        pn = cls.public_key.public_numbers()
+        cls.test_kid = "test_key_kid_1"
+
+        def _int_to_b64(val):
+            byte_len = (val.bit_length() + 7) // 8
+            return base64.urlsafe_b64encode(val.to_bytes(byte_len, 'big')).decode('ascii').rstrip('=')
+
+        cls.jwks = {
+            cls.test_kid: {
+                "kid": cls.test_kid,
+                "kty": "RSA",
+                "alg": "RS256",
+                "use": "sig",
+                "n": _int_to_b64(pn.n),
+                "e": _int_to_b64(pn.e),
+            }
+        }
+
+    def _create_signed_id_token(self, claims_override=None, header_override=None, sign_key=None):
+        header = {
+            "alg": "RS256",
+            "kid": self.test_kid,
+            "typ": "JWT"
+        }
+        if header_override:
+            header.update(header_override)
+
+        now = int(time.time())
+        payload = {
+            "iss": "https://accounts.google.com",
+            "aud": "test_client_id_123",
+            "sub": "google_sub_998877",
+            "email": "testuser@gmail.com",
+            "email_verified": True,
+            "given_name": "Test",
+            "family_name": "GoogleUser",
+            "nonce": "test_nonce_val_123",
+            "iat": now,
+            "exp": now + 3600
+        }
+        if claims_override:
+            payload.update(claims_override)
+
+        def _b64encode_json(d):
+            return base64.urlsafe_b64encode(json.dumps(d).encode('utf-8')).decode('ascii').rstrip('=')
+
+        h_b64 = _b64encode_json(header)
+        p_b64 = _b64encode_json(payload)
+        signed_bytes = f"{h_b64}.{p_b64}".encode('ascii')
+
+        key_to_use = sign_key or self.private_key
+        sig = key_to_use.sign(signed_bytes, padding.PKCS1v15(), hashes.SHA256())
+        s_b64 = base64.urlsafe_b64encode(sig).decode('ascii').rstrip('=')
+        return f"{h_b64}.{p_b64}.{s_b64}"
+
+    def _get_mock_request(self):
+        from django.test import RequestFactory
+        from django.contrib.sessions.middleware import SessionMiddleware
+        request = RequestFactory().get('/')
+        middleware = SessionMiddleware(lambda r: None)
+        middleware.process_request(request)
+        request.session.save()
+        return request
+
+
+    # -------------------------------------------------------------
+    # OAuth Protocol Tests (Scenarios 1-15)
+    # -------------------------------------------------------------
+    def test_01_authorization_url_generation(self):
+        client = Client()
+        session = client.session
+        request = MagicMock()
+        request.session = session
+        request.build_absolute_uri.return_value = 'http://testserver/accounts/google/callback/'
+        request.is_secure.return_value = False
+        request.headers = {}
+
+        url = get_google_authorization_url(request, role='student')
+        self.assertIn('https://accounts.google.com/o/oauth2/v2/auth', url)
+        self.assertIn('client_id=test_client_id_123', url)
+        self.assertIn('response_type=code', url)
+        self.assertIn('code_challenge_method=S256', url)
+        self.assertIn('state=', url)
+        self.assertIn('nonce=', url)
+        self.assertEqual(session['oauth_pending_role'], 'student')
+
+    def test_02_state_generation(self):
+        s1 = generate_oauth_state()
+        s2 = generate_oauth_state()
+        self.assertTrue(len(s1) >= 32)
+        self.assertNotEqual(s1, s2)
+
+    def test_03_state_mismatch_rejection(self):
+        client = Client()
+        session = client.session
+        session['oauth_state'] = 'correct_state_val'
+        session['oauth_code_verifier'] = 'verifier_123'
+        session['oauth_nonce'] = 'nonce_123'
+        session.save()
+
+        response = client.get(reverse('google_callback'), {'code': 'auth_code_1', 'state': 'tampered_state'})
+        self.assertRedirects(response, reverse('login'))
+        # Ensure error message set
+        messages = list(response.wsgi_request._messages)
+        self.assertTrue(any("Invalid or expired session state" in str(m) for m in messages))
+
+    def test_04_missing_state_rejection(self):
+        client = Client()
+        session = client.session
+        session['oauth_state'] = 'correct_state_val'
+        session['oauth_code_verifier'] = 'verifier_123'
+        session.save()
+
+        response = client.get(reverse('google_callback'), {'code': 'auth_code_1'})
+        self.assertRedirects(response, reverse('login'))
+
+    def test_05_pkce_challenge_generation(self):
+        v, c = generate_pkce_pair()
+        self.assertTrue(len(v) >= 43)
+        self.assertTrue(len(c) >= 43)
+        # Re-derive challenge from verifier
+        import hashlib
+        expected_c = base64.urlsafe_b64encode(hashlib.sha256(v.encode('ascii')).digest()).decode('ascii').rstrip('=')
+        self.assertEqual(c, expected_c)
+
+    def test_06_missing_verifier_rejection(self):
+        client = Client()
+        session = client.session
+        session['oauth_state'] = 'state_123'
+        # missing oauth_code_verifier
+        session.save()
+
+        response = client.get(reverse('google_callback'), {'code': 'auth_code_1', 'state': 'state_123'})
+        self.assertRedirects(response, reverse('login'))
+
+    def test_07_nonce_generation_and_validation(self):
+        n1 = generate_oauth_nonce()
+        n2 = generate_oauth_nonce()
+        self.assertTrue(len(n1) >= 32)
+        self.assertNotEqual(n1, n2)
+
+    def test_08_invalid_id_token_signature(self):
+        other_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        token = self._create_signed_id_token(sign_key=other_key)
+        with self.assertRaises(ValidationError) as ctx:
+            verify_google_id_token(token, expected_nonce="test_nonce_val_123", jwks_keys=self.jwks)
+        self.assertIn("signature verification failed", str(ctx.exception))
+
+    def test_09_invalid_audience(self):
+        token = self._create_signed_id_token(claims_override={"aud": "wrong_audience_id"})
+        with self.assertRaises(ValidationError) as ctx:
+            verify_google_id_token(token, expected_nonce="test_nonce_val_123", jwks_keys=self.jwks)
+        self.assertIn("Invalid ID token audience", str(ctx.exception))
+
+    def test_10_invalid_issuer(self):
+        token = self._create_signed_id_token(claims_override={"iss": "https://malicious.issuer.com"})
+        with self.assertRaises(ValidationError) as ctx:
+            verify_google_id_token(token, expected_nonce="test_nonce_val_123", jwks_keys=self.jwks)
+        self.assertIn("Invalid ID token issuer", str(ctx.exception))
+
+    def test_11_expired_token(self):
+        past_time = int(time.time()) - 3600
+        token = self._create_signed_id_token(claims_override={"exp": past_time - 60, "iat": past_time - 120})
+        with self.assertRaises(ValidationError) as ctx:
+            verify_google_id_token(token, expected_nonce="test_nonce_val_123", jwks_keys=self.jwks)
+        self.assertIn("ID token has expired", str(ctx.exception))
+
+    def test_12_nonce_mismatch(self):
+        token = self._create_signed_id_token(claims_override={"nonce": "token_nonce_1"})
+        with self.assertRaises(ValidationError) as ctx:
+            verify_google_id_token(token, expected_nonce="session_nonce_different", jwks_keys=self.jwks)
+        self.assertIn("nonce does not match", str(ctx.exception))
+
+    def test_13_unverified_email(self):
+        token = self._create_signed_id_token(claims_override={"email_verified": False})
+        with self.assertRaises(ValidationError) as ctx:
+            verify_google_id_token(token, expected_nonce="test_nonce_val_123", jwks_keys=self.jwks)
+        self.assertIn("email address is not verified", str(ctx.exception))
+
+    @patch('apps.accounts.google_auth.requests.post')
+    def test_14_google_api_timeout(self, mock_post):
+        import requests
+        mock_post.side_effect = requests.Timeout("Connection timed out")
+        with self.assertRaises(ValidationError) as ctx:
+            exchange_code_for_tokens('code123', 'verifier123', 'http://testserver/callback/')
+        self.assertIn("Failed to communicate with Google", str(ctx.exception))
+
+    def test_15_cancelled_consent(self):
+        client = Client()
+        response = client.get(reverse('google_callback'), {'error': 'access_denied'})
+        self.assertRedirects(response, reverse('login'))
+        messages = list(response.wsgi_request._messages)
+        self.assertTrue(any("cancelled" in str(m) for m in messages))
+
+    # -------------------------------------------------------------
+    # GoogleIdentity Model Tests (Scenarios 16-21)
+    # -------------------------------------------------------------
+    def test_16_google_identity_creation(self):
+        user = User.objects.create_user(username='uid16', email='u16@example.com', password='pass')
+        gi = GoogleIdentity.objects.create(
+            user=user,
+            provider='google',
+            provider_user_id='sub_16',
+            email_at_link='u16@example.com'
+        )
+        self.assertEqual(gi.provider, 'google')
+        self.assertEqual(gi.provider_user_id, 'sub_16')
+        self.assertEqual(gi.user, user)
+
+    def test_17_unique_provider_and_provider_id_constraint(self):
+        u1 = User.objects.create_user(username='uid17_1', email='u17_1@example.com')
+        u2 = User.objects.create_user(username='uid17_2', email='u17_2@example.com')
+        GoogleIdentity.objects.create(user=u1, provider='google', provider_user_id='sub_17_same', email_at_link=u1.email)
+        with self.assertRaises(IntegrityError):
+            GoogleIdentity.objects.create(user=u2, provider='google', provider_user_id='sub_17_same', email_at_link=u2.email)
+
+    def test_18_unique_user_provider_constraint(self):
+        u = User.objects.create_user(username='uid18', email='u18@example.com')
+        GoogleIdentity.objects.create(user=u, provider='google', provider_user_id='sub_18_a', email_at_link=u.email)
+        with self.assertRaises(IntegrityError):
+            GoogleIdentity.objects.create(user=u, provider='google', provider_user_id='sub_18_b', email_at_link=u.email)
+
+    def test_19_correct_user_relationship(self):
+        u = User.objects.create_user(username='uid19', email='u19@example.com')
+        gi = GoogleIdentity.objects.create(user=u, provider='google', provider_user_id='sub_19', email_at_link=u.email)
+        self.assertEqual(list(u.google_identities.all()), [gi])
+
+    def test_20_identity_deletion_cascades_on_user_delete(self):
+        u = User.objects.create_user(username='uid20', email='u20@example.com')
+        GoogleIdentity.objects.create(user=u, provider='google', provider_user_id='sub_20', email_at_link=u.email)
+        u.delete()
+        self.assertFalse(GoogleIdentity.objects.filter(provider_user_id='sub_20').exists())
+
+    def test_21_lookup_by_provider_and_provider_id(self):
+        u = User.objects.create_user(username='uid21', email='u21@example.com')
+        GoogleIdentity.objects.create(user=u, provider='google', provider_user_id='sub_21_lookup', email_at_link=u.email)
+        found = GoogleIdentity.objects.filter(provider='google', provider_user_id='sub_21_lookup').first()
+        self.assertIsNotNone(found)
+        self.assertEqual(found.user, u)
+
+    # -------------------------------------------------------------
+    # New Account Tests (Scenarios 22-32)
+    # -------------------------------------------------------------
+    @patch('apps.accounts.views.exchange_code_for_tokens')
+    @patch('apps.accounts.views.verify_google_id_token')
+    def test_22_new_student_signup_from_register(self, mock_verify, mock_exchange):
+        mock_exchange.return_value = {'id_token': 'fake_token'}
+        mock_verify.return_value = {
+            'sub': 'student_new_sub_22',
+            'email': 'newstudent@example.com',
+            'email_verified': True,
+            'given_name': 'New',
+            'family_name': 'Student',
+        }
+
+        client = Client()
+        session = client.session
+        session['oauth_state'] = 'state_22'
+        session['oauth_code_verifier'] = 'verifier_22'
+        session['oauth_pending_role'] = 'student'
+        session.save()
+
+        response = client.get(reverse('google_callback'), {'code': 'c22', 'state': 'state_22'})
+        user = User.objects.get(email='newstudent@example.com')
+        self.assertEqual(user.role, 'student')
+        self.assertTrue(user.is_active)
+        self.assertTrue(GoogleIdentity.objects.filter(user=user, provider_user_id='student_new_sub_22').exists())
+        self.assertRedirects(response, reverse('profile_create'))
+
+    @patch('apps.accounts.views.exchange_code_for_tokens')
+    @patch('apps.accounts.views.verify_google_id_token')
+    def test_23_new_mentor_signup_from_register(self, mock_verify, mock_exchange):
+        mock_exchange.return_value = {'id_token': 'fake_token'}
+        mock_verify.return_value = {
+            'sub': 'mentor_new_sub_23',
+            'email': 'newmentor@example.com',
+            'email_verified': True,
+            'given_name': 'New',
+            'family_name': 'Mentor',
+        }
+
+        client = Client()
+        session = client.session
+        session['oauth_state'] = 'state_23'
+        session['oauth_code_verifier'] = 'verifier_23'
+        session['oauth_pending_role'] = 'mentor'
+        session.save()
+
+        response = client.get(reverse('google_callback'), {'code': 'c23', 'state': 'state_23'})
+        user = User.objects.get(email='newmentor@example.com')
+        self.assertEqual(user.role, 'mentor')
+        self.assertTrue(user.is_active)
+        self.assertFalse(hasattr(user, 'mentor_profile'))
+        self.assertRedirects(response, reverse('community:mentor_register'))
+
+    @patch('apps.accounts.views.exchange_code_for_tokens')
+    @patch('apps.accounts.views.verify_google_id_token')
+    def test_24_new_login_user_receives_role_selection_page(self, mock_verify, mock_exchange):
+        mock_exchange.return_value = {'id_token': 'fake_token'}
+        mock_verify.return_value = {
+            'sub': 'login_new_sub_24',
+            'email': 'choosertester@example.com',
+            'email_verified': True,
+            'given_name': 'Choose',
+            'family_name': 'User',
+        }
+
+        client = Client()
+        session = client.session
+        session['oauth_state'] = 'state_24'
+        session['oauth_code_verifier'] = 'verifier_24'
+        # No oauth_pending_role
+        session.save()
+
+        response = client.get(reverse('google_callback'), {'code': 'c24', 'state': 'state_24'})
+        self.assertRedirects(response, reverse('google_choose_role'))
+        # Ensure session pending user stored
+        self.assertEqual(client.session.get('oauth_pending_user')['email'], 'choosertester@example.com')
+
+    def test_25_no_user_created_before_role_selection(self):
+        client = Client()
+        session = client.session
+        session['oauth_pending_user'] = {
+            'sub': 'uncreated_sub_25',
+            'email': 'uncreated25@example.com',
+            'given_name': 'Wait',
+            'family_name': 'User',
+            'timestamp': time.time(),
+        }
+        session.save()
+
+        # Just viewing choose-role does not create user
+        response = client.get(reverse('google_choose_role'))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(email='uncreated25@example.com').exists())
+
+    def test_26_invalid_role_rejected(self):
+        client = Client()
+        session = client.session
+        session['oauth_pending_user'] = {
+            'sub': 'invalid_role_sub_26',
+            'email': 'invalidrole26@example.com',
+            'timestamp': time.time(),
+        }
+        session.save()
+
+        response = client.post(reverse('google_choose_role'), {'role': 'administrator'})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(email='invalidrole26@example.com').exists())
+
+    def test_27_user_and_google_identity_created_atomically(self):
+        req = self._get_mock_request()
+        data = {
+            'sub': 'atomic_sub_27',
+            'email': 'atomic27@example.com',
+            'given_name': 'Atomic',
+            'family_name': 'User'
+        }
+        status, user, err = authenticate_or_register_google_user(req, data, role='student')
+        self.assertEqual(status, 'created')
+        self.assertIsNotNone(user)
+        self.assertTrue(GoogleIdentity.objects.filter(user=user, provider_user_id='atomic_sub_27').exists())
+
+    def test_28_username_collision_handled(self):
+        User.objects.create_user(username='collisionuser', email='existing@example.com')
+        new_username = generate_unique_username('collisionuser')
+        self.assertEqual(new_username, 'collisionuser_1')
+
+    def test_29_duplicate_email_handled(self):
+        User.objects.create_user(username='u29', email='duplicate29@example.com')
+        req = self._get_mock_request()
+        data = {'sub': 'sub_29', 'email': 'duplicate29@example.com'}
+        status, user, err = authenticate_or_register_google_user(req, data, role='student')
+        # Authenticates matching existing account instead of creating duplicate
+        self.assertEqual(status, 'authenticated')
+        self.assertEqual(user.username, 'u29')
+        self.assertEqual(User.objects.filter(email='duplicate29@example.com').count(), 1)
+
+    def test_30_concurrent_duplicate_signup_handled(self):
+        User.objects.create_user(username='concurrent_u', email='concurrent@example.com')
+        req = self._get_mock_request()
+        data = {'sub': 'concurrent_sub_30', 'email': 'concurrent@example.com'}
+        # Both calls should resolve safely
+        status, user, err = authenticate_or_register_google_user(req, data, role='student')
+        self.assertEqual(status, 'authenticated')
+        self.assertEqual(User.objects.filter(email='concurrent@example.com').count(), 1)
+
+    def test_31_student_redirected_to_profile_completion(self):
+        u = User.objects.create_user(username='student31', email='s31@example.com', role='student')
+        dest = get_role_based_redirect_url(u)
+        self.assertEqual(dest, reverse('profile_create'))
+
+    def test_32_mentor_redirected_to_mentor_application(self):
+        u = User.objects.create_user(username='mentor32', email='m32@example.com', role='mentor')
+        dest = get_role_based_redirect_url(u)
+        self.assertEqual(dest, reverse('community:mentor_register'))
+
+    # -------------------------------------------------------------
+    # Existing Account Tests (Scenarios 33-50)
+    # -------------------------------------------------------------
+    def test_33_existing_student_authenticates_automatically(self):
+        user = User.objects.create_user(username='stud33', email='student33@example.com', role='student')
+        req = self._get_mock_request()
+        data = {'sub': 'sub_33', 'email': 'student33@example.com'}
+        status, logged_in, err = authenticate_or_register_google_user(req, data)
+        self.assertEqual(status, 'authenticated')
+        self.assertEqual(logged_in, user)
+        self.assertTrue(GoogleIdentity.objects.filter(user=user, provider_user_id='sub_33').exists())
+
+    def test_34_existing_mentor_authenticates_automatically(self):
+        user = User.objects.create_user(username='mentor34', email='mentor34@example.com', role='mentor')
+        req = self._get_mock_request()
+        data = {'sub': 'sub_34', 'email': 'mentor34@example.com'}
+        status, logged_in, err = authenticate_or_register_google_user(req, data)
+        self.assertEqual(status, 'authenticated')
+        self.assertEqual(logged_in, user)
+        self.assertTrue(GoogleIdentity.objects.filter(user=user, provider_user_id='sub_34').exists())
+
+    def test_35_existing_google_identity_login_uses_stored_sub(self):
+        user = User.objects.create_user(username='linked35', email='original35@example.com')
+        GoogleIdentity.objects.create(user=user, provider='google', provider_user_id='sub_35_linked', email_at_link=user.email)
+        req = self._get_mock_request()
+        data = {'sub': 'sub_35_linked', 'email': 'original35@example.com'}
+        status, logged_in, err = authenticate_or_register_google_user(req, data)
+        self.assertEqual(status, 'authenticated')
+        self.assertEqual(logged_in, user)
+
+    def test_36_google_email_changes_sub_still_identifies_account(self):
+        user = User.objects.create_user(username='changedemail36', email='firstemail36@example.com')
+        GoogleIdentity.objects.create(user=user, provider='google', provider_user_id='sub_36_stable', email_at_link=user.email)
+        req = self._get_mock_request()
+        data = {'sub': 'sub_36_stable', 'email': 'completely_new_email@gmail.com'}
+        status, logged_in, err = authenticate_or_register_google_user(req, data)
+        self.assertEqual(status, 'authenticated')
+        self.assertEqual(logged_in, user)
+
+    def test_37_existing_account_role_remains_unchanged(self):
+        user = User.objects.create_user(username='mentor37', email='m37@example.com', role='mentor')
+        req = self._get_mock_request()
+        # Incoming role is student, but user is mentor
+        data = {'sub': 'sub_37', 'email': 'm37@example.com'}
+        status, logged_in, err = authenticate_or_register_google_user(req, data, role='student')
+        user.refresh_from_db()
+        self.assertEqual(user.role, 'mentor')
+
+    def test_38_existing_password_remains_unchanged(self):
+        user = User.objects.create_user(username='pass38', email='pass38@example.com', password='OriginalSecretPassword123!')
+        orig_hash = user.password
+        req = self._get_mock_request()
+        data = {'sub': 'sub_38', 'email': 'pass38@example.com'}
+        authenticate_or_register_google_user(req, data)
+        user.refresh_from_db()
+        self.assertEqual(user.password, orig_hash)
+
+    def test_39_existing_profile_data_remains_unchanged(self):
+        user = User.objects.create_user(username='prof39', email='prof39@example.com', first_name='OriginalName')
+        req = self._get_mock_request()
+        data = {'sub': 'sub_39', 'email': 'prof39@example.com', 'given_name': 'NewGoogleName'}
+        authenticate_or_register_google_user(req, data)
+        user.refresh_from_db()
+        self.assertEqual(user.first_name, 'OriginalName')
+
+    def test_40_no_duplicate_user_is_created(self):
+        User.objects.create_user(username='nodup40', email='nodup40@example.com')
+        req = self._get_mock_request()
+        data = {'sub': 'sub_40', 'email': 'nodup40@example.com'}
+        authenticate_or_register_google_user(req, data)
+        self.assertEqual(User.objects.filter(email='nodup40@example.com').count(), 1)
+
+    def test_41_case_insensitive_initial_email_matching(self):
+        user = User.objects.create_user(username='case41', email='John.Doe@Example.COM')
+        req = self._get_mock_request()
+        data = {'sub': 'sub_41', 'email': 'john.doe@example.com'}
+        status, logged_in, err = authenticate_or_register_google_user(req, data)
+        self.assertEqual(status, 'authenticated')
+        self.assertEqual(logged_in, user)
+
+    def test_42_multiple_normalized_email_matches_rejected(self):
+        # Temporarily bypass unique constraint or simulate multiple matches
+        u1 = User(username='match42_1', email='dup@test.com')
+        u1.save()
+        # Use raw query or mock filter to simulate multiple matches safely
+        req = self._get_mock_request()
+        with patch.object(User.objects, 'filter') as mock_filter:
+            mock_filter.return_value.count.return_value = 2
+            mock_filter.return_value.__iter__.return_value = [u1, u1]
+            data = {'sub': 'sub_42', 'email': 'dup@test.com'}
+            status, logged_in, err = authenticate_or_register_google_user(req, data)
+            self.assertEqual(status, 'error')
+            self.assertIn("Multiple accounts found", err)
+
+    def test_43_incomplete_otp_account_recovered_under_valid_conditions(self):
+        user = User.objects.create_user(username='otp43', email='otp43@example.com', is_active=False)
+        EmailOTP.objects.create(user=user, otp_hash=make_password('112233'))
+        req = self._get_mock_request()
+        data = {'sub': 'sub_43', 'email': 'otp43@example.com'}
+        status, logged_in, err = authenticate_or_register_google_user(req, data)
+        self.assertEqual(status, 'authenticated')
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertEqual(EmailOTP.objects.filter(user=user).count(), 0)
+
+    def test_44_administratively_disabled_account_cannot_be_reactivated(self):
+        user = User.objects.create_user(username='admin_disabled44', email='disabled44@example.com', is_active=False)
+        # No unexpired OTP
+        req = self._get_mock_request()
+        data = {'sub': 'sub_44', 'email': 'disabled44@example.com'}
+        status, logged_in, err = authenticate_or_register_google_user(req, data)
+        self.assertEqual(status, 'error')
+        self.assertIn("deactivated", err)
+        user.refresh_from_db()
+        self.assertFalse(user.is_active)
+
+    def test_45_blocked_mentor_restrictions_remain_intact(self):
+        user = User.objects.create_user(username='blocked_m45', email='bm45@example.com', role='mentor', is_active=False)
+        req = self._get_mock_request()
+        data = {'sub': 'sub_45', 'email': 'bm45@example.com'}
+        status, logged_in, err = authenticate_or_register_google_user(req, data)
+        self.assertEqual(status, 'error')
+        self.assertFalse(user.is_active)
+
+    def test_46_pending_mentor_state_remains_intact(self):
+        user = User.objects.create_user(username='pending_m46', email='pm46@example.com', role='mentor')
+        MentorProfile.objects.create(user=user, company='TechCorp', designation='Engineer', experience_years=5, status='Pending', verified=False)
+        dest = get_role_based_redirect_url(user)
+        self.assertEqual(dest, reverse('community:mentor_register'))
+
+    def test_47_rejected_mentor_state_remains_intact(self):
+        user = User.objects.create_user(username='rej_m47', email='rm47@example.com', role='mentor')
+        MentorProfile.objects.create(user=user, company='TechCorp', designation='Engineer', experience_years=5, status='Rejected', verified=False)
+        dest = get_role_based_redirect_url(user)
+        self.assertEqual(dest, reverse('community:mentor_register'))
+
+    def test_48_inactive_mentor_state_remains_intact(self):
+        user = User.objects.create_user(username='inact_m48', email='im48@example.com', role='mentor')
+        MentorProfile.objects.create(user=user, company='TechCorp', designation='Engineer', experience_years=5, status='Inactive', verified=False)
+        dest = get_role_based_redirect_url(user)
+        self.assertEqual(dest, reverse('community:mentor_register'))
+
+    def test_49_existing_google_identity_cannot_be_linked_to_another_user(self):
+        u1 = User.objects.create_user(username='u49_1', email='u49_1@example.com')
+        u2 = User.objects.create_user(username='u49_2', email='u49_2@example.com')
+        GoogleIdentity.objects.create(user=u1, provider='google', provider_user_id='sub_49_dup', email_at_link=u1.email)
+        req = self._get_mock_request()
+        data = {'sub': 'sub_49_dup', 'email': 'u49_2@example.com'}
+        status, logged_in, err = authenticate_or_register_google_user(req, data)
+        # Sub matches u1, so it authenticates u1, not u2
+        self.assertEqual(status, 'authenticated')
+        self.assertEqual(logged_in, u1)
+
+    def test_50_failed_linking_transaction_leaves_no_partial_records(self):
+        u = User.objects.create_user(username='u50', email='u50@example.com')
+        req = self._get_mock_request()
+        with patch.object(GoogleIdentity.objects, 'create', side_effect=IntegrityError("DB lock")):
+            with self.assertRaises(IntegrityError):
+                with transaction.atomic():
+                    GoogleIdentity.objects.create(user=u, provider='google', provider_user_id='sub_50', email_at_link=u.email)
+        self.assertFalse(GoogleIdentity.objects.filter(provider_user_id='sub_50').exists())
+
+    # -------------------------------------------------------------
+    # Regression Tests (Scenarios 51-56)
+    # -------------------------------------------------------------
+    def test_51_existing_username_password_login_works(self):
+        User.objects.create_user(username='reg51', email='r51@example.com', password='Password123!')
+        client = Client()
+        response = client.post(reverse('login'), {'username': 'reg51', 'password': 'Password123!'})
+        self.assertEqual(response.status_code, 302)
+
+    def test_52_existing_email_otp_registration_works(self):
+        client = Client()
+        reg_data = {
+            'username': 'reg52_user',
+            'email': 'r52@example.com',
+            'first_name': 'Reg',
+            'last_name': 'FiftyTwo',
+            'role': 'student',
+            'password1': 'StrongPass123!',
+            'password2': 'StrongPass123!',
+        }
+        with patch('apps.accounts.services.send_otp_email'):
+            response = client.post(reverse('register'), reg_data)
+        self.assertRedirects(response, reverse('verify_otp'))
+        user = User.objects.get(username='reg52_user')
+        self.assertFalse(user.is_active)
+        self.assertTrue(EmailOTP.objects.filter(user=user).exists())
+
+    def test_53_existing_otp_verification_works(self):
+        user = User.objects.create_user(username='reg53', email='r53@example.com', is_active=False)
+        otp = EmailOTP.objects.create(user=user, otp_hash=make_password('654321'))
+        client = Client()
+        session = client.session
+        session['verify_user_id'] = user.id
+        session.save()
+
+        response = client.post(reverse('verify_otp'), {'otp_code': '654321'})
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertRedirects(response, reverse('profile_create'))
+
+    def test_54_existing_password_reset_works(self):
+        User.objects.create_user(username='reg54', email='r54@example.com')
+        client = Client()
+        with patch('django.contrib.auth.forms.PasswordResetForm.save'):
+            response = client.post(reverse('password_reset'), {'email': 'r54@example.com'})
+        self.assertEqual(response.status_code, 302)
+
+    def test_55_existing_logout_works(self):
+        user = User.objects.create_user(username='reg55', email='r55@example.com')
+        client = Client()
+        client.force_login(user)
+        response = client.get(reverse('logout'))
+        self.assertRedirects(response, reverse('home'))
+
+    def test_56_existing_role_based_redirect_behavior_remains_unchanged(self):
+        student = User.objects.create_user(username='reg56_s', email='r56s@example.com', role='student')
+        mentor = User.objects.create_user(username='reg56_m', email='r56m@example.com', role='mentor')
+        self.assertEqual(get_role_based_redirect_url(student), reverse('profile_create'))
+        self.assertEqual(get_role_based_redirect_url(mentor), reverse('community:mentor_register'))

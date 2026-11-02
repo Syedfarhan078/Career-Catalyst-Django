@@ -1,3 +1,12 @@
+import secrets
+import time
+from .google_auth import (
+    get_google_authorization_url,
+    get_google_redirect_uri,
+    exchange_code_for_tokens,
+    verify_google_id_token,
+    authenticate_or_register_google_user,
+)
 # apps/accounts/views.py
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
@@ -152,3 +161,139 @@ class CustomPasswordResetConfirmView(SuccessMessageMixin, auth_views.PasswordRes
     template_name = 'accounts/reset_password.html'
     success_url = reverse_lazy('login')
     success_message = "Your password has been successfully reset. You may now log in with your new password."
+
+def google_login_view(request):
+    """Initiates Google OAuth 2.0 flow with state, PKCE, and optional pending role."""
+    if request.user.is_authenticated:
+        return redirect(get_role_based_redirect_url(request.user))
+
+    role = request.GET.get('role') or request.POST.get('role')
+    if role not in ['student', 'mentor']:
+        role = None
+
+    try:
+        auth_url = get_google_authorization_url(request, role=role)
+        return redirect(auth_url)
+    except Exception as e:
+        messages.error(request, f'Failed to initiate Google sign-in: {str(e)}')
+        return redirect('login')
+
+
+def google_callback_view(request):
+    """Handles Google OAuth callback, validates state and PKCE, verifies ID token, and authenticates."""
+    if request.user.is_authenticated:
+        return redirect(get_role_based_redirect_url(request.user))
+
+    # Handle cancelled or denied consent from Google
+    if request.GET.get('error'):
+        messages.warning(request, 'Google sign-in was cancelled.')
+        return redirect('login')
+
+    code = request.GET.get('code')
+    state = request.GET.get('state')
+
+    session_state = request.session.pop('oauth_state', None)
+    code_verifier = request.session.pop('oauth_code_verifier', None)
+    session_nonce = request.session.pop('oauth_nonce', None)
+    pending_role = request.session.pop('oauth_pending_role', None)
+    created_at = request.session.pop('oauth_created_at', None)
+
+    # State validation and replay protection
+    if not state or not session_state or not secrets.compare_digest(state, session_state):
+        messages.error(request, 'Invalid or expired session state. Please try signing in again.')
+        return redirect('login')
+
+    # Expiration check (10 minutes)
+    if created_at and (time.time() - created_at > 600):
+        messages.error(request, 'Authentication session timed out. Please try signing in again.')
+        return redirect('login')
+
+    if not code or not code_verifier:
+        messages.error(request, 'Missing authorization code or verifier from Google.')
+        return redirect('login')
+
+    redirect_uri = get_google_redirect_uri(request)
+
+    try:
+        tokens = exchange_code_for_tokens(code, code_verifier, redirect_uri)
+        id_token = tokens['id_token']
+        claims = verify_google_id_token(id_token, expected_nonce=session_nonce)
+    except ValidationError as e:
+        msg = e.message if hasattr(e, 'message') else str(e)
+        messages.error(request, msg)
+        return redirect('login')
+    except Exception:
+        messages.error(request, 'Google authentication verification failed. Please try again.')
+        return redirect('login')
+
+    status, user, err = authenticate_or_register_google_user(request, claims, role=pending_role)
+
+    if status == 'error':
+        messages.error(request, err or 'Google authentication failed.')
+        return redirect('login')
+
+    if status == 'needs_role':
+        request.session['oauth_pending_user'] = {
+            'sub': claims['sub'],
+            'email': claims['email'],
+            'given_name': claims.get('given_name', ''),
+            'family_name': claims.get('family_name', ''),
+            'timestamp': time.time(),
+        }
+        return redirect('google_choose_role')
+
+    if status == 'created':
+        messages.success(request, f'Welcome to Career Catalyst, {user.username}!')
+        return redirect(get_role_based_redirect_url(user))
+
+    if status == 'authenticated':
+        messages.success(request, f'Welcome back, {user.username}!')
+        return redirect(get_role_based_redirect_url(user))
+
+    messages.error(request, 'Unexpected authentication status.')
+    return redirect('login')
+
+
+def google_choose_role_view(request):
+    """Dedicated role-selection view for new users who initiated Google sign-in from login."""
+    if request.user.is_authenticated:
+        return redirect(get_role_based_redirect_url(request.user))
+
+    pending_data = request.session.get('oauth_pending_user')
+    if not pending_data:
+        messages.error(request, 'No pending Google sign-in found. Please sign in again.')
+        return redirect('login')
+
+    # Expiration check (10 minutes)
+    if time.time() - pending_data.get('timestamp', 0) > 600:
+        request.session.pop('oauth_pending_user', None)
+        messages.error(request, 'Role selection session expired. Please sign in with Google again.')
+        return redirect('login')
+
+    if request.method == 'POST':
+        role = request.POST.get('role', '').strip()
+        if role not in ['student', 'mentor']:
+            messages.error(request, 'Please select whether you want to join as a Student or Mentor.')
+            return render(request, 'accounts/choose_role.html', {
+                'pending_email': pending_data.get('email'),
+                'given_name': pending_data.get('given_name')
+            })
+
+        status, user, err = authenticate_or_register_google_user(request, pending_data, role=role)
+        request.session.pop('oauth_pending_user', None)
+
+        if status == 'error':
+            messages.error(request, err or 'Account creation failed.')
+            return redirect('login')
+
+        if status in ['created', 'authenticated']:
+            messages.success(request, f'Welcome to Career Catalyst, {user.username}!')
+            return redirect(get_role_based_redirect_url(user))
+
+        messages.error(request, 'Failed to complete registration.')
+        return redirect('login')
+
+    return render(request, 'accounts/choose_role.html', {
+        'pending_email': pending_data.get('email'),
+        'given_name': pending_data.get('given_name')
+    })
