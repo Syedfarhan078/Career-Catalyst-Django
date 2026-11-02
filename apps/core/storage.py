@@ -29,10 +29,7 @@ class CareerCatalystPublicMediaStorage(_BaseStorage):
     }
 
     def _get_resource_type(self, name):
-        ext = os.path.splitext(name or '')[1].lower()
-        if ext in self.IMAGE_EXTENSIONS:
-            return RESOURCE_TYPES.get('IMAGE', 'image')
-        return RESOURCE_TYPES.get('RAW', 'raw')
+        return RESOURCE_TYPES.get('IMAGE', 'image')
 
     def _upload(self, name, content):
         if not cloudinary:
@@ -156,15 +153,14 @@ class CareerCatalystMediaCloudinaryStorage(_BaseStorage):
 
     def is_private_asset(self, name):
         normalized = (name or '').replace('\\', '/').lstrip('/')
+        if normalized.startswith('media/'):
+            normalized = normalized[6:]
         return any(normalized.startswith(prefix) for prefix in self.PRIVATE_PREFIXES)
 
     def _get_resource_type(self, name):
         if self.is_private_asset(name):
             return RESOURCE_TYPES.get('RAW', 'raw')
-        ext = os.path.splitext(name or '')[1].lower()
-        if ext in self.IMAGE_EXTENSIONS:
-            return RESOURCE_TYPES.get('IMAGE', 'image')
-        return RESOURCE_TYPES.get('RAW', 'raw')
+        return RESOURCE_TYPES.get('IMAGE', 'image')
 
     def _upload(self, name, content):
         if not cloudinary:

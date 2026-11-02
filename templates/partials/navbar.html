@@ -146,12 +146,26 @@
                     <!-- User Avatar Dropdown (SF ▾) -->
                     <li class="nav-item dropdown user-profile-dropdown">
                         <a class="nav-link dropdown-toggle p-0 d-flex align-items-center gap-1 border-0" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                            {% if user.studentprofile.profile_picture %}
-                                <img src="{{ user.studentprofile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border shadow-sm" style="width: 36px; height: 36px;">
+                            {% if active_workspace == 'mentor' and user.mentor_profile.profile_photo %}
+                                <img src="{{ user.mentor_profile.profile_photo.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border shadow-sm" style="width: 36px; height: 36px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary fw-bold align-items-center justify-content-center border border-primary border-opacity-25 shadow-sm" style="display: none; width: 36px; height: 36px; font-size: 0.85rem;">
+                                    {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                                </div>
+                            {% elif user.studentprofile.profile_picture %}
+                                <img src="{{ user.studentprofile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border shadow-sm" style="width: 36px; height: 36px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary fw-bold align-items-center justify-content-center border border-primary border-opacity-25 shadow-sm" style="display: none; width: 36px; height: 36px; font-size: 0.85rem;">
+                                    {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                                </div>
                             {% elif user.mentor_profile.profile_photo %}
-                                <img src="{{ user.mentor_profile.profile_photo.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border shadow-sm" style="width: 36px; height: 36px;">
+                                <img src="{{ user.mentor_profile.profile_photo.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border shadow-sm" style="width: 36px; height: 36px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary fw-bold align-items-center justify-content-center border border-primary border-opacity-25 shadow-sm" style="display: none; width: 36px; height: 36px; font-size: 0.85rem;">
+                                    {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                                </div>
                             {% elif user.profile_picture %}
-                                <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border shadow-sm" style="width: 36px; height: 36px;">
+                                <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border shadow-sm" style="width: 36px; height: 36px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary fw-bold align-items-center justify-content-center border border-primary border-opacity-25 shadow-sm" style="display: none; width: 36px; height: 36px; font-size: 0.85rem;">
+                                    {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                                </div>
                             {% else %}
                                 <div class="rounded-circle bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center border border-primary border-opacity-25 shadow-sm" style="width: 36px; height: 36px; font-size: 0.85rem;">
                                     {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
@@ -165,12 +179,26 @@
                             <!-- User Info Header -->
                             <li class="px-3 py-2">
                                 <div class="d-flex align-items-center gap-3">
-                                    {% if user.studentprofile.profile_picture %}
-                                        <img src="{{ user.studentprofile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border" style="width: 38px; height: 38px;">
+                                    {% if active_workspace == 'mentor' and user.mentor_profile.profile_photo %}
+                                        <img src="{{ user.mentor_profile.profile_photo.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border" style="width: 38px; height: 38px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div class="rounded-circle bg-primary text-white fw-bold align-items-center justify-content-center flex-shrink-0" style="display: none; width: 38px; height: 38px; font-size: 0.9rem;">
+                                            {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                                        </div>
+                                    {% elif user.studentprofile.profile_picture %}
+                                        <img src="{{ user.studentprofile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border" style="width: 38px; height: 38px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div class="rounded-circle bg-primary text-white fw-bold align-items-center justify-content-center flex-shrink-0" style="display: none; width: 38px; height: 38px; font-size: 0.9rem;">
+                                            {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                                        </div>
                                     {% elif user.mentor_profile.profile_photo %}
-                                        <img src="{{ user.mentor_profile.profile_photo.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border" style="width: 38px; height: 38px;">
+                                        <img src="{{ user.mentor_profile.profile_photo.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border" style="width: 38px; height: 38px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div class="rounded-circle bg-primary text-white fw-bold align-items-center justify-content-center flex-shrink-0" style="display: none; width: 38px; height: 38px; font-size: 0.9rem;">
+                                            {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                                        </div>
                                     {% elif user.profile_picture %}
-                                        <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border" style="width: 38px; height: 38px;">
+                                        <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle object-fit-cover border" style="width: 38px; height: 38px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div class="rounded-circle bg-primary text-white fw-bold align-items-center justify-content-center flex-shrink-0" style="display: none; width: 38px; height: 38px; font-size: 0.9rem;">
+                                            {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                                        </div>
                                     {% else %}
                                         <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; font-size: 0.9rem;">
                                             {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
