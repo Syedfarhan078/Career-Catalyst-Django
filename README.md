@@ -7,12 +7,14 @@
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/django-5.2-092E20.svg?logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![Database](https://img.shields.io/badge/database-PostgreSQL%20%2F%20Neon-336791.svg?logo=postgresql&logoColor=white)](https://neon.tech/)
+[![Cloud Storage](https://img.shields.io/badge/Cloudinary-Persistent%20Media-3448C5.svg?logo=cloudinary&logoColor=white)](https://cloudinary.com/)
+[![Google Auth](https://img.shields.io/badge/Google%20OAuth-2.0%20%2F%20OIDC-4285F4.svg?logo=google&logoColor=white)](https://developers.google.com/identity/protocols/oauth2)
 [![AI & Vision](https://img.shields.io/badge/AI%20%26%20Vision-TensorFlow.js%20%7C%20Groq-FF6F00.svg?logo=tensorflow&logoColor=white)](https://www.tensorflow.org/js)
 [![Frontend](https://img.shields.io/badge/UI-Bootstrap%205%20%7C%20ES6%2B-7952B3.svg?logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
 [![Security](https://img.shields.io/badge/Security-PBKDF2%20%7C%20PII%20Sanitized-22C55E.svg)](#-privacy-shield--zero-data-leakage-guarantee)
 
 <p align="center">
-  <b>Bridging the gap between college education and industry hiring. A unified, privacy-first platform featuring structured career roadmaps with curated resources, AI readiness benchmarks, 1-on-1 mentorship, proctored coding assessments, and ATS resume analytics.</b>
+  <b>Bridging the gap between college education and industry hiring. A unified, privacy-first platform featuring structured career roadmaps with curated resources, AI readiness benchmarks, 1-on-1 mentorship, proctored coding assessments, ATS resume analytics, and persistent cloud storage.</b>
 </p>
 
 </div>
@@ -83,12 +85,15 @@ We built a single, unified, open platform where any student—regardless of thei
 
 ---
 
-### 5. 🤝 1-on-1 Mentorship Network & Community Hub (`apps/community/`)
-*Direct guidance from engineers who have been there.*
+### 5. 🤝 1-on-1 Mentorship Marketplace & Dual-Workspace Hub (`apps/community/`)
+*Direct guidance from industry engineers, featuring dedicated student and mentor workspaces.*
 
-- **Verified Mentor Directory**: Connect with industry mentors filtered by domain expertise, company affiliation, and mentee ratings.
-- **Direct Messaging Rooms**: Private asynchronous communication for portfolio reviews, mock interview feedback, and career guidance.
-- **Collaborative Discussion Forums**: Topic-specific threads for interview preparation and peer support.
+- **Verified Mentor Directory & Marketplace**: Connect with industry mentors filtered by domain expertise, company affiliation, and mentee ratings.
+- **Dual-Workspace Architecture**: Seamless context switching between the **Student Dashboard** and a dedicated **Mentor Dashboard** with tailored metrics, upcoming sessions, and review queues.
+- **Custom Availability Scheduling**: Mentors define recurring availability windows, maximum weekly sessions, and meeting preferences (Online, Offline, or Both).
+- **Mentorship Request Lifecycle**: Structured booking workflow (Pending, Accepted, Rejected, Completed) with custom meeting links and student profile review access restricted to active requests.
+- **Lifecycle Management & Step-Down**: Mentors can temporarily pause new booking requests or voluntarily step down with audit trail logging (`MentorLifecycleEvent`).
+- **Direct Messaging Rooms & Forums**: Topic-specific discussion threads and private messaging for portfolio reviews, mock interview feedback, and career guidance.
 
 ---
 
@@ -100,9 +105,34 @@ We built a single, unified, open platform where any student—regardless of thei
 
 ---
 
-### 7. 🔐 Enterprise Security & Identity Management (`apps/accounts/`)
+### 7. 🔐 Enterprise Security, Identity & Google OAuth 2.0 (`apps/accounts/`)
+- **Google OAuth 2.0 / OpenID Connect (OIDC)**:
+  - Cryptographic PKCE (S256), state parameter verification, and OpenID Connect nonce validation against Google's JWKS public keys.
+  - Automatic email normalization and persistent `GoogleIdentity` account association.
+  - Role-aware post-login routing (new user onboarding vs. returning student/mentor dashboard).
 - **PBKDF2-Hashed OTP Verification**: Secure 6-digit email verification with cryptographic hashing, brute-force rate-limiting (5 attempts lock), and 60-second resend cooldowns.
 - **Dual-Relay Email Engine**: Automatically routes outbound mail through HTTPS REST APIs (Brevo) on cloud environments to bypass PaaS SMTP port blocks, with standard SMTP fallback for local development.
+
+---
+
+### 8. ☁️ Cloudinary Persistent Media Storage & Dual-Routing Architecture (`apps/core/`)
+*Permanent, production-grade cloud media storage resolving container filesystem ephemerality on Render.*
+
+- **Dual Public/Private Asset Separation**:
+  - **Public CDN Delivery (`resource_type='image'`)**: Profile pictures and mentor photos (`profile_pictures/`, `mentor_photos/`) use Cloudinary's global CDN with automatic format optimization and graceful fallback initials.
+  - **Private Authenticated Delivery (`resource_type='raw'`, `type='authenticated'`)**: Sensitive files (Student resumes in `resumes/` and Mentor CVs in `mentor_resumes/`) are strictly protected from unsigned public access.
+  - **300-Second Expiring Signed URLs**: Authorized download endpoints generate cryptographic, time-limited signed URLs (`generate_expiring_url`) enforced directly by Cloudinary CDN.
+- **Multi-Role Profile Picture Synchronization**: Seamless avatar synchronization across `User.profile_picture`, `StudentProfile.profile_picture`, and `MentorProfile.profile_photo`.
+- **Legacy Media Migration CLI**: Zero-downtime management command `python manage.py migrate_profile_images_to_cloudinary` with `--dry-run`, `--execute`, idempotency, and automatic verification against target storage.
+
+---
+
+### 9. 🔔 Real-Time In-App Notification Center (`apps/notifications/`)
+*Persistent notification pipeline connecting students and mentors across all key events.*
+
+- **Live Unread Notification Badge**: Optimized global context processor delivering real-time unread counts directly to the navigation bar.
+- **Event-Driven Alerts**: Automated notifications for mentorship requests, booking acceptances, cancellations, mentor profile reviews, and session updates.
+- **Interactive Notification Dropdown**: In-navbar dropdown with direct deep-links to relevant requests, mark-as-read toggles, and notification history.
 
 ---
 
@@ -133,21 +163,30 @@ flowchart LR
          ▼                        ▼                      ▼                      ▼                        ▼
 ┌──────────────────┐    ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐     ┌──────────────────┐
 │ ⭐ ROADMAPS &    │    │ ⭐ AI GUIDANCE & │   │ ⭐ HYBRID ATS &  │   │ ⭐ PROCTORED     │     │ ⭐ MENTOR &      │
-│  CURATED TRACKS  │    │  READINESS MATRIX│   │  RESUME BUILDER  │   │  CODE SANDBOX    │     │  JOB TRACKER     │
+│  CURATED TRACKS  │    │  READINESS MATRIX│   │  RESUME BUILDER  │   │  CODE SANDBOX    │     │  DUAL WORKSPACE  │
 │ (apps/roadmaps)  │    │(apps/recommend.) │   │ (apps/ai_resume) │   │(apps/interviews) │     │ (apps/community) │
-└──────────────────┘    └──────────────────┘   └────────┬─────────┘   └────────┬─────────┘     └──────────────────┘
-                                                        │                      │
-                                                        ▼                      ▼
-                                               ┌──────────────────┐   ┌──────────────────┐
-                                               │ In-Memory PII    │   │ Client Vision ML │
-                                               │ Sanitizer Shield │   │ (BlazeFace/COCO) │
-                                               └────────┬─────────┘   └──────────────────┘
+└──────────────────┘    └──────────────────┘   └────────┬─────────┘   └────────┬─────────┘     └────────┬─────────┘
+                                                        │                      │                        │
+                                                        ▼                      ▼                        ▼
+                                               ┌──────────────────┐   ┌──────────────────┐     ┌──────────────────┐
+                                               │ In-Memory PII    │   │ Client Vision ML │     │ In-App Alerts    │
+                                               │ Sanitizer Shield │   │ (BlazeFace/COCO) │     │ (apps/notificat.)│
+                                               └────────┬─────────┘   └──────────────────┘     └──────────────────┘
                                                         │
                                                         ▼ (Zero PII Payload)
                                                ┌──────────────────┐
                                                │ Semantic AI Layer│
                                                │  (Groq / Gemini) │
                                                └──────────────────┘
+                                                         │
+                                                         ▼
+                                 ┌──────────────────────────────────────────────────┐
+                                 │       Persistent Cloudinary Media Router         │
+                                 │   (apps/core/storage.py • Dual-Path Routing)     │
+                                 ├─────────────────────────┬────────────────────────┤
+                                 │  Public Avatars (CDN)   │ Private Authenticated  │
+                                 │  resource_type: image   │ Resumes / CVs (300s)   │
+                                 └─────────────────────────┴────────────────────────┘
 ```
 
 ---
@@ -158,7 +197,7 @@ flowchart LR
 | :--- | :--- | :--- |
 | **Tier-2 & Tier-3 Students** | Get clear, structured direction with curated resources, benchmark readiness, and eliminate resume blindspots. | Curated Roadmaps, AI Guidance & Readiness Radar, Hybrid ATS Resume Engine, Job Tracker. |
 | **Fresh Graduates & Job Seekers** | Practice coding in realistic proctored environments and format resumes to industry standards. | Code Execution Sandbox, Google XYZ Bullet Rewriter, Split-Screen PDF Builder. |
-| **Industry Mentors & Coaches** | Help aspiring engineers, review portfolios, and guide students on high-impact skills. | Mentor Directory, Direct Messaging Rooms, Competency Radar Verification. |
+| **Industry Mentors & Coaches** | Help aspiring engineers, review candidate portfolios, and manage session bookings with dedicated workspace tools. | Dual-Workspace Dashboard, Availability Scheduler, Booking Request Lifecycle, Direct Messaging. |
 | **Placement Cells & Bootcamps** | Standardize career preparation workflows with measurable placement readiness metrics. | Multi-Factor Readiness Index, Placement Analytics, Role Benchmark Matrix. |
 
 ---
@@ -169,13 +208,16 @@ flowchart LR
 | :--- | :--- |
 | **Backend Framework** | Python 3.10+, Django 5.2 (Modular SaaS Architecture) |
 | **Database & ORM** | PostgreSQL (Production / Neon Serverless), SQLite (Local Dev Fallback), Django ORM |
+| **Cloud Media Storage** | Cloudinary (Dual Routing: Public CDN Avatars & Authenticated Expiring Signed URLs for Private Resumes) |
+| **Identity & Authentication** | Google OAuth 2.0 / OpenID Connect (PKCE S256, Nonce, JWKS Validation), PBKDF2 Hashed OTP Verification |
 | **NLP & Scoring Engine** | Pure-Python TF-IDF Vectorizer, Cosine Similarity, N-Gram Extractor, Custom 5,000+ Taxonomy |
 | **AI / Machine Learning** | Groq API (LLaMA-3.3, Qwen 2.5, GPT-OSS), Google Gemini 1.5 Flash |
 | **Computer Vision & ML** | TensorFlow.js, BlazeFace (Facial Tracking), COCO-SSD (Object & Phone Detection) |
 | **Frontend Architecture** | HTML5, CSS3 Custom Properties (Design System), Bootstrap 5.3, Vanilla ES6+ JavaScript |
 | **Data Visualization** | Chart.js 4.x (Radar & Performance Visualizations) |
+| **Notifications & Email** | Persistent In-App Notification System (`apps/notifications`), Brevo API (REST HTTPS) & SMTP Relay |
 | **Static Assets & Serving** | WhiteNoise 6.x (Gzip / Brotli Compression), Gunicorn WSGI |
-| **Security & Privacy** | PBKDF2 Password Hashing, CSRF Protection, In-Memory PII Sanitizer, XSS Defense |
+| **Security & Privacy** | PBKDF2 Password Hashing, CSRF Protection, In-Memory PII Sanitizer, XSS Defense, Cryptographic Nonces |
 
 ---
 
@@ -189,10 +231,11 @@ Career-Catalyst-Django/
 │   ├── ai_resume/         # ⭐ HERO: Hybrid ATS analyzer, NLP vectorizer, taxonomy, PII sanitizer
 │   ├── interviews/        # ⭐ HERO: Code sandbox, computer vision proctoring & test runners
 │   ├── tracker/           # ⭐ HERO: Job application tracker, deadline reminders & pipeline
-│   ├── community/         # ⭐ HERO: Mentor directory, 1-on-1 direct messaging & forums
+│   ├── community/         # ⭐ HERO: Mentor marketplace, dual workspace, booking & messaging
+│   ├── notifications/     # ⭐ HERO: In-app notification center, unread counters & deep-linking
 │   ├── resume/            # Dynamic resume builder, split-screen PDF preview engine
-│   ├── accounts/          # Authentication, PBKDF2 OTP verification, Custom User identity
-│   ├── core/              # Global landing views, dashboard dispatchers, core UI partials
+│   ├── accounts/          # Authentication, Google OAuth 2.0 / OIDC, PBKDF2 OTP verification
+│   ├── core/              # Global landing, Cloudinary dual storage router, migration CLI
 │   └── profiles/          # User profile management, skill portfolios & certifications
 ├── config/                # Project URL routing, WSGI/ASGI handlers, global settings
 ├── static/                # Design systems, utility stylesheets, proctoring scripts
@@ -204,6 +247,7 @@ Career-Catalyst-Django/
 ```
 
 ---
+
 
 ## 📄 License
 
