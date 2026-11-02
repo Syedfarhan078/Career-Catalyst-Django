@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
@@ -22,14 +24,18 @@ def profile_create_view(request):
     if request.method == 'POST':
         form = StudentProfileForm(request.POST, request.FILES)
         if form.is_valid():
-            profile = form.save(commit=False)
-            profile.user = request.user
-            profile.save()
-            if 'profile_picture' in request.FILES and profile.profile_picture:
-                request.user.profile_picture = profile.profile_picture
-                request.user.save(update_fields=['profile_picture'])
-            messages.success(request, "Your profile has been created successfully! Welcome onboarding completed.")
-            return redirect('dashboard')
+            try:
+                profile = form.save(commit=False)
+                profile.user = request.user
+                profile.save()
+                if 'profile_picture' in request.FILES and profile.profile_picture:
+                    request.user.profile_picture.name = profile.profile_picture.name
+                    request.user.save(update_fields=['profile_picture'])
+                messages.success(request, "Your profile has been created successfully! Welcome onboarding completed.")
+                return redirect('dashboard')
+            except Exception as e:
+                logger.exception("Failed to create profile: %s", e)
+                messages.error(request, f"Unable to save profile picture: {e}. Please check your Cloudinary configuration.")
         else:
             messages.error(request, "There was an error creating your profile. Please check the fields below.")
     else:
@@ -73,13 +79,17 @@ def profile_update_view(request):
             active_tab = 'account'
             account_form = UserProfileForm(request.POST, request.FILES, instance=request.user)
             if account_form.is_valid():
-                updated_user = account_form.save()
-                if 'profile_picture' in request.FILES and updated_user.profile_picture:
-                    if hasattr(updated_user, 'studentprofile'):
-                        profile.profile_picture = updated_user.profile_picture
-                        profile.save(update_fields=['profile_picture'])
-                messages.success(request, "Account settings updated successfully.")
-                return redirect(f"{reverse('profile_edit')}?tab=account")
+                try:
+                    updated_user = account_form.save()
+                    if 'profile_picture' in request.FILES and updated_user.profile_picture:
+                        if hasattr(updated_user, 'studentprofile'):
+                            profile.profile_picture.name = updated_user.profile_picture.name
+                            profile.save(update_fields=['profile_picture'])
+                    messages.success(request, "Account settings updated successfully.")
+                    return redirect(f"{reverse('profile_edit')}?tab=account")
+                except Exception as e:
+                    logger.exception("Failed to update account settings: %s", e)
+                    messages.error(request, f"Unable to save profile picture: {e}. Please check your Cloudinary configuration.")
             else:
                 messages.error(request, "Please correct the errors in your account settings.")
 
@@ -87,12 +97,16 @@ def profile_update_view(request):
             active_tab = 'profile'
             profile_form = StudentProfileForm(request.POST, request.FILES, instance=profile)
             if profile_form.is_valid():
-                updated_profile = profile_form.save()
-                if 'profile_picture' in request.FILES and updated_profile.profile_picture:
-                    request.user.profile_picture = updated_profile.profile_picture
-                    request.user.save(update_fields=['profile_picture'])
-                messages.success(request, "Career & student profile updated successfully.")
-                return redirect(f"{reverse('profile_edit')}?tab=profile")
+                try:
+                    updated_profile = profile_form.save()
+                    if 'profile_picture' in request.FILES and updated_profile.profile_picture:
+                        request.user.profile_picture.name = updated_profile.profile_picture.name
+                        request.user.save(update_fields=['profile_picture'])
+                    messages.success(request, "Career & student profile updated successfully.")
+                    return redirect(f"{reverse('profile_edit')}?tab=profile")
+                except Exception as e:
+                    logger.exception("Failed to update career profile: %s", e)
+                    messages.error(request, f"Unable to save profile picture: {e}. Please check your Cloudinary configuration.")
             else:
                 messages.error(request, "Please correct the errors in your career profile.")
 

@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 import secrets
 import time
 from .google_auth import (
@@ -107,14 +109,18 @@ def profile_view(request):
     if request.method == 'POST':
         form = UserProfileForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
-            updated_user = form.save()
-            if 'profile_picture' in request.FILES and updated_user.profile_picture:
-                if hasattr(updated_user, 'studentprofile'):
-                    student_prof = updated_user.studentprofile
-                    student_prof.profile_picture = updated_user.profile_picture
-                    student_prof.save(update_fields=['profile_picture'])
-            messages.success(request, "Your profile has been updated successfully!")
-            return redirect(f"{reverse_lazy('profile_edit')}?tab=account")
+            try:
+                updated_user = form.save()
+                if 'profile_picture' in request.FILES and updated_user.profile_picture:
+                    if hasattr(updated_user, 'studentprofile'):
+                        student_prof = updated_user.studentprofile
+                        student_prof.profile_picture.name = updated_user.profile_picture.name
+                        student_prof.save(update_fields=['profile_picture'])
+                messages.success(request, "Your profile has been updated successfully!")
+                return redirect(f"{reverse_lazy('profile_edit')}?tab=account")
+            except Exception as e:
+                logger.exception("Failed to update profile view: %s", e)
+                messages.error(request, f"Unable to save profile picture: {e}. Please check your Cloudinary configuration.")
         else:
             messages.error(request, "There was an error updating your profile. Please check the fields below.")
     else:

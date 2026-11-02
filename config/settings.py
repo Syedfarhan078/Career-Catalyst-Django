@@ -201,6 +201,16 @@ def parse_cloudinary_url(raw_url):
     cleaned = raw_url.strip()
     if not cleaned:
         return None
+    # Defensive cleanup: strip outer quotes if present
+    if (cleaned.startswith('"') and cleaned.endswith('"')) or (cleaned.startswith("'") and cleaned.endswith("'")):
+        cleaned = cleaned[1:-1].strip()
+    # Defensive cleanup: strip leading 'export ' or 'CLOUDINARY_URL=' if user pasted entire line
+    if cleaned.lower().startswith('export '):
+        cleaned = cleaned[7:].strip()
+    if cleaned.startswith('CLOUDINARY_URL='):
+        cleaned = cleaned[15:].strip()
+    if (cleaned.startswith('"') and cleaned.endswith('"')) or (cleaned.startswith("'") and cleaned.endswith("'")):
+        cleaned = cleaned[1:-1].strip()
     try:
         parsed = urllib.parse.urlsplit(cleaned)
     except Exception:
@@ -219,9 +229,9 @@ def parse_cloudinary_url(raw_url):
     return (cloud_name, api_key, api_secret)
 
 
-_raw_cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME', '').strip()
-_raw_api_key = os.getenv('CLOUDINARY_API_KEY', '').strip()
-_raw_api_secret = os.getenv('CLOUDINARY_API_SECRET', '').strip()
+_raw_cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME', '').strip().strip('"').strip("'")
+_raw_api_key = os.getenv('CLOUDINARY_API_KEY', '').strip().strip('"').strip("'")
+_raw_api_secret = os.getenv('CLOUDINARY_API_SECRET', '').strip().strip('"').strip("'")
 _raw_cloudinary_url = os.getenv('CLOUDINARY_URL', '').strip()
 
 CLOUDINARY_CLOUD_NAME = None
