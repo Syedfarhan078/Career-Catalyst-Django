@@ -1,8 +1,10 @@
+import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, CreateView
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404, FileResponse
+from django.core.exceptions import PermissionDenied
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 
@@ -216,3 +218,35 @@ def api_enhance_ai(request, pk):
             "status": "offline",
             "message": ai_resp.get("message", "AI provider is not configured. Local deterministic ATS report is active.")
         })
+
+
+@login_required
+def download_resume_file(request, pk):
+    """
+    Securely serves or redirects to the uploaded resume file for a ResumeAnalysis.
+    Verifies that the requesting user owns the analysis or is staff.
+    Anonymous or unauthorized users are strictly denied.
+    """
+    analysis = get_object_or_404(ResumeAnalysis, pk=pk)
+    if analysis.user != request.user and not request.user.is_staff:
+        raise PermissionDenied("You do not have permission to view or download this resume.")
+
+    if not analysis.uploaded_file:
+        raise Http404("No uploaded file is associated with this resume analysis.")
+
+    file_field = analysis.uploaded_file
+    storage = file_field.storage
+
+    if hasattr(storage, 'generate_expiring_url'):
+        redirect_url = storage.generate_expiring_url(file_field.name, expires_in=300)
+        return redirect(redirect_url)
+    elif hasattr(storage, 'get_private_url'):
+        redirect_url = storage.get_private_url(file_field.name, expires_in=300)
+        return redirect(redirect_url)
+    else:
+        try:
+            f = file_field.open('rb')
+            filename = os.path.basename(file_field.name)
+            return FileResponse(f, as_attachment=False, filename=filename)
+        except (FileNotFoundError, OSError):
+            raise Http404("The requested resume file is missing from storage.")

@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import sys
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -183,14 +185,109 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
-    },
-}
+# Cloudinary Persistent Media Storage Configuration
+import urllib.parse
+
+
+def parse_cloudinary_url(raw_url):
+    """
+    Parses and validates a CLOUDINARY_URL in the format:
+    cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+    Returns (cloud_name, api_key, api_secret) or None if invalid/incomplete.
+    Handles URL-encoding and percent-decoding safely.
+    """
+    if not raw_url or not isinstance(raw_url, str):
+        return None
+    cleaned = raw_url.strip()
+    if not cleaned:
+        return None
+    try:
+        parsed = urllib.parse.urlsplit(cleaned)
+    except Exception:
+        return None
+
+    if parsed.scheme.lower() != 'cloudinary':
+        return None
+
+    cloud_name = (parsed.hostname or '').strip()
+    api_key = urllib.parse.unquote(parsed.username or '').strip()
+    api_secret = urllib.parse.unquote(parsed.password or '').strip()
+
+    if not (cloud_name and api_key and api_secret):
+        return None
+
+    return (cloud_name, api_key, api_secret)
+
+
+_raw_cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME', '').strip()
+_raw_api_key = os.getenv('CLOUDINARY_API_KEY', '').strip()
+_raw_api_secret = os.getenv('CLOUDINARY_API_SECRET', '').strip()
+_raw_cloudinary_url = os.getenv('CLOUDINARY_URL', '').strip()
+
+CLOUDINARY_CLOUD_NAME = None
+CLOUDINARY_API_KEY = None
+CLOUDINARY_API_SECRET = None
+CLOUDINARY_URL = _raw_cloudinary_url or None
+
+# Method A: Individual environment variables
+if _raw_cloud_name and _raw_api_key and _raw_api_secret:
+    CLOUDINARY_CLOUD_NAME = _raw_cloud_name
+    CLOUDINARY_API_KEY = _raw_api_key
+    CLOUDINARY_API_SECRET = _raw_api_secret
+# Method B: Parse CLOUDINARY_URL
+elif _raw_cloudinary_url:
+    _parsed = parse_cloudinary_url(_raw_cloudinary_url)
+    if _parsed:
+        CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET = _parsed
+
+USE_CLOUDINARY = bool(CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET)
+
+IS_RENDER = bool(os.getenv('RENDER') or os.getenv('RENDER_EXTERNAL_HOSTNAME'))
+IS_TESTING = 'test' in sys.argv
+
+if USE_CLOUDINARY:
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
+        'API_KEY': CLOUDINARY_API_KEY,
+        'API_SECRET': CLOUDINARY_API_SECRET,
+        'SECURE': True,
+    }
+    # Configure underlying cloudinary SDK with the exact same credentials
+    import cloudinary
+    cloudinary.config(
+        cloud_name=CLOUDINARY_CLOUD_NAME,
+        api_key=CLOUDINARY_API_KEY,
+        api_secret=CLOUDINARY_API_SECRET,
+        secure=True,
+    )
+    STORAGES = {
+        "default": {
+            "BACKEND": "apps.core.storage.CareerCatalystMediaCloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+    }
+    if 'cloudinary' not in INSTALLED_APPS:
+        INSTALLED_APPS += ['cloudinary', 'cloudinary_storage']
+elif IS_RENDER and not IS_TESTING:
+    raise ImproperlyConfigured(
+        "Production deployment on Render detected, but valid Cloudinary credentials "
+        "(CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) "
+        "are missing or malformed. Persistent cloud media storage must be configured to prevent "
+        "profile pictures and user uploads from disappearing on container restarts."
+    )
+else:
+    # Local development or testing without Cloudinary credentials:
+    # Use standard local FileSystemStorage. No placeholder credentials are used.
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+    }
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

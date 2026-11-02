@@ -99,9 +99,9 @@
                                                 <i class="bi bi-file-earmark-person me-1"></i> {{ item.resume.title }}
                                             </a>
                                         {% elif item.uploaded_file %}
-                                            <span class="badge bg-info bg-opacity-10 text-info px-2.5 py-1.5 rounded-pill">
-                                                <i class="bi bi-upload me-1"></i> File Upload
-                                            </span>
+                                            <a href="{% url 'ai_resume:download_file' item.pk %}" class="badge bg-info bg-opacity-10 text-info text-decoration-none px-2.5 py-1.5 rounded-pill" title="Download Uploaded Resume">
+                                                <i class="bi bi-download me-1"></i> File Upload
+                                            </a>
                                         {% else %}
                                             <span class="badge bg-secondary bg-opacity-10 text-secondary px-2.5 py-1.5 rounded-pill">
                                                 <i class="bi bi-clipboard-data me-1"></i> Pasted Text

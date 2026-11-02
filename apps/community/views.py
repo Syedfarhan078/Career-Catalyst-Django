@@ -3,16 +3,17 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, TemplateView
-from django.http import JsonResponse, HttpResponseForbidden, Http404
+from django.http import JsonResponse, HttpResponseForbidden, Http404, FileResponse
 from django.contrib import messages
 from django.db.models import Count, Q, Avg
 from django.urls import reverse
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
 from django.conf import settings
 from django.utils import timezone
 from functools import wraps
 from datetime import datetime, date, timedelta
 import json
+import os
 
 from .models import (
     ForumCategory, ForumThread, ForumReply, SharedProject, ProjectLike, 
@@ -1049,6 +1050,37 @@ def admin_action_mentor(request, pk, action):
     review_mentor_application_service(profile, action, request.user)
     messages.success(request, f"Mentor '{profile.full_name}' status set to {profile.status}.")
     return redirect('community:admin_verify')
+
+
+@login_required
+def admin_mentor_resume_download(request, pk):
+    """
+    Staff-only endpoint to securely download or preview a candidate mentor's verification CV.
+    Rejects non-staff, non-superuser, and anonymous requests with HTTP 403 Forbidden.
+    """
+    if not request.user.is_staff and not request.user.is_superuser:
+        return HttpResponseForbidden("Access Denied: Staff authorization required to view mentor CVs.")
+
+    mentor = get_object_or_404(MentorProfile, pk=pk)
+    if not mentor.resume:
+        raise Http404("No resume on file for this mentor.")
+
+    file_field = mentor.resume
+    storage = file_field.storage
+
+    if hasattr(storage, 'generate_expiring_url'):
+        redirect_url = storage.generate_expiring_url(file_field.name, expires_in=300)
+        return redirect(redirect_url)
+    elif hasattr(storage, 'get_private_url'):
+        redirect_url = storage.get_private_url(file_field.name, expires_in=300)
+        return redirect(redirect_url)
+    else:
+        try:
+            f = file_field.open('rb')
+            filename = os.path.basename(file_field.name)
+            return FileResponse(f, as_attachment=False, filename=filename)
+        except (FileNotFoundError, OSError):
+            raise Http404("The requested mentor CV is missing from storage.")
 
 
 # --- INTER CONVERSATION CHAT PORTAL ---

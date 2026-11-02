@@ -103,6 +103,11 @@
                     </div>
 
                     <div class="d-flex align-items-center gap-2 flex-wrap">
+                        {% if analysis.uploaded_file %}
+                        <a href="{% url 'ai_resume:download_file' analysis.pk %}" class="dash-btn dash-btn-outline dash-btn-sm" title="Download Uploaded Resume File">
+                            <i class="bi bi-download me-1"></i> Download File
+                        </a>
+                        {% endif %}
                         <a href="{% url 'ai_resume:analyze' %}" class="dash-btn dash-btn-secondary dash-btn-sm">
                             <i class="bi bi-arrow-repeat me-1"></i> New Scan
                         </a>

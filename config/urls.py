@@ -40,5 +40,9 @@ urlpatterns = [
     path("tracker/", include("apps.tracker.urls")),
     path("notifications/", include("apps.notifications.urls")),
     path("", include("apps.core.urls")),
-    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ]
+
+if settings.DEBUG or not getattr(settings, 'has_cloudinary_creds', False):
+    urlpatterns.append(
+        re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT})
+    )

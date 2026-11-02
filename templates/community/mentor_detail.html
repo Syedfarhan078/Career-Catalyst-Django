@@ -224,12 +224,6 @@
                             {% endif %}
                         </div>
 
-                        {% if mentor.resume %}
-                        <a href="{{ mentor.resume.url }}" target="_blank" rel="noopener noreferrer" class="dash-btn dash-btn-outline dash-btn-sm w-100 mb-3">
-                            <i class="bi bi-file-earmark-pdf me-1"></i> View Resume PDF
-                        </a>
-                        {% endif %}
-
                         <!-- Booking Action Buttons -->
                         {% if active_workspace == 'mentor' %}
                             {% if mentor.user == request.user %}

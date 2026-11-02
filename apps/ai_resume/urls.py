@@ -7,5 +7,6 @@ urlpatterns = [
     path('', views.AnalysisHistoryView.as_view(), name='history'),
     path('analyze/', views.AnalyzeResumeView.as_view(), name='analyze'),
     path('analysis/<int:pk>/', views.AnalysisDetailView.as_view(), name='detail'),
+    path('analysis/<int:pk>/download/', views.download_resume_file, name='download_file'),
     path('analysis/<int:pk>/enhance-ai/', views.api_enhance_ai, name='api_enhance_ai'),
 ]

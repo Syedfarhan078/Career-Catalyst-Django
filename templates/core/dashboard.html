@@ -35,6 +35,9 @@
                 {% if profile.profile_picture %}
                     <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <span class="dash-avatar-initials" style="display: none; font-size: 0.7rem;">{{ user_initials }}</span>
+                {% elif user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="dash-avatar-initials" style="display: none; font-size: 0.7rem;">{{ user_initials }}</span>
                 {% else %}
                     <span class="dash-avatar-initials" style="font-size: 0.7rem;">{{ user_initials }}</span>
                 {% endif %}

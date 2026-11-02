@@ -107,7 +107,12 @@ def profile_view(request):
     if request.method == 'POST':
         form = UserProfileForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
-            form.save()
+            updated_user = form.save()
+            if 'profile_picture' in request.FILES and updated_user.profile_picture:
+                if hasattr(updated_user, 'studentprofile'):
+                    student_prof = updated_user.studentprofile
+                    student_prof.profile_picture = updated_user.profile_picture
+                    student_prof.save(update_fields=['profile_picture'])
             messages.success(request, "Your profile has been updated successfully!")
             return redirect(f"{reverse_lazy('profile_edit')}?tab=account")
         else:

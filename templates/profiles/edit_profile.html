@@ -152,6 +152,8 @@
                             <div class="position-relative">
                                 {% if user.profile_picture %}
                                     <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" id="accountAvatarPreview" class="settings-avatar-preview">
+                                {% elif profile.profile_picture %}
+                                    <img src="{{ profile.profile_picture.url }}" alt="{{ user.username }}" id="accountAvatarPreview" class="settings-avatar-preview">
                                 {% else %}
                                     <div id="accountAvatarInitials" class="settings-avatar-initials">{{ user_initials }}</div>
                                     <img src="" alt="Preview" id="accountAvatarPreview" class="settings-avatar-preview" style="display: none;">
@@ -272,6 +274,8 @@
                             <div class="position-relative">
                                 {% if profile.profile_picture %}
                                     <img src="{{ profile.profile_picture.url }}" alt="{{ profile.user.username }}" id="studentAvatarPreview" class="settings-avatar-preview">
+                                {% elif user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="{{ profile.user.username }}" id="studentAvatarPreview" class="settings-avatar-preview">
                                 {% else %}
                                     <div id="studentAvatarInitials" class="settings-avatar-initials">{{ user_initials }}</div>
                                     <img src="" alt="Preview" id="studentAvatarPreview" class="settings-avatar-preview" style="display: none;">

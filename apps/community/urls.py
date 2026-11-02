@@ -51,6 +51,7 @@ urlpatterns = [
     
     # Staff / Admin Panel reviews
     path('admin/verify/', views.admin_verification_dashboard, name='admin_verify'),
+    path('admin/verify/<int:pk>/resume/', views.admin_mentor_resume_download, name='admin_mentor_resume'),
     path('admin/verify/<int:pk>/<str:action>/', views.admin_action_mentor, name='admin_action'),
     
     # Direct Chat Console (Bonus Integration)
