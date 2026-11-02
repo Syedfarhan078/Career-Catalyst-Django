@@ -162,6 +162,22 @@ class CustomPasswordResetConfirmView(SuccessMessageMixin, auth_views.PasswordRes
     success_url = reverse_lazy('login')
     success_message = "Your password has been successfully reset. You may now log in with your new password."
 
+OAUTH_SESSION_KEYS = (
+    'oauth_state',
+    'oauth_code_verifier',
+    'oauth_nonce',
+    'oauth_pending_role',
+    'oauth_created_at',
+    'oauth_pending_user',
+)
+
+
+def clear_oauth_session(request):
+    """Safely cleans up all temporary Google OAuth session data without affecting other session keys."""
+    for key in OAUTH_SESSION_KEYS:
+        request.session.pop(key, None)
+
+
 def google_login_view(request):
     """Initiates Google OAuth 2.0 flow with state, PKCE, and optional pending role."""
     if request.user.is_authenticated:
@@ -186,6 +202,7 @@ def google_callback_view(request):
 
     # Handle cancelled or denied consent from Google
     if request.GET.get('error'):
+        clear_oauth_session(request)
         messages.warning(request, 'Google sign-in was cancelled.')
         return redirect('login')
 
@@ -200,15 +217,18 @@ def google_callback_view(request):
 
     # State validation and replay protection
     if not state or not session_state or not secrets.compare_digest(state, session_state):
+        clear_oauth_session(request)
         messages.error(request, 'Invalid or expired session state. Please try signing in again.')
         return redirect('login')
 
     # Expiration check (10 minutes)
     if created_at and (time.time() - created_at > 600):
+        clear_oauth_session(request)
         messages.error(request, 'Authentication session timed out. Please try signing in again.')
         return redirect('login')
 
     if not code or not code_verifier:
+        clear_oauth_session(request)
         messages.error(request, 'Missing authorization code or verifier from Google.')
         return redirect('login')
 
@@ -219,16 +239,19 @@ def google_callback_view(request):
         id_token = tokens['id_token']
         claims = verify_google_id_token(id_token, expected_nonce=session_nonce)
     except ValidationError as e:
+        clear_oauth_session(request)
         msg = e.message if hasattr(e, 'message') else str(e)
         messages.error(request, msg)
         return redirect('login')
     except Exception:
+        clear_oauth_session(request)
         messages.error(request, 'Google authentication verification failed. Please try again.')
         return redirect('login')
 
     status, user, err = authenticate_or_register_google_user(request, claims, role=pending_role)
 
     if status == 'error':
+        clear_oauth_session(request)
         messages.error(request, err or 'Google authentication failed.')
         return redirect('login')
 
@@ -261,12 +284,13 @@ def google_choose_role_view(request):
 
     pending_data = request.session.get('oauth_pending_user')
     if not pending_data:
+        clear_oauth_session(request)
         messages.error(request, 'No pending Google sign-in found. Please sign in again.')
         return redirect('login')
 
     # Expiration check (10 minutes)
     if time.time() - pending_data.get('timestamp', 0) > 600:
-        request.session.pop('oauth_pending_user', None)
+        clear_oauth_session(request)
         messages.error(request, 'Role selection session expired. Please sign in with Google again.')
         return redirect('login')
 
@@ -280,7 +304,7 @@ def google_choose_role_view(request):
             })
 
         status, user, err = authenticate_or_register_google_user(request, pending_data, role=role)
-        request.session.pop('oauth_pending_user', None)
+        clear_oauth_session(request)
 
         if status == 'error':
             messages.error(request, err or 'Account creation failed.')

@@ -291,21 +291,52 @@ def verify_google_id_token(
 
     # Audience check
     token_aud = payload.get("aud")
-    if token_aud != target_client_id:
-        raise ValidationError(f"Invalid ID token audience: {token_aud}")
+    if isinstance(token_aud, list):
+        if target_client_id not in token_aud:
+            raise ValidationError(f"Target client ID not in token audiences: {token_aud}")
+        # Multi-audience token requires valid azp claim per OIDC Core 3.1.3.7
+        azp = payload.get("azp")
+        if not azp or not isinstance(azp, str):
+            raise ValidationError("ID token with multiple audiences missing valid 'azp' claim.")
+        if not secrets.compare_digest(azp, target_client_id):
+            raise ValidationError(f"Invalid ID token authorized party (azp): {azp}")
+    elif isinstance(token_aud, str):
+        if not secrets.compare_digest(token_aud, target_client_id):
+            raise ValidationError(f"Invalid ID token audience: {token_aud}")
+    else:
+        raise ValidationError("Invalid or missing ID token audience.")
+
+    # Explicit azp check if azp claim is present (single or multi-audience)
+    if "azp" in payload:
+        azp = payload.get("azp")
+        if not isinstance(azp, str) or not azp.strip():
+            raise ValidationError("Malformed 'azp' claim in ID token.")
+        if not secrets.compare_digest(azp, target_client_id):
+            raise ValidationError(f"Invalid ID token authorized party (azp): {azp}")
 
     # Expiration check (with 30-second leeway)
     exp = payload.get("exp", 0)
+    if not isinstance(exp, (int, float)):
+        raise ValidationError("Malformed expiration (exp) claim in ID token.")
     if now > exp + 30:
         raise ValidationError("ID token has expired.")
 
     # Issued-at check (with 30-second future leeway)
     iat = payload.get("iat", 0)
+    if not isinstance(iat, (int, float)):
+        raise ValidationError("Malformed issued-at (iat) claim in ID token.")
     if iat > now + 30:
         raise ValidationError("ID token issued at a future date.")
 
-    # Nonce check
-    if expected_nonce and payload.get("nonce") != expected_nonce:
+    # Nonce check (Must fail closed)
+    if not expected_nonce or not isinstance(expected_nonce, str) or not expected_nonce.strip():
+        raise ValidationError("Missing or empty expected nonce for ID token verification.")
+
+    token_nonce = payload.get("nonce")
+    if not token_nonce or not isinstance(token_nonce, str):
+        raise ValidationError("ID token missing nonce claim.")
+
+    if not secrets.compare_digest(token_nonce, expected_nonce):
         raise ValidationError("ID token nonce does not match session nonce.")
 
     # Subject check
@@ -405,23 +436,24 @@ def authenticate_or_register_google_user(
         user = identity.user
         # Account eligibility checks
         if not user.is_active:
-            # Check for incomplete registration OTP
-            unexpired_otp = (
-                EmailOTP.objects.filter(user=user, is_verified=False)
-                .order_by("-created_at")
-                .first()
-            )
-            if unexpired_otp and not unexpired_otp.is_expired():
-                # Legitimate incomplete signup recovered via verified Google identity
-                user.is_active = True
-                user.save(update_fields=["is_active"])
-                EmailOTP.objects.filter(user=user).delete()
-            else:
-                return (
-                    "error",
-                    None,
-                    "This account has been deactivated. Please contact support for assistance.",
+            with transaction.atomic():
+                # Check for incomplete registration OTP
+                unexpired_otp = (
+                    EmailOTP.objects.filter(user=user, is_verified=False)
+                    .order_by("-created_at")
+                    .first()
                 )
+                if unexpired_otp and not unexpired_otp.is_expired():
+                    # Legitimate incomplete signup recovered via verified Google identity
+                    user.is_active = True
+                    user.save(update_fields=["is_active"])
+                    EmailOTP.objects.filter(user=user).delete()
+                else:
+                    return (
+                        "error",
+                        None,
+                        "This account has been deactivated. Please contact support for assistance.",
+                    )
 
         user.backend = "django.contrib.auth.backends.ModelBackend"
         login(request, user)
@@ -447,25 +479,7 @@ def authenticate_or_register_google_user(
     if count == 1:
         user = matching_users.first()
 
-        # Account activation check
-        if not user.is_active:
-            unexpired_otp = (
-                EmailOTP.objects.filter(user=user, is_verified=False)
-                .order_by("-created_at")
-                .first()
-            )
-            if unexpired_otp and not unexpired_otp.is_expired():
-                user.is_active = True
-                user.save(update_fields=["is_active"])
-                EmailOTP.objects.filter(user=user).delete()
-            else:
-                return (
-                    "error",
-                    None,
-                    "This account has been deactivated. Please contact support for assistance.",
-                )
-
-        # Link GoogleIdentity atomically
+        # Atomic account activation and GoogleIdentity linking
         with transaction.atomic():
             # Ensure user does not already have a different google identity
             if GoogleIdentity.objects.filter(user=user, provider="google").exists():
@@ -480,6 +494,24 @@ def authenticate_or_register_google_user(
                     None,
                     "This Google account is already linked to another user.",
                 )
+
+            # Account activation check inside the atomic transaction
+            if not user.is_active:
+                unexpired_otp = (
+                    EmailOTP.objects.filter(user=user, is_verified=False)
+                    .order_by("-created_at")
+                    .first()
+                )
+                if unexpired_otp and not unexpired_otp.is_expired():
+                    user.is_active = True
+                    user.save(update_fields=["is_active"])
+                    EmailOTP.objects.filter(user=user).delete()
+                else:
+                    return (
+                        "error",
+                        None,
+                        "This account has been deactivated. Please contact support for assistance.",
+                    )
 
             GoogleIdentity.objects.create(
                 user=user,

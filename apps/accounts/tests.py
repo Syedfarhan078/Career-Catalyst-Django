@@ -1341,3 +1341,145 @@ class GoogleOAuthAndIdentityTests(TestCase):
         mentor = User.objects.create_user(username='reg56_m', email='r56m@example.com', role='mentor')
         self.assertEqual(get_role_based_redirect_url(student), reverse('profile_create'))
         self.assertEqual(get_role_based_redirect_url(mentor), reverse('community:mentor_register'))
+
+    # -------------------------------------------------------------
+    # Phase 2 Security Hardening Tests (Nonce, Cleanup, Atomicity, azp)
+    # -------------------------------------------------------------
+    def test_hardening_missing_expected_nonce_fails_closed(self):
+        token = self._create_signed_id_token()
+        with self.assertRaises(ValidationError) as ctx:
+            verify_google_id_token(token, expected_nonce=None, jwks_keys=self.jwks)
+        self.assertIn("Missing or empty expected nonce", str(ctx.exception))
+
+    def test_hardening_empty_expected_nonce_fails_closed(self):
+        token = self._create_signed_id_token()
+        with self.assertRaises(ValidationError) as ctx:
+            verify_google_id_token(token, expected_nonce="", jwks_keys=self.jwks)
+        self.assertIn("Missing or empty expected nonce", str(ctx.exception))
+
+    def test_hardening_missing_token_nonce_fails_closed(self):
+        token = self._create_signed_id_token(claims_override={"nonce": None})
+        with self.assertRaises(ValidationError) as ctx:
+            verify_google_id_token(token, expected_nonce="test_nonce_val_123", jwks_keys=self.jwks)
+        self.assertIn("missing nonce claim", str(ctx.exception))
+
+    def test_hardening_nonce_matching_accepted(self):
+        token = self._create_signed_id_token(claims_override={"nonce": "exact_matching_nonce"})
+        payload = verify_google_id_token(token, expected_nonce="exact_matching_nonce", jwks_keys=self.jwks)
+        self.assertEqual(payload["nonce"], "exact_matching_nonce")
+
+    def test_hardening_cancellation_clears_all_oauth_session_keys(self):
+        client = Client()
+        session = client.session
+        session["oauth_state"] = "state_cancel_test"
+        session["oauth_code_verifier"] = "verifier_cancel_test"
+        session["oauth_nonce"] = "nonce_cancel_test"
+        session["oauth_pending_role"] = "student"
+        session["oauth_created_at"] = time.time()
+        session["oauth_pending_user"] = {"sub": "cancel_sub"}
+        session["unrelated_custom_key"] = "preserve_me_123"
+        session.save()
+
+        response = client.get(reverse("google_callback"), {"error": "access_denied"})
+        self.assertRedirects(response, reverse("login"))
+
+        # Re-fetch session
+        updated_session = client.session
+        oauth_keys = [
+            "oauth_state",
+            "oauth_code_verifier",
+            "oauth_nonce",
+            "oauth_pending_role",
+            "oauth_created_at",
+            "oauth_pending_user",
+        ]
+        for key in oauth_keys:
+            self.assertNotIn(key, updated_session, f"Key {key} was not cleared on cancellation")
+        self.assertEqual(updated_session.get("unrelated_custom_key"), "preserve_me_123")
+
+    def test_hardening_failed_callback_clears_stale_session_data(self):
+        client = Client()
+        session = client.session
+        session["oauth_state"] = "valid_state"
+        session["oauth_code_verifier"] = "valid_verifier"
+        session["oauth_nonce"] = "valid_nonce"
+        session["oauth_pending_role"] = "mentor"
+        session.save()
+
+        # Trigger state mismatch failure
+        response = client.get(reverse("google_callback"), {"code": "c", "state": "invalid_state"})
+        self.assertRedirects(response, reverse("login"))
+
+        updated_session = client.session
+        self.assertNotIn("oauth_pending_role", updated_session)
+        self.assertNotIn("oauth_code_verifier", updated_session)
+        self.assertNotIn("oauth_nonce", updated_session)
+
+    def test_hardening_atomic_otp_activation_success(self):
+        user = User.objects.create_user(username="atomic_ok", email="atomic_ok@example.com", is_active=False)
+        EmailOTP.objects.create(user=user, otp_hash=make_password("998877"))
+        req = self._get_mock_request()
+        data = {"sub": "sub_atomic_ok", "email": "atomic_ok@example.com"}
+
+        status, logged_in, err = authenticate_or_register_google_user(req, data)
+        self.assertEqual(status, "authenticated")
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertEqual(EmailOTP.objects.filter(user=user).count(), 0)
+        self.assertTrue(GoogleIdentity.objects.filter(user=user, provider_user_id="sub_atomic_ok").exists())
+
+    def test_hardening_atomic_otp_activation_rollback_on_identity_creation_error(self):
+        user = User.objects.create_user(username="atomic_fail", email="atomic_fail@example.com", is_active=False)
+        otp = EmailOTP.objects.create(user=user, otp_hash=make_password("998877"))
+        req = self._get_mock_request()
+        data = {"sub": "sub_atomic_fail", "email": "atomic_fail@example.com"}
+
+        with patch.object(GoogleIdentity.objects, "create", side_effect=IntegrityError("DB collision")):
+            with self.assertRaises(IntegrityError):
+                authenticate_or_register_google_user(req, data)
+
+        user.refresh_from_db()
+        # Ensure user.is_active remained False (rolled back)
+        self.assertFalse(user.is_active)
+        # Ensure EmailOTP was NOT deleted (rolled back)
+        self.assertTrue(EmailOTP.objects.filter(user=user).exists())
+        self.assertFalse(GoogleIdentity.objects.filter(provider_user_id="sub_atomic_fail").exists())
+
+    def test_hardening_azp_correct_accepted(self):
+        token = self._create_signed_id_token(claims_override={"azp": "test_client_id_123"})
+        payload = verify_google_id_token(token, expected_nonce="test_nonce_val_123", jwks_keys=self.jwks)
+        self.assertEqual(payload.get("azp"), "test_client_id_123")
+
+    def test_hardening_azp_incorrect_rejected(self):
+        token = self._create_signed_id_token(claims_override={"azp": "unauthorized_client_xyz"})
+        with self.assertRaises(ValidationError) as ctx:
+            verify_google_id_token(token, expected_nonce="test_nonce_val_123", jwks_keys=self.jwks)
+        self.assertIn("authorized party (azp)", str(ctx.exception))
+
+    def test_hardening_azp_malformed_rejected(self):
+        token = self._create_signed_id_token(claims_override={"azp": 123456})
+        with self.assertRaises(ValidationError) as ctx:
+            verify_google_id_token(token, expected_nonce="test_nonce_val_123", jwks_keys=self.jwks)
+        self.assertIn("Malformed 'azp' claim", str(ctx.exception))
+
+    def test_hardening_azp_multi_audience_valid_accepted(self):
+        token = self._create_signed_id_token(claims_override={
+            "aud": ["test_client_id_123", "secondary_aud_456"],
+            "azp": "test_client_id_123"
+        })
+        payload = verify_google_id_token(token, expected_nonce="test_nonce_val_123", jwks_keys=self.jwks)
+        self.assertEqual(payload.get("azp"), "test_client_id_123")
+
+    def test_hardening_azp_multi_audience_missing_azp_rejected(self):
+        token = self._create_signed_id_token(claims_override={
+            "aud": ["test_client_id_123", "secondary_aud_456"],
+        })
+        with self.assertRaises(ValidationError) as ctx:
+            verify_google_id_token(token, expected_nonce="test_nonce_val_123", jwks_keys=self.jwks)
+        self.assertIn("missing valid 'azp' claim", str(ctx.exception))
+
+    def test_hardening_azp_single_audience_without_azp_accepted(self):
+        token = self._create_signed_id_token(claims_override={"aud": "test_client_id_123"})
+        payload = verify_google_id_token(token, expected_nonce="test_nonce_val_123", jwks_keys=self.jwks)
+        self.assertEqual(payload.get("aud"), "test_client_id_123")
+
