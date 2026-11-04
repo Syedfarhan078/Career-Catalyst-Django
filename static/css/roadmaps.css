@@ -903,7 +903,29 @@
     text-align: center;
 }
 
-.roadmap-modal-icon {
+.roadmap-modal-icon,
+.roadmap-milestone-seal {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--dash-primary-subtle);
+    border: 1.5px solid var(--dash-primary-border);
+    color: var(--dash-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin-bottom: 0.85rem;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.roadmap-milestone-seal.completed {
+    background-color: var(--dash-success-subtle);
+    border-color: var(--dash-success-border);
+    color: var(--dash-success);
+}
+
+.roadmap-modal-icon-legacy {
     width: 56px;
     height: 56px;
     border-radius: 50%;

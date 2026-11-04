@@ -113,7 +113,7 @@
                         </a>
                         {% if not analysis.ai_enhanced %}
                         <button type="button" id="btnEnhanceAiTop" class="dash-btn dash-btn-primary dash-btn-sm" onclick="triggerAiEnhancement()">
-                            <i class="bi bi-stars me-1"></i> ⚡ Enhance with AI
+                            <i class="bi bi-stars me-1"></i> Enhance with AI
                         </button>
                         {% endif %}
                     </div>
@@ -253,7 +253,7 @@
                         </p>
                     </div>
                     <button type="button" id="btnEnhanceAi" class="dash-btn dash-btn-primary px-4 py-2 text-nowrap" onclick="triggerAiEnhancement()">
-                        <i class="bi bi-stars me-1"></i> ⚡ Enhance with AI
+                        <i class="bi bi-stars me-1"></i> Enhance with AI
                     </button>
                 </div>
             </div>
@@ -405,13 +405,13 @@
                         <div class="text-muted small fw-semibold mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px; text-transform: uppercase;">Contact & Profiles Verification:</div>
                         <div class="d-flex flex-wrap gap-2">
                             <span class="badge {% if contact_info.email %}bg-success bg-opacity-10 text-success{% else %}bg-danger bg-opacity-10 text-danger{% endif %} rounded-pill px-2.5 py-1 small">
-                                Email {% if contact_info.email %}✓{% else %}✗{% endif %}
+                                Email {% if contact_info.email %}<i class="bi bi-check-lg ms-0.5"></i>{% else %}<i class="bi bi-x-lg ms-0.5"></i>{% endif %}
                             </span>
                             <span class="badge {% if contact_info.phone %}bg-success bg-opacity-10 text-success{% else %}bg-danger bg-opacity-10 text-danger{% endif %} rounded-pill px-2.5 py-1 small">
-                                Phone {% if contact_info.phone %}✓{% else %}✗{% endif %}
+                                Phone {% if contact_info.phone %}<i class="bi bi-check-lg ms-0.5"></i>{% else %}<i class="bi bi-x-lg ms-0.5"></i>{% endif %}
                             </span>
                             <span class="badge {% if contact_info.links %}bg-success bg-opacity-10 text-success{% else %}bg-secondary bg-opacity-10 text-muted{% endif %} rounded-pill px-2.5 py-1 small">
-                                Profiles (LinkedIn/GitHub) {% if contact_info.links %}✓{% else %}✗{% endif %}
+                                Profiles (LinkedIn/GitHub) {% if contact_info.links %}<i class="bi bi-check-lg ms-0.5"></i>{% else %}<i class="bi bi-x-lg ms-0.5"></i>{% endif %}
                             </span>
                         </div>
                     </div>
@@ -589,13 +589,13 @@ function triggerAiEnhancement() {
             const container = document.getElementById('aiInsightsContainer');
             if (container) container.classList.remove('d-none');
         } else {
-            setButtons('<i class="bi bi-stars me-1"></i> ⚡ Enhance with AI', false);
+            setButtons('<i class="bi bi-stars me-1"></i> Enhance with AI', false);
             alert(data.message || 'AI service running in offline mode.');
         }
     })
     .catch(err => {
         console.error(err);
-        setButtons('<i class="bi bi-stars me-1"></i> ⚡ Enhance with AI', false);
+        setButtons('<i class="bi bi-stars me-1"></i> Enhance with AI', false);
         alert('Failed to contact AI service.');
     });
 }
