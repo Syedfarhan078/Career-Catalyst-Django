@@ -1,11 +1,86 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}CareerCatalyst — Learn. Build. Innovate. | Career Development Platform{% endblock %}
+{% block title %}CareerCatalyst — Tech Career Roadmaps for Engineering Students, Freshers & Graduates{% endblock %}
 {% block robots %}<meta name="robots" content="index, follow">{% endblock %}
-{% block meta_description %}CareerCatalyst is an AI-assisted career development platform for engineering students and fresh graduates. Master structured 12-week learning roadmaps, benchmark resumes with ATS scoring, practice proctored interviews, and track applications in one focused workspace.{% endblock %}
-{% block og_title %}CareerCatalyst — Learn. Build. Innovate.{% endblock %}
-{% block og_description %}Structured career development platform for engineers. Master 12-week learning roadmaps, benchmark your resume with ATS scoring, and practice mock interviews.{% endblock %}
+{% block meta_description %}CareerCatalyst provides free, structured tech career roadmaps for engineering students, fresh graduates, and freshers. Explore 15+ week-by-week learning paths (Software Engineering, Full Stack, Data Science, AI/ML, DevOps), ATS resume checker, and mock interview prep.{% endblock %}
+{% block meta_keywords %}career catalyst roadmaps, career catalyst, tech career roadmaps, engineering roadmaps, software engineer roadmap for freshers, computer science roadmap, college students tech roadmaps, fresher developer roadmap, btech placement roadmap, full stack developer roadmap, data scientist roadmap, devops roadmap, machine learning curriculum{% endblock %}
+{% block og_title %}CareerCatalyst — Tech Career Roadmaps for Engineering Students, Freshers & Graduates{% endblock %}
+{% block og_description %}Explore 15+ structured engineering learning roadmaps, ATS resume scoring, and mock interview preparation designed for college students, freshers, and early-career engineers.{% endblock %}
+
+{% block schema_markup %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "CareerCatalyst",
+      "alternateName": ["Career Catalyst", "Career Catalyst Roadmaps", "CareerCatalyst Roadmaps"],
+      "url": "{{ CANONICAL_ORIGIN }}/",
+      "description": "Free tech career roadmaps and placement preparation platform for engineering students, fresh graduates, and freshers."
+    },
+    {
+      "@type": "Organization",
+      "name": "CareerCatalyst",
+      "alternateName": "Career Catalyst",
+      "url": "{{ CANONICAL_ORIGIN }}/",
+      "logo": "{{ CANONICAL_ORIGIN }}{% static 'images/logo.png' %}"
+    },
+    {
+      "@type": "WebApplication",
+      "name": "CareerCatalyst",
+      "url": "{{ CANONICAL_ORIGIN }}/",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "All",
+      "description": "AI-assisted career development platform featuring structured engineering learning roadmaps, ATS resume analysis, mock interview preparation, and job application tracking for students and freshers.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is CareerCatalyst and who is it for?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "CareerCatalyst is a free career development platform built for engineering students, fresh graduates, and tech freshers. It unifies curated week-by-week learning roadmaps, ATS resume scoring, technical interview preparation, and application tracking into one structured workspace."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are CareerCatalyst learning roadmaps free?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, CareerCatalyst is completely free. All 15+ engineering career roadmaps, weekly syllabus milestones, official documentation links, and verification checkpoints are 100% accessible with no paywalls or subscription fees."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which tech career roadmaps are available on CareerCatalyst?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "CareerCatalyst offers 15 curated technical tracks including Software Engineer, Full Stack Developer, Frontend Developer, Backend Developer, Data Scientist, Machine Learning Engineer, DevOps Engineer, Cloud Architect, Cybersecurity Analyst, and AI Research Scientist."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does CareerCatalyst help freshers and college students get software jobs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "College students and freshers follow step-by-step milestone roadmaps, benchmark their resumes against ATS applicant tracking standards, practice proctored technical and coding interview challenges, and organize their campus placement applications."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+{% endblock %}
 {% block body_class %}home-page{% endblock %}
 
 {% block extra_css %}

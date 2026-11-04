@@ -55,7 +55,7 @@
                         <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% if request.resolver_match.url_name == 'home' %}#roadmaps{% else %}{% url 'home' %}#roadmaps{% endif %}">Roadmaps</a>
+                        <a class="nav-link {% if '/roadmaps/' in request.path or request.resolver_match.url_name == 'path_list' or request.resolver_match.url_name == 'path_detail' %}active{% endif %}" href="{% url 'roadmaps:path_list' %}">Roadmaps</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if '/career-guides/' in request.path or request.resolver_match.url_name == 'guide_list' or request.resolver_match.url_name == 'guide_detail' %}active{% endif %}" href="{% url 'guide_list' %}">Career Guides</a>

@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ path.name }} Learning Roadmap & Curriculum | CareerCatalyst{% endblock %}
-{% block meta_description %}Master {{ path.name }} with a structured {{ path.estimated_weeks }}-week learning roadmap. Complete milestones, study open documentation, earn verified skills, and obtain a verifiable certificate.{% endblock %}
-{% block meta_keywords %}{{ path.name|lower }} roadmap, {{ path.name|lower }} curriculum, learn {{ path.name|lower }}, engineering syllabus, tech career track, milestone curriculum{% endblock %}
+{% block title %}{{ path.name }} Roadmap for Freshers & Students (2026 Guide) | CareerCatalyst{% endblock %}
+{% block meta_description %}Complete step-by-step {{ path.name }} roadmap for engineering students, fresh graduates, and freshers. Master {{ path.difficulty|lower }}-level skills in {{ path.estimated_weeks }} weeks with curated tutorials, project milestones, and career guidance on CareerCatalyst.{% endblock %}
+{% block meta_keywords %}{{ path.name|lower }} roadmap for freshers, {{ path.name|lower }} roadmap 2026, learn {{ path.name|lower }} from scratch, {{ path.name|lower }} engineering syllabus, tech career roadmaps, career catalyst roadmaps{% endblock %}
 
 {% block robots %}
 <meta name="robots" content="index, follow">
@@ -15,15 +15,15 @@
 
 {% block extra_meta %}
 <!-- Open Graph / Social Sharing -->
-<meta property="og:title" content="{{ path.name }} Learning Roadmap & Curriculum | CareerCatalyst">
-<meta property="og:description" content="Master {{ path.name }} with a structured {{ path.estimated_weeks }}-week learning roadmap. Complete milestones and study curated resources.">
+<meta property="og:title" content="{{ path.name }} Roadmap for Freshers & Students (2026 Guide) | CareerCatalyst">
+<meta property="og:description" content="Master {{ path.name }} with a structured {{ path.estimated_weeks }}-week learning roadmap designed for engineering students and freshers. Complete milestones and build verifiable skills.">
 <meta property="og:url" content="{{ CANONICAL_ORIGIN }}{% url 'roadmaps:path_detail' path.slug %}">
 <meta property="og:type" content="article">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{{ path.name }} Learning Roadmap & Curriculum | CareerCatalyst">
-<meta name="twitter:description" content="Master {{ path.name }} with a structured {{ path.estimated_weeks }}-week learning roadmap.">
+<meta name="twitter:title" content="{{ path.name }} Roadmap for Freshers & Students (2026 Guide) | CareerCatalyst">
+<meta name="twitter:description" content="Master {{ path.name }} with a structured {{ path.estimated_weeks }}-week learning roadmap for engineering students and freshers.">
 
 <!-- Structured Data: BreadcrumbList + Course -->
 <script type="application/ld+json">
@@ -202,6 +202,9 @@
                             {{ path.difficulty }} Level
                         </span>
                         <span class="badge bg-light text-muted border px-2 py-1">
+                            <i class="bi bi-mortarboard me-1"></i>Freshers &amp; Students
+                        </span>
+                        <span class="badge bg-light text-muted border px-2 py-1">
                             <i class="bi bi-clock me-1"></i>{{ path.estimated_weeks }} Weeks Syllabus
                         </span>
                         <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
@@ -213,9 +216,9 @@
                     </div>
 
                     <!-- Title & Description -->
-                    <h1 class="display-6 fw-bold text-dark mb-3">{{ path.name }} Roadmap</h1>
+                    <h1 class="display-6 fw-bold text-dark mb-3">{{ path.name }} Roadmap for Freshers &amp; Students</h1>
                     <p class="lead text-muted mb-4" style="line-height: 1.6; font-size: 1.05rem;">
-                        {{ path.description }}
+                        Part of the official <strong>Career Catalyst Roadmaps</strong> series. {{ path.description }} Structured curriculum for engineering students, fresh graduates, and tech freshers preparing for software developer placements.
                     </p>
 
                     <!-- Enrollment & CTA States -->
