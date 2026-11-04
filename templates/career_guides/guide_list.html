@@ -50,7 +50,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/career_guides.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/career_guides.css' %}?v=1.2">
 {% endblock %}
 
 {% block main_wrapper %}
@@ -61,104 +61,239 @@
             <!-- Breadcrumbs -->
             <nav aria-label="breadcrumb" class="guides-breadcrumb">
                 <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-decoration-none text-muted">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
                     <li class="breadcrumb-item active text-body fw-semibold" aria-current="page">Career Guides</li>
                 </ol>
             </nav>
 
             <div class="row align-items-center g-4">
                 <div class="col-lg-8">
-                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 small fw-semibold mb-3">
-                        <i class="bi bi-compass"></i>
-                        <span>Career Knowledge Hub</span>
+                    <div class="guides-kicker">
+                        <i class="bi bi-journal-code"></i>
+                        <span>Engineering Editorial Hub &bull; Technical Guides</span>
                     </div>
-                    <h1 class="display-6 fw-bold text-body mb-3">Career Guides for Engineering Students & Graduates</h1>
-                    <p class="lead text-muted fs-6 mb-0" style="max-width: 680px;">
+                    <h1 class="guides-hero-title">Career Guides for Engineering Students & Graduates</h1>
+                    <p class="guides-hero-lead mb-0">
                         Practical, in-depth tech career guides and learning paths designed to help engineering students, freshers, and college graduates master in-demand technical skills, build industry-ready portfolios, and crack campus placement interviews.
                     </p>
                 </div>
                 <div class="col-lg-4 text-lg-end">
-                    <a href="{% url 'roadmaps:path_list' %}" class="btn btn-outline-primary rounded-pill px-4 py-2">
-                        <i class="bi bi-map me-1"></i> Browse All Roadmaps
+                    <a href="{% url 'roadmaps:path_list' %}" class="btn btn-outline-primary px-4 py-2.5">
+                        <i class="bi bi-map me-1.5"></i> Browse All Roadmaps
                     </a>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Guides Grid Section -->
+    <!-- Main Content Hub -->
     <section class="container px-3 py-5">
-        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-            <div>
-                <h2 class="h5 fw-bold text-body mb-1">Featured Career Guides</h2>
-                <p class="text-muted small mb-0">Explore our comprehensive editorial guides covering career tracks, skills, and preparation.</p>
-            </div>
-            <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">
-                {{ total_guides_count }} Comprehensive Guides
-            </span>
+        <!-- Interactive Category Filter Bar -->
+        <div class="guide-filter-bar" id="categoryFilterBar">
+            <button class="guide-filter-btn active" data-filter="all">
+                <i class="bi bi-grid-fill"></i>
+                <span>All Guides ({{ total_guides_count }})</span>
+            </button>
+            <button class="guide-filter-btn" data-filter="Career Roadmaps">
+                <i class="bi bi-signpost-split"></i>
+                <span>Career Roadmaps</span>
+            </button>
+            <button class="guide-filter-btn" data-filter="Career Comparisons">
+                <i class="bi bi-layout-split"></i>
+                <span>Role Comparisons</span>
+            </button>
+            <button class="guide-filter-btn" data-filter="Engineering Fundamentals">
+                <i class="bi bi-cpu"></i>
+                <span>Fundamentals</span>
+            </button>
+            <button class="guide-filter-btn" data-filter="Portfolio & Resumes">
+                <i class="bi bi-briefcase"></i>
+                <span>Portfolio & Resumes</span>
+            </button>
+            <button class="guide-filter-btn" data-filter="Interview Preparation">
+                <i class="bi bi-patch-question"></i>
+                <span>Interview Prep</span>
+            </button>
         </div>
 
         {% if guides %}
-        <div class="guide-card-grid">
-            {% for g in guides %}
-            <article class="guide-card">
-                <div>
-                    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                        {% if g.category == 'Career Roadmaps' %}
-                            <span class="guide-badge guide-badge-roadmaps">{{ g.category }}</span>
-                        {% elif g.category == 'Career Comparisons' %}
-                            <span class="guide-badge guide-badge-comparisons">{{ g.category }}</span>
-                        {% elif g.category == 'Engineering Fundamentals' %}
-                            <span class="guide-badge guide-badge-fundamentals">{{ g.category }}</span>
-                        {% elif g.category == 'Portfolio & Resumes' %}
-                            <span class="guide-badge guide-badge-portfolio">{{ g.category }}</span>
-                        {% elif g.category == 'Interview Preparation' %}
-                            <span class="guide-badge guide-badge-interview">{{ g.category }}</span>
-                        {% else %}
-                            <span class="guide-badge guide-badge-roadmaps">{{ g.category }}</span>
-                        {% endif %}
-                        <span class="guide-read-time"><i class="bi bi-clock me-1"></i>{{ g.reading_time }}</span>
+            <!-- A. FEATURED EDITORIAL GUIDE (First Guide) -->
+            {% with feat=guides.0 %}
+            <div class="guide-item-container mb-4" data-category="{{ feat.category }}">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-uppercase small fw-bold text-muted" style="letter-spacing: 0.05em;">Featured Editorial Guide</span>
+                    <span class="badge bg-light text-secondary border px-2.5 py-1">Deep Dive Curriculum</span>
+                </div>
+                <article class="guide-featured-card">
+                    <div class="featured-card-content">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                                <span class="guide-badge guide-badge-roadmaps">{{ feat.category }}</span>
+                                <span class="badge bg-light text-secondary border px-2.5 py-1">
+                                    <i class="bi bi-people me-1"></i>{{ feat.target_audience }}
+                                </span>
+                            </div>
+
+                            <h2 class="featured-title">
+                                <a href="{% url 'guide_detail' feat.slug %}">{{ feat.title }}</a>
+                            </h2>
+
+                            <p class="featured-excerpt">{{ feat.excerpt }}</p>
+
+                            <div class="featured-meta-row">
+                                <span><i class="bi bi-person-circle me-1"></i>{{ feat.author.name }}</span>
+                                <span><i class="bi bi-clock me-1"></i>{{ feat.reading_time }}</span>
+                                <span><i class="bi bi-calendar3 me-1"></i>Updated {{ feat.modified_date|slice:":10" }}</span>
+                                <span class="text-success"><i class="bi bi-patch-check-fill me-1"></i>Verified Guide</span>
+                            </div>
+                        </div>
+
+                        <div class="featured-actions">
+                            <a href="{% url 'guide_detail' feat.slug %}" class="btn btn-primary px-4 py-2">
+                                <span>Read Full Guide</span>
+                                <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                            <a href="{% url 'roadmaps:path_detail' 'data-scientist' %}" class="btn btn-outline-secondary px-3 py-2">
+                                <i class="bi bi-map me-1"></i> View Interactive Syllabus
+                            </a>
+                        </div>
                     </div>
 
-                    <h3 class="guide-card-title">
-                        <a href="{% url 'guide_detail' g.slug %}">{{ g.title }}</a>
-                    </h3>
+                    <div class="featured-card-aside">
+                        <div>
+                            <div class="aside-title">
+                                <i class="bi bi-list-check text-primary"></i>
+                                <span>Core Curriculum Checkpoints</span>
+                            </div>
+                            <ul class="aside-syllabus-list">
+                                <li class="aside-syllabus-item">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span><strong>Mathematics Foundations:</strong> Linear algebra, multivariable calculus, and hypothesis testing.</span>
+                                </li>
+                                <li class="aside-syllabus-item">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span><strong>Production Tooling:</strong> NumPy, Pandas, Scikit-Learn, and complex SQL data pipelines.</span>
+                                </li>
+                                <li class="aside-syllabus-item">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span><strong>Portfolio Proof:</strong> End-to-end predictive systems evaluated against real industry metrics.</span>
+                                </li>
+                            </ul>
+                        </div>
 
-                    <p class="guide-card-desc">{{ g.excerpt }}</p>
-                </div>
+                        <div class="aside-roadmap-box">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="small fw-semibold text-body">Related Learning Track</span>
+                                <span class="badge bg-primary bg-opacity-10 text-primary small">12 Weeks</span>
+                            </div>
+                            <p class="text-muted small mb-2">Follow the step-by-step topic milestones in our official curriculum sandbox.</p>
+                            <a href="{% url 'roadmaps:path_detail' 'data-scientist' %}" class="small text-primary fw-semibold text-decoration-none">
+                                Start Data Scientist Roadmap &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            {% endwith %}
 
-                <div class="guide-card-footer">
-                    <span class="text-muted small"><i class="bi bi-person me-1"></i>{{ g.author.name }}</span>
-                    <a href="{% url 'guide_detail' g.slug %}" class="guide-read-link" aria-label="Read {{ g.title }}">
-                        <span>Read Guide</span>
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
+            <!-- B. CURATED EDITORIAL GRID (Remaining 4 Guides) -->
+            <div class="d-flex align-items-center justify-content-between mb-3 mt-4 flex-wrap gap-2">
+                <div>
+                    <h2 class="h5 fw-bold text-body mb-1">Core Engineering Knowledge Pillars</h2>
+                    <p class="text-muted small mb-0">Practical technical guides covering engineering fundamentals, role distinctions, portfolio proof, and placement interview rounds.</p>
                 </div>
-            </article>
-            {% endfor %}
-        </div>
+                <span class="badge bg-light text-secondary border px-3 py-1.5">
+                    4 Technical Pillars
+                </span>
+            </div>
+
+            <div class="guide-editorial-grid" id="guidesGrid">
+                {% for g in guides|slice:"1:" %}
+                <article class="editorial-guide-card guide-item-container" data-category="{{ g.category }}">
+                    <div>
+                        <div class="editorial-card-top">
+                            {% if g.category == 'Career Comparisons' %}
+                                <span class="guide-badge guide-badge-comparisons">{{ g.category }}</span>
+                            {% elif g.category == 'Engineering Fundamentals' %}
+                                <span class="guide-badge guide-badge-fundamentals">{{ g.category }}</span>
+                            {% elif g.category == 'Portfolio & Resumes' %}
+                                <span class="guide-badge guide-badge-portfolio">{{ g.category }}</span>
+                            {% elif g.category == 'Interview Preparation' %}
+                                <span class="guide-badge guide-badge-interview">{{ g.category }}</span>
+                            {% else %}
+                                <span class="guide-badge guide-badge-roadmaps">{{ g.category }}</span>
+                            {% endif %}
+                            <span class="text-muted small"><i class="bi bi-clock me-1"></i>{{ g.reading_time }}</span>
+                        </div>
+
+                        <h3 class="editorial-card-title">
+                            <a href="{% url 'guide_detail' g.slug %}">{{ g.title }}</a>
+                        </h3>
+
+                        <p class="editorial-card-desc">{{ g.excerpt }}</p>
+
+                        <div class="mb-3">
+                            <span class="badge bg-light text-secondary border px-2 py-1 small" style="font-size: 0.75rem;">
+                                <i class="bi bi-bullseye me-1 text-primary"></i>{{ g.target_audience }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="editorial-card-footer">
+                        <span class="text-muted small"><i class="bi bi-person me-1"></i>{{ g.author.name }}</span>
+                        <a href="{% url 'guide_detail' g.slug %}" class="editorial-read-link" aria-label="Read {{ g.title }}">
+                            <span>Read Guide</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
         {% else %}
-        <div class="text-center py-5">
-            <i class="bi bi-journal-x fs-1 text-muted mb-3 d-block"></i>
-            <h3 class="h5 fw-semibold text-secondary">No guides available</h3>
-            <p class="text-muted small">Please check back soon as new guides are published.</p>
-        </div>
+            <div class="text-center py-5">
+                <i class="bi bi-journal-x fs-1 text-muted mb-3 d-block"></i>
+                <h3 class="h5 fw-semibold text-secondary">No guides available</h3>
+                <p class="text-muted small">Please check back soon as new guides are published.</p>
+            </div>
         {% endif %}
 
-        <!-- Roadmap CTA Banner -->
+        <!-- Editorial Standards & Quality Assurance -->
+        <section class="editorial-standards-card">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <div class="standards-header">
+                        <i class="bi bi-shield-check text-primary fs-5"></i>
+                        <h3 class="standards-title">Editorial Standards &amp; Technical Integrity</h3>
+                    </div>
+                    <p class="standards-text">
+                        Every career guide published on CareerCatalyst is reviewed by our engineering editorial team against real industry hiring criteria, verified technical documentation, and campus placement evaluations. We do not accept sponsored content, third-party promotional placements, or affiliate links.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <div class="d-inline-flex flex-column align-items-lg-end">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1.5 mb-2 fw-semibold">
+                            <i class="bi bi-check2-all me-1"></i> 100% Free &amp; Open Access
+                        </span>
+                        <span class="small text-muted">Vetted for freshers &amp; engineering students</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Roadmap CTA Banner -->
         <aside class="roadmap-cta-banner">
             <div class="row align-items-center g-4">
                 <div class="col-lg-8">
                     <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 mb-2 fw-semibold">
                         Interactive Learning Roadmaps
                     </span>
-                    <h3 class="h4 fw-bold text-dark mb-2">Explore Official Career Catalyst Roadmaps</h3>
+                    <h3 class="h4 fw-bold text-body mb-2">Explore Official Career Catalyst Roadmaps</h3>
                     <p class="text-muted mb-0 small" style="max-width: 620px;">
                         Put these guides into practice with 15+ official Career Catalyst Roadmaps. Track your topic progress, study verified documentation, and earn verifiable milestone certificates.
                     </p>
                 </div>
                 <div class="col-lg-4 text-lg-end">
-                    <a href="{% url 'roadmaps:path_list' %}" class="btn btn-primary rounded-pill px-4 py-2.5 fw-semibold">
+                    <a href="{% url 'roadmaps:path_list' %}" class="btn btn-primary px-4 py-2.5 fw-semibold">
                         <span>Explore 15 Roadmaps</span>
                         <i class="bi bi-arrow-right ms-1"></i>
                     </a>
@@ -167,4 +302,30 @@
         </aside>
     </section>
 </main>
+
+<!-- Client-side Category Filter Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('.guide-filter-btn');
+    const guideItems = document.querySelectorAll('.guide-item-container');
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const filterValue = this.getAttribute('data-filter');
+
+            guideItems.forEach(item => {
+                const itemCat = item.getAttribute('data-category');
+                if (filterValue === 'all' || itemCat === filterValue) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

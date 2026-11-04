@@ -3,7 +3,7 @@
 
 {% block title %}{{ guide.meta_title }}{% endblock %}
 {% block meta_description %}{{ guide.meta_description }}{% endblock %}
-{% block meta_keywords %}{{ guide.category }}, engineering career guide, career catalyst roadmaps, freshers roadmap, software engineer roadmap for freshers, campus placement preparation, technical skills, {{ guide.title }}{% endblock %}
+{% block meta_keywords %}{{ guide.title }}, career catalyst, engineering roadmaps, placement preparation, {{ guide.category }}{% endblock %}
 
 {% block robots %}
 <meta name="robots" content="index, follow">
@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block extra_meta %}
-<!-- Open Graph / Social Sharing -->
+<!-- Open Graph -->
 <meta property="og:title" content="{{ guide.meta_title }}">
 <meta property="og:description" content="{{ guide.meta_description }}">
 <meta property="og:url" content="{{ CANONICAL_ORIGIN }}{% url 'guide_detail' guide.slug %}">
@@ -42,7 +42,7 @@
           "@type": "ListItem",
           "position": 1,
           "name": "Home",
-          "item": "{{ CANONICAL_ORIGIN }}/"
+          "item": "{{ CANONICAL_ORIGIN }}{% url 'home' %}"
         },
         {
           "@type": "ListItem",
@@ -91,7 +91,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/career_guides.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/career_guides.css' %}?v=1.2">
 {% endblock %}
 
 {% block main_wrapper %}
@@ -108,8 +108,8 @@
             <!-- Breadcrumbs -->
             <nav aria-label="breadcrumb" class="guide-breadcrumb">
                 <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-decoration-none text-muted">Home</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'guide_list' %}" class="text-decoration-none text-muted">Career Guides</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'guide_list' %}">Career Guides</a></li>
                     <li class="breadcrumb-item active text-body fw-semibold" aria-current="page">{{ guide.title }}</li>
                 </ol>
             </nav>
@@ -151,200 +151,249 @@
             <aside class="d-none d-lg-block">
                 <nav class="guide-sidebar" aria-label="Table of Contents">
                     <div class="toc-title">
-                        <i class="bi bi-list-nested"></i>
+                        <i class="bi bi-list-nested text-primary"></i>
                         <span>Contents</span>
                     </div>
-                    <ul class="toc-list">
+                    <ul class="toc-list" id="desktopTocList">
                         {% for toc in guide.table_of_contents %}
                         <li>
-                            <a href="#{{ toc.id }}" class="toc-link">{{ toc.title }}</a>
+                            <a href="#{{ toc.id }}" class="toc-link" data-target="{{ toc.id }}">{{ toc.title }}</a>
                         </li>
                         {% endfor %}
+                        {% if guide.related_roadmaps %}
+                        <li class="pt-2 mt-2 border-top">
+                            <a href="#related-roadmaps" class="toc-link text-primary fw-semibold">
+                                <i class="bi bi-map me-1"></i> Related Roadmaps
+                            </a>
+                        </li>
+                        {% endif %}
                     </ul>
                 </nav>
             </aside>
 
             <!-- Article Body Content -->
             <article class="article-body">
-                <!-- Mobile Table of Contents Accordion -->
-                <div class="d-lg-none mb-4">
-                    <div class="accordion" id="mobileTocAccordion">
-                        <div class="accordion-item border rounded-3">
-                            <h2 class="accordion-header" id="headingMobileToc">
-                                <button class="accordion-button collapsed py-2.5 px-3 fw-semibold small" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMobileToc" aria-expanded="false" aria-controls="collapseMobileToc">
-                                    <i class="bi bi-list-nested me-2"></i> Jump to Section ({{ guide.table_of_contents|length }} sections)
-                                </button>
-                            </h2>
-                            <div id="collapseMobileToc" class="accordion-collapse collapse" aria-labelledby="headingMobileToc" data-bs-parent="#mobileTocAccordion">
-                                <div class="accordion-body p-3">
-                                    <ul class="toc-list">
-                                        {% for toc in guide.table_of_contents %}
-                                        <li>
-                                            <a href="#{{ toc.id }}" class="toc-link">{{ toc.title }}</a>
-                                        </li>
-                                        {% endfor %}
-                                    </ul>
+                <div class="article-reading-container">
+                    <!-- Mobile Table of Contents Accordion -->
+                    <div class="d-lg-none mb-4">
+                        <div class="accordion" id="mobileTocAccordion">
+                            <div class="accordion-item border rounded-3">
+                                <h2 class="accordion-header" id="headingMobileToc">
+                                    <button class="accordion-button collapsed py-2.5 px-3 fw-semibold small" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMobileToc" aria-expanded="false" aria-controls="collapseMobileToc">
+                                        <i class="bi bi-list-nested me-2"></i> Jump to Section ({{ guide.table_of_contents|length }} sections)
+                                    </button>
+                                </h2>
+                                <div id="collapseMobileToc" class="accordion-collapse collapse" aria-labelledby="headingMobileToc" data-bs-parent="#mobileTocAccordion">
+                                    <div class="accordion-body p-3">
+                                        <ul class="toc-list">
+                                            {% for toc in guide.table_of_contents %}
+                                            <li>
+                                                <a href="#{{ toc.id }}" class="toc-link">{{ toc.title }}</a>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Key Takeaways Highlight Box -->
-                <section class="key-takeaways-card">
-                    <div class="takeaways-title">
-                        <i class="bi bi-lightbulb-fill"></i>
-                        <span>Executive Summary & Key Takeaways</span>
-                    </div>
-                    <ul class="takeaways-list">
-                        {% for item in guide.key_takeaways %}
-                        <li>
-                            <i class="bi bi-check-circle-fill"></i>
-                            <span>{{ item }}</span>
-                        </li>
+                    <!-- Key Takeaways Highlight Box -->
+                    <section class="key-takeaways-card">
+                        <div class="takeaways-title">
+                            <i class="bi bi-lightbulb-fill"></i>
+                            <span>Executive Summary &amp; Key Takeaways</span>
+                        </div>
+                        <ul class="takeaways-list">
+                            {% for item in guide.key_takeaways %}
+                            <li>
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span>{{ item }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+
+                    <!-- Article Sections -->
+                    {% for section in guide.sections %}
+                    <section class="article-section" id="{{ section.id }}">
+                        <h2 class="article-h2">{{ section.title }}</h2>
+
+                        {% for block in section.blocks %}
+                            {% if block.type == 'paragraph' %}
+                                <p class="article-p">{{ block.text }}</p>
+                            {% elif block.type == 'list' %}
+                                <ul class="article-list">
+                                    {% for item in block.items %}
+                                    <li>{{ item }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% elif block.type == 'callout' %}
+                                <div class="article-callout article-callout-{{ block.variant }}">
+                                    <div class="callout-title">
+                                        {% if block.variant == 'tip' %}
+                                            <i class="bi bi-check2-circle"></i>
+                                        {% elif block.variant == 'warning' %}
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                        {% else %}
+                                            <i class="bi bi-info-circle"></i>
+                                        {% endif %}
+                                        <span>{{ block.title }}</span>
+                                    </div>
+                                    <p>{{ block.text }}</p>
+                                </div>
+                            {% elif block.type == 'table' %}
+                                <div class="table-responsive my-3">
+                                    <table class="table table-bordered table-striped align-middle small mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                {% for h in block.headers %}
+                                                <th scope="col">{{ h }}</th>
+                                                {% endfor %}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for r in block.rows %}
+                                            <tr>
+                                                {% for cell in r %}
+                                                <td>{{ cell }}</td>
+                                                {% endfor %}
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% elif block.type == 'code' %}
+                                <div class="article-code-wrapper">
+                                    <div class="code-header">
+                                        <span class="code-lang">{{ block.language }}</span>
+                                    </div>
+                                    <pre><code class="language-{{ block.language }}">{{ block.code }}</code></pre>
+                                </div>
+                            {% endif %}
                         {% endfor %}
-                    </ul>
-                </section>
-
-                <!-- Article Sections -->
-                {% for section in guide.sections %}
-                <section class="article-section" id="{{ section.id }}">
-                    <h2 class="article-h2">{{ section.title }}</h2>
-
-                    {% for block in section.blocks %}
-                        {% if block.type == 'paragraph' %}
-                            <p class="article-p">{{ block.text }}</p>
-                        {% elif block.type == 'list' %}
-                            <ul class="article-list">
-                                {% for item in block.items %}
-                                <li>{{ item }}</li>
-                                {% endfor %}
-                            </ul>
-                        {% elif block.type == 'callout' %}
-                            <div class="article-callout article-callout-{{ block.variant }}">
-                                <div class="callout-title">
-                                    {% if block.variant == 'tip' %}
-                                        <i class="bi bi-check2-circle"></i>
-                                    {% elif block.variant == 'warning' %}
-                                        <i class="bi bi-exclamation-triangle"></i>
-                                    {% else %}
-                                        <i class="bi bi-info-circle"></i>
-                                    {% endif %}
-                                    <span>{{ block.title }}</span>
-                                </div>
-                                <p>{{ block.text }}</p>
-                            </div>
-                        {% elif block.type == 'table' %}
-                            <div class="table-responsive my-3">
-                                <table class="table table-bordered table-striped align-middle small mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            {% for h in block.headers %}
-                                            <th scope="col">{{ h }}</th>
-                                            {% endfor %}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for r in block.rows %}
-                                        <tr>
-                                            {% for cell in r %}
-                                            <td>{{ cell }}</td>
-                                            {% endfor %}
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% elif block.type == 'code' %}
-                            <div class="article-code-wrapper">
-                                <div class="code-header">
-                                    <span class="code-lang">{{ block.language }}</span>
-                                </div>
-                                <pre><code class="language-{{ block.language }}">{{ block.code }}</code></pre>
-                            </div>
-                        {% endif %}
+                    </section>
                     {% endfor %}
-                </section>
-                {% endfor %}
 
-                <!-- Related CareerCatalyst Roadmaps Section -->
-                {% if guide.related_roadmaps %}
-                <section class="my-5 pt-4 border-top">
-                    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                        <div>
-                            <h2 class="h5 fw-bold text-body mb-1">Related Learning Roadmaps</h2>
-                            <p class="text-muted small mb-0">Put this guide into practice with structured, week-by-week curriculums.</p>
-                        </div>
-                        <a href="{% url 'roadmaps:path_list' %}" class="btn btn-sm btn-outline-primary rounded-pill">
-                            View All Roadmaps
-                        </a>
-                    </div>
-
-                    <div class="related-roadmaps-grid">
-                        {% for r in guide.related_roadmaps %}
-                        <a href="{% url 'roadmaps:path_detail' r.slug %}" class="roadmap-mini-card">
+                    <!-- Related CareerCatalyst Roadmaps Section -->
+                    {% if guide.related_roadmaps %}
+                    <section class="my-5 pt-4 border-top" id="related-roadmaps">
+                        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                             <div>
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 small">
-                                        {{ r.difficulty }} Level
-                                    </span>
-                                    <span class="text-muted small"><i class="bi bi-clock me-1"></i>{{ r.weeks }} Weeks</span>
-                                </div>
-                                <h3 class="h6 fw-bold text-body mb-1.5">{{ r.name }}</h3>
-                                <p class="text-muted small mb-0">{{ r.description }}</p>
+                                <h2 class="h5 fw-bold text-body mb-1">Related Learning Roadmaps</h2>
+                                <p class="text-muted small mb-0">Put this guide into practice with structured, week-by-week curriculums.</p>
                             </div>
-                            <div class="mt-3 pt-2 border-top d-flex align-items-center justify-content-between text-primary small fw-semibold">
-                                <span>Explore Syllabus</span>
-                                <i class="bi bi-arrow-right"></i>
-                            </div>
-                        </a>
-                        {% endfor %}
-                    </div>
-                </section>
-                {% endif %}
-
-                <!-- Related Guides Section -->
-                {% if related_guides %}
-                <section class="my-5 pt-4 border-top">
-                    <h2 class="h5 fw-bold text-body mb-3">Continue Reading: Related Career Guides</h2>
-                    <div class="row g-3">
-                        {% for rel in related_guides %}
-                        <div class="col-md-6">
-                            <div class="card h-100 border p-3 rounded-3 shadow-none">
-                                <span class="text-muted small mb-1"><i class="bi bi-clock me-1"></i>{{ rel.reading_time }}</span>
-                                <h3 class="h6 fw-bold mb-2">
-                                    <a href="{% url 'guide_detail' rel.slug %}" class="text-decoration-none text-body hover-primary">
-                                        {{ rel.title }}
-                                    </a>
-                                </h3>
-                                <p class="text-muted small mb-3 flex-grow-1">{{ rel.excerpt }}</p>
-                                <a href="{% url 'guide_detail' rel.slug %}" class="small fw-semibold text-primary text-decoration-none">
-                                    Read Article <i class="bi bi-arrow-right"></i>
-                                </a>
-                            </div>
+                            <a href="{% url 'roadmaps:path_list' %}" class="btn btn-sm btn-outline-primary">
+                                View All Roadmaps
+                            </a>
                         </div>
-                        {% endfor %}
-                    </div>
-                </section>
-                {% endif %}
 
-                <!-- Interactive CTA Banner -->
-                <section class="roadmap-cta-banner text-center my-5">
-                    <h3 class="h5 fw-bold text-body mb-2">Ready to Accelerate Your Career?</h3>
-                    <p class="text-muted small mb-3" style="max-width: 520px; margin: 0 auto;">
-                        CareerCatalyst combines structured curriculums, deterministic ATS scoring, mock interview sandboxes, and job tracking into one free workspace.
-                    </p>
-                    <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
-                        <a href="{% url 'register' %}" class="btn btn-primary rounded-pill px-4 py-2 small fw-semibold">
-                            Get Started Free
-                        </a>
-                        <a href="{% url 'guide_list' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2 small">
-                            Browse All Guides
+                        <div class="related-roadmaps-grid">
+                            {% for r in guide.related_roadmaps %}
+                            <a href="{% url 'roadmaps:path_detail' r.slug %}" class="roadmap-mini-card">
+                                <div>
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 small">
+                                            {{ r.difficulty }} Level
+                                        </span>
+                                        <span class="text-muted small"><i class="bi bi-clock me-1"></i>{{ r.weeks }} Weeks</span>
+                                    </div>
+                                    <h3 class="h6 fw-bold text-body mb-1.5">{{ r.name }}</h3>
+                                    <p class="text-muted small mb-0">{{ r.description }}</p>
+                                </div>
+                                <div class="mt-3 pt-2 border-top d-flex align-items-center justify-content-between text-primary small fw-semibold">
+                                    <span>Explore Syllabus</span>
+                                    <i class="bi bi-arrow-right"></i>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+
+                    <!-- Related Guides Section -->
+                    {% if related_guides %}
+                    <section class="my-5 pt-4 border-top">
+                        <h2 class="h5 fw-bold text-body mb-3">Continue Reading: Related Career Guides</h2>
+                        <div class="row g-3">
+                            {% for rel in related_guides %}
+                            <div class="col-md-6">
+                                <div class="related-guide-box">
+                                    <div>
+                                        <span class="text-muted small mb-1 d-block"><i class="bi bi-clock me-1"></i>{{ rel.reading_time }}</span>
+                                        <h3 class="h6 fw-bold mb-2">
+                                            <a href="{% url 'guide_detail' rel.slug %}" class="text-decoration-none text-body hover-primary">
+                                                {{ rel.title }}
+                                            </a>
+                                        </h3>
+                                        <p class="text-muted small mb-3">{{ rel.excerpt }}</p>
+                                    </div>
+                                    <a href="{% url 'guide_detail' rel.slug %}" class="small fw-semibold text-primary text-decoration-none">
+                                        Read Article <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+
+                    <!-- In-page Bottom Back Link -->
+                    <div class="py-3 border-top mt-4">
+                        <a href="{% url 'guide_list' %}" class="d-inline-flex align-items-center gap-1 text-decoration-none text-muted small">
+                            <i class="bi bi-arrow-left"></i>
+                            <span>Back to Career Guides</span>
                         </a>
                     </div>
-                </section>
+
+                    <!-- Interactive CTA Banner -->
+                    <section class="roadmap-cta-banner text-center my-5">
+                        <h3 class="h5 fw-bold text-body mb-2">Ready to Accelerate Your Career?</h3>
+                        <p class="text-muted small mb-3" style="max-width: 520px; margin: 0 auto;">
+                            CareerCatalyst combines structured curriculums, deterministic ATS scoring, mock interview sandboxes, and job tracking into one free workspace.
+                        </p>
+                        <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                            <a href="{% url 'register' %}" class="btn btn-primary px-4 py-2 small fw-semibold">
+                                Get Started Free
+                            </a>
+                            <a href="{% url 'guide_list' %}" class="btn btn-outline-secondary px-4 py-2 small">
+                                Browse All Guides
+                            </a>
+                        </div>
+                    </section>
+                </div>
             </article>
         </div>
     </div>
 </main>
+
+<!-- Sticky TOC Scroll-Spy Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tocLinks = document.querySelectorAll('#desktopTocList .toc-link[data-target]');
+    const sections = Array.from(document.querySelectorAll('.article-section'));
+
+    if (tocLinks.length > 0 && sections.length > 0 && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    tocLinks.forEach(link => {
+                        if (link.getAttribute('data-target') === id) {
+                            link.classList.add('active');
+                        } else {
+                            link.classList.remove('active');
+                        }
+                    });
+                }
+            });
+        }, {
+            rootMargin: '0px 0px -70% 0px',
+            threshold: 0
+        });
+
+        sections.forEach(sec => observer.observe(sec));
+    }
+});
+</script>
 {% endblock %}
