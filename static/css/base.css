@@ -12,22 +12,50 @@
    1. CSS CUSTOM PROPERTIES (Design Tokens)
    ------------------------------------------------------------ */
 :root {
-    /* --- Colors --- */
-    --primary:      #2563EB;
-    --secondary:    #0F172A;
-    --accent:       #14B8A6;
-    --bg:           #F8FAFC;
-    --card-bg:      #FFFFFF;
-    --text:         #334155;
-    --text-muted:   #64748B;
-    --success:      #22C55E;
-    --warning:      #F59E0B;
-    --border:       #E2E8F0;
-    --welcome-bg:   linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    --hover-bg:     #f1f5f9;
-    --completed-bg: #f0fdf4;
+    /* --- Primary Brand Tokens --- */
+    --primary:         #2563EB;
+    --primary-hover:   #1D4ED8;
+    --primary-subtle:  #EFF6FF;
+    --primary-border:  rgba(37, 99, 235, 0.20);
+    
+    /* --- Neutral Surfaces & Canvas --- */
+    --bg:              #F7F8FA;
+    --card-bg:         #FFFFFF;
+    --surface-elevated:#FFFFFF;
+    --surface-muted:   #F9FAFB;
+    --surface-hover:   #F3F4F6;
+    
+    /* --- Typography Colors --- */
+    --text:            #111827;
+    --text-muted:      #64748B;
+    --text-subtle:     #9CA3AF;
+    --secondary:       #0F172A;
+    --accent:          #2563EB;
+    
+    /* --- Borders --- */
+    --border:          #E5E7EB;
+    --border-strong:   #D1D5DB;
+    --border-subtle:   #F1F5F9;
+    
+    /* --- Semantic States --- */
+    --success:         #16A34A;
+    --success-subtle:  #F0FDF4;
+    --success-border:  rgba(22, 163, 74, 0.20);
+    --warning:         #D97706;
+    --warning-subtle:  #FFFBEB;
+    --warning-border:  rgba(217, 119, 6, 0.20);
+    --danger:          #DC2626;
+    --danger-subtle:   #FEF2F2;
+    --danger-border:   rgba(220, 38, 38, 0.20);
+    --info:            #2563EB;
+    --info-subtle:     #EFF6FF;
+    --info-border:     rgba(37, 99, 235, 0.20);
+    
+    --welcome-bg:      linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    --hover-bg:        #f1f5f9;
+    --completed-bg:    #f0fdf4;
 
-    /* --- Spacing (8px scale) --- */
+    /* --- Spacing (4px / 8px scale) --- */
     --space-1:  0.25rem;  /*  4px */
     --space-2:  0.5rem;   /*  8px */
     --space-3:  0.75rem;  /* 12px */
@@ -41,6 +69,10 @@
     --space-20: 5rem;     /* 80px */
     --space-24: 6rem;     /* 96px */
 
+    /* --- Typography — Font Families --- */
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
     /* --- Typography — Font Sizes --- */
     --text-xs:   0.75rem;    /* 12px */
     --text-sm:   0.875rem;   /* 14px */
@@ -50,9 +82,9 @@
     --text-xl:   1.5rem;     /* 24px */
     --text-2xl:  1.75rem;    /* 28px */
     --text-3xl:  2rem;       /* 32px */
-    --text-4xl:  2.5rem;     /* 40px */
-    --text-5xl:  3rem;       /* 48px */
-    --text-6xl:  3.5rem;     /* 56px */
+    --text-4xl:  2.25rem;    /* 36px */
+    --text-5xl:  2.75rem;    /* 44px */
+    --text-6xl:  3.25rem;    /* 52px */
 
     /* --- Typography — Font Weights --- */
     --font-light:     300;
@@ -62,27 +94,30 @@
     --font-bold:      700;
     --font-extrabold: 800;
 
-    /* --- Shadows --- */
-    --shadow-sm:  0  1px  2px  rgba(0, 0, 0, 0.05);
-    --shadow-md:  0  4px  6px  rgba(0, 0, 0, 0.07),
-                  0  2px  4px  rgba(0, 0, 0, 0.06);
-    --shadow-lg:  0 10px 15px  rgba(0, 0, 0, 0.1),
-                  0  4px  6px  rgba(0, 0, 0, 0.05);
-    --shadow-xl:  0 20px 25px  rgba(0, 0, 0, 0.1),
-                  0  8px 10px  rgba(0, 0, 0, 0.04);
+    /* --- Shadows (Ambient elevation, zero colored glow) --- */
+    --shadow-xs:  0  1px  2px  rgba(0, 0, 0, 0.05);
+    --shadow-sm:  0  1px  3px  rgba(0, 0, 0, 0.07),
+                  0  1px  2px -1px rgba(0, 0, 0, 0.06);
+    --shadow-md:  0  4px  6px -1px rgba(0, 0, 0, 0.07),
+                  0  2px  4px -2px rgba(0, 0, 0, 0.05);
+    --shadow-lg:  0 10px 15px -3px rgba(0, 0, 0, 0.08),
+                  0  4px  6px -4px rgba(0, 0, 0, 0.03);
+    --shadow-xl:  0 20px 25px -5px rgba(0, 0, 0, 0.08),
+                  0  8px 10px -6px rgba(0, 0, 0, 0.03);
 
-    /* --- Border Radii --- */
-    --radius-sm:   4px;
+    /* --- Border Radii (Reusable system tokens) --- */
+    --radius-xs:   4px;
+    --radius-sm:   6px;
     --radius-md:   8px;
-    --radius-lg:   12px;
-    --radius-xl:   16px;
-    --radius-2xl:  24px;
-    --radius-full: 50px;
+    --radius-lg:   10px;
+    --radius-xl:   12px;
+    --radius-2xl:  16px;
+    --radius-full: 9999px;
 
     /* --- Transitions --- */
     --transition-fast: all 150ms ease;
-    --transition-base: all 300ms ease;
-    --transition-slow: all 500ms ease;
+    --transition-base: all 250ms ease;
+    --transition-slow: all 400ms ease;
 }
 
 
@@ -101,7 +136,7 @@ html {
 
 body {
     background-color: var(--bg);
-    font-family: 'Poppins', sans-serif;
+    font-family: var(--font-sans);
     color: var(--text);
     line-height: 1.6;
     margin: 0;
@@ -166,19 +201,12 @@ img {
 }
 
 .section-title::after {
-    content: '';
-    display: block;
-    width: 60px;
-    height: 4px;
-    background: linear-gradient(to right, var(--primary), var(--accent));
-    margin-top: 1rem;
-    border-radius: 2px;
+    display: none !important;
 }
 
 /* Center the underline when inside a .text-center parent */
 .text-center .section-title::after {
-    margin-left: auto;
-    margin-right: auto;
+    display: none !important;
 }
 
 /* --- Section Subtitle --- */
@@ -513,7 +541,12 @@ html[data-theme="dark"] .table {
     border-color: var(--border) !important;
 }
 
-html[data-theme="dark"] .table th,
+html[data-theme="dark"] .table th {
+    background-color: #151519 !important;
+    color: #9CA3AF !important;
+    border-color: var(--border) !important;
+}
+
 html[data-theme="dark"] .table td {
     background-color: var(--card-bg) !important;
     color: var(--text) !important;

@@ -25,13 +25,13 @@
     cursor: pointer;
     z-index: 1025;
     transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-    animation: bot-float 3s ease-in-out infinite;
+    /* animation: bot-float 3s ease-in-out infinite; (removed: decorative bobbing) */
     padding: 0;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4), 0 2px 6px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 #chatbot-launcher i {
@@ -50,7 +50,7 @@
 #chatbot-launcher:hover {
     transform: translateY(-2px) scale(1.05);
     background-color: #1D4ED8;
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5), 0 2px 8px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.20), 0 2px 4px rgba(0, 0, 0, 0.10);
 }
 
 #chatbot-launcher:focus-visible {
