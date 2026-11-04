@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block title %}Learning Roadmaps — CareerCatalyst{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
@@ -43,6 +44,12 @@
 
         <!-- Main Content Area -->
         <main class="dash-content">
+            <!-- Back Navigation -->
+            <a href="{% url 'dashboard' %}" class="roadmap-back-link">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Dashboard</span>
+            </a>
+
             <!-- 1. Roadmaps Page Header -->
             <header class="roadmap-page-header">
                 <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
@@ -154,12 +161,12 @@
                         <i class="bi bi-award-fill"></i>
                         <span>View Certificate</span>
                     </a>
-                    <a href="{% url 'roadmaps:path_detail' primary_enrollment.career_path.slug %}" class="dash-btn-secondary">
+                    <a href="{% url 'roadmaps:learning_detail' primary_enrollment.career_path.slug %}?from=my_roadmaps" class="dash-btn-secondary">
                         <span>Review Roadmap</span>
                         <i class="bi bi-arrow-right"></i>
                     </a>
                     {% else %}
-                    <a href="{% url 'roadmaps:path_detail' primary_enrollment.career_path.slug %}" class="dash-btn-primary">
+                    <a href="{% url 'roadmaps:learning_detail' primary_enrollment.career_path.slug %}?from=my_roadmaps" class="dash-btn-primary">
                         <span>Review Roadmap</span>
                         <i class="bi bi-arrow-right"></i>
                     </a>
@@ -169,11 +176,11 @@
                         <span>Practice Interview</span>
                     </a>
                     {% else %}
-                    <a href="{% url 'roadmaps:path_detail' primary_enrollment.career_path.slug %}{% if current_milestone %}#milestone-week-{{ current_milestone.week_number }}{% endif %}" class="dash-btn-primary">
+                    <a href="{% url 'roadmaps:learning_detail' primary_enrollment.career_path.slug %}?from=my_roadmaps{% if current_milestone %}#milestone-week-{{ current_milestone.week_number }}{% endif %}" class="dash-btn-primary">
                         <span>Continue Learning</span>
                         <i class="bi bi-arrow-right"></i>
                     </a>
-                    <a href="{% url 'roadmaps:path_detail' primary_enrollment.career_path.slug %}" class="dash-btn-secondary">
+                    <a href="{% url 'roadmaps:learning_detail' primary_enrollment.career_path.slug %}?from=my_roadmaps" class="dash-btn-secondary">
                         <span>View Full Syllabus</span>
                     </a>
                     {% endif %}
@@ -195,7 +202,7 @@
                 </p>
                 <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
                     {% if target_career_path %}
-                    <a href="{% url 'roadmaps:path_detail' target_career_path.slug %}" class="dash-btn-primary">
+                    <a href="{% url 'roadmaps:learning_detail' target_career_path.slug %}?from=my_roadmaps" class="dash-btn-primary">
                         <span>Explore {{ target_career_path.name }} Roadmap</span>
                         <i class="bi bi-arrow-right"></i>
                     </a>
@@ -238,7 +245,7 @@
 
                 <div class="roadmap-journey-track">
                     {% for ms in milestone_journey %}
-                    <a href="{% url 'roadmaps:path_detail' primary_enrollment.career_path.slug %}#milestone-week-{{ ms.week_number }}" 
+                    <a href="{% url 'roadmaps:learning_detail' primary_enrollment.career_path.slug %}?from=my_roadmaps#milestone-week-{{ ms.week_number }}" 
                        class="roadmap-journey-node {{ ms.status }}" 
                        title="Week {{ ms.week_number }}: {{ ms.title }} ({{ ms.completed_topics }}/{{ ms.total_topics }} completed)">
                         <div class="roadmap-node-top">
@@ -276,7 +283,7 @@
 
                 <div class="roadmap-secondary-list">
                     {% for enr in secondary_enrollments %}
-                    <a href="{% url 'roadmaps:path_detail' enr.career_path.slug %}" class="roadmap-secondary-item">
+                    <a href="{% url 'roadmaps:learning_detail' enr.career_path.slug %}?from=my_roadmaps" class="roadmap-secondary-item">
                         <div class="roadmap-secondary-info">
                             <div class="roadmap-secondary-icon">
                                 <i class="{{ enr.career_path.icon }}"></i>
@@ -382,17 +389,17 @@
 
                             <div>
                                 {% if path.is_completed %}
-                                <a href="{% url 'roadmaps:path_detail' path.slug %}" class="dash-btn-secondary dash-btn-sm text-success" style="font-size: 0.8rem;">
+                                <a href="{% url 'roadmaps:learning_detail' path.slug %}?from=my_roadmaps" class="dash-btn-secondary dash-btn-sm text-success" style="font-size: 0.8rem;">
                                     <i class="bi bi-check-circle-fill"></i>
                                     <span>Completed</span>
                                 </a>
                                 {% elif path.is_enrolled %}
-                                <a href="{% url 'roadmaps:path_detail' path.slug %}" class="dash-btn-primary dash-btn-sm" style="font-size: 0.8rem;">
+                                <a href="{% url 'roadmaps:learning_detail' path.slug %}?from=my_roadmaps" class="dash-btn-primary dash-btn-sm" style="font-size: 0.8rem;">
                                     <span>Continue · {{ path.progress_pct }}%</span>
                                     <i class="bi bi-arrow-right"></i>
                                 </a>
                                 {% else %}
-                                <a href="{% url 'roadmaps:path_detail' path.slug %}" class="dash-btn-secondary dash-btn-sm" style="font-size: 0.8rem;">
+                                <a href="{% url 'roadmaps:learning_detail' path.slug %}?from=my_roadmaps" class="dash-btn-secondary dash-btn-sm" style="font-size: 0.8rem;">
                                     <span>Explore Path</span>
                                     <i class="bi bi-arrow-right"></i>
                                 </a>

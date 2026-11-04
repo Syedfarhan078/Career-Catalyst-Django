@@ -216,7 +216,7 @@
                         </button>
                         {% if matched_career_path %}
                             {% if is_enrolled_in_path %}
-                                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="dash-btn dash-btn-outline dash-btn-sm w-100 fw-semibold">
+                                <a href="{% url 'roadmaps:learning_detail' matched_career_path.slug %}?from=guidance" class="dash-btn dash-btn-outline dash-btn-sm w-100 fw-semibold">
                                     {% if is_path_completed %}
                                         <i class="bi bi-check2-all me-1"></i> Review Track
                                     {% else %}
@@ -224,7 +224,7 @@
                                     {% endif %}
                                 </a>
                             {% else %}
-                                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="dash-btn dash-btn-outline dash-btn-sm w-100">
+                                <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}?from=guidance" class="dash-btn dash-btn-outline dash-btn-sm w-100">
                                     <i class="bi bi-eye me-1"></i> Preview Curriculum
                                 </a>
                             {% endif %}
@@ -453,14 +453,14 @@
                 <div class="transition-actions">
                     {% if is_enrolled_in_path %}
                         {% if is_path_completed %}
-                            <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="dash-btn dash-btn-outline dash-btn-sm d-inline-flex align-items-center gap-2 fw-semibold">
+                            <a href="{% url 'roadmaps:learning_detail' matched_career_path.slug %}?from=guidance" class="dash-btn dash-btn-outline dash-btn-sm d-inline-flex align-items-center gap-2 fw-semibold">
                                 <i class="bi bi-check2-all"></i> Review Roadmap
                             </a>
                             <a href="{% url 'interviews:hub' %}" class="dash-btn dash-btn-primary dash-btn-sm d-inline-flex align-items-center gap-2 fw-semibold">
                                 <i class="bi bi-mortarboard-fill"></i> Open Interview Prep
                             </a>
                         {% else %}
-                            <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="dash-btn dash-btn-primary dash-btn-sm d-inline-flex align-items-center gap-2 fw-semibold">
+                            <a href="{% url 'roadmaps:learning_detail' matched_career_path.slug %}?from=guidance" class="dash-btn dash-btn-primary dash-btn-sm d-inline-flex align-items-center gap-2 fw-semibold">
                                 <i class="bi bi-play-circle-fill"></i> Continue Learning (Week {{ next_active_week }})
                             </a>
                             <form method="POST" action="{% url 'recommendation:activate_roadmap' analysis.id %}">
@@ -478,7 +478,7 @@
                             </button>
                         </form>
                         {% if matched_career_path %}
-                        <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                        <a href="{% url 'roadmaps:path_detail' matched_career_path.slug %}?from=guidance" class="dash-btn dash-btn-outline dash-btn-sm">
                             <i class="bi bi-eye me-1"></i> Preview
                         </a>
                         {% endif %}

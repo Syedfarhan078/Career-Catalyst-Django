@@ -1,0 +1,440 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ path.name }} Learning Roadmap & Curriculum | CareerCatalyst{% endblock %}
+{% block meta_description %}Master {{ path.name }} with a structured {{ path.estimated_weeks }}-week learning roadmap. Complete milestones, study open documentation, earn verified skills, and obtain a verifiable certificate.{% endblock %}
+{% block meta_keywords %}{{ path.name|lower }} roadmap, {{ path.name|lower }} curriculum, learn {{ path.name|lower }}, engineering syllabus, tech career track, milestone curriculum{% endblock %}
+
+{% block robots %}
+<meta name="robots" content="index, follow">
+{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="{{ CANONICAL_ORIGIN }}{% url 'roadmaps:path_detail' path.slug %}">
+{% endblock %}
+
+{% block extra_meta %}
+<!-- Open Graph / Social Sharing -->
+<meta property="og:title" content="{{ path.name }} Learning Roadmap & Curriculum | CareerCatalyst">
+<meta property="og:description" content="Master {{ path.name }} with a structured {{ path.estimated_weeks }}-week learning roadmap. Complete milestones and study curated resources.">
+<meta property="og:url" content="{{ CANONICAL_ORIGIN }}{% url 'roadmaps:path_detail' path.slug %}">
+<meta property="og:type" content="article">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ path.name }} Learning Roadmap & Curriculum | CareerCatalyst">
+<meta name="twitter:description" content="Master {{ path.name }} with a structured {{ path.estimated_weeks }}-week learning roadmap.">
+
+<!-- Structured Data: BreadcrumbList + Course -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "{{ CANONICAL_ORIGIN }}/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Roadmaps",
+          "item": "{{ CANONICAL_ORIGIN }}{% url 'roadmaps:path_list' %}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "{{ path.name }}",
+          "item": "{{ CANONICAL_ORIGIN }}{% url 'roadmaps:path_detail' path.slug %}"
+        }
+      ]
+    },
+    {
+      "@type": "Course",
+      "name": "{{ path.name }} Roadmap",
+      "description": "{{ path.description|escapejs }}",
+      "educationalLevel": "{{ path.difficulty }}",
+      "timeRequired": "P{{ path.estimated_weeks }}W",
+      "isAccessibleForFree": true,
+      "url": "{{ CANONICAL_ORIGIN }}{% url 'roadmaps:path_detail' path.slug %}",
+      "provider": {
+        "@type": "Organization",
+        "name": "CareerCatalyst",
+        "sameAs": "{{ CANONICAL_ORIGIN }}"
+      },
+      "hasCourseInstance": {
+        "@type": "CourseInstance",
+        "courseMode": "Online",
+        "courseWorkload": "PT{{ total_estimated_hours }}H"
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.pub-detail-hero {
+    background: linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, rgba(248, 250, 252, 0) 100%);
+    padding: 2.5rem 0 2rem;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+.pub-breadcrumb {
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+}
+.pub-stat-badge {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 12px;
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 110px;
+}
+.pub-stat-val {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary, #0f172a);
+}
+.pub-stat-lbl {
+    font-size: 0.75rem;
+    color: var(--text-muted, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 600;
+}
+.milestone-accordion-item {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+.milestone-accordion-header {
+    padding: 1.25rem 1.5rem;
+    background: var(--card-bg, #ffffff);
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    transition: background-color 0.15s ease;
+}
+.milestone-accordion-header:hover {
+    background: var(--bg-secondary, #f8fafc);
+}
+.topic-item-row {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color, #f1f5f9);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+.topic-item-row:hover {
+    background: rgba(248, 250, 252, 0.6);
+}
+.level-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.level-beginner { background: #dcfce7; color: #15803d; }
+.level-intermediate { background: #e0e7ff; color: #4338ca; }
+.level-advanced { background: #fef3c7; color: #b45309; }
+.skill-tag {
+    font-size: 0.72rem;
+    background: #f1f5f9;
+    color: #334155;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+}
+</style>
+{% endblock %}
+
+{% block main_wrapper %}
+<main class="pub-detail-page">
+    <!-- Hero / Header Section -->
+    <header class="pub-detail-hero">
+        <div class="container px-3">
+            <!-- In-page Back Navigation -->
+            <a href="{{ back_url }}" class="d-inline-flex align-items-center gap-1 text-decoration-none text-muted small mb-2">
+                <i class="bi bi-arrow-left"></i>
+                <span>{{ back_label }}</span>
+            </a>
+
+            <!-- Breadcrumbs -->
+            <nav aria-label="breadcrumb" class="pub-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-decoration-none text-muted">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'roadmaps:path_list' %}" class="text-decoration-none text-muted">Roadmaps</a></li>
+                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">{{ path.name }}</li>
+                </ol>
+            </nav>
+
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <!-- Badges -->
+                    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                        <span class="level-badge level-{{ path.difficulty|lower }}">
+                            {{ path.difficulty }} Level
+                        </span>
+                        <span class="badge bg-light text-muted border px-2 py-1">
+                            <i class="bi bi-clock me-1"></i>{{ path.estimated_weeks }} Weeks Syllabus
+                        </span>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
+                            <i class="bi bi-patch-check me-1"></i>Verifiable Certificate
+                        </span>
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1">
+                            100% Free Open Access
+                        </span>
+                    </div>
+
+                    <!-- Title & Description -->
+                    <h1 class="display-6 fw-bold text-dark mb-3">{{ path.name }} Roadmap</h1>
+                    <p class="lead text-muted mb-4" style="line-height: 1.6; font-size: 1.05rem;">
+                        {{ path.description }}
+                    </p>
+
+                    <!-- Enrollment & CTA States -->
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        {% if is_enrolled %}
+                        <div class="alert alert-success d-flex align-items-center justify-content-between flex-wrap gap-3 w-100 mb-0 p-3 rounded-3 shadow-sm">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 1.35rem;"></i>
+                                <div>
+                                    <div class="fw-bold text-success">You are enrolled in this track</div>
+                                    <div class="small text-muted">Pick up where you left off in your interactive workspace.</div>
+                                </div>
+                            </div>
+                            <a href="{% url 'roadmaps:learning_detail' path.slug %}?from=public_detail" class="btn btn-success fw-semibold px-4">
+                                <span>Open Learning Console</span>
+                                <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                        {% elif user.is_authenticated %}
+                        <form method="POST" action="{% url 'roadmaps:enroll' path.slug %}" class="d-inline-block">
+                            {% csrf_token %}
+                            <input type="hidden" name="from" value="public_detail">
+                            <button type="submit" class="btn btn-primary btn-lg fw-semibold px-4 shadow-sm d-flex align-items-center gap-2">
+                                <i class="bi bi-play-circle-fill"></i>
+                                <span>Enroll in Roadmap (Free)</span>
+                            </button>
+                        </form>
+                        {% else %}
+                        <a href="{% url 'register' %}?next={% url 'roadmaps:learning_detail' path.slug %}" class="btn btn-primary btn-lg fw-semibold px-4 shadow-sm d-flex align-items-center gap-2">
+                            <i class="bi bi-person-plus-fill"></i>
+                            <span>Enroll in Roadmap (Free)</span>
+                        </a>
+                        <a href="{% url 'login' %}?next={% url 'roadmaps:learning_detail' path.slug %}" class="btn btn-outline-secondary bg-white px-3 py-2">
+                            Sign In
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Stats Badges -->
+                <div class="col-lg-4">
+                    <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                        <div class="pub-stat-badge">
+                            <span class="pub-stat-val">{{ path.estimated_weeks }}</span>
+                            <span class="pub-stat-lbl">Weeks</span>
+                        </div>
+                        <div class="pub-stat-badge">
+                            <span class="pub-stat-val">{{ structured_milestones|length }}</span>
+                            <span class="pub-stat-lbl">Milestones</span>
+                        </div>
+                        <div class="pub-stat-badge">
+                            <span class="pub-stat-val">{{ total_topics_count }}</span>
+                            <span class="pub-stat-lbl">Topics</span>
+                        </div>
+                        <div class="pub-stat-badge">
+                            <span class="pub-stat-val">{{ total_estimated_hours }}h</span>
+                            <span class="pub-stat-lbl">Est. Study</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content: Skills & Syllabus -->
+    <div class="container py-5 px-3">
+        <div class="row g-5">
+            <!-- Left Column: Syllabus -->
+            <div class="col-lg-8">
+                <!-- Section Header -->
+                <div class="mb-4">
+                    <h2 class="h4 fw-bold text-dark mb-1">Curriculum Syllabus &amp; Milestones</h2>
+                    <p class="text-muted small">
+                        Sequential weekly checkpoints covering core principles, frameworks, databases, and hands-on concepts.
+                    </p>
+                </div>
+
+                <!-- Milestones Timeline / Accordion -->
+                <div class="milestones-wrapper">
+                    {% for item in structured_milestones %}
+                    <div class="milestone-accordion-item">
+                        <div class="milestone-accordion-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold px-2 py-0.5" style="font-size: 0.75rem;">
+                                        Week {{ item.milestone.week_number }}
+                                    </span>
+                                    <span class="level-badge level-{{ item.milestone.level|lower }}">
+                                        {{ item.milestone.level }}
+                                    </span>
+                                </div>
+                                <h3 class="h6 fw-bold text-dark mb-0">{{ item.milestone.title }}</h3>
+                                {% if item.milestone.description %}
+                                <p class="text-muted small mb-0 mt-1">{{ item.milestone.description }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="text-muted small">
+                                <i class="bi bi-journal-check me-1"></i>{{ item.topics_count }} lesson{{ item.topics_count|pluralize }}
+                            </div>
+                        </div>
+
+                        <!-- Topics List -->
+                        <div class="milestone-topics-list">
+                            {% for topic in item.topics %}
+                            <div class="topic-item-row">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                        <h4 class="h6 fw-semibold text-dark mb-0">{{ topic.title }}</h4>
+                                        <span class="badge bg-light text-muted border" style="font-size: 0.68rem;">
+                                            <i class="bi bi-file-earmark-text me-1"></i>{{ topic.resource_type }}
+                                        </span>
+                                        <span class="badge bg-light text-muted border" style="font-size: 0.68rem;">
+                                            <i class="bi bi-clock me-1"></i>{{ topic.estimated_hours }}h
+                                        </span>
+                                    </div>
+                                    {% if topic.description %}
+                                    <p class="text-muted small mb-2" style="font-size: 0.82rem; line-height: 1.5;">
+                                        {{ topic.description }}
+                                    </p>
+                                    {% endif %}
+
+                                    {% if topic.get_skills_list %}
+                                    <div class="d-flex flex-wrap gap-1 mt-1">
+                                        {% for s in topic.get_skills_list %}
+                                        <span class="skill-tag">{{ s }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                {% if topic.resource_url %}
+                                <div class="flex-shrink-0">
+                                    <a href="{{ topic.resource_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm" style="font-size: 0.75rem;" title="View official reference documentation">
+                                        <span>Official Docs</span>
+                                        <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Right Sidebar: Skills, Certification, FAQ -->
+            <div class="col-lg-4">
+                <!-- Skills Card -->
+                {% if all_skills %}
+                <div class="card border rounded-3 p-4 mb-4 bg-white shadow-sm">
+                    <h3 class="h6 fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-tools text-primary"></i>
+                        <span>Skills &amp; Technologies</span>
+                    </h3>
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for s in all_skills %}
+                        <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.8rem; font-weight: 500;">
+                            {{ s }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Certificate Verification Info -->
+                <div class="card border rounded-3 p-4 mb-4 bg-white shadow-sm">
+                    <div class="text-success mb-2" style="font-size: 1.5rem;">
+                        <i class="bi bi-patch-check-fill"></i>
+                    </div>
+                    <h3 class="h6 fw-bold text-dark mb-2">Verifiable Credential</h3>
+                    <p class="text-muted small mb-3">
+                        When you complete 100% of the topics in this roadmap, CareerCatalyst generates a signed certificate with a unique tamper-proof ID and verification QR code.
+                    </p>
+                    <div class="p-2 bg-light rounded text-center small text-muted font-monospace border">
+                        Format: CC-2026-XXXXXXXXXXXX
+                    </div>
+                </div>
+
+                <!-- Frequently Asked Questions -->
+                <div class="card border rounded-3 p-4 mb-4 bg-white shadow-sm">
+                    <h3 class="h6 fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-question-circle text-primary"></i>
+                        <span>Frequently Asked Questions</span>
+                    </h3>
+                    
+                    <div class="mb-3">
+                        <h4 class="small fw-bold text-dark mb-1">Is this roadmap free?</h4>
+                        <p class="text-muted small mb-0">Yes. All roadmap curriculums, lesson checkpoints, and reference links are 100% free for students.</p>
+                    </div>
+                    <hr class="my-2">
+                    <div class="mb-3">
+                        <h4 class="small fw-bold text-dark mb-1">How do I track progress?</h4>
+                        <p class="text-muted small mb-0">Once enrolled, use the interactive learning workspace to check off topics week by week. Your profile automatically synchronizes your earned skills.</p>
+                    </div>
+                    <hr class="my-2">
+                    <div>
+                        <h4 class="small fw-bold text-dark mb-1">Can I take multiple roadmaps?</h4>
+                        <p class="text-muted small mb-0">Yes. You can enroll in multiple career tracks and monitor each track independently from your personal workspace.</p>
+                    </div>
+                </div>
+
+                <!-- Sticky Enrollment Box -->
+                <div class="card border-primary border-opacity-25 rounded-3 p-4 bg-light shadow-sm">
+                    <h3 class="h6 fw-bold text-dark mb-2">Ready to Start?</h3>
+                    <p class="text-muted small mb-3">
+                        Enroll in the {{ path.name }} track to access interactive lesson checkboxes, milestone tracking, and certificate eligibility.
+                    </p>
+                    {% if is_enrolled %}
+                    <a href="{% url 'roadmaps:learning_detail' path.slug %}?from=public_detail" class="btn btn-success w-100 fw-semibold">
+                        <span>Open Learning Console</span>
+                        <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                    {% elif user.is_authenticated %}
+                    <form method="POST" action="{% url 'roadmaps:enroll' path.slug %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="from" value="public_detail">
+                        <button type="submit" class="btn btn-primary w-100 fw-semibold">
+                            Enroll in this Roadmap
+                        </button>
+                    </form>
+                    {% else %}
+                    <a href="{% url 'register' %}?next={% url 'roadmaps:learning_detail' path.slug %}" class="btn btn-primary w-100 fw-semibold mb-2">
+                        <span>Enroll Free</span>
+                        <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                    <a href="{% url 'login' %}?next={% url 'roadmaps:learning_detail' path.slug %}" class="btn btn-outline-secondary bg-white w-100 btn-sm">
+                        Sign In
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

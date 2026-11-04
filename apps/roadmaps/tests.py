@@ -150,7 +150,7 @@ class RoadmapsRedesignTests(TestCase):
         self.t2_1 = Topic.objects.create(milestone=self.ms2, title='REST Principles', order=1, estimated_hours=3.0)
 
     def test_hub_empty_state_when_not_enrolled(self):
-        response = self.client.get(reverse('roadmaps:path_list'))
+        response = self.client.get(reverse('roadmaps:my_roadmap'))
         self.assertEqual(response.status_code, 200)
         # Uses workspace shell
         self.assertContains(response, 'dash-shell')
@@ -166,7 +166,7 @@ class RoadmapsRedesignTests(TestCase):
         enr_front = UserRoadmap.objects.create(user=self.user, career_path=self.path_frontend)
         enr_back = UserRoadmap.objects.create(user=self.user, career_path=self.path_backend)
 
-        response = self.client.get(reverse('roadmaps:path_list'))
+        response = self.client.get(reverse('roadmaps:my_roadmap'))
         self.assertEqual(response.status_code, 200)
         
         # Primary enrollment must be Backend Developer
@@ -186,7 +186,7 @@ class RoadmapsRedesignTests(TestCase):
         TopicProgress.objects.create(user_roadmap=enr_back, topic=self.t1_2, is_completed=False)
         TopicProgress.objects.create(user_roadmap=enr_back, topic=self.t2_1, is_completed=False)
 
-        response = self.client.get(reverse('roadmaps:path_list'))
+        response = self.client.get(reverse('roadmaps:my_roadmap'))
         self.assertEqual(response.status_code, 200)
 
         # Current milestone should be Week 1 because t1_2 is incomplete
@@ -200,7 +200,7 @@ class RoadmapsRedesignTests(TestCase):
         self.assertContains(response, 'Continue Learning')
 
         # Check detail page renders the exact matching ID (Constraint 3)
-        detail_response = self.client.get(reverse('roadmaps:path_detail', kwargs={'slug': 'backend-developer'}))
+        detail_response = self.client.get(reverse('roadmaps:learning_detail', kwargs={'slug': 'backend-developer'}))
         self.assertEqual(detail_response.status_code, 200)
         self.assertContains(detail_response, f'id="milestone-week-{current_ms.week_number}"')
         self.assertContains(detail_response, f'href="#milestone-week-{current_ms.week_number}"')
@@ -211,7 +211,7 @@ class RoadmapsRedesignTests(TestCase):
         TopicProgress.objects.create(user_roadmap=enr_back, topic=self.t1_2, is_completed=True)
         TopicProgress.objects.create(user_roadmap=enr_back, topic=self.t2_1, is_completed=True)
 
-        response = self.client.get(reverse('roadmaps:path_list'))
+        response = self.client.get(reverse('roadmaps:my_roadmap'))
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['is_roadmap_completed'])
         self.assertContains(response, 'Review Roadmap')
@@ -219,13 +219,13 @@ class RoadmapsRedesignTests(TestCase):
 
     def test_dynamic_path_count_not_hardcoded(self):
         # Test Constraint 1: dynamic count rendered from queryset
-        response = self.client.get(reverse('roadmaps:path_list'))
+        response = self.client.get(reverse('roadmaps:my_roadmap'))
         self.assertEqual(response.status_code, 200)
         paths_count = len(response.context['paths'])
         self.assertContains(response, f'{paths_count} career tracks curated')
 
     def test_sidebar_active_link_on_roadmaps(self):
-        response = self.client.get(reverse('roadmaps:path_list'))
+        response = self.client.get(reverse('roadmaps:my_roadmap'))
         self.assertEqual(response.status_code, 200)
         # My Roadmap sidebar link should have the active class
         self.assertContains(response, 'class="dash-nav-link active">\n                <i class="bi bi-map"></i>\n                <span>My Roadmap</span>')

@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.http import Http404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -209,7 +210,7 @@ def dashboard_view(request):
             'progress': roadmap_progress,
             'why': f'Master {current_topic.title} to progress towards completing week {current_milestone.week_number} of {active_enrollment.career_path.name}.',
             'cta_text': 'Continue learning',
-            'cta_url': reverse('roadmaps:path_detail', kwargs={'slug': active_enrollment.career_path.slug}),
+            'cta_url': f"{reverse('roadmaps:learning_detail', kwargs={'slug': active_enrollment.career_path.slug})}?from=dashboard",
             'icon': 'bi-play-circle-fill',
         }
     elif not has_resume:
@@ -384,7 +385,7 @@ def dashboard_view(request):
             'detail': f"{active_enrollment.career_path.name} ({roadmap_progress}%)" if active_enrollment else 'Enroll in 12-week path',
             'status': roadmap_status,
             'status_text': roadmap_status_text,
-            'url': reverse('roadmaps:path_detail', kwargs={'slug': active_enrollment.career_path.slug}) if active_enrollment else reverse('roadmaps:path_list'),
+            'url': f"{reverse('roadmaps:learning_detail', kwargs={'slug': active_enrollment.career_path.slug})}?from=dashboard" if active_enrollment else reverse('roadmaps:path_list'),
         },
         {
             'id': 'resume',
@@ -528,3 +529,37 @@ def robots_txt(request):
         {'sitemap_url': sitemap_url},
         content_type='text/plain; charset=utf-8',
     )
+
+
+def guide_list_view(request):
+    """
+    Public listing of curated career guides for engineering students and fresh graduates.
+    Fully accessible without authentication; indexed by search engines.
+    """
+    from .guides_data import get_all_guides
+    guides = get_all_guides()
+    context = {
+        'guides': guides,
+        'total_guides_count': len(guides),
+    }
+    return render(request, 'career_guides/guide_list.html', context)
+
+
+def guide_detail_view(request, slug):
+    """
+    Individual public career guide detail page.
+    Renders structured editorial content, table of contents, related roadmaps, and schema markup.
+    Returns HTTP 404 if guide slug is not found.
+    """
+    from .guides_data import get_guide_by_slug, get_related_guides
+    guide = get_guide_by_slug(slug)
+    if not guide:
+        raise Http404("Career guide not found.")
+
+    related_guides = get_related_guides(slug, limit=3)
+
+    context = {
+        'guide': guide,
+        'related_guides': related_guides,
+    }
+    return render(request, 'career_guides/guide_detail.html', context)

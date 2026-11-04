@@ -32,7 +32,7 @@ urlpatterns = [
     path("profile/", include("apps.profiles.urls")),
     path("resume/", include("apps.resume.urls")),
     path("ai-resume/", include("apps.ai_resume.urls")),
-    path("roadmaps/", include("apps.roadmaps.urls")),
+    path("", include("apps.roadmaps.urls")),
     path("verify/<str:certificate_id>/", verify_certificate, name='public_verify_certificate'),
     path("interviews/", include("apps.interviews.urls")),
     path("community/", include("apps.community.urls")),

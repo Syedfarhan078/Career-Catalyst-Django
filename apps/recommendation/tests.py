@@ -236,19 +236,19 @@ class RecommendationTests(TestCase):
         self.assertEqual(res_rec.status_code, 200)
         self.assertContains(res_rec, 'href="/recommendation/" class="dash-nav-link active"')
         self.assertNotContains(res_rec, 'href="/dashboard/" class="dash-nav-link active"')
-        self.assertNotContains(res_rec, 'href="/roadmaps/" class="dash-nav-link active"')
+        self.assertNotContains(res_rec, 'href="/roadmaps/my/" class="dash-nav-link active"')
 
         # 2. On /dashboard/
         res_dash = self.client.get(reverse('dashboard'))
         self.assertEqual(res_dash.status_code, 200)
         self.assertContains(res_dash, 'href="/dashboard/" class="dash-nav-link active"')
         self.assertNotContains(res_dash, 'href="/recommendation/" class="dash-nav-link active"')
-        self.assertNotContains(res_dash, 'href="/roadmaps/" class="dash-nav-link active"')
+        self.assertNotContains(res_dash, 'href="/roadmaps/my/" class="dash-nav-link active"')
 
-        # 3. On /roadmaps/
-        res_road = self.client.get(reverse('roadmaps:path_list'))
+        # 3. On /roadmaps/my/
+        res_road = self.client.get(reverse('roadmaps:my_roadmap'))
         self.assertEqual(res_road.status_code, 200)
-        self.assertContains(res_road, 'href="/roadmaps/" class="dash-nav-link active"')
+        self.assertContains(res_road, 'href="/roadmaps/my/" class="dash-nav-link active"')
         self.assertNotContains(res_road, 'href="/dashboard/" class="dash-nav-link active"')
         self.assertNotContains(res_road, 'href="/recommendation/" class="dash-nav-link active"')
 

@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block title %}Certificate — {{ cert.career_path.name }} — CareerCatalyst{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
@@ -105,7 +106,7 @@
 
         <main class="dash-content">
             <!-- Back Navigation -->
-            <a href="{% url 'roadmaps:path_detail' cert.career_path.slug %}" class="roadmap-back-link mb-3">
+            <a href="{% url 'roadmaps:learning_detail' cert.career_path.slug %}" class="roadmap-back-link mb-3">
                 <i class="bi bi-arrow-left"></i>
                 <span>Back to {{ cert.career_path.name }} Track</span>
             </a>

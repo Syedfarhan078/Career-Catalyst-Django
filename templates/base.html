@@ -51,37 +51,52 @@
     
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="CareerCatalyst is an AI-powered career development platform. Master structured 12-week learning roadmaps, benchmark resumes with ATS scoring, and practice mock interviews.">
-    <meta name="keywords" content="career catalyst, career roadmaps, ats resume analyzer, mock interview practice, student portfolio, tech jobs preparation, learning tracks">
+    <title>{% block title %}CareerCatalyst — Learn. Build. Innovate.{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}CareerCatalyst is an AI-assisted career development platform for engineering students and graduates. Master structured 12-week learning roadmaps, benchmark resumes with ATS scoring, and prepare for interviews.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}career catalyst, career roadmaps, ats resume analyzer, mock interview practice, student portfolio, tech jobs preparation, learning tracks{% endblock %}">
     <meta name="author" content="CareerCatalyst">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://career-catalyst-ad5m.onrender.com{{ request.path|default:'/' }}">
+    {% block extra_meta %}{% endblock %}
+
+    <!-- Robots Indexing Control: Secure default is noindex, nofollow; public pages explicitly declare index, follow -->
+    {% block robots %}
+    <meta name="robots" content="noindex, nofollow">
+    {% endblock %}
+
+    <!-- Canonical URL -->
+    {% block canonical %}
+    <link rel="canonical" href="{% block canonical_url %}{{ CANONICAL_ORIGIN }}{{ request.path }}{% endblock %}">
+    {% endblock %}
 
     <!-- Open Graph / Facebook / LinkedIn / WhatsApp -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://career-catalyst-ad5m.onrender.com{{ request.path|default:'/' }}">
+    {% block og_tags %}
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
     <meta property="og:site_name" content="CareerCatalyst">
-    <meta property="og:title" content="CareerCatalyst — AI Career Roadmaps, ATS Resume Analyzer & Interview Prep">
-    <meta property="og:description" content="Structured career development platform. Master 12-week learning roadmaps, benchmark your resume with ATS scoring, and practice mock interviews.">
-    <meta property="og:image" content="https://career-catalyst-ad5m.onrender.com{% static 'images/logo.png' %}">
+    <meta property="og:url" content="{% block og_url %}{{ CANONICAL_ORIGIN }}{{ request.path }}{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}CareerCatalyst — Learn. Build. Innovate.{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Structured career development platform for engineers. Master structured 12-week learning roadmaps, benchmark your resume with ATS scoring, and practice mock interviews.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ CANONICAL_ORIGIN }}{% static 'images/logo.png' %}{% endblock %}">
+    {% endblock %}
 
     <!-- Twitter / X Cards -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:url" content="https://career-catalyst-ad5m.onrender.com{{ request.path|default:'/' }}">
-    <meta name="twitter:title" content="CareerCatalyst — AI Career Roadmaps & Interview Prep">
-    <meta name="twitter:description" content="Structured career development platform. Master 12-week learning roadmaps, benchmark your resume, and practice mock interviews.">
-    <meta name="twitter:image" content="https://career-catalyst-ad5m.onrender.com{% static 'images/logo.png' %}">
+    {% block twitter_tags %}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ CANONICAL_ORIGIN }}{{ request.path }}">
+    <meta name="twitter:title" content="{% block twitter_title %}CareerCatalyst — Learn. Build. Innovate.{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Structured career development platform for engineers. Master structured 12-week learning roadmaps, benchmark your resume, and practice mock interviews.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ CANONICAL_ORIGIN }}{% static 'images/logo.png' %}{% endblock %}">
+    {% endblock %}
 
     <!-- Schema.org JSON-LD Structured Data for Google Rich Snippets -->
+    {% block schema_markup %}
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": "CareerCatalyst",
-      "url": "https://career-catalyst-ad5m.onrender.com/",
+      "url": "{{ CANONICAL_ORIGIN }}/",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "All",
-      "description": "AI-powered career development platform featuring structured learning roadmaps, ATS resume analysis, mock interview preparation, and job application tracking.",
+      "description": "AI-assisted career development platform featuring structured learning roadmaps, ATS resume analysis, mock interview preparation, and job application tracking.",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -89,8 +104,9 @@
       }
     }
     </script>
+    {% endblock %}
 
-    <title>{% block title %}Career Catalyst{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}?v=3.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}">

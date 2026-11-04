@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block title %}CareerCatalyst — Dashboard{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
@@ -188,7 +189,7 @@
                         {% endif %}
 
                         <div class="mt-auto pt-2">
-                            <a href="{% url 'roadmaps:path_detail' active_enrollment.career_path.slug %}" class="dash-btn-primary w-100">
+                            <a href="{% url 'roadmaps:learning_detail' active_enrollment.career_path.slug %}?from=dashboard" class="dash-btn-primary w-100">
                                 <span>{% if is_roadmap_completed %}Review roadmap{% else %}Continue roadmap{% endif %}</span>
                                 <i class="bi bi-arrow-right"></i>
                             </a>

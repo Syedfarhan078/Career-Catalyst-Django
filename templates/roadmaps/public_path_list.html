@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Explore {{ total_paths_count }} Structured Engineering Learning Roadmaps | CareerCatalyst{% endblock %}
+{% block meta_description %}Explore structured, week-by-week learning roadmaps for modern tech careers. Master computer science fundamentals, backend APIs, data science, machine learning, and DevOps with open resources and skill verification.{% endblock %}
+{% block meta_keywords %}career roadmaps, software engineering syllabus, learn backend, machine learning curriculum, devops roadmap, full stack developer path, computer science curriculum, engineering roadmaps{% endblock %}
+
+{% block robots %}
+<meta name="robots" content="index, follow">
+{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="{{ CANONICAL_ORIGIN }}{% url 'roadmaps:path_list' %}">
+{% endblock %}
+
+{% block extra_meta %}
+<!-- Open Graph / Social Sharing -->
+<meta property="og:title" content="Explore {{ total_paths_count }} Structured Engineering Learning Roadmaps | CareerCatalyst">
+<meta property="og:description" content="Structured week-by-week roadmaps for modern technology careers. Master backend APIs, data science, machine learning, and DevOps.">
+<meta property="og:url" content="{{ CANONICAL_ORIGIN }}{% url 'roadmaps:path_list' %}">
+<meta property="og:type" content="website">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Explore {{ total_paths_count }} Structured Engineering Learning Roadmaps | CareerCatalyst">
+<meta name="twitter:description" content="Structured week-by-week roadmaps for modern engineering careers with milestone checkpoints.">
+
+<!-- Structured Data: ItemList of Courses -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "CareerCatalyst Engineering Learning Roadmaps",
+  "description": "Curated week-by-week learning paths for engineering students and technology professionals.",
+  "numberOfItems": {{ annotated_paths|length }},
+  "itemListElement": [
+    {% for item in annotated_paths %}
+    {
+      "@type": "ListItem",
+      "position": {{ forloop.counter }},
+      "item": {
+        "@type": "Course",
+        "name": "{{ item.path.name }}",
+        "description": "{{ item.path.description|escapejs }}",
+        "url": "{{ CANONICAL_ORIGIN }}{% url 'roadmaps:path_detail' item.path.slug %}",
+        "educationalLevel": "{{ item.path.difficulty }}",
+        "timeRequired": "P{{ item.path.estimated_weeks }}W",
+        "isAccessibleForFree": true,
+        "provider": {
+          "@type": "Organization",
+          "name": "CareerCatalyst",
+          "sameAs": "{{ CANONICAL_ORIGIN }}"
+        }
+      }
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.pub-roadmaps-hero {
+    background: linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, rgba(248, 250, 252, 0) 100%);
+    padding: 3.5rem 0 2rem;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+.pub-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
+}
+.pub-roadmap-card {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 14px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+}
+.pub-roadmap-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px -10px rgba(15, 23, 42, 0.1);
+    border-color: #cbd5e1;
+}
+.pub-roadmap-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+.pub-filter-btn {
+    border-radius: 9999px;
+    padding: 0.4rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+.level-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.level-beginner { background: #dcfce7; color: #15803d; }
+.level-intermediate { background: #e0e7ff; color: #4338ca; }
+.level-advanced { background: #fef3c7; color: #b45309; }
+.skills-pill {
+    font-size: 0.75rem;
+    background: var(--bg-secondary, #f1f5f9);
+    color: var(--text-secondary, #475569);
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color, #e2e8f0);
+}
+</style>
+{% endblock %}
+
+{% block main_wrapper %}
+<main class="pub-roadmaps-page">
+    <!-- Header / Hero Banner -->
+    <header class="pub-roadmaps-hero">
+        <div class="container text-center max-w-3xl mx-auto px-3">
+            <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(37, 99, 235, 0.08); color: #2563eb; font-size: 0.85rem; font-weight: 600;">
+                <i class="bi bi-compass"></i>
+                <span>Curated Engineering Curricula</span>
+            </div>
+            <h1 class="display-6 fw-bold mb-3 text-dark">Structured Roadmaps for Modern Tech Careers</h1>
+            <p class="lead text-muted mb-4 mx-auto" style="max-width: 680px; font-size: 1.05rem;">
+                Step-by-step week-by-week learning roadmaps designed for engineering students and fresh graduates. Master industry-demanded skills with curated tutorials, official documentation, and milestone checkpoints.
+            </p>
+
+            <!-- Search and Filter Form -->
+            <form method="GET" action="{% url 'roadmaps:path_list' %}" class="row g-2 justify-content-center align-items-center mb-3">
+                <div class="col-12 col-md-6 col-lg-5">
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white border-end-0 text-muted">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" name="q" value="{{ search_query }}" class="form-control border-start-0 ps-0" placeholder="Search by role or keyword (e.g. Backend, ML, DevOps)..." aria-label="Search roadmaps">
+                        {% if selected_difficulty %}
+                        <input type="hidden" name="difficulty" value="{{ selected_difficulty }}">
+                        {% endif %}
+                        <button class="btn btn-primary px-3" type="submit">Search</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Difficulty Filter Pills -->
+            <nav class="d-flex flex-wrap justify-content-center gap-2 mt-2" aria-label="Roadmap Difficulty Filter">
+                <a href="{% url 'roadmaps:path_list' %}{% if search_query %}?q={{ search_query }}{% endif %}" class="btn pub-filter-btn {% if not selected_difficulty %}btn-primary{% else %}btn-outline-secondary bg-white{% endif %}">
+                    All Levels ({{ total_paths_count }})
+                </a>
+                <a href="{% url 'roadmaps:path_list' %}?difficulty=Beginner{% if search_query %}&q={{ search_query }}{% endif %}" class="btn pub-filter-btn {% if selected_difficulty == 'Beginner' %}btn-primary{% else %}btn-outline-secondary bg-white{% endif %}">
+                    Beginner
+                </a>
+                <a href="{% url 'roadmaps:path_list' %}?difficulty=Intermediate{% if search_query %}&q={{ search_query }}{% endif %}" class="btn pub-filter-btn {% if selected_difficulty == 'Intermediate' %}btn-primary{% else %}btn-outline-secondary bg-white{% endif %}">
+                    Intermediate
+                </a>
+                <a href="{% url 'roadmaps:path_list' %}?difficulty=Advanced{% if search_query %}&q={{ search_query }}{% endif %}" class="btn pub-filter-btn {% if selected_difficulty == 'Advanced' %}btn-primary{% else %}btn-outline-secondary bg-white{% endif %}">
+                    Advanced
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Catalogue Listing Grid -->
+    <section class="py-5">
+        <div class="container px-3">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <h2 class="h5 fw-bold text-dark mb-0">
+                    Showing {{ annotated_paths|length }} Career Path{{ annotated_paths|length|pluralize }}
+                    {% if selected_difficulty %}<span class="badge bg-light text-muted border ms-2">{{ selected_difficulty }}</span>{% endif %}
+                </h2>
+                <div class="small text-muted">
+                    Structured syllabus &bull; Verifiable certificate upon completion
+                </div>
+            </div>
+
+            {% if annotated_paths %}
+                <div class="pub-card-grid">
+                    {% for item in annotated_paths %}
+                    <article class="pub-roadmap-card">
+                        <!-- Card Header -->
+                        <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                            <div class="pub-roadmap-icon">
+                                <i class="bi {{ item.path.icon|default:'bi-journal-code' }}"></i>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="level-badge level-{{ item.path.difficulty|lower }}">
+                                    {{ item.path.difficulty }}
+                                </span>
+                                {% if item.path.slug in enrolled_slugs %}
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small fw-semibold">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Enrolled
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Title and Description -->
+                        <h3 class="h5 fw-bold text-dark mb-2">
+                            <a href="{% url 'roadmaps:path_detail' item.path.slug %}?from=catalogue" class="text-dark text-decoration-none hover-primary">
+                                {{ item.path.name }}
+                            </a>
+                        </h3>
+                        <p class="text-muted small mb-3 flex-grow-1" style="line-height: 1.55;">
+                            {{ item.path.description|truncatewords:24 }}
+                        </p>
+
+                        <!-- Key Curriculum Stats -->
+                        <div class="d-flex align-items-center gap-3 py-2 border-top border-bottom mb-3 text-muted small">
+                            <span title="Estimated duration" class="d-flex align-items-center gap-1">
+                                <i class="bi bi-calendar-week text-primary"></i>
+                                <span>{{ item.path.estimated_weeks }} Weeks</span>
+                            </span>
+                            <span title="Milestones" class="d-flex align-items-center gap-1">
+                                <i class="bi bi-flag text-primary"></i>
+                                <span>{{ item.milestones_count }} Milestones</span>
+                            </span>
+                            <span title="Total topics" class="d-flex align-items-center gap-1">
+                                <i class="bi bi-journal-check text-primary"></i>
+                                <span>{{ item.topics_count }} Topics</span>
+                            </span>
+                        </div>
+
+                        <!-- Skills Preview -->
+                        {% if item.skills_preview %}
+                        <div class="mb-4">
+                            <div class="text-uppercase text-muted" style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 0.35rem;">Skills Covered:</div>
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for s in item.skills_preview %}
+                                <span class="skills-pill">{{ s }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Card Action CTA -->
+                        <div class="mt-auto pt-2 d-flex flex-column gap-2">
+                            {% if item.path.slug in enrolled_slugs %}
+                            <a href="{% url 'roadmaps:learning_detail' item.path.slug %}?from=catalogue" class="btn btn-outline-success btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-1">
+                                <i class="bi bi-play-circle-fill"></i>
+                                <span>Open Learning Console</span>
+                            </a>
+                            <a href="{% url 'roadmaps:path_detail' item.path.slug %}?from=catalogue" class="btn btn-light btn-sm w-100 text-muted">
+                                <span>View Public Overview &rarr;</span>
+                            </a>
+                            {% else %}
+                            <a href="{% url 'roadmaps:path_detail' item.path.slug %}?from=catalogue" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-1">
+                                <span>View Syllabus &amp; Enroll</span>
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5 bg-white rounded-3 border">
+                    <i class="bi bi-compass text-muted" style="font-size: 2.5rem;"></i>
+                    <h3 class="h5 fw-bold mt-3">No matching roadmaps found</h3>
+                    <p class="text-muted small mb-3">Try adjusting your search keyword or selected difficulty filter.</p>
+                    <a href="{% url 'roadmaps:path_list' %}" class="btn btn-outline-primary btn-sm">Clear All Filters</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Why CareerCatalyst Roadmaps Section -->
+    <section class="py-5 bg-white border-top">
+        <div class="container px-3 max-w-4xl mx-auto">
+            <div class="text-center mb-5">
+                <h2 class="h4 fw-bold text-dark">Why Follow a Structured Roadmap?</h2>
+                <p class="text-muted small max-w-2xl mx-auto">
+                    Instead of jumping between disconnected video tutorials, CareerCatalyst roadmaps provide a sequential progression model directly aligned with technical interview bars.
+                </p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3 border h-100 bg-light">
+                        <div class="text-primary mb-2" style="font-size: 1.5rem;"><i class="bi bi-sort-numeric-down"></i></div>
+                        <h3 class="h6 fw-bold">1. Sequential Milestones</h3>
+                        <p class="text-muted small mb-0">Every roadmap is structured into 10 to 12 weekly milestones. Master fundamentals before jumping into frameworks.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3 border h-100 bg-light">
+                        <div class="text-primary mb-2" style="font-size: 1.5rem;"><i class="bi bi-shield-check"></i></div>
+                        <h3 class="h6 fw-bold">2. Verified Skill Acquisition</h3>
+                        <p class="text-muted small mb-0">Topics teach demonstrable industry skills. As you mark topics complete in your learning console, earned skills sync to your profile.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3 border h-100 bg-light">
+                        <div class="text-primary mb-2" style="font-size: 1.5rem;"><i class="bi bi-patch-check"></i></div>
+                        <h3 class="h6 fw-bold">3. Verifiable Certification</h3>
+                        <p class="text-muted small mb-0">Completing 100% of topics unlocks an authentic, verifiable certificate with a tamper-resistant ID and recruiter verification QR code.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bottom Registration CTA -->
+    <section class="py-5 bg-light border-top text-center">
+        <div class="container px-3 max-w-2xl mx-auto">
+            <h2 class="h4 fw-bold mb-2">Ready to accelerate your career?</h2>
+            <p class="text-muted small mb-4">Join thousands of students following structured engineering curriculums on CareerCatalyst.</p>
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}" class="btn btn-primary px-4 fw-semibold">
+                    <span>Go to Student Workspace</span>
+                    <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+                {% else %}
+                <a href="{% url 'register' %}" class="btn btn-primary px-4 fw-semibold">
+                    <span>Get Started Free</span>
+                    <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+                <a href="{% url 'login' %}" class="btn btn-outline-secondary bg-white px-4">
+                    Sign In
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}

@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
@@ -308,7 +309,7 @@ def activate_roadmap_from_analysis(request, analysis_id):
                 request,
                 f"🚀 Successfully activated your {career_path.name} roadmap! Jump into Week {next_week} below."
             )
-        return redirect('roadmaps:path_detail', slug=career_path.slug)
+        return redirect(f"{reverse('roadmaps:learning_detail', kwargs={'slug': career_path.slug})}?from=guidance")
     except Exception as e:
         messages.error(request, f"Could not activate roadmap: {str(e)}")
         return redirect('recommendation:dashboard')

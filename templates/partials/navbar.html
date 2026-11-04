@@ -49,18 +49,28 @@
                             </a>
                         </li>
                     {% endif %}
-                {% elif request.resolver_match.url_name == 'home' %}
+                {% else %}
+                    {# Public Navigation for Anonymous Visitors across all public pages #}
                     <li class="nav-item">
-                        <a class="nav-link" href="#features">Features</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#how-it-works">How It Works</a>
+                        <a class="nav-link" href="{% if request.resolver_match.url_name == 'home' %}#roadmaps{% else %}{% url 'home' %}#roadmaps{% endif %}">Roadmaps</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#journey">Career Journey</a>
+                        <a class="nav-link {% if '/career-guides/' in request.path or request.resolver_match.url_name == 'guide_list' or request.resolver_match.url_name == 'guide_detail' %}active{% endif %}" href="{% url 'guide_list' %}">Career Guides</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#faq">FAQ</a>
+                        <a class="nav-link" href="{% if request.resolver_match.url_name == 'home' %}#features{% else %}{% url 'home' %}#features{% endif %}">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% if request.resolver_match.url_name == 'home' %}#how-it-works{% else %}{% url 'home' %}#how-it-works{% endif %}">How It Works</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% if request.resolver_match.url_name == 'home' %}#journey{% else %}{% url 'home' %}#journey{% endif %}">Career Journey</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% if request.resolver_match.url_name == 'home' %}#faq{% else %}{% url 'home' %}#faq{% endif %}">FAQ</a>
                     </li>
                 {% endif %}
             </ul>

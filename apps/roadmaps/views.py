@@ -14,6 +14,7 @@ from xhtml2pdf import pisa
 from .models import CareerPath, Milestone, Topic, UserRoadmap, TopicProgress, RoadmapCertificate
 from .services import sync_topic_completion, check_and_award_roadmap_certificate, get_roadmap_certificate
 from .utils import generate_qr_code_base64, is_rate_limited, get_verified_badge_base64
+from .navigation import get_safe_roadmap_back_navigation, SAFE_ORIGIN_CONFIG
 from apps.profiles.models import StudentProfile
 
 
@@ -33,6 +34,133 @@ def _get_user_display_context(user):
         'target_career': target_career,
         'user_initials': user_initials,
     }
+
+
+class PublicRoadmapListView(ListView):
+    """
+    Public SEO roadmap catalogue accessible without authentication.
+    Displays published curriculum tracks from the database without exposing
+    private user-specific enrollment or progress data.
+    """
+    model = CareerPath
+    template_name = 'roadmaps/public_path_list.html'
+    context_object_name = 'paths'
+
+    def get_queryset(self):
+        qs = CareerPath.objects.filter(is_active=True).prefetch_related('milestones__topics')
+        difficulty = self.request.GET.get('difficulty', '').strip()
+        if difficulty in ['Beginner', 'Intermediate', 'Advanced']:
+            qs = qs.filter(difficulty=difficulty)
+        query = self.request.GET.get('q', '').strip()
+        if query:
+            qs = qs.filter(name__icontains=query) | qs.filter(description__icontains=query)
+        return qs.distinct()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        annotated_paths = []
+        for path in context['paths']:
+            milestones = list(path.milestones.all())
+            topics = [t for ms in milestones for t in ms.topics.all()]
+            milestones_count = len(milestones)
+            topics_count = len(topics)
+            
+            # Aggregate unique skills
+            skills = []
+            for t in topics:
+                for s in t.get_skills_list():
+                    if s not in skills and len(skills) < 6:
+                        skills.append(s)
+
+            annotated_paths.append({
+                'path': path,
+                'milestones_count': milestones_count,
+                'topics_count': topics_count,
+                'skills_preview': skills,
+            })
+
+        context['annotated_paths'] = annotated_paths
+        context['selected_difficulty'] = self.request.GET.get('difficulty', '')
+        context['search_query'] = self.request.GET.get('q', '')
+        context['total_paths_count'] = CareerPath.objects.filter(is_active=True).count()
+
+        # Non-sensitive enrollment indicator for authenticated users to navigate smoothly
+        if self.request.user.is_authenticated:
+            context['enrolled_slugs'] = set(
+                UserRoadmap.objects.filter(user=self.request.user, is_active=True).values_list('career_path__slug', flat=True)
+            )
+        else:
+            context['enrolled_slugs'] = set()
+
+        return context
+
+
+class PublicRoadmapDetailView(DetailView):
+    """
+    Public SEO roadmap detail page accessible without authentication.
+    Renders structured curriculum syllabus, milestones, topics, and documentation links.
+    Does not expose private user progress or completion states.
+    """
+    model = CareerPath
+    template_name = 'roadmaps/public_path_detail.html'
+    context_object_name = 'path'
+
+    def get_queryset(self):
+        return CareerPath.objects.filter(is_active=True)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        path = self.object
+
+        milestones = path.milestones.prefetch_related('topics').all().order_by('order', 'week_number')
+        
+        all_skills = []
+        total_topics_count = 0
+        total_estimated_hours = 0.0
+
+        structured_milestones = []
+        for ms in milestones:
+            ms_topics = list(ms.topics.all().order_by('order'))
+            total_topics_count += len(ms_topics)
+            for t in ms_topics:
+                if t.estimated_hours:
+                    total_estimated_hours += float(t.estimated_hours)
+                for s in t.get_skills_list():
+                    if s not in all_skills:
+                        all_skills.append(s)
+            structured_milestones.append({
+                'milestone': ms,
+                'topics': ms_topics,
+                'topics_count': len(ms_topics),
+            })
+
+        context['milestones'] = milestones
+        context['structured_milestones'] = structured_milestones
+        context['all_skills'] = all_skills
+        context['total_topics_count'] = total_topics_count
+        context['total_estimated_hours'] = int(total_estimated_hours)
+
+        # Check if authenticated user is already enrolled
+        is_enrolled = False
+        if self.request.user.is_authenticated:
+            is_enrolled = UserRoadmap.objects.filter(
+                user=self.request.user,
+                career_path=path,
+                is_active=True
+            ).exists()
+
+        context['is_enrolled'] = is_enrolled
+
+        # Context-aware return navigation
+        back_url, back_label = get_safe_roadmap_back_navigation(
+            self.request,
+            default_context='catalogue',
+            path_slug=path.slug
+        )
+        context['back_url'] = back_url
+        context['back_label'] = back_label
+
+        return context
 
 
 @method_decorator(login_required, name='dispatch')
@@ -295,6 +423,15 @@ class RoadmapDetailView(DetailView):
         context['is_roadmap_completed'] = is_roadmap_completed
         context['certificate'] = get_roadmap_certificate(self.request.user, path)
 
+        # Context-aware return navigation (ensures authenticated students remain in workspace by default)
+        back_url, back_label = get_safe_roadmap_back_navigation(
+            self.request,
+            default_context='my_roadmaps',
+            path_slug=path.slug
+        )
+        context['back_url'] = back_url
+        context['back_label'] = back_label
+
         return context
 
 
@@ -317,7 +454,13 @@ def enroll_roadmap(request, slug):
             messages.success(request, f"You have enrolled in the {path.name} roadmap!")
         else:
             messages.info(request, f"You are already enrolled in the {path.name} roadmap.")
-        return redirect('roadmaps:path_detail', slug=slug)
+
+        # Preserve navigation origin context on enrollment redirect
+        origin = request.POST.get('from') or request.GET.get('from') or ''
+        redirect_url = reverse('roadmaps:learning_detail', kwargs={'slug': slug})
+        if origin in SAFE_ORIGIN_CONFIG:
+            redirect_url = f"{redirect_url}?from={origin}"
+        return redirect(redirect_url)
     return redirect('roadmaps:path_list')
 
 

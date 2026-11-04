@@ -21,7 +21,7 @@
                 <i class="bi bi-grid-fill"></i>
                 <span>Overview</span>
             </a>
-            <a href="{% url 'roadmaps:path_list' %}" class="dash-nav-link {% if 'roadmaps' in request.path or request.resolver_match.app_name == 'roadmaps' %}active{% endif %}">
+            <a href="{% url 'roadmaps:my_roadmap' %}" class="dash-nav-link {% if 'roadmaps' in request.path or request.resolver_match.app_name == 'roadmaps' %}active{% endif %}">
                 <i class="bi bi-map"></i>
                 <span>My Roadmap</span>
             </a>

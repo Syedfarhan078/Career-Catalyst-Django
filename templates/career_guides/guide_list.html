@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Career Guides & Engineering Career Paths | CareerCatalyst{% endblock %}
+{% block meta_description %}Explore actionable, in-depth career guides for engineering students and fresh graduates. Learn data science, compare technical roles, build portfolios, and prepare for interviews.{% endblock %}
+{% block meta_keywords %}career guides, software engineering guide, data scientist roadmap, portfolio guide, technical interview preparation, engineering careers, tech skills{% endblock %}
+
+{% block robots %}
+<meta name="robots" content="index, follow">
+{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="{{ CANONICAL_ORIGIN }}{% url 'guide_list' %}">
+{% endblock %}
+
+{% block extra_meta %}
+<!-- Open Graph -->
+<meta property="og:title" content="Career Guides & Engineering Career Paths | CareerCatalyst">
+<meta property="og:description" content="Actionable, in-depth career guides for engineering students and fresh graduates. Learn data science, compare technical roles, build portfolios, and prepare for interviews.">
+<meta property="og:url" content="{{ CANONICAL_ORIGIN }}{% url 'guide_list' %}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="{{ CANONICAL_ORIGIN }}{% static 'images/logo.png' %}">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Career Guides & Engineering Career Paths | CareerCatalyst">
+<meta name="twitter:description" content="Actionable, in-depth career guides for engineering students and fresh graduates.">
+<meta name="twitter:image" content="{{ CANONICAL_ORIGIN }}{% static 'images/logo.png' %}">
+
+<!-- Structured Data: ItemList -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "CareerCatalyst Career Guides",
+  "description": "Curated, in-depth career and technical guides for engineering students and fresh graduates.",
+  "numberOfItems": {{ guides|length }},
+  "itemListElement": [
+    {% for g in guides %}
+    {
+      "@type": "ListItem",
+      "position": {{ forloop.counter }},
+      "name": "{{ g.title|escapejs }}",
+      "url": "{{ CANONICAL_ORIGIN }}{% url 'guide_detail' g.slug %}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.guides-hero {
+    background: linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, rgba(248, 250, 252, 0) 100%);
+    padding: 3.5rem 0 2rem;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+.guides-breadcrumb {
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+}
+.guide-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
+}
+.guide-card {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 14px;
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    height: 100%;
+}
+.guide-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px -10px rgba(15, 23, 42, 0.1);
+    border-color: #cbd5e1;
+}
+.guide-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.guide-badge-roadmaps { background: #dbeafe; color: #1e40af; }
+.guide-badge-comparisons { background: #fef3c7; color: #b45309; }
+.guide-badge-fundamentals { background: #dcfce7; color: #15803d; }
+.guide-badge-portfolio { background: #f3e8ff; color: #7e22ce; }
+.guide-badge-interview { background: #fee2e2; color: #b91c1c; }
+
+.guide-read-time {
+    font-size: 0.8rem;
+    color: var(--text-muted, #64748b);
+}
+.guide-card-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary, #0f172a);
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+.guide-card-title a {
+    color: inherit;
+    text-decoration: none;
+}
+.guide-card-title a:hover {
+    color: var(--primary-color, #2563eb);
+}
+.guide-card-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary, #475569);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
+}
+.guide-card-footer {
+    border-top: 1px solid var(--border-color, #f1f5f9);
+    padding-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.guide-read-link {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary-color, #2563eb);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: gap 0.15s ease;
+}
+.guide-read-link:hover {
+    gap: 0.55rem;
+    color: #1d4ed8;
+}
+.roadmap-cta-banner {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(59, 130, 246, 0.08) 100%);
+    border: 1px solid rgba(37, 99, 235, 0.15);
+    border-radius: 16px;
+    padding: 2.25rem 2rem;
+    margin-top: 3.5rem;
+}
+</style>
+{% endblock %}
+
+{% block main_wrapper %}
+<main class="guides-page">
+    <!-- Hero / Header Section -->
+    <header class="guides-hero">
+        <div class="container px-3">
+            <!-- Breadcrumbs -->
+            <nav aria-label="breadcrumb" class="guides-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-decoration-none text-muted">Home</a></li>
+                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Career Guides</li>
+                </ol>
+            </nav>
+
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 small fw-semibold mb-3">
+                        <i class="bi bi-compass"></i>
+                        <span>Career Knowledge Hub</span>
+                    </div>
+                    <h1 class="display-6 fw-bold text-dark mb-3">Career Guides for Engineering Students & Graduates</h1>
+                    <p class="lead text-muted fs-6 mb-0" style="max-width: 680px;">
+                        Practical, in-depth guides designed to help engineering students navigate specializations, master foundational technical skills, build industry-grade portfolios, and clear technical interview rounds.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <a href="{% url 'roadmaps:path_list' %}" class="btn btn-outline-primary rounded-pill px-4 py-2">
+                        <i class="bi bi-map me-1"></i> Browse All Roadmaps
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Guides Grid Section -->
+    <section class="container px-3 py-5">
+        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+            <div>
+                <h2 class="h5 fw-bold text-dark mb-1">Featured Career Guides</h2>
+                <p class="text-muted small mb-0">Explore our comprehensive editorial guides covering career tracks, skills, and preparation.</p>
+            </div>
+            <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">
+                {{ total_guides_count }} Comprehensive Guides
+            </span>
+        </div>
+
+        {% if guides %}
+        <div class="guide-card-grid">
+            {% for g in guides %}
+            <article class="guide-card">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                        {% if g.category == 'Career Roadmaps' %}
+                            <span class="guide-badge guide-badge-roadmaps">{{ g.category }}</span>
+                        {% elif g.category == 'Career Comparisons' %}
+                            <span class="guide-badge guide-badge-comparisons">{{ g.category }}</span>
+                        {% elif g.category == 'Engineering Fundamentals' %}
+                            <span class="guide-badge guide-badge-fundamentals">{{ g.category }}</span>
+                        {% elif g.category == 'Portfolio & Resumes' %}
+                            <span class="guide-badge guide-badge-portfolio">{{ g.category }}</span>
+                        {% elif g.category == 'Interview Preparation' %}
+                            <span class="guide-badge guide-badge-interview">{{ g.category }}</span>
+                        {% else %}
+                            <span class="guide-badge guide-badge-roadmaps">{{ g.category }}</span>
+                        {% endif %}
+                        <span class="guide-read-time"><i class="bi bi-clock me-1"></i>{{ g.reading_time }}</span>
+                    </div>
+
+                    <h3 class="guide-card-title">
+                        <a href="{% url 'guide_detail' g.slug %}">{{ g.title }}</a>
+                    </h3>
+
+                    <p class="guide-card-desc">{{ g.excerpt }}</p>
+                </div>
+
+                <div class="guide-card-footer">
+                    <span class="text-muted small"><i class="bi bi-person me-1"></i>{{ g.author.name }}</span>
+                    <a href="{% url 'guide_detail' g.slug %}" class="guide-read-link" aria-label="Read {{ g.title }}">
+                        <span>Read Guide</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-journal-x fs-1 text-muted mb-3 d-block"></i>
+            <h3 class="h5 fw-semibold text-secondary">No guides available</h3>
+            <p class="text-muted small">Please check back soon as new guides are published.</p>
+        </div>
+        {% endif %}
+
+        <!-- Roadmap CTA Banner -->
+        <aside class="roadmap-cta-banner">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 mb-2 fw-semibold">
+                        Interactive Learning Roadmaps
+                    </span>
+                    <h3 class="h4 fw-bold text-dark mb-2">Ready to put these guides into practice?</h3>
+                    <p class="text-muted mb-0 small" style="max-width: 620px;">
+                        Explore our 15 structured, week-by-week engineering curriculums. Track your topic progress, study verified documentation, and earn verifiable milestone certificates.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <a href="{% url 'roadmaps:path_list' %}" class="btn btn-primary rounded-pill px-4 py-2.5 fw-semibold">
+                        <span>Explore 15 Roadmaps</span>
+                        <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+    </section>
+</main>
+{% endblock %}

@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block title %}{{ path.name }} Curriculum — CareerCatalyst{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
@@ -57,9 +58,9 @@
         <!-- Main Content Area -->
         <main class="dash-content">
             <!-- Back Navigation -->
-            <a href="{% url 'roadmaps:path_list' %}" class="roadmap-back-link">
+            <a href="{{ back_url }}" class="roadmap-back-link">
                 <i class="bi bi-arrow-left"></i>
-                <span>Back to Roadmaps Hub</span>
+                <span>{{ back_label }}</span>
             </a>
 
             <!-- Track Header Card -->

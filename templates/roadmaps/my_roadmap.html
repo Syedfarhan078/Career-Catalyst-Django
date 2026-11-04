@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block title %}My Active Roadmaps — CareerCatalyst{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
@@ -44,9 +45,9 @@
         <!-- Main Content Area -->
         <main class="dash-content">
             <!-- Back Navigation -->
-            <a href="{% url 'roadmaps:path_list' %}" class="roadmap-back-link">
+            <a href="{% url 'dashboard' %}" class="roadmap-back-link">
                 <i class="bi bi-arrow-left"></i>
-                <span>Back to Roadmaps Hub</span>
+                <span>Back to Dashboard</span>
             </a>
 
             <!-- Header -->
@@ -106,12 +107,12 @@
                             </span>
                             <div>
                                 {% if enrollment.progress_percentage >= 100 %}
-                                <a href="{% url 'roadmaps:path_detail' enrollment.career_path.slug %}" class="dash-btn-secondary dash-btn-sm text-success" style="font-size: 0.8rem;">
+                                <a href="{% url 'roadmaps:learning_detail' enrollment.career_path.slug %}?from=my_roadmaps" class="dash-btn-secondary dash-btn-sm text-success" style="font-size: 0.8rem;">
                                     <i class="bi bi-check2-all"></i>
                                     <span>Review Roadmap</span>
                                 </a>
                                 {% else %}
-                                <a href="{% url 'roadmaps:path_detail' enrollment.career_path.slug %}" class="dash-btn-primary dash-btn-sm" style="font-size: 0.8rem;">
+                                <a href="{% url 'roadmaps:learning_detail' enrollment.career_path.slug %}?from=my_roadmaps" class="dash-btn-primary dash-btn-sm" style="font-size: 0.8rem;">
                                     <span>Continue Roadmap</span>
                                     <i class="bi bi-arrow-right"></i>
                                 </a>
