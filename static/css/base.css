@@ -37,6 +37,12 @@
     --border-strong:   #D1D5DB;
     --border-subtle:   #F1F5F9;
     
+    /* --- Compatibility / Legacy Token Aliases --- */
+    --text-primary:    #111827;
+    --text-secondary:  #475569;
+    --border-color:    #E5E7EB;
+    --primary-color:   #2563EB;
+    
     /* --- Semantic States --- */
     --success:         #16A34A;
     --success-subtle:  #F0FDF4;
@@ -250,6 +256,18 @@ html[data-theme="dark"] {
     --welcome-bg:   linear-gradient(135deg, #111115 0%, #09090B 100%);
     --hover-bg:     rgba(255, 255, 255, 0.05);
     --completed-bg: rgba(34, 197, 94, 0.12);
+    --surface-muted:   #151519;
+    --surface-elevated:#18181C;
+    --surface-hover:   #1C1C22;
+    --border-subtle:   #1F1F23;
+    --primary-subtle:  rgba(59, 130, 246, 0.15);
+    --primary-border:  rgba(59, 130, 246, 0.30);
+
+    /* Compatibility / Legacy Token Aliases */
+    --text-primary:    #F8FAFC;
+    --text-secondary:  #D1D5DB;
+    --border-color:    #27272A;
+    --primary-color:   #3B82F6;
 
     /* Bootstrap 5 system variable mapping in dark mode */
     --bs-body-color: #F8FAFC;
@@ -321,6 +339,14 @@ html[data-theme="dark"] .border {
 
 html[data-theme="dark"] .border-subtle {
     border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .text-dark {
+    color: var(--text) !important;
+}
+
+html[data-theme="dark"] .text-dark-emphasis {
+    color: #FFFFFF !important;
 }
 
 /* Accessible High-Contrast Semantic Text in Dark Mode */

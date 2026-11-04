@@ -986,3 +986,264 @@
         transform: none !important;
     }
 }
+
+
+/* --------------------------------------------------------------------------
+   9. PUBLIC ROADMAP CATALOGUE & DETAIL STYLING (Phase 6.2C)
+   -------------------------------------------------------------------------- */
+.pub-roadmaps-page,
+.pub-detail-page {
+    background-color: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+.pub-roadmaps-hero,
+.pub-detail-hero {
+    background-color: var(--surface-muted);
+    border-bottom: 1px solid var(--border);
+    padding: 3.5rem 0 2.5rem;
+}
+
+html[data-theme="dark"] .pub-roadmaps-hero,
+html[data-theme="dark"] .pub-detail-hero {
+    background-color: #111115;
+    border-bottom-color: var(--border);
+}
+
+.pub-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    gap: 1.5rem;
+}
+
+@media (max-width: 575.98px) {
+    .pub-card-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+.pub-roadmap-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg, 10px);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+    position: relative;
+    box-shadow: var(--shadow-xs);
+}
+
+.pub-roadmap-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+}
+
+.pub-roadmap-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md, 8px);
+    background-color: var(--primary-subtle);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.pub-filter-btn {
+    border-radius: var(--radius-full, 9999px) !important;
+    padding: 0.35rem 0.95rem !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+    transition: all 150ms ease !important;
+}
+
+.level-badge {
+    font-size: 0.725rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-full, 9999px);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid transparent;
+}
+
+.level-beginner {
+    background-color: #F0FDF4;
+    color: #16A34A;
+    border-color: rgba(22, 163, 74, 0.2);
+}
+
+.level-intermediate {
+    background-color: #EFF6FF;
+    color: #2563EB;
+    border-color: rgba(37, 99, 235, 0.2);
+}
+
+.level-advanced {
+    background-color: #FFFBEB;
+    color: #D97706;
+    border-color: rgba(217, 119, 6, 0.2);
+}
+
+html[data-theme="dark"] .level-beginner {
+    background-color: rgba(34, 197, 94, 0.15);
+    color: #4ADE80;
+    border-color: rgba(34, 197, 94, 0.25);
+}
+
+html[data-theme="dark"] .level-intermediate {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #60A5FA;
+    border-color: rgba(59, 130, 246, 0.25);
+}
+
+html[data-theme="dark"] .level-advanced {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: #FBBF24;
+    border-color: rgba(245, 158, 11, 0.25);
+}
+
+.skills-pill,
+.skill-tag {
+    font-size: 0.725rem;
+    background-color: var(--surface-muted);
+    color: var(--text-muted);
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-xs, 4px);
+    border: 1px solid var(--border);
+    display: inline-block;
+}
+
+html[data-theme="dark"] .skills-pill,
+html[data-theme="dark"] .skill-tag {
+    background-color: #151519;
+    color: #D1D5DB;
+    border-color: var(--border);
+}
+
+.pub-stat-badge {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 8px);
+    padding: 0.75rem 1.15rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 105px;
+    box-shadow: var(--shadow-xs);
+}
+
+.pub-stat-val {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+}
+
+.pub-stat-lbl {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+}
+
+.milestone-accordion-item {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg, 10px);
+    margin-bottom: 1rem;
+    overflow: hidden;
+    box-shadow: var(--shadow-xs);
+}
+
+.milestone-accordion-header {
+    padding: 1.15rem 1.35rem;
+    background-color: var(--surface-muted);
+    border-bottom: 1px solid var(--border);
+}
+
+html[data-theme="dark"] .milestone-accordion-header {
+    background-color: #151519;
+}
+
+.topic-item-row {
+    padding: 0.95rem 1.35rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    transition: background-color 150ms ease;
+}
+
+.topic-item-row:first-child {
+    border-top: none;
+}
+
+.topic-item-row:hover {
+    background-color: var(--surface-hover);
+}
+
+html[data-theme="dark"] .topic-item-row:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.pub-sidebar-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg, 10px);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-xs);
+}
+
+.pub-enroll-box {
+    background-color: var(--surface-muted);
+    border: 1px solid var(--primary-border);
+    border-radius: var(--radius-lg, 10px);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-xs);
+}
+
+html[data-theme="dark"] .pub-enroll-box {
+    background-color: #151519;
+    border-color: rgba(59, 130, 246, 0.25);
+}
+
+@media (max-width: 575.98px) {
+    .topic-item-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+        padding: 0.85rem 1rem;
+    }
+    .topic-item-row .flex-shrink-0 {
+        align-self: flex-start;
+    }
+    .milestone-accordion-header {
+        padding: 1rem;
+    }
+}
+
+
+/* Verifiable Credential Format Badge */
+.pub-cert-format-box {
+    background-color: var(--surface-muted);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .pub-cert-format-box {
+    background-color: #151519;
+    border-color: var(--border);
+    color: var(--text-muted);
+}

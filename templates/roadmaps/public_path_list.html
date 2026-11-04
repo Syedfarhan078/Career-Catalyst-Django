@@ -60,80 +60,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<style>
-.pub-roadmaps-hero {
-    background: linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, rgba(248, 250, 252, 0) 100%);
-    padding: 3.5rem 0 2rem;
-    border-bottom: 1px solid var(--border-color, #e2e8f0);
-}
-.pub-card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-    gap: 1.5rem;
-}
-@media (max-width: 575.98px) {
-    .pub-card-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    .pub-roadmap-card {
-        padding: 1.25rem 1rem;
-    }
-}
-.pub-roadmap-card {
-    background: var(--card-bg, #ffffff);
-    border: 1px solid var(--border-color, #e2e8f0);
-    border-radius: 14px;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    position: relative;
-}
-.pub-roadmap-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 24px -10px rgba(15, 23, 42, 0.1);
-    border-color: #cbd5e1;
-}
-.pub-roadmap-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    background: rgba(37, 99, 235, 0.1);
-    color: #2563eb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.35rem;
-    flex-shrink: 0;
-}
-.pub-filter-btn {
-    border-radius: 9999px;
-    padding: 0.4rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-.level-badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.25rem 0.65rem;
-    border-radius: 9999px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-.level-beginner { background: #dcfce7; color: #15803d; }
-.level-intermediate { background: #e0e7ff; color: #4338ca; }
-.level-advanced { background: #fef3c7; color: #b45309; }
-.skills-pill {
-    font-size: 0.75rem;
-    background: var(--bg-secondary, #f1f5f9);
-    color: var(--text-secondary, #475569);
-    padding: 0.2rem 0.55rem;
-    border-radius: 6px;
-    border: 1px solid var(--border-color, #e2e8f0);
-}
-</style>
+<link rel="stylesheet" href="{% static 'css/roadmaps.css' %}?v=2.2">
 {% endblock %}
 
 {% block main_wrapper %}
@@ -145,7 +72,7 @@
                 <i class="bi bi-compass"></i>
                 <span>Curated Engineering Curricula for Freshers &amp; Students</span>
             </div>
-            <h1 class="display-6 fw-bold mb-3 text-dark">Tech Career Roadmaps for Engineering Students &amp; Freshers</h1>
+            <h1 class="display-6 fw-bold mb-3 text-secondary">Tech Career Roadmaps for Engineering Students &amp; Freshers</h1>
             <p class="lead text-muted mb-4 mx-auto" style="max-width: 720px; font-size: 1.05rem;">
                 Explore official <strong>Career Catalyst Roadmaps</strong> featuring step-by-step, week-by-week learning curricula designed for computer science engineering students, fresh graduates, and tech freshers. Master industry-demanded technical skills, prepare for software developer placements, and earn verified milestone certificates.
             </p>
@@ -154,7 +81,7 @@
             <form method="GET" action="{% url 'roadmaps:path_list' %}" class="row g-2 justify-content-center align-items-center mb-3">
                 <div class="col-12 col-md-6 col-lg-5">
                     <div class="input-group shadow-sm">
-                        <span class="input-group-text bg-white border-end-0 text-muted">
+                        <span class="input-group-text border-end-0 text-muted">
                             <i class="bi bi-search"></i>
                         </span>
                         <input type="text" name="q" value="{{ search_query }}" class="form-control border-start-0 ps-0" placeholder="Search by role or keyword (e.g. Backend, ML, DevOps)..." aria-label="Search roadmaps">
@@ -168,16 +95,16 @@
 
             <!-- Difficulty Filter Pills -->
             <nav class="d-flex flex-wrap justify-content-center gap-2 mt-2" aria-label="Roadmap Difficulty Filter">
-                <a href="{% url 'roadmaps:path_list' %}{% if search_query %}?q={{ search_query }}{% endif %}" class="btn pub-filter-btn {% if not selected_difficulty %}btn-primary{% else %}btn-outline-secondary bg-white{% endif %}">
+                <a href="{% url 'roadmaps:path_list' %}{% if search_query %}?q={{ search_query }}{% endif %}" class="btn pub-filter-btn {% if not selected_difficulty %}btn-primary{% else %}btn-outline-secondary{% endif %}">
                     All Levels ({{ total_paths_count }})
                 </a>
-                <a href="{% url 'roadmaps:path_list' %}?difficulty=Beginner{% if search_query %}&q={{ search_query }}{% endif %}" class="btn pub-filter-btn {% if selected_difficulty == 'Beginner' %}btn-primary{% else %}btn-outline-secondary bg-white{% endif %}">
+                <a href="{% url 'roadmaps:path_list' %}?difficulty=Beginner{% if search_query %}&q={{ search_query }}{% endif %}" class="btn pub-filter-btn {% if selected_difficulty == 'Beginner' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
                     Beginner
                 </a>
-                <a href="{% url 'roadmaps:path_list' %}?difficulty=Intermediate{% if search_query %}&q={{ search_query }}{% endif %}" class="btn pub-filter-btn {% if selected_difficulty == 'Intermediate' %}btn-primary{% else %}btn-outline-secondary bg-white{% endif %}">
+                <a href="{% url 'roadmaps:path_list' %}?difficulty=Intermediate{% if search_query %}&q={{ search_query }}{% endif %}" class="btn pub-filter-btn {% if selected_difficulty == 'Intermediate' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
                     Intermediate
                 </a>
-                <a href="{% url 'roadmaps:path_list' %}?difficulty=Advanced{% if search_query %}&q={{ search_query }}{% endif %}" class="btn pub-filter-btn {% if selected_difficulty == 'Advanced' %}btn-primary{% else %}btn-outline-secondary bg-white{% endif %}">
+                <a href="{% url 'roadmaps:path_list' %}?difficulty=Advanced{% if search_query %}&q={{ search_query }}{% endif %}" class="btn pub-filter-btn {% if selected_difficulty == 'Advanced' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
                     Advanced
                 </a>
             </nav>
@@ -188,7 +115,7 @@
     <section class="py-5">
         <div class="container px-3">
             <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                <h2 class="h5 fw-bold text-dark mb-0">
+                <h2 class="h5 fw-bold text-secondary mb-0">
                     Showing {{ annotated_paths|length }} Career Path{{ annotated_paths|length|pluralize }}
                     {% if selected_difficulty %}<span class="badge bg-light text-muted border ms-2">{{ selected_difficulty }}</span>{% endif %}
                 </h2>
@@ -219,8 +146,8 @@
                         </div>
 
                         <!-- Title and Description -->
-                        <h3 class="h5 fw-bold text-dark mb-2">
-                            <a href="{% url 'roadmaps:path_detail' item.path.slug %}?from=catalogue" class="text-dark text-decoration-none hover-primary">
+                        <h3 class="h5 fw-bold text-secondary mb-2">
+                            <a href="{% url 'roadmaps:path_detail' item.path.slug %}?from=catalogue" class="text-secondary text-decoration-none">
                                 {{ item.path.name }}
                             </a>
                         </h3>
@@ -277,7 +204,7 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <div class="text-center py-5 bg-white rounded-3 border">
+                <div class="text-center py-5 rounded-3 border pub-sidebar-card">
                     <i class="bi bi-compass text-muted" style="font-size: 2.5rem;"></i>
                     <h3 class="h5 fw-bold mt-3">No matching roadmaps found</h3>
                     <p class="text-muted small mb-3">Try adjusting your search keyword or selected difficulty filter.</p>
@@ -288,10 +215,10 @@
     </section>
 
     <!-- Why CareerCatalyst Roadmaps Section -->
-    <section class="py-5 bg-white border-top">
+    <section class="py-5 border-top" style="background-color: var(--card-bg);">
         <div class="container px-3 max-w-4xl mx-auto">
             <div class="text-center mb-5">
-                <h2 class="h4 fw-bold text-dark">Why Follow a Structured Roadmap?</h2>
+                <h2 class="h4 fw-bold text-secondary">Why Follow a Structured Roadmap?</h2>
                 <p class="text-muted small max-w-2xl mx-auto">
                     Instead of jumping between disconnected video tutorials, CareerCatalyst roadmaps provide a sequential progression model directly aligned with technical interview bars.
                 </p>
@@ -299,21 +226,21 @@
 
             <div class="row g-4">
                 <div class="col-md-4">
-                    <div class="p-3 rounded-3 border h-100 bg-light">
+                    <div class="p-3 rounded-3 border h-100" style="background-color: var(--surface-muted);">
                         <div class="text-primary mb-2" style="font-size: 1.5rem;"><i class="bi bi-sort-numeric-down"></i></div>
                         <h3 class="h6 fw-bold">1. Sequential Milestones</h3>
                         <p class="text-muted small mb-0">Every roadmap is structured into 10 to 12 weekly milestones. Master fundamentals before jumping into frameworks.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="p-3 rounded-3 border h-100 bg-light">
+                    <div class="p-3 rounded-3 border h-100" style="background-color: var(--surface-muted);">
                         <div class="text-primary mb-2" style="font-size: 1.5rem;"><i class="bi bi-shield-check"></i></div>
                         <h3 class="h6 fw-bold">2. Verified Skill Acquisition</h3>
                         <p class="text-muted small mb-0">Topics teach demonstrable industry skills. As you mark topics complete in your learning console, earned skills sync to your profile.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="p-3 rounded-3 border h-100 bg-light">
+                    <div class="p-3 rounded-3 border h-100" style="background-color: var(--surface-muted);">
                         <div class="text-primary mb-2" style="font-size: 1.5rem;"><i class="bi bi-patch-check"></i></div>
                         <h3 class="h6 fw-bold">3. Verifiable Certification</h3>
                         <p class="text-muted small mb-0">Completing 100% of topics unlocks an authentic, verifiable certificate with a tamper-resistant ID and recruiter verification QR code.</p>
@@ -324,9 +251,9 @@
     </section>
 
     <!-- Bottom Registration CTA -->
-    <section class="py-5 bg-light border-top text-center">
+    <section class="py-5 border-top text-center" style="background-color: var(--surface-muted);">
         <div class="container px-3 max-w-2xl mx-auto">
-            <h2 class="h4 fw-bold mb-2">Ready to accelerate your career?</h2>
+            <h2 class="h4 fw-bold text-secondary mb-2">Ready to accelerate your career?</h2>
             <p class="text-muted small mb-4">Join thousands of students following structured engineering curriculums on CareerCatalyst.</p>
             <div class="d-flex justify-content-center gap-2 flex-wrap">
                 {% if user.is_authenticated %}
@@ -339,7 +266,7 @@
                     <span>Get Started Free</span>
                     <i class="bi bi-arrow-right ms-1"></i>
                 </a>
-                <a href="{% url 'login' %}" class="btn btn-outline-secondary bg-white px-4">
+                <a href="{% url 'login' %}" class="btn btn-outline-secondary px-4">
                     Sign In
                 </a>
                 {% endif %}

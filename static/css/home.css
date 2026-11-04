@@ -9,61 +9,61 @@
    1. DESIGN TOKENS (LIGHT & DARK WORKSPACE HARMONY)
    ------------------------------------------------------------ */
 .home-page {
-    /* --- Light Mode Tokens --- */
-    --home-bg:              #F8FAFC;
-    --home-surface:         #FFFFFF;
-    --home-surface-subtle:  #F1F5F9;
-    --home-surface-hover:   #F8FAFC;
-    --home-card-bg:         #FFFFFF;
-    --home-border:          #E5E7EB;
-    --home-border-subtle:   #F1F5F9;
-    --home-border-strong:   #D1D5DB;
-    --home-text:            #111827;
-    --home-text-muted:      #6B7280;
-    --home-text-subtle:     #9CA3AF;
-    --home-primary:         #2563EB;
-    --home-primary-hover:   #1D4ED8;
-    --home-primary-subtle:  rgba(37, 99, 235, 0.08);
-    --home-primary-border:  rgba(37, 99, 235, 0.2);
-    --home-success:         #16A34A;
-    --home-success-subtle:  rgba(22, 163, 74, 0.1);
-    --home-warning:         #D97706;
-    --home-warning-subtle:  rgba(217, 119, 6, 0.1);
-    --home-shadow-sm:       0 1px 2px rgba(0, 0, 0, 0.05);
-    --home-shadow-md:       0 4px 12px rgba(0, 0, 0, 0.05);
-    --home-shadow-lg:       0 12px 24px -4px rgba(0, 0, 0, 0.08);
-    --home-radius:          8px;
-    --home-radius-sm:       6px;
-    --home-radius-lg:       12px;
+    /* Inherit dynamically from global design tokens (Phase 6.2A / 6.2B) */
+    --home-bg:              var(--bg);
+    --home-surface:         var(--card-bg);
+    --home-surface-subtle:  var(--surface-muted);
+    --home-surface-hover:   var(--surface-hover);
+    --home-card-bg:         var(--card-bg);
+    --home-border:          var(--border);
+    --home-border-subtle:   var(--border-subtle);
+    --home-border-strong:   var(--border-strong);
+    --home-text:            var(--text);
+    --home-text-muted:      var(--text-muted);
+    --home-text-subtle:     var(--text-subtle);
+    --home-primary:         var(--primary);
+    --home-primary-hover:   var(--primary-hover);
+    --home-primary-subtle:  var(--primary-subtle);
+    --home-primary-border:  var(--primary-border);
+    --home-success:         var(--success);
+    --home-success-subtle:  var(--success-subtle);
+    --home-warning:         var(--warning);
+    --home-warning-subtle:  var(--warning-subtle);
+    --home-shadow-sm:       var(--shadow-xs);
+    --home-shadow-md:       var(--shadow-sm);
+    --home-shadow-lg:       var(--shadow-md);
+    --home-radius:          var(--radius-lg, 10px);
+    --home-radius-sm:       var(--radius-sm, 6px);
+    --home-radius-lg:       var(--radius-xl, 12px);
 
     background-color: var(--home-bg) !important;
     color: var(--home-text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-sans);
     line-height: 1.6;
     overflow-x: hidden;
 }
 
-/* --- Dark Mode Tokens (Matches Authenticated #09090B Workspace) --- */
+/* --- Dark Mode Tokens (Inherits seamlessly from global theme tokens) --- */
 html[data-theme="dark"] .home-page,
 html[data-theme="dark"] body.home-page {
-    --home-bg:              #09090B;
-    --home-surface:         #111115;
-    --home-surface-subtle:  #18181B;
-    --home-surface-hover:   #1C1C21;
-    --home-card-bg:         #111115;
-    --home-border:          #27272A;
-    --home-border-subtle:   #1C1C21;
-    --home-border-strong:   #3F3F46;
-    --home-text:            #F8FAFC;
-    --home-text-muted:      #9CA3AF;
-    --home-text-subtle:     #6B7280;
-    --home-primary:         #3B82F6;
-    --home-primary-hover:   #60A5FA;
+    --home-bg:              var(--bg);
+    --home-surface:         var(--card-bg);
+    --home-surface-subtle:  #151519;
+    --home-surface-hover:   #18181C;
+    --home-card-bg:         var(--card-bg);
+    --home-border:          var(--border);
+    --home-border-subtle:   #18181C;
+    --home-border-strong:   var(--border-strong);
+    --home-text:            var(--text);
+    --home-text-muted:      var(--text-muted);
+    --home-text-subtle:     var(--text-subtle);
+    --home-primary:         var(--primary);
+    --home-primary-hover:   var(--primary-hover);
     --home-primary-subtle:  rgba(59, 130, 246, 0.12);
     --home-primary-border:  rgba(59, 130, 246, 0.25);
-    --home-success:         #22C55E;
+    --home-success:         var(--success);
     --home-success-subtle:  rgba(34, 197, 94, 0.15);
-    --home-warning:         #F59E0B;
+    --home-warning:         var(--warning);
     --home-warning-subtle:  rgba(245, 158, 11, 0.15);
     --home-shadow-sm:       0 1px 2px rgba(0, 0, 0, 0.4);
     --home-shadow-md:       0 4px 16px rgba(0, 0, 0, 0.4);
@@ -157,7 +157,7 @@ html[data-theme="dark"] body.home-page {
     font-weight: 600;
     line-height: 1.4;
     padding: 0.55rem 1.25rem;
-    border-radius: var(--home-radius-sm);
+    border-radius: var(--radius-md, 8px);
     text-decoration: none !important;
     cursor: pointer;
     border: 1px solid transparent;
@@ -175,13 +175,14 @@ html[data-theme="dark"] body.home-page {
 }
 
 .btn-cc:focus-visible {
-    outline: 2px solid var(--home-primary);
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: 0 0 0 3px var(--home-primary-border) !important;
 }
 
 .btn-cc-lg {
     padding: 0.7rem 1.5rem;
     font-size: 0.95rem;
+    border-radius: var(--radius-lg, 10px);
 }
 
 /* Primary Variant */
@@ -249,7 +250,7 @@ html[data-theme="dark"] body.home-page {
     background: var(--home-surface);
     border: 1px solid var(--home-border);
     padding: 0.3rem 0.85rem;
-    border-radius: 50px;
+    border-radius: var(--radius-full, 9999px);
     margin-bottom: 1.5rem;
     box-shadow: var(--home-shadow-sm);
 }
@@ -262,7 +263,7 @@ html[data-theme="dark"] body.home-page {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 0.15rem 0.5rem;
-    border-radius: 50px;
+    border-radius: var(--radius-full, 9999px);
 }
 
 .hero-eyebrow-text {

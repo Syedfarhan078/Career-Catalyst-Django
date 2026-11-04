@@ -78,100 +78,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<style>
-.pub-detail-hero {
-    background: linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, rgba(248, 250, 252, 0) 100%);
-    padding: 2.5rem 0 2rem;
-    border-bottom: 1px solid var(--border-color, #e2e8f0);
-}
-.pub-breadcrumb {
-    font-size: 0.85rem;
-    margin-bottom: 1.25rem;
-}
-.pub-stat-badge {
-    background: var(--card-bg, #ffffff);
-    border: 1px solid var(--border-color, #e2e8f0);
-    border-radius: 12px;
-    padding: 0.75rem 1.25rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 110px;
-}
-.pub-stat-val {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text-primary, #0f172a);
-}
-.pub-stat-lbl {
-    font-size: 0.75rem;
-    color: var(--text-muted, #64748b);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    font-weight: 600;
-}
-.milestone-accordion-item {
-    background: var(--card-bg, #ffffff);
-    border: 1px solid var(--border-color, #e2e8f0);
-    border-radius: 12px;
-    margin-bottom: 1rem;
-    overflow: hidden;
-}
-.milestone-accordion-header {
-    padding: 1.25rem 1.5rem;
-    background: var(--card-bg, #ffffff);
-    cursor: pointer;
-    border-bottom: 1px solid transparent;
-    transition: background-color 0.15s ease;
-}
-.milestone-accordion-header:hover {
-    background: var(--bg-secondary, #f8fafc);
-}
-.topic-item-row {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-color, #f1f5f9);
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-}
-@media (max-width: 575.98px) {
-    .topic-item-row {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
-        padding: 0.85rem 1rem;
-    }
-    .topic-item-row .flex-shrink-0 {
-        align-self: flex-start;
-    }
-    .milestone-accordion-header {
-        padding: 1rem 1rem;
-    }
-}
-.topic-item-row:hover {
-    background: rgba(248, 250, 252, 0.6);
-}
-.level-badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.25rem 0.65rem;
-    border-radius: 9999px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-.level-beginner { background: #dcfce7; color: #15803d; }
-.level-intermediate { background: #e0e7ff; color: #4338ca; }
-.level-advanced { background: #fef3c7; color: #b45309; }
-.skill-tag {
-    font-size: 0.72rem;
-    background: #f1f5f9;
-    color: #334155;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    border: 1px solid #e2e8f0;
-}
-</style>
+<link rel="stylesheet" href="{% static 'css/roadmaps.css' %}?v=2.2">
 {% endblock %}
 
 {% block main_wrapper %}
@@ -190,7 +97,7 @@
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-decoration-none text-muted">Home</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'roadmaps:path_list' %}" class="text-decoration-none text-muted">Roadmaps</a></li>
-                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">{{ path.name }}</li>
+                    <li class="breadcrumb-item active text-secondary fw-semibold" aria-current="page">{{ path.name }}</li>
                 </ol>
             </nav>
 
@@ -216,7 +123,7 @@
                     </div>
 
                     <!-- Title & Description -->
-                    <h1 class="display-6 fw-bold text-dark mb-3">{{ path.name }} Roadmap for Freshers &amp; Students</h1>
+                    <h1 class="display-6 fw-bold text-secondary mb-3">{{ path.name }} Roadmap for Freshers &amp; Students</h1>
                     <p class="lead text-muted mb-4" style="line-height: 1.6; font-size: 1.05rem;">
                         Part of the official <strong>Career Catalyst Roadmaps</strong> series. {{ path.description }} Structured curriculum for engineering students, fresh graduates, and tech freshers preparing for software developer placements.
                     </p>
@@ -251,7 +158,7 @@
                             <i class="bi bi-person-plus-fill"></i>
                             <span>Enroll in Roadmap (Free)</span>
                         </a>
-                        <a href="{% url 'login' %}?next={% url 'roadmaps:learning_detail' path.slug %}" class="btn btn-outline-secondary bg-white px-3 py-2">
+                        <a href="{% url 'login' %}?next={% url 'roadmaps:learning_detail' path.slug %}" class="btn btn-outline-secondary px-3 py-2">
                             Sign In
                         </a>
                         {% endif %}
@@ -290,7 +197,7 @@
             <div class="col-lg-8">
                 <!-- Section Header -->
                 <div class="mb-4">
-                    <h2 class="h4 fw-bold text-dark mb-1">Curriculum Syllabus &amp; Milestones</h2>
+                    <h2 class="h4 fw-bold text-secondary mb-1">Curriculum Syllabus &amp; Milestones</h2>
                     <p class="text-muted small">
                         Sequential weekly checkpoints covering core principles, frameworks, databases, and hands-on concepts.
                     </p>
@@ -310,7 +217,7 @@
                                         {{ item.milestone.level }}
                                     </span>
                                 </div>
-                                <h3 class="h6 fw-bold text-dark mb-0">{{ item.milestone.title }}</h3>
+                                <h3 class="h6 fw-bold text-secondary mb-0">{{ item.milestone.title }}</h3>
                                 {% if item.milestone.description %}
                                 <p class="text-muted small mb-0 mt-1">{{ item.milestone.description }}</p>
                                 {% endif %}
@@ -326,7 +233,7 @@
                             <div class="topic-item-row">
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                                        <h4 class="h6 fw-semibold text-dark mb-0">{{ topic.title }}</h4>
+                                        <h4 class="h6 fw-semibold text-secondary mb-0">{{ topic.title }}</h4>
                                         <span class="badge bg-light text-muted border" style="font-size: 0.68rem;">
                                             <i class="bi bi-file-earmark-text me-1"></i>{{ topic.resource_type }}
                                         </span>
@@ -369,61 +276,59 @@
             <div class="col-lg-4">
                 <!-- Skills Card -->
                 {% if all_skills %}
-                <div class="card border rounded-3 p-4 mb-4 bg-white shadow-sm">
-                    <h3 class="h6 fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                <div class="card border rounded-3 p-4 mb-4 shadow-sm pub-sidebar-card">
+                    <h3 class="h6 fw-bold text-secondary mb-3 d-flex align-items-center gap-2">
                         <i class="bi bi-tools text-primary"></i>
                         <span>Skills &amp; Technologies</span>
                     </h3>
                     <div class="d-flex flex-wrap gap-1">
                         {% for s in all_skills %}
-                        <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.8rem; font-weight: 500;">
-                            {{ s }}
-                        </span>
+                        <span class="skills-pill">{{ s }}</span>
                         {% endfor %}
                     </div>
                 </div>
                 {% endif %}
 
                 <!-- Certificate Verification Info -->
-                <div class="card border rounded-3 p-4 mb-4 bg-white shadow-sm">
+                <div class="card border rounded-3 p-4 mb-4 shadow-sm pub-sidebar-card">
                     <div class="text-success mb-2" style="font-size: 1.5rem;">
                         <i class="bi bi-patch-check-fill"></i>
                     </div>
-                    <h3 class="h6 fw-bold text-dark mb-2">Verifiable Credential</h3>
+                    <h3 class="h6 fw-bold text-secondary mb-2">Verifiable Credential</h3>
                     <p class="text-muted small mb-3">
                         When you complete 100% of the topics in this roadmap, CareerCatalyst generates a signed certificate with a unique tamper-proof ID and verification QR code.
                     </p>
-                    <div class="p-2 bg-light rounded text-center small text-muted font-monospace border">
+                    <div class="p-2 rounded text-center small font-monospace pub-cert-format-box">
                         Format: CC-2026-XXXXXXXXXXXX
                     </div>
                 </div>
 
                 <!-- Frequently Asked Questions -->
-                <div class="card border rounded-3 p-4 mb-4 bg-white shadow-sm">
-                    <h3 class="h6 fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                <div class="card border rounded-3 p-4 mb-4 shadow-sm pub-sidebar-card">
+                    <h3 class="h6 fw-bold text-secondary mb-3 d-flex align-items-center gap-2">
                         <i class="bi bi-question-circle text-primary"></i>
                         <span>Frequently Asked Questions</span>
                     </h3>
                     
                     <div class="mb-3">
-                        <h4 class="small fw-bold text-dark mb-1">Is this roadmap free?</h4>
+                        <h4 class="small fw-bold text-secondary mb-1">Is this roadmap free?</h4>
                         <p class="text-muted small mb-0">Yes. All roadmap curriculums, lesson checkpoints, and reference links are 100% free for students.</p>
                     </div>
                     <hr class="my-2">
                     <div class="mb-3">
-                        <h4 class="small fw-bold text-dark mb-1">How do I track progress?</h4>
+                        <h4 class="small fw-bold text-secondary mb-1">How do I track progress?</h4>
                         <p class="text-muted small mb-0">Once enrolled, use the interactive learning workspace to check off topics week by week. Your profile automatically synchronizes your earned skills.</p>
                     </div>
                     <hr class="my-2">
                     <div>
-                        <h4 class="small fw-bold text-dark mb-1">Can I take multiple roadmaps?</h4>
+                        <h4 class="small fw-bold text-secondary mb-1">Can I take multiple roadmaps?</h4>
                         <p class="text-muted small mb-0">Yes. You can enroll in multiple career tracks and monitor each track independently from your personal workspace.</p>
                     </div>
                 </div>
 
                 <!-- Sticky Enrollment Box -->
-                <div class="card border-primary border-opacity-25 rounded-3 p-4 bg-light shadow-sm">
-                    <h3 class="h6 fw-bold text-dark mb-2">Ready to Start?</h3>
+                <div class="pub-enroll-box">
+                    <h3 class="h6 fw-bold text-secondary mb-2">Ready to Start?</h3>
                     <p class="text-muted small mb-3">
                         Enroll in the {{ path.name }} track to access interactive lesson checkboxes, milestone tracking, and certificate eligibility.
                     </p>
@@ -445,7 +350,7 @@
                         <span>Enroll Free</span>
                         <i class="bi bi-arrow-right ms-1"></i>
                     </a>
-                    <a href="{% url 'login' %}?next={% url 'roadmaps:learning_detail' path.slug %}" class="btn btn-outline-secondary bg-white w-100 btn-sm">
+                    <a href="{% url 'login' %}?next={% url 'roadmaps:learning_detail' path.slug %}" class="btn btn-outline-secondary w-100 btn-sm">
                         Sign In
                     </a>
                     {% endif %}

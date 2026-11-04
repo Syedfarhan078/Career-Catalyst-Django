@@ -91,270 +91,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<style>
-.guide-header-section {
-    background: linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, rgba(248, 250, 252, 0) 100%);
-    padding: 3rem 0 2rem;
-    border-bottom: 1px solid var(--border-color, #e2e8f0);
-}
-.guide-breadcrumb {
-    font-size: 0.85rem;
-    margin-bottom: 1.25rem;
-}
-.guide-badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.25rem 0.65rem;
-    border-radius: 9999px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-.guide-badge-roadmaps { background: #dbeafe; color: #1e40af; }
-.guide-badge-comparisons { background: #fef3c7; color: #b45309; }
-.guide-badge-fundamentals { background: #dcfce7; color: #15803d; }
-.guide-badge-portfolio { background: #f3e8ff; color: #7e22ce; }
-.guide-badge-interview { background: #fee2e2; color: #b91c1c; }
-
-.guide-article-title {
-    font-size: 2.25rem;
-    font-weight: 800;
-    line-height: 1.25;
-    color: var(--text-primary, #0f172a);
-    margin-bottom: 1rem;
-}
-.guide-meta-bar {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    flex-wrap: wrap;
-    color: var(--text-muted, #64748b);
-    font-size: 0.85rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.25rem;
-    border-bottom: 1px solid var(--border-color, #e2e8f0);
-}
-.guide-meta-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-}
-
-/* Layout */
-.guide-layout {
-    display: grid;
-    grid-template-columns: 280px minmax(0, 1fr);
-    gap: 2.5rem;
-    align-items: start;
-    position: relative;
-}
-@media (max-width: 991.98px) {
-    .guide-layout {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Sidebar / Table of Contents */
-.guide-sidebar {
-    position: sticky;
-    top: 5rem;
-    background: var(--card-bg, #ffffff);
-    border: 1px solid var(--border-color, #e2e8f0);
-    border-radius: 12px;
-    padding: 1.25rem;
-    max-height: calc(100vh - 6rem);
-    overflow-y: auto;
-}
-.toc-title {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--text-primary, #0f172a);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 0.85rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-.toc-list {
-    list-style: none;
-    padding-left: 0;
-    margin-bottom: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-.toc-link {
-    font-size: 0.85rem;
-    color: var(--text-secondary, #475569);
-    text-decoration: none;
-    line-height: 1.4;
-    transition: color 0.15s ease, padding-left 0.15s ease;
-    display: block;
-}
-.toc-link:hover {
-    color: var(--primary-color, #2563eb);
-    padding-left: 0.25rem;
-}
-
-/* Article Body Typography */
-.article-body {
-    color: var(--text-primary, #1e293b);
-    line-height: 1.75;
-    font-size: 1.05rem;
-}
-.article-section {
-    margin-bottom: 2.5rem;
-    scroll-margin-top: 5.5rem;
-}
-.article-h2 {
-    font-size: 1.45rem;
-    font-weight: 700;
-    color: var(--text-primary, #0f172a);
-    margin-top: 1.5rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color, #f1f5f9);
-}
-.article-p {
-    margin-bottom: 1.15rem;
-    color: var(--text-secondary, #334155);
-}
-.article-list {
-    margin-bottom: 1.25rem;
-    padding-left: 1.4rem;
-    color: var(--text-secondary, #334155);
-}
-.article-list li {
-    margin-bottom: 0.5rem;
-}
-
-/* Callout Box */
-.article-callout {
-    border-radius: 10px;
-    padding: 1.25rem;
-    margin: 1.5rem 0;
-    border-left: 4px solid;
-}
-.article-callout-info {
-    background: #eff6ff;
-    border-color: #3b82f6;
-    color: #1e3a8a;
-}
-.article-callout-tip {
-    background: #f0fdf4;
-    border-color: #22c55e;
-    color: #14532d;
-}
-.article-callout-warning {
-    background: #fffbeb;
-    border-color: #f59e0b;
-    color: #78350f;
-}
-.callout-title {
-    font-weight: 700;
-    font-size: 0.95rem;
-    margin-bottom: 0.35rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-.article-callout p {
-    margin-bottom: 0;
-    font-size: 0.925rem;
-    line-height: 1.55;
-}
-
-/* Code Snippet */
-.article-code-wrapper {
-    background: #0f172a;
-    border-radius: 10px;
-    overflow: hidden;
-    margin: 1.5rem 0;
-}
-.code-header {
-    background: #1e293b;
-    padding: 0.4rem 1rem;
-    display: flex;
-    justify-content: flex-end;
-}
-.code-lang {
-    font-size: 0.75rem;
-    color: #94a3b8;
-    text-transform: uppercase;
-    font-family: monospace;
-}
-.article-code-wrapper pre {
-    margin: 0;
-    padding: 1.25rem;
-    color: #f8fafc;
-    font-size: 0.875rem;
-    overflow-x: auto;
-}
-
-/* Key Takeaways Box */
-.key-takeaways-card {
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(59, 130, 246, 0.08) 100%);
-    border: 1px solid rgba(37, 99, 235, 0.2);
-    border-radius: 14px;
-    padding: 1.75rem;
-    margin: 2rem 0;
-}
-.takeaways-title {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #1e40af;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.takeaways-list {
-    list-style: none;
-    padding-left: 0;
-    margin-bottom: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
-}
-.takeaways-list li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.6rem;
-    font-size: 0.95rem;
-    color: var(--text-primary, #1e293b);
-}
-.takeaways-list li i {
-    color: #2563eb;
-    margin-top: 0.2rem;
-    flex-shrink: 0;
-}
-
-/* Related Roadmaps Grid */
-.related-roadmaps-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.25rem;
-    margin-top: 1rem;
-}
-.roadmap-mini-card {
-    background: var(--card-bg, #ffffff);
-    border: 1px solid var(--border-color, #e2e8f0);
-    border-radius: 12px;
-    padding: 1.25rem;
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.roadmap-mini-card:hover {
-    transform: translateY(-2px);
-    border-color: #3b82f6;
-    box-shadow: 0 8px 16px -6px rgba(37, 99, 235, 0.15);
-    color: inherit;
-}
-</style>
+<link rel="stylesheet" href="{% static 'css/career_guides.css' %}?v=1.1">
 {% endblock %}
 
 {% block main_wrapper %}
@@ -373,7 +110,7 @@
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-decoration-none text-muted">Home</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'guide_list' %}" class="text-decoration-none text-muted">Career Guides</a></li>
-                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">{{ guide.title }}</li>
+                    <li class="breadcrumb-item active text-body fw-semibold" aria-current="page">{{ guide.title }}</li>
                 </ol>
             </nav>
 
@@ -535,7 +272,7 @@
                 <section class="my-5 pt-4 border-top">
                     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                         <div>
-                            <h2 class="h5 fw-bold text-dark mb-1">Related Learning Roadmaps</h2>
+                            <h2 class="h5 fw-bold text-body mb-1">Related Learning Roadmaps</h2>
                             <p class="text-muted small mb-0">Put this guide into practice with structured, week-by-week curriculums.</p>
                         </div>
                         <a href="{% url 'roadmaps:path_list' %}" class="btn btn-sm btn-outline-primary rounded-pill">
@@ -553,7 +290,7 @@
                                     </span>
                                     <span class="text-muted small"><i class="bi bi-clock me-1"></i>{{ r.weeks }} Weeks</span>
                                 </div>
-                                <h3 class="h6 fw-bold text-dark mb-1.5">{{ r.name }}</h3>
+                                <h3 class="h6 fw-bold text-body mb-1.5">{{ r.name }}</h3>
                                 <p class="text-muted small mb-0">{{ r.description }}</p>
                             </div>
                             <div class="mt-3 pt-2 border-top d-flex align-items-center justify-content-between text-primary small fw-semibold">
@@ -569,14 +306,14 @@
                 <!-- Related Guides Section -->
                 {% if related_guides %}
                 <section class="my-5 pt-4 border-top">
-                    <h2 class="h5 fw-bold text-dark mb-3">Continue Reading: Related Career Guides</h2>
+                    <h2 class="h5 fw-bold text-body mb-3">Continue Reading: Related Career Guides</h2>
                     <div class="row g-3">
                         {% for rel in related_guides %}
                         <div class="col-md-6">
                             <div class="card h-100 border p-3 rounded-3 shadow-none">
                                 <span class="text-muted small mb-1"><i class="bi bi-clock me-1"></i>{{ rel.reading_time }}</span>
                                 <h3 class="h6 fw-bold mb-2">
-                                    <a href="{% url 'guide_detail' rel.slug %}" class="text-decoration-none text-dark hover-primary">
+                                    <a href="{% url 'guide_detail' rel.slug %}" class="text-decoration-none text-body hover-primary">
                                         {{ rel.title }}
                                     </a>
                                 </h3>
@@ -592,8 +329,8 @@
                 {% endif %}
 
                 <!-- Interactive CTA Banner -->
-                <section class="p-4 rounded-4 bg-light border text-center my-5">
-                    <h3 class="h5 fw-bold text-dark mb-2">Ready to Accelerate Your Career?</h3>
+                <section class="roadmap-cta-banner text-center my-5">
+                    <h3 class="h5 fw-bold text-body mb-2">Ready to Accelerate Your Career?</h3>
                     <p class="text-muted small mb-3" style="max-width: 520px; margin: 0 auto;">
                         CareerCatalyst combines structured curriculums, deterministic ATS scoring, mock interview sandboxes, and job tracking into one free workspace.
                     </p>

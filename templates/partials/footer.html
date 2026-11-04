@@ -5,36 +5,36 @@
             <!-- Column 1 — Brand -->
             <div class="col-lg-5 col-md-12">
                 <a class="footer-brand d-inline-flex align-items-center mb-3 text-decoration-none" href="{% url 'home' %}">
-                    <img src="{% static 'images/favicon.png' %}?v=3.0" alt="Career Catalyst Logo" class="me-2" width="28" height="28" style="border-radius: 6px;">
+                    <img src="{% static 'images/favicon.png' %}?v=3.0" alt="CareerCatalyst Logo" class="me-2" width="28" height="28" style="border-radius: 6px;">
                     <span>Career<span class="brand-accent">Catalyst</span></span>
                 </a>
-                <p class="footer-desc mb-0">A structured platform for career guidance, learning roadmaps, resume preparation, interview practice, and job tracking.</p>
+                <p class="footer-desc mb-0">
+                    AI-assisted tech career development platform for engineering students and freshers. Structured week-by-week learning roadmaps, deterministic ATS resume diagnostics, coding interview preparation, and job application tracking.
+                </p>
             </div>
             
-            <!-- Column 2 — Explore -->
+            <!-- Column 2 — Curricula & Guides -->
             <div class="col-6 col-md-3 col-lg-3">
-                <h5 class="footer-heading">Explore</h5>
+                <h5 class="footer-heading">Curricula &amp; Guides</h5>
                 <ul class="footer-links">
-                    <li><a href="{% url 'home' %}#hero">Home</a></li>
                     <li><a href="{% url 'roadmaps:path_list' %}">Career Roadmaps</a></li>
                     <li><a href="{% url 'guide_list' %}">Career Guides</a></li>
-                    <li><a href="{% url 'home' %}#features">Features</a></li>
                     <li><a href="{% url 'home' %}#how-it-works">How It Works</a></li>
                     <li><a href="{% url 'home' %}#journey">Career Journey</a></li>
-                    <li><a href="{% url 'home' %}#faq">FAQ</a></li>
                 </ul>
             </div>
             
-            <!-- Column 3 — Account -->
+            <!-- Column 3 — Platform & Account -->
             <div class="col-6 col-md-3 col-lg-3">
-                <h5 class="footer-heading">Account</h5>
+                <h5 class="footer-heading">Platform</h5>
                 <ul class="footer-links">
+                    <li><a href="{% url 'home' %}#features">Features</a></li>
+                    <li><a href="{% url 'home' %}#faq">FAQ</a></li>
                     {% if not user.is_authenticated %}
                     <li><a href="{% url 'login' %}">Login</a></li>
-                    <li><a href="{% url 'register' %}">Get Started</a></li>
+                    <li><a href="{% url 'register' %}">Get Started Free</a></li>
                     {% else %}
-                    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li><a href="{% url 'roadmaps:path_list' %}">Roadmaps</a></li>
+                    <li><a href="{% url 'dashboard' %}">Student Workspace</a></li>
                     {% endif %}
                 </ul>
             </div>

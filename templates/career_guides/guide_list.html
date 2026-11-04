@@ -50,114 +50,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<style>
-.guides-hero {
-    background: linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, rgba(248, 250, 252, 0) 100%);
-    padding: 3.5rem 0 2rem;
-    border-bottom: 1px solid var(--border-color, #e2e8f0);
-}
-.guides-breadcrumb {
-    font-size: 0.85rem;
-    margin-bottom: 1.25rem;
-}
-.guide-card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-    gap: 1.5rem;
-}
-@media (max-width: 575.98px) {
-    .guide-card-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    .guide-card {
-        padding: 1.25rem 1rem;
-    }
-}
-.guide-card {
-    background: var(--card-bg, #ffffff);
-    border: 1px solid var(--border-color, #e2e8f0);
-    border-radius: 14px;
-    padding: 1.75rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    height: 100%;
-}
-.guide-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 24px -10px rgba(15, 23, 42, 0.1);
-    border-color: #cbd5e1;
-}
-.guide-badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.25rem 0.65rem;
-    border-radius: 9999px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-.guide-badge-roadmaps { background: #dbeafe; color: #1e40af; }
-.guide-badge-comparisons { background: #fef3c7; color: #b45309; }
-.guide-badge-fundamentals { background: #dcfce7; color: #15803d; }
-.guide-badge-portfolio { background: #f3e8ff; color: #7e22ce; }
-.guide-badge-interview { background: #fee2e2; color: #b91c1c; }
-
-.guide-read-time {
-    font-size: 0.8rem;
-    color: var(--text-muted, #64748b);
-}
-.guide-card-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--text-primary, #0f172a);
-    margin-bottom: 0.75rem;
-    line-height: 1.4;
-}
-.guide-card-title a {
-    color: inherit;
-    text-decoration: none;
-}
-.guide-card-title a:hover {
-    color: var(--primary-color, #2563eb);
-}
-.guide-card-desc {
-    font-size: 0.9rem;
-    color: var(--text-secondary, #475569);
-    line-height: 1.6;
-    margin-bottom: 1.5rem;
-    flex-grow: 1;
-}
-.guide-card-footer {
-    border-top: 1px solid var(--border-color, #f1f5f9);
-    padding-top: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.guide-read-link {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--primary-color, #2563eb);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    transition: gap 0.15s ease;
-}
-.guide-read-link:hover {
-    gap: 0.55rem;
-    color: #1d4ed8;
-}
-.roadmap-cta-banner {
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(59, 130, 246, 0.08) 100%);
-    border: 1px solid rgba(37, 99, 235, 0.15);
-    border-radius: 16px;
-    padding: 2.25rem 2rem;
-    margin-top: 3.5rem;
-}
-</style>
+<link rel="stylesheet" href="{% static 'css/career_guides.css' %}?v=1.1">
 {% endblock %}
 
 {% block main_wrapper %}
@@ -169,7 +62,7 @@
             <nav aria-label="breadcrumb" class="guides-breadcrumb">
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-decoration-none text-muted">Home</a></li>
-                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Career Guides</li>
+                    <li class="breadcrumb-item active text-body fw-semibold" aria-current="page">Career Guides</li>
                 </ol>
             </nav>
 
@@ -179,7 +72,7 @@
                         <i class="bi bi-compass"></i>
                         <span>Career Knowledge Hub</span>
                     </div>
-                    <h1 class="display-6 fw-bold text-dark mb-3">Career Guides for Engineering Students & Graduates</h1>
+                    <h1 class="display-6 fw-bold text-body mb-3">Career Guides for Engineering Students & Graduates</h1>
                     <p class="lead text-muted fs-6 mb-0" style="max-width: 680px;">
                         Practical, in-depth tech career guides and learning paths designed to help engineering students, freshers, and college graduates master in-demand technical skills, build industry-ready portfolios, and crack campus placement interviews.
                     </p>
@@ -197,7 +90,7 @@
     <section class="container px-3 py-5">
         <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
             <div>
-                <h2 class="h5 fw-bold text-dark mb-1">Featured Career Guides</h2>
+                <h2 class="h5 fw-bold text-body mb-1">Featured Career Guides</h2>
                 <p class="text-muted small mb-0">Explore our comprehensive editorial guides covering career tracks, skills, and preparation.</p>
             </div>
             <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">
