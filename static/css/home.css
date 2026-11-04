@@ -333,6 +333,28 @@ html[data-theme="dark"] body.home-page {
     }
 }
 
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 1.85rem;
+        line-height: 1.22;
+        letter-spacing: -0.02em;
+    }
+    .hero-lead {
+        font-size: 0.925rem;
+        line-height: 1.5;
+    }
+    .hero-wrapper {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .hero-title {
+        font-size: 1.65rem;
+    }
+}
+
 /* Realistic Workspace Product Window */
 .hero-mockup-wrapper {
     max-width: 1040px;

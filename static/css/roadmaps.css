@@ -524,7 +524,7 @@
 /* Catalog Grid */
 .roadmap-catalog-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
     gap: 1.15rem;
 }
 
@@ -934,6 +934,23 @@
    8. RESPONSIVE & ACCESSIBILITY
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
+    .roadmap-topic-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.65rem;
+        padding: 0.75rem 0.65rem;
+    }
+    
+    .roadmap-topic-right {
+        align-self: flex-start;
+        margin-left: 2rem;
+        flex-wrap: wrap;
+    }
+    
+    .roadmap-topics-list {
+        padding: 0.5rem 0.5rem 0.75rem 0.5rem;
+    }
+
     .roadmap-hero-card {
         padding: 1.25rem 1.15rem;
     }

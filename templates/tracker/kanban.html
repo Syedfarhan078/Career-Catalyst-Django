@@ -204,6 +204,22 @@
                     </div>
                 {% endif %}
             {% else %}
+                <!-- Mobile Stage Navigator Pills (Hidden on Desktop) -->
+                <nav class="tracker-mobile-stages d-md-none mb-3" aria-label="Kanban Stage Selection">
+                    <div class="tracker-stage-pills-scroll">
+                        {% for col in columns %}
+                        <button type="button" 
+                                class="tracker-stage-pill {% if forloop.first %}active{% endif %}" 
+                                data-stage="{{ col.id }}" 
+                                onclick="scrollToKanbanStage('{{ col.id }}', this)">
+                            <i class="bi {{ col.icon }} text-{{ col.badge }}"></i>
+                            <span>{{ col.title }}</span>
+                            <span class="badge rounded-pill bg-secondary bg-opacity-25 text-dark ms-1">{{ col.count }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </nav>
+
                 <!-- VIEW 1: KANBAN BOARD VIEW -->
                 <div class="tracker-board" id="trackerBoardView">
                     {% for col in columns %}
@@ -956,6 +972,48 @@
                 }, 2000);
             }
         });
+    }
+
+    // --------------------------------------------------------------------------
+    // 10. MOBILE KANBAN STAGE SCROLL & ACTIVE TRACKING
+    // --------------------------------------------------------------------------
+    function scrollToKanbanStage(stageId, pillEl) {
+        const col = document.querySelector(`.tracker-column[data-status="${stageId}"]`);
+        if (col) {
+            col.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+        document.querySelectorAll('.tracker-stage-pill').forEach(p => p.classList.remove('active'));
+        if (pillEl) {
+            pillEl.classList.add('active');
+        }
+    }
+
+    const trackerBoardView = document.getElementById('trackerBoardView');
+    if (trackerBoardView) {
+        let scrollTimeout;
+        trackerBoardView.addEventListener('scroll', function() {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const cols = document.querySelectorAll('.tracker-column');
+                const center = trackerBoardView.scrollLeft + trackerBoardView.clientWidth / 2;
+                let closestCol = null;
+                let minDiff = Infinity;
+                cols.forEach(col => {
+                    const colCenter = col.offsetLeft + col.clientWidth / 2;
+                    const diff = Math.abs(center - colCenter);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closestCol = col;
+                    }
+                });
+                if (closestCol) {
+                    const status = closestCol.getAttribute('data-status');
+                    document.querySelectorAll('.tracker-stage-pill').forEach(p => {
+                        p.classList.toggle('active', p.getAttribute('data-stage') === status);
+                    });
+                }
+            }, 80);
+        }, { passive: true });
     }
 </script>
 {% endblock %}

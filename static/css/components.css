@@ -1223,11 +1223,31 @@ html[data-theme="dark"] .badge-outline-warning {
 }
 
 .notifications-dropdown .dropdown-menu {
-    border-radius: 16px;
+    min-width: 310px;
+    max-width: 360px;
+    border-radius: 14px;
     border: 1px solid var(--border);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     background: var(--card-bg, #ffffff);
     animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 575.98px) {
+    .notifications-dropdown {
+        position: static !important;
+    }
+    .notifications-dropdown .dropdown-menu {
+        min-width: 0 !important;
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        left: 12px !important;
+        right: 12px !important;
+        transform: none !important;
+        margin-top: 8px !important;
+    }
+    .notifications-dropdown .dropdown-item {
+        white-space: normal;
+    }
 }
 
 .notifications-dropdown .dropdown-item {

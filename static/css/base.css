@@ -714,11 +714,6 @@ html[data-theme="dark"] .password-toggle-btn:hover {
 }
 
 @media (max-width: 767.98px) {
-    /* Prevent horizontal page overflow */
-    body, html {
-        overflow-x: hidden;
-    }
-    
     /* Responsive Typography */
     h1, .h1 {
         font-size: 2rem !important;

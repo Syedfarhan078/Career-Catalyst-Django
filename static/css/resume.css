@@ -380,12 +380,33 @@
     letter-spacing: 0.5px;
 }
 
-.builder-preview-frame {
+.builder-preview-wrapper {
     flex: 1;
     width: 100%;
     height: 100%;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background: #0f172a;
+    padding: 1rem;
+    position: relative;
+}
+
+.builder-preview-frame {
+    width: 100%;
+    height: 100%;
     border: none;
-    background: transparent;
+    background: #ffffff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    border-radius: 4px;
+    transition: transform 0.15s ease;
+}
+
+@media (max-width: 991.98px) {
+    .builder-preview-wrapper {
+        padding: 0.5rem;
+    }
 }
 
 /* Builder Accordions */

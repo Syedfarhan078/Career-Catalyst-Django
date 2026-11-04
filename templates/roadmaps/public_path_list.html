@@ -68,8 +68,17 @@
 }
 .pub-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
     gap: 1.5rem;
+}
+@media (max-width: 575.98px) {
+    .pub-card-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .pub-roadmap-card {
+        padding: 1.25rem 1rem;
+    }
 }
 .pub-roadmap-card {
     background: var(--card-bg, #ffffff);

@@ -62,8 +62,17 @@
 }
 .guide-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
     gap: 1.5rem;
+}
+@media (max-width: 575.98px) {
+    .guide-card-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .guide-card {
+        padding: 1.25rem 1rem;
+    }
 }
 .guide-card {
     background: var(--card-bg, #ffffff);

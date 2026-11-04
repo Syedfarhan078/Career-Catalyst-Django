@@ -23,7 +23,7 @@
     border: none;
     outline: none;
     cursor: pointer;
-    z-index: 1050;
+    z-index: 1025;
     transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
     animation: bot-float 3s ease-in-out infinite;
     padding: 0;
@@ -280,14 +280,22 @@ html[data-theme="dark"] .chatbot-input-group button:hover {
 /* Mobile responsive fixes */
 @media (max-width: 576px) {
     #chatbot-window {
-        width: calc(100% - 32px);
-        right: 16px;
-        left: 16px;
-        bottom: 84px;
-        height: 420px;
+        width: calc(100% - 24px);
+        right: 12px;
+        left: 12px;
+        bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+        height: min(440px, calc(100vh - 100px));
+        max-height: calc(100dvh - 84px);
+        z-index: 1030;
     }
     #chatbot-launcher {
-        bottom: 18px;
-        right: 18px;
+        bottom: max(16px, env(safe-area-inset-bottom, 16px));
+        right: 14px;
+        width: 44px;
+        height: 44px;
+        z-index: 1025;
+    }
+    #chatbot-launcher i {
+        font-size: 1.1rem;
     }
 }

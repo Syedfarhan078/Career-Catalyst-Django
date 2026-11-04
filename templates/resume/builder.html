@@ -282,14 +282,24 @@
                     <!-- RIGHT PANE: Live Preview Iframe -->
                     <div class="builder-preview-pane" id="builderPreviewPane">
                         <div class="builder-preview-toolbar">
-                            <span><i class="bi bi-eye text-primary me-1"></i> Live Rendered Preview</span>
+                            <span><i class="bi bi-eye text-primary me-1"></i> Live Preview</span>
                             <div class="d-flex align-items-center gap-2">
-                                <button type="button" class="dash-btn dash-btn-outline dash-btn-xs" onclick="refreshPreview()">
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Preview Zoom">
+                                    <button type="button" class="dash-btn dash-btn-outline dash-btn-xs active" id="zoomFitBtn" onclick="setPreviewZoom('fit')" title="Fit to width">
+                                        <i class="bi bi-arrows-angle-contract me-1"></i>Fit
+                                    </button>
+                                    <button type="button" class="dash-btn dash-btn-outline dash-btn-xs" id="zoom100Btn" onclick="setPreviewZoom('actual')" title="Actual size">
+                                        100%
+                                    </button>
+                                </div>
+                                <button type="button" class="dash-btn dash-btn-outline dash-btn-xs" onclick="refreshPreview()" title="Refresh preview">
                                     <i class="bi bi-arrow-clockwise me-1"></i> Refresh
                                 </button>
                             </div>
                         </div>
-                        <iframe id="previewFrame" src="{% url 'resume:preview' resume.pk %}" class="builder-preview-frame" title="Live Resume Preview"></iframe>
+                        <div class="builder-preview-wrapper" id="previewWrapper">
+                            <iframe id="previewFrame" src="{% url 'resume:preview' resume.pk %}" class="builder-preview-frame" title="Live Resume Preview"></iframe>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -341,6 +351,47 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
+let currentPreviewZoom = 'fit';
+
+function applyPreviewZoom() {
+    const frame = document.getElementById('previewFrame');
+    const wrapper = document.getElementById('previewWrapper');
+    if (!frame || !wrapper) return;
+    
+    const isMobile = window.innerWidth < 992;
+    if (currentPreviewZoom === 'fit' && isMobile) {
+        const availableWidth = wrapper.clientWidth - 16;
+        const targetA4Width = 794; // Standard A4 width at 96 DPI
+        if (availableWidth > 0 && availableWidth < targetA4Width) {
+            const scale = availableWidth / targetA4Width;
+            frame.style.width = targetA4Width + 'px';
+            frame.style.minHeight = '1123px';
+            frame.style.transform = `scale(${scale})`;
+            frame.style.transformOrigin = 'top left';
+            frame.style.marginBottom = `-${(1123 * (1 - scale))}px`;
+            frame.style.marginRight = `-${(targetA4Width * (1 - scale))}px`;
+            return;
+        }
+    }
+    frame.style.width = '100%';
+    frame.style.minHeight = '100%';
+    frame.style.transform = 'none';
+    frame.style.transformOrigin = 'unset';
+    frame.style.marginBottom = '0';
+    frame.style.marginRight = '0';
+}
+
+function setPreviewZoom(mode) {
+    currentPreviewZoom = mode;
+    applyPreviewZoom();
+    const fitBtn = document.getElementById('zoomFitBtn');
+    const btn100 = document.getElementById('zoom100Btn');
+    if (fitBtn && btn100) {
+        fitBtn.classList.toggle('active', mode === 'fit');
+        btn100.classList.toggle('active', mode === 'actual');
+    }
+}
+
 function toggleMobilePreview() {
     const previewPane = document.getElementById('builderPreviewPane');
     const editorPane = document.getElementById('builderEditorPane');
@@ -354,8 +405,11 @@ function toggleMobilePreview() {
         previewPane.style.display = 'flex';
         editorPane.style.display = 'none';
         btn.innerHTML = '<i class="bi bi-pencil me-1"></i> Editor';
+        setTimeout(applyPreviewZoom, 60);
     }
 }
+
+window.addEventListener('resize', applyPreviewZoom);
 
 function refreshPreview() {
     const frame = document.getElementById('previewFrame');

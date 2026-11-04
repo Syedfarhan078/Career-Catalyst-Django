@@ -228,6 +228,82 @@
 /* --------------------------------------------------------------------------
    4. KANBAN BOARD CONTAINER & COLUMNS
    -------------------------------------------------------------------------- */
+/* Mobile Stage Navigator */
+.tracker-mobile-stages {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    .tracker-mobile-stages {
+        display: block;
+        margin-bottom: 1rem;
+    }
+    
+    .tracker-stage-pills-scroll {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0.35rem;
+        scrollbar-width: none;
+    }
+    
+    .tracker-stage-pills-scroll::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .tracker-stage-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 9999px;
+        border: 1px solid var(--dash-border);
+        background: var(--dash-surface);
+        color: var(--dash-text);
+        font-size: 0.8rem;
+        font-weight: 500;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        flex-shrink: 0;
+    }
+    
+    .tracker-stage-pill.active {
+        background: var(--dash-primary);
+        color: #ffffff;
+        border-color: var(--dash-primary);
+    }
+    
+    .tracker-stage-pill.active .text-primary,
+    .tracker-stage-pill.active .text-secondary,
+    .tracker-stage-pill.active .text-info,
+    .tracker-stage-pill.active .text-warning,
+    .tracker-stage-pill.active .text-success,
+    .tracker-stage-pill.active .text-danger {
+        color: #ffffff !important;
+    }
+    
+    .tracker-stage-pill.active .badge {
+        background: rgba(255, 255, 255, 0.25) !important;
+        color: #ffffff !important;
+    }
+
+    .tracker-board {
+        scroll-snap-type: x mandatory;
+        padding-bottom: 1rem;
+        gap: 0.85rem;
+    }
+    
+    .tracker-column {
+        flex: 0 0 calc(100vw - 44px) !important;
+        width: calc(100vw - 44px) !important;
+        max-width: 340px !important;
+        min-width: 260px !important;
+        scroll-snap-align: center;
+    }
+}
+
 .tracker-board {
     display: flex;
     gap: 1rem;
