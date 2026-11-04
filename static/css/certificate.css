@@ -1,0 +1,568 @@
+/* ============================================================
+   CERTIFICATE.CSS — Professional Engineering Credential System
+   CareerCatalyst Design System (Phase 6.2E)
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. IN-APP CERTIFICATE PAGE & WORKSPACE
+   ------------------------------------------------------------ */
+.cert-page-container {
+    max-width: 980px;
+    margin: 0 auto;
+    padding-bottom: 3rem;
+}
+
+.cert-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.cert-action-group {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------------
+   2. PHYSICAL-STYLE CREDENTIAL DOCUMENT
+   Stable print-neutral appearance across both Light & Dark themes
+   ------------------------------------------------------------ */
+.cert-document-wrapper {
+    margin: 0 auto 2.5rem;
+    width: 100%;
+}
+
+.cert-document {
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    padding: 2.5rem 3rem;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 150ms ease;
+}
+
+[data-theme="dark"] .cert-document {
+    border-color: #334155;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+@media (max-width: 767.98px) {
+    .cert-document {
+        padding: 1.5rem 1.25rem;
+    }
+}
+
+.cert-inner-frame {
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    padding: 2.25rem 2.5rem;
+    position: relative;
+    text-align: center;
+    background-color: #FFFFFF !important;
+}
+
+@media (max-width: 767.98px) {
+    .cert-inner-frame {
+        padding: 1.5rem 1rem;
+    }
+}
+
+/* Document Header */
+.cert-header {
+    margin-bottom: 1.75rem;
+}
+
+.cert-brand-seal {
+    width: 48px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #EFF6FF;
+    border: 1.5px solid rgba(37, 99, 235, 0.25);
+    color: #1D4ED8;
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.cert-issuer-tag {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #64748B !important;
+    margin-bottom: 0.35rem;
+}
+
+.cert-main-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: #0F172A !important;
+    text-transform: uppercase;
+    margin-bottom: 0;
+}
+
+@media (max-width: 575.98px) {
+    .cert-main-title {
+        font-size: 1.25rem;
+    }
+}
+
+/* Document Body & Recipient */
+.cert-confer-line {
+    font-size: 0.925rem;
+    color: #64748B !important;
+    margin: 1.5rem 0 0.5rem;
+}
+
+.cert-recipient-name {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #0F172A !important;
+    line-height: 1.2;
+    margin: 0.5rem 0;
+    letter-spacing: -0.015em;
+}
+
+@media (max-width: 575.98px) {
+    .cert-recipient-name {
+        font-size: 1.65rem;
+    }
+}
+
+.cert-achievement-statement {
+    font-size: 0.925rem;
+    color: #64748B !important;
+    margin-bottom: 0.35rem;
+}
+
+.cert-track-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1D4ED8 !important;
+    margin: 0.4rem 0 1rem;
+}
+
+@media (max-width: 575.98px) {
+    .cert-track-title {
+        font-size: 1.2rem;
+    }
+}
+
+.cert-curriculum-summary {
+    font-size: 0.8875rem;
+    color: #475569 !important;
+    line-height: 1.6;
+    max-width: 660px;
+    margin: 0 auto 1.75rem;
+}
+
+/* Document Footer / Authentication Block */
+.cert-auth-row {
+    border-top: 1.5px solid #E2E8F0;
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1.5rem;
+    align-items: center;
+    text-align: left;
+}
+
+@media (max-width: 767.98px) {
+    .cert-auth-row {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        text-align: center;
+    }
+}
+
+.cert-auth-label {
+    font-size: 0.725rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748B !important;
+    margin-bottom: 0.2rem;
+}
+
+.cert-auth-value {
+    font-size: 0.925rem;
+    font-weight: 600;
+    color: #0F172A !important;
+}
+
+.cert-auth-mono {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1D4ED8 !important;
+}
+
+.cert-qr-box {
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 0.35rem;
+    display: inline-block;
+}
+
+.cert-qr-caption {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #64748B !important;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-top: 0.35rem;
+    text-align: center;
+}
+
+.cert-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.775rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    background-color: #DCFCE7 !important;
+    color: #15803D !important;
+    border: 1px solid #86EFAC !important;
+}
+
+.cert-status-pill.revoked {
+    background-color: #FEE2E2 !important;
+    color: #B91C1C !important;
+    border-color: #FCA5A5 !important;
+}
+
+/* ------------------------------------------------------------
+   3. IN-APP SHARING & INTEGRATION PANELS
+   ------------------------------------------------------------ */
+.cert-supporting-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg, 10px);
+    padding: 1.5rem;
+    height: 100%;
+    box-shadow: var(--shadow-xs);
+}
+
+.cert-supporting-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.45rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ------------------------------------------------------------
+   4. PUBLIC CERTIFICATE VERIFICATION REGISTRY PAGE
+   ------------------------------------------------------------ */
+.verify-registry-wrapper {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 3rem 1rem 4rem;
+}
+
+.verify-brand-bar {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.verify-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl, 14px);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.verify-banner-valid {
+    background-color: #F0FDF4;
+    border-bottom: 1px solid #BBF7D0;
+    padding: 1.25rem 1.5rem;
+    text-align: center;
+}
+
+html[data-theme="dark"] .verify-banner-valid {
+    background-color: rgba(34, 197, 94, 0.12);
+    border-bottom-color: rgba(34, 197, 94, 0.25);
+}
+
+.verify-banner-revoked {
+    background-color: #FEF2F2;
+    border-bottom: 1px solid #FECACA;
+    padding: 1.25rem 1.5rem;
+    text-align: center;
+}
+
+html[data-theme="dark"] .verify-banner-revoked {
+    background-color: rgba(239, 68, 68, 0.12);
+    border-bottom-color: rgba(239, 68, 68, 0.25);
+}
+
+.verify-banner-notfound {
+    background-color: var(--surface-muted);
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+    text-align: center;
+}
+
+.verify-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 1.75rem 0;
+}
+
+@media (max-width: 575.98px) {
+    .verify-meta-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.verify-meta-cell {
+    background-color: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 8px);
+    padding: 1rem 1.15rem;
+}
+
+html[data-theme="dark"] .verify-meta-cell {
+    background-color: #151519;
+}
+
+.verify-meta-label {
+    font-size: 0.725rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.verify-meta-val {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* ------------------------------------------------------------
+   5. BROWSER PRINT OUTPUT (@media print)
+   Strict single-page print isolation: prints ONLY the credential
+   Identical visual styling to in-app platform presentation
+   ------------------------------------------------------------ */
+@media print {
+    @page {
+        size: a4 landscape;
+        margin: 6mm 8mm;
+    }
+
+    html,
+    body {
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+        font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Completely hide navigation, dashboard shell, headers, buttons, overlays */
+    .dash-sidebar,
+    .dash-mobile-header,
+    .dash-sidebar-overlay,
+    .roadmap-back-link,
+    .dash-header-bar,
+    .cert-action-bar,
+    .cert-sharing-row,
+    .btn,
+    button,
+    footer,
+    nav,
+    header,
+    #chatbot-widget {
+        display: none !important;
+    }
+
+    .dash-shell,
+    .dash-main,
+    .dash-content,
+    .cert-page-container,
+    .cert-document-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    /* Outer document frame matches platform styling and fits exactly on 1 page */
+    .cert-document {
+        box-shadow: none !important;
+        border: 1.5pt solid #CBD5E1 !important;
+        border-radius: 8px !important;
+        padding: 7mm 9mm !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+        background-color: #FFFFFF !important;
+    }
+
+    /* Inner frame matches platform styling */
+    .cert-inner-frame {
+        border: 1pt solid #E2E8F0 !important;
+        border-radius: 6px !important;
+        padding: 5mm 8mm !important;
+        background-color: #FFFFFF !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* Proportional typography and spacing to preserve single-page fit */
+    .cert-header {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .cert-brand-seal {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 1.25rem !important;
+        margin-bottom: 0.35rem !important;
+        background-color: #EFF6FF !important;
+        border: 1.5px solid rgba(37, 99, 235, 0.25) !important;
+        color: #1D4ED8 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .cert-issuer-tag {
+        font-size: 0.7rem !important;
+        letter-spacing: 0.14em !important;
+        color: #64748B !important;
+        margin-bottom: 0.2rem !important;
+    }
+
+    .cert-main-title {
+        font-size: 1.4rem !important;
+        font-weight: 800 !important;
+        color: #0F172A !important;
+        margin-bottom: 0 !important;
+    }
+
+    .cert-confer-line {
+        font-size: 0.85rem !important;
+        color: #64748B !important;
+        margin: 0.75rem 0 0.25rem !important;
+    }
+
+    .cert-recipient-name {
+        font-size: 1.95rem !important;
+        font-weight: 800 !important;
+        color: #0F172A !important;
+        line-height: 1.15 !important;
+        margin: 0.25rem 0 !important;
+    }
+
+    .cert-achievement-statement {
+        font-size: 0.85rem !important;
+        color: #64748B !important;
+        margin-bottom: 0.2rem !important;
+    }
+
+    .cert-track-title {
+        font-size: 1.35rem !important;
+        font-weight: 700 !important;
+        color: #1D4ED8 !important;
+        margin: 0.2rem 0 0.55rem !important;
+    }
+
+    .cert-curriculum-summary {
+        font-size: 0.8rem !important;
+        color: #475569 !important;
+        line-height: 1.4 !important;
+        max-width: 620px !important;
+        margin: 0 auto 0.85rem !important;
+    }
+
+    /* Authentication & Verification Footer Block */
+    .cert-auth-row {
+        border-top: 1.5px solid #E2E8F0 !important;
+        padding-top: 0.75rem !important;
+        margin-top: 0.75rem !important;
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        text-align: left !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .cert-auth-label {
+        font-size: 0.675rem !important;
+        color: #64748B !important;
+        margin-bottom: 0.15rem !important;
+    }
+
+    .cert-auth-value {
+        font-size: 0.85rem !important;
+        color: #0F172A !important;
+    }
+
+    .cert-auth-mono {
+        font-size: 0.85rem !important;
+        color: #1D4ED8 !important;
+    }
+
+    .cert-qr-box {
+        background-color: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        padding: 0.25rem !important;
+        display: inline-block !important;
+    }
+
+    .cert-qr-box img {
+        width: 60px !important;
+        height: 60px !important;
+        display: block !important;
+    }
+
+    .cert-qr-caption {
+        font-size: 0.65rem !important;
+        color: #64748B !important;
+        margin-top: 0.2rem !important;
+    }
+
+    .cert-status-pill {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.3rem !important;
+        font-size: 0.725rem !important;
+        padding: 0.2rem 0.55rem !important;
+        border-radius: 9999px !important;
+        background-color: #DCFCE7 !important;
+        color: #15803D !important;
+        border: 1px solid #86EFAC !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}

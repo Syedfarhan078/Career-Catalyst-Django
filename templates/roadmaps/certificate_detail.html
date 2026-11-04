@@ -6,78 +6,8 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
-<link rel="stylesheet" href="{% static 'css/roadmaps.css' %}?v=1.0">
-<style>
-.cert-display-card {
-    background: #ffffff;
-    border: 2px solid var(--dash-border, #e2e8f0);
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-    position: relative;
-    overflow: hidden;
-    padding: 3rem 2.5rem;
-}
-[data-theme="dark"] .cert-display-card {
-    background: #1e293b;
-    border-color: #334155;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
-.cert-outer-frame {
-    border: 3px double #cbd5e1;
-    border-radius: 12px;
-    padding: 2.5rem 2rem;
-    position: relative;
-    background: radial-gradient(circle at center, rgba(248, 250, 252, 0.6) 0%, rgba(241, 245, 249, 0.4) 100%);
-}
-[data-theme="dark"] .cert-outer-frame {
-    border-color: #475569;
-    background: radial-gradient(circle at center, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.6) 100%);
-}
-.cert-watermark {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    opacity: 0.04;
-    font-size: 16rem;
-    pointer-events: none;
-}
-.cert-header-icon {
-    width: 64px;
-    height: 64px;
-    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
-    color: #ffffff;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
-}
-.cert-recipient-name {
-    font-size: 2.2rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: var(--dash-text, #0f172a);
-    margin: 1.25rem 0 0.5rem 0;
-}
-.cert-track-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #4f46e5;
-    margin-bottom: 1rem;
-}
-[data-theme="dark"] .cert-track-title {
-    color: #818cf8;
-}
-.cert-qr-container {
-    background: #ffffff;
-    padding: 0.5rem;
-    border-radius: 8px;
-    display: inline-block;
-    border: 1px solid #e2e8f0;
-}
-</style>
+<link rel="stylesheet" href="{% static 'css/roadmaps.css' %}?v=2.2">
+<link rel="stylesheet" href="{% static 'css/certificate.css' %}?v=1.0">
 {% endblock %}
 
 {# Override public navbar & footer for workspace shell #}
@@ -105,110 +35,130 @@
         </header>
 
         <main class="dash-content">
-            <!-- Back Navigation -->
-            <a href="{% url 'roadmaps:learning_detail' cert.career_path.slug %}" class="roadmap-back-link mb-3">
-                <i class="bi bi-arrow-left"></i>
-                <span>Back to {{ cert.career_path.name }} Track</span>
-            </a>
+            <div class="cert-page-container">
+                <!-- Back Navigation -->
+                <a href="{% url 'roadmaps:learning_detail' cert.career_path.slug %}" class="roadmap-back-link mb-3">
+                    <i class="bi bi-arrow-left"></i>
+                    <span>Back to {{ cert.career_path.name }} Track</span>
+                </a>
 
-            <!-- Page Title Bar -->
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
-                <div>
-                    <h1 class="h3 fw-bold mb-1">Official Course Certificate</h1>
-                    <p class="text-muted small mb-0">Verified record of curriculum mastery on CareerCatalyst.</p>
-                </div>
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <a href="{% url 'roadmaps:certificate_pdf' cert.certificate_id %}" target="_blank" rel="noopener noreferrer" class="dash-btn-primary">
-                        <i class="bi bi-download"></i>
-                        <span>Download PDF</span>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Certificate Interactive Card -->
-            <div class="cert-display-card mb-4">
-                <div class="cert-outer-frame text-center">
-                    <i class="bi bi-award cert-watermark"></i>
-
-                    <div class="mb-3">
-                        <div class="cert-header-icon">
-                            <i class="bi bi-patch-check-fill"></i>
-                        </div>
+                <!-- Header & Action Bar -->
+                <div class="cert-action-bar">
+                    <div>
+                        <h1 class="h3 fw-bold mb-1">Official Course Certificate</h1>
+                        <p class="text-muted small mb-0">Verified record of curriculum mastery on CareerCatalyst.</p>
                     </div>
-
-                    <div class="text-uppercase small fw-bold tracking-widest text-muted" style="letter-spacing: 0.15em;">
-                        CareerCatalyst Verified Curriculum Mastery
-                    </div>
-
-                    <p class="text-muted mt-3 mb-1 small">This is to certify that</p>
-                    <div class="cert-recipient-name">{{ recipient_name }}</div>
-                    <p class="text-muted mb-2 small">has successfully mastered all required curriculum milestones and topics in</p>
-                    <div class="cert-track-title">{{ cert.career_path.name }}</div>
-
-                    <p class="text-muted small mx-auto" style="max-width: 620px; line-height: 1.6;">
-                        Demonstrating practical proficiency across <strong>{{ cert.total_topics_completed }} lessons</strong> and core competencies including
-                        <em>{{ cert.skills_summary|truncatewords:15 }}</em>.
-                    </p>
-
-                    <div class="row align-items-center justify-content-between pt-4 mt-4 border-top border-secondary-subtle">
-                        <div class="col-sm-4 text-start mb-3 mb-sm-0">
-                            <div class="small text-muted">Issue Date</div>
-                            <div class="fw-bold">{{ cert.issued_at|date:"F d, Y" }}</div>
-                            <div class="small text-muted mt-2">Issuing Authority</div>
-                            <div class="fw-bold text-primary">CareerCatalyst</div>
-                        </div>
-
-                        <div class="col-sm-4 text-center mb-3 mb-sm-0">
-                            {% if qr_code_base64 %}
-                            <div class="cert-qr-container">
-                                <img src="{{ qr_code_base64 }}" alt="Verification QR Code" width="96" height="96">
-                            </div>
-                            <div class="small text-muted mt-1" style="font-size: 0.7rem;">Scan to verify validity</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="col-sm-4 text-end">
-                            <div class="small text-muted">Credential Identifier</div>
-                            <div class="fw-bold font-monospace text-primary fs-6">{{ cert.certificate_id }}</div>
-                            <div class="small text-muted mt-2">Verification Status</div>
-                            <div>
-                                {% if cert.is_valid %}
-                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 small fw-semibold">
-                                    <i class="bi bi-check-circle-fill me-1"></i> Active & Verified
-                                </span>
-                                {% else %}
-                                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2.5 py-1 small fw-semibold">
-                                    <i class="bi bi-x-circle-fill me-1"></i> Revoked
-                                </span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sharing & Integration Box -->
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="p-3 rounded bg-light border">
-                        <h6 class="fw-bold mb-2"><i class="bi bi-share text-primary me-2"></i>Share Your Achievement</h6>
-                        <p class="small text-muted mb-3">Copy your permanent verification link to share with recruiters or on your portfolio.</p>
-                        <div class="input-group input-group-sm">
-                            <input type="text" class="form-control" id="shareUrlInput" value="{{ verification_url }}" readonly>
-                            <button class="btn btn-outline-primary" type="button" onclick="navigator.clipboard.writeText('{{ verification_url }}'); this.innerText='Copied!'; setTimeout(() => this.innerText='Copy', 2000);">
-                                Copy
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="p-3 rounded bg-light border">
-                        <h6 class="fw-bold mb-2"><i class="bi bi-file-earmark-text text-primary me-2"></i>Resume Integration</h6>
-                        <p class="small text-muted mb-3">Include this certificate in your resume with one click via the Resume Builder.</p>
-                        <a href="{% url 'resume:list' %}" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-arrow-right-circle me-1"></i> Open Resume Hub &rarr;
+                    <div class="cert-action-group">
+                        <button type="button" onclick="window.print();" class="btn btn-outline-secondary px-3 py-2">
+                            <i class="bi bi-printer me-1.5"></i>
+                            <span>Print</span>
+                        </button>
+                        <a href="{% url 'roadmaps:certificate_pdf' cert.certificate_id %}" target="_blank" rel="noopener noreferrer" class="btn btn-primary px-3 py-2">
+                            <i class="bi bi-download me-1.5"></i>
+                            <span>Download PDF</span>
                         </a>
+                    </div>
+                </div>
+
+                <!-- Credential Document Frame -->
+                <div class="cert-document-wrapper">
+                    <div class="cert-document">
+                        <div class="cert-inner-frame">
+                            <!-- Header / Emblem -->
+                            <div class="cert-header">
+                                <div class="cert-brand-seal">
+                                    <i class="bi bi-patch-check-fill"></i>
+                                </div>
+                                <div class="cert-issuer-tag">
+                                    CareerCatalyst Verified Curriculum Mastery
+                                </div>
+                                <h2 class="cert-main-title">Certificate of Technical Proficiency</h2>
+                            </div>
+
+                            <!-- Body / Recipient / Track -->
+                            <p class="cert-confer-line">This is to certify that</p>
+                            <div class="cert-recipient-name">{{ recipient_name }}</div>
+                            <p class="cert-achievement-statement">has successfully mastered all required curriculum milestones and topics in</p>
+                            <div class="cert-track-title">{{ cert.career_path.name }}</div>
+
+                            <p class="cert-curriculum-summary">
+                                Demonstrating practical proficiency across <strong>{{ cert.total_topics_completed }} lessons</strong> and core competencies including
+                                <em>{{ cert.skills_summary|truncatewords:15 }}</em>.
+                            </p>
+
+                            <!-- Authentication & Verification Footer Block -->
+                            <div class="cert-auth-row">
+                                <!-- Left Column: Issue Date & Platform -->
+                                <div>
+                                    <div class="cert-auth-label">Issue Date</div>
+                                    <div class="cert-auth-value mb-2">{{ cert.issued_at|date:"F d, Y" }}</div>
+                                    <div class="cert-auth-label">Issuing Authority</div>
+                                    <div class="cert-auth-value text-primary">CareerCatalyst Education</div>
+                                </div>
+
+                                <!-- Center Column: QR Code Verification -->
+                                <div class="text-center">
+                                    {% if qr_code_base64 %}
+                                    <div class="cert-qr-box">
+                                        <img src="{{ qr_code_base64 }}" alt="Verification QR Code" width="80" height="80">
+                                    </div>
+                                    <div class="cert-qr-caption">Scan to verify validity</div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Right Column: Credential Identifier & Status -->
+                                <div class="text-sm-end">
+                                    <div class="cert-auth-label">Credential Identifier</div>
+                                    <div class="cert-auth-mono mb-2">{{ cert.certificate_id }}</div>
+                                    <div class="cert-auth-label">Verification Status</div>
+                                    <div>
+                                        {% if cert.is_valid %}
+                                        <span class="cert-status-pill">
+                                            <i class="bi bi-check-circle-fill"></i>
+                                            <span>Active &amp; Verified</span>
+                                        </span>
+                                        {% else %}
+                                        <span class="cert-status-pill revoked">
+                                            <i class="bi bi-x-circle-fill"></i>
+                                            <span>Revoked</span>
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sharing & Registry Info Panels -->
+                <div class="row g-3 cert-sharing-row">
+                    <div class="col-md-6">
+                        <div class="cert-supporting-card">
+                            <h2 class="cert-supporting-title">
+                                <i class="bi bi-share text-primary"></i>
+                                <span>Share Your Achievement</span>
+                            </h2>
+                            <p class="small text-muted mb-3">Copy your permanent verification link to share with recruiters or on your LinkedIn profile.</p>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="shareUrlInput" value="{{ verification_url }}" readonly>
+                                <button class="btn btn-outline-primary" type="button" onclick="navigator.clipboard.writeText('{{ verification_url }}'); this.innerText='Copied!'; setTimeout(() => this.innerText='Copy', 2000);">
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="cert-supporting-card">
+                            <h2 class="cert-supporting-title">
+                                <i class="bi bi-file-earmark-check text-primary"></i>
+                                <span>Resume Integration</span>
+                            </h2>
+                            <p class="small text-muted mb-3">Include this certificate in your resume with one click via the CareerCatalyst Resume Hub.</p>
+                            <a href="{% url 'resume:list' %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-right-circle me-1"></i> Open Resume Hub &rarr;
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
