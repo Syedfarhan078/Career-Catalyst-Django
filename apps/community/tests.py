@@ -129,7 +129,7 @@ class MentorMarketplaceTests(TestCase):
         url = reverse('community:book_session', args=[self.mentor_profile.id])
         booking_data = {
             "requested_date": booking_date.strftime("%Y-%m-%d"),
-            "requested_time": "11:00:00",
+            "requested_time": "10:00:00",
             "purpose": "Resume Review",
             "student_message": "Please review my resume details."
         }
@@ -427,7 +427,7 @@ class MentorMarketplaceTests(TestCase):
         url = reverse('community:book_session', args=[self.mentor_profile.id])
         booking_data = {
             "requested_date": booking_date.strftime("%Y-%m-%d"),
-            "requested_time": "11:00:00",
+            "requested_time": "10:00:00",
             "purpose": "Resume Review",
             "student_message": "Testing booking unapproved mentor."
         }

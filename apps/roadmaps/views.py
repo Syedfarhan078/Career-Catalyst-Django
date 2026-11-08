@@ -180,17 +180,39 @@ class CareerPathListView(ListView):
         profile = user_ctx['profile']
 
         if self.request.user.is_authenticated:
-            enrollments = UserRoadmap.objects.filter(
+            enrollments = list(UserRoadmap.objects.filter(
                 user=self.request.user
-            ).select_related('career_path')
+            ).select_related('career_path'))
             
+            # Batch calculate progress to eliminate N+1 queries across enrollments
+            enrolled_path_ids = [e.career_path_id for e in enrollments]
+            roadmap_ids = [e.id for e in enrollments]
+
+            from django.db.models import Count
+            # Total topics per career path in a single batch query
+            path_topic_totals = dict(
+                Topic.objects.filter(milestone__career_path_id__in=enrolled_path_ids)
+                .values('milestone__career_path_id')
+                .annotate(total=Count('id'))
+                .values_list('milestone__career_path_id', 'total')
+            )
+            # Completed topics per user roadmap in a single batch query
+            roadmap_completed_counts = dict(
+                TopicProgress.objects.filter(user_roadmap_id__in=roadmap_ids, is_completed=True)
+                .values('user_roadmap_id')
+                .annotate(done=Count('id'))
+                .values_list('user_roadmap_id', 'done')
+            )
+
             # Map progress and categorize into in-progress vs completed
             progress_map = {}
             completed_enrollments = []
             in_progress_enrollments = []
             
             for enrollment in enrollments:
-                p = enrollment.progress_percentage()
+                tot = path_topic_totals.get(enrollment.career_path_id, 0)
+                comp = roadmap_completed_counts.get(enrollment.id, 0)
+                p = int((comp / tot) * 100) if tot > 0 else 0
                 progress_map[enrollment.career_path_id] = p
                 if p >= 100:
                     completed_enrollments.append(enrollment)
@@ -200,7 +222,7 @@ class CareerPathListView(ListView):
             context['enrollments'] = enrollments
             context['in_progress_enrollments'] = in_progress_enrollments
             context['completed_enrollments'] = completed_enrollments
-            context['enrolled_ids'] = list(enrollments.values_list('career_path_id', flat=True))
+            context['enrolled_ids'] = [e.career_path_id for e in enrollments]
             context['progress_map'] = progress_map
             context['completed_path_ids'] = [e.career_path_id for e in completed_enrollments]
             context['in_progress_path_ids'] = [e.career_path_id for e in in_progress_enrollments]
@@ -214,7 +236,7 @@ class CareerPathListView(ListView):
             # 1. Match StudentProfile career_goal to an enrolled CareerPath
             # 2. Fallback to preferred_domain match
             # 3. Fallback to most recently started active enrollment
-            active_enrollments = list(enrollments.filter(is_active=True).select_related('career_path'))
+            active_enrollments = [e for e in enrollments if e.is_active]
             primary_enrollment = None
 
             if target_career and active_enrollments:
@@ -243,9 +265,18 @@ class CareerPathListView(ListView):
             secondary_enrollments = []
 
             if primary_enrollment:
-                roadmap_progress = primary_enrollment.progress_percentage()
-                roadmap_completed_count = primary_enrollment.completed_count()
-                roadmap_total_topics = primary_enrollment.career_path.total_topics()
+                roadmap_total_topics = path_topic_totals.get(
+                    primary_enrollment.career_path_id,
+                    primary_enrollment.career_path.total_topics()
+                )
+                roadmap_completed_count = roadmap_completed_counts.get(
+                    primary_enrollment.id,
+                    primary_enrollment.completed_count()
+                )
+                roadmap_progress = progress_map.get(
+                    primary_enrollment.career_path_id,
+                    int((roadmap_completed_count / roadmap_total_topics) * 100) if roadmap_total_topics > 0 else 0
+                )
                 is_roadmap_completed = bool(
                     roadmap_total_topics > 0 and roadmap_completed_count >= roadmap_total_topics
                 )
@@ -261,16 +292,20 @@ class CareerPathListView(ListView):
                     current_milestone = incomplete_prog.topic.milestone
                     current_topic = incomplete_prog.topic
 
-                # Build sequential milestone journey
+                # Fetch all completed topic IDs for this roadmap in ONE query
+                completed_topic_ids = set(
+                    TopicProgress.objects.filter(
+                        user_roadmap=primary_enrollment,
+                        is_completed=True
+                    ).values_list('topic_id', flat=True)
+                )
+
+                # Build sequential milestone journey without per-milestone DB count calls
                 for ms in primary_enrollment.career_path.milestones.prefetch_related('topics').all():
                     ms_topics = list(ms.topics.all())
                     ms_total = len(ms_topics)
                     ms_topic_ids = [t.id for t in ms_topics]
-                    ms_completed = TopicProgress.objects.filter(
-                        user_roadmap=primary_enrollment,
-                        topic_id__in=ms_topic_ids,
-                        is_completed=True
-                    ).count()
+                    ms_completed = sum(1 for tid in ms_topic_ids if tid in completed_topic_ids)
 
                     if is_roadmap_completed or (ms_total > 0 and ms_completed >= ms_total):
                         status = 'completed'

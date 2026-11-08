@@ -48,6 +48,10 @@ class JobApplication(models.Model):
 
     class Meta:
         ordering = ['-updated_at']
+        indexes = [
+            models.Index(fields=['user', '-updated_at']),
+            models.Index(fields=['user', 'status']),
+        ]
 
     def __str__(self):
         return f"{self.role_title} at {self.company_name} ({self.get_status_display()})"

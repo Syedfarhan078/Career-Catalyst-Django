@@ -234,3 +234,22 @@ def get_private_storage():
     if getattr(settings, 'USE_CLOUDINARY', False):
         return CareerCatalystPrivateMediaStorage()
     return FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
+
+
+try:
+    from whitenoise.storage import CompressedManifestStaticFilesStorage
+
+    class CareerCatalystStaticFilesStorage(CompressedManifestStaticFilesStorage):
+        """
+        WhiteNoise production storage backend that produces fingerprinted (hashed)
+        and compressed static assets with long-lived immutable cache headers
+        (Cache-Control: max-age=31536000, public, immutable).
+
+        manifest_strict=False ensures that third-party CSS or optional webfont
+        relative paths not present locally log a non-fatal warning rather than crashing
+        the deployment build step during collectstatic.
+        """
+        manifest_strict = False
+except ImportError:
+    CareerCatalystStaticFilesStorage = None
+

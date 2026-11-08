@@ -66,9 +66,10 @@ def dashboard_view(request):
 
     step_2_completed = active_enrollment is not None
     
-    # Resume status
+    # Latest Resume Analysis (serves both step 3 verification and latest score card)
+    latest_analysis = ResumeAnalysis.objects.filter(user=request.user).order_by('-created_at').first()
+    has_analysis = latest_analysis is not None
     has_resume = Resume.objects.filter(user=request.user).exists()
-    has_analysis = ResumeAnalysis.objects.filter(user=request.user).exists()
     step_3_completed = has_resume or has_analysis
     
     completed_steps_count = sum([1 for s in [step_1_completed, step_2_completed, step_3_completed] if s])
@@ -95,23 +96,41 @@ def dashboard_view(request):
         'all_completed': all_steps_completed,
     }
 
-    # Job Tracker Metrics & Pipeline
-    applications = list(JobApplication.objects.filter(user=request.user))
-    total_apps_count = len(applications)
-    interview_apps_count = sum(1 for a in applications if a.status == 'interview')
-    offer_apps_count = sum(1 for a in applications if a.status == 'offer')
-    applied_apps_count = sum(1 for a in applications if a.status == 'applied')
-    assessment_apps_count = sum(1 for a in applications if a.status == 'assessment')
-    
-    followup_due_apps = [a for a in applications if a.needs_follow_up]
-    followup_due_count = len(followup_due_apps)
-    
+    # Job Tracker Metrics & Pipeline (fetching lean dictionary values rather than full model instances)
+    app_rows = list(JobApplication.objects.filter(user=request.user).values('status', 'applied_date', 'interview_date', 'company_name', 'role_title', 'id'))
+    total_apps_count = len(app_rows)
+    interview_apps_count = 0
+    offer_apps_count = 0
+    applied_apps_count = 0
+    assessment_apps_count = 0
+    followup_due_apps = []
+
+    today = timezone.now().date()
     now = timezone.now()
-    upcoming_interviews = [a for a in applications if a.interview_date and a.interview_date >= now]
-    upcoming_interviews.sort(key=lambda x: x.interview_date)
-    
-    # Latest Resume Analysis
-    latest_analysis = ResumeAnalysis.objects.filter(user=request.user).order_by('-created_at').first()
+    upcoming_interviews = []
+
+    for a in app_rows:
+        st = a.get('status')
+        if st == 'interview':
+            interview_apps_count += 1
+        elif st == 'offer':
+            offer_apps_count += 1
+        elif st == 'applied':
+            applied_apps_count += 1
+        elif st == 'assessment':
+            assessment_apps_count += 1
+
+        if st in ('applied', 'referral_requested'):
+            ad = a.get('applied_date')
+            if ad and (today - ad).days >= 5:
+                followup_due_apps.append(a)
+
+        iv_date = a.get('interview_date')
+        if iv_date and iv_date >= now:
+            upcoming_interviews.append(a)
+
+    followup_due_count = len(followup_due_apps)
+    upcoming_interviews.sort(key=lambda x: x['interview_date'])
     
     # Skills List
     skills_list = [s.strip() for s in (profile.skills or '').replace('\n', ',').split(',') if s.strip()]
@@ -119,9 +138,9 @@ def dashboard_view(request):
     # Career Analysis (Readiness)
     career_analysis = CareerAnalysis.objects.filter(user=request.user).order_by('-created_at').first()
 
-    # Interview attempts
-    has_interview_attempt = UserAttempt.objects.filter(user=request.user).exists()
+    # Interview attempts (single count query serves count and existence check)
     interview_attempts_count = UserAttempt.objects.filter(user=request.user).count()
+    has_interview_attempt = interview_attempts_count > 0
 
     # Detailed Roadmap Progress & First Incomplete Topic
     current_milestone = None

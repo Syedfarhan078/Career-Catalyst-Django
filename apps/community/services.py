@@ -497,6 +497,17 @@ def create_mentorship_request_service(student, mentor, form_cleaned_data):
     requested_date = form_cleaned_data.get('requested_date')
     requested_time = form_cleaned_data.get('requested_time')
 
+    if isinstance(requested_date, str):
+        from datetime import datetime as dt_datetime
+        requested_date = dt_datetime.strptime(requested_date, '%Y-%m-%d').date()
+    if isinstance(requested_time, str):
+        from datetime import time as dt_time
+        parts = [int(p) for p in requested_time.split(':')]
+        if len(parts) == 2:
+            requested_time = dt_time(parts[0], parts[1])
+        elif len(parts) >= 3:
+            requested_time = dt_time(parts[0], parts[1], parts[2])
+
     today = timezone.now().date()
     if requested_date < today:
         raise ValidationError("You cannot book a mentorship session for a past date.")

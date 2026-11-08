@@ -113,6 +113,9 @@ class TopicProgress(models.Model):
 
     class Meta:
         unique_together = ['user_roadmap', 'topic']
+        indexes = [
+            models.Index(fields=['user_roadmap', 'is_completed']),
+        ]
 
     def __str__(self):
         status = "✓" if self.is_completed else "□"

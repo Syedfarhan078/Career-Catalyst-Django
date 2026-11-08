@@ -765,3 +765,33 @@ class AwardCompletedRoadmapCertificatesCommandTests(TestCase):
         self.assertEqual(RoadmapCertificate.objects.filter(user=self.user, career_path=self.path).count(), 1)
 
 
+class RoadmapQueryOptimizationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='perfstudent', password='password123')
+        StudentProfile.objects.create(user=self.user, career_goal='Backend Developer')
+        self.client.force_login(self.user)
+
+        # Create multiple career paths with milestones and topics
+        for i in range(3):
+            path = CareerPath.objects.create(name=f'Track {i}', slug=f'track-{i}', is_active=True)
+            for m in range(2):
+                ms = Milestone.objects.create(career_path=path, week_number=m + 1, title=f'MS {m}', order=m + 1)
+                for t in range(2):
+                    Topic.objects.create(milestone=ms, title=f'Topic {t}', order=t + 1)
+            # Enroll user in path
+            enr = UserRoadmap.objects.create(user=self.user, career_path=path)
+            # Mark first topic complete
+            first_topic = path.milestones.first().topics.first()
+            TopicProgress.objects.create(user_roadmap=enr, topic=first_topic, is_completed=True)
+
+    def test_path_list_view_query_efficiency(self):
+        # CareerPathListView must execute efficiently and return accurate progress_map
+        response = self.client.get(reverse('roadmaps:my_roadmap'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('progress_map', response.context)
+        # Verify progress map accuracy: 1 of 4 topics completed = 25%
+        for path_id, progress in response.context['progress_map'].items():
+            self.assertEqual(progress, 25)
+
+
+

@@ -29,6 +29,24 @@ class DashboardRefinementTests(TestCase):
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
 
+    def test_dashboard_job_application_metrics_optimization(self):
+        from apps.tracker.models import JobApplication
+        from django.utils import timezone
+        from datetime import timedelta
+
+        # Create a few job applications across statuses
+        JobApplication.objects.create(user=self.user, role_title='Backend Dev', company_name='Acme', status='interview', interview_date=timezone.now() + timedelta(days=2))
+        JobApplication.objects.create(user=self.user, role_title='Fullstack Dev', company_name='Beta Corp', status='offer')
+        JobApplication.objects.create(user=self.user, role_title='Frontend Dev', company_name='Gamma LLC', status='applied', applied_date=timezone.now().date() - timedelta(days=7))
+
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_apps_count'], 3)
+        self.assertEqual(response.context['interview_apps_count'], 1)
+        self.assertEqual(response.context['offer_apps_count'], 1)
+        self.assertEqual(response.context['followup_due_count'], 1)
+        self.assertEqual(len(response.context['upcoming_interviews']), 1)
+
     def test_ats_report_recommendation_links_to_analysis_detail(self):
         analysis = ResumeAnalysis.objects.create(
             user=self.user,

@@ -136,12 +136,30 @@ DATABASES = {
     }
 }
 
+DB_CONN_MAX_AGE = int(os.getenv("DB_CONN_MAX_AGE", 60))
+
 if os.getenv("DATABASE_URL") and dj_database_url:
     DATABASES['default'] = dj_database_url.config(
-        conn_max_age=600,
+        conn_max_age=DB_CONN_MAX_AGE,
         conn_health_checks=True,
         ssl_require=not DEBUG
     )
+
+
+# Caching Configuration
+# Non-critical in-memory cache for static catalogue metadata and system lookups.
+# Never used for storing personalized user or session data.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'careercatalyst-locmem',
+        'TIMEOUT': int(os.getenv("CACHE_DEFAULT_TIMEOUT", 300)),
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+            'CULL_FREQUENCY': 3,
+        }
+    }
+}
 
 
 # Password validation
@@ -276,7 +294,7 @@ if USE_CLOUDINARY:
             "BACKEND": "apps.core.storage.CareerCatalystMediaCloudinaryStorage",
         },
         "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+            "BACKEND": "apps.core.storage.CareerCatalystStaticFilesStorage" if not (DEBUG or IS_TESTING) else "whitenoise.storage.CompressedStaticFilesStorage",
         },
     }
     if 'cloudinary' not in INSTALLED_APPS:
@@ -296,9 +314,16 @@ else:
             "BACKEND": "django.core.files.storage.FileSystemStorage",
         },
         "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+            "BACKEND": "apps.core.storage.CareerCatalystStaticFilesStorage" if not (DEBUG or IS_TESTING) else "whitenoise.storage.CompressedStaticFilesStorage",
         },
     }
+
+# WhiteNoise Caching Directives
+# Fingerprinted (hashed) assets automatically receive 1-year immutable caching
+# (Cache-Control: max-age=31536000, public, immutable).
+# WHITENOISE_MAX_AGE applies ONLY to un-fingerprinted static files (e.g. favicon.ico, unhashed files),
+# ensuring browsers do not serve stale versions of newly deployed assets.
+WHITENOISE_MAX_AGE = int(os.getenv("WHITENOISE_MAX_AGE", 60)) if not DEBUG else 0
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
