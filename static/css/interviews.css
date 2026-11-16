@@ -69,6 +69,18 @@
 /* --------------------------------------------------------------------------
    2. HUB QUICK STATS & TRACK CARDS
    -------------------------------------------------------------------------- */
+.interview-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 1rem;
+    width: 100%;
+}
+
+.interview-stat-item,
+.interview-recent-item {
+    min-width: 0;
+}
+
 .interview-stat-card {
     background: var(--dash-surface);
     border: 1px solid var(--dash-border);
@@ -89,15 +101,20 @@
     background: var(--dash-surface-muted);
     box-shadow: none;
     min-width: 0;
+    width: 100%;
 }
 
 .interview-stat-card > div:last-child {
     min-width: 0;
+    flex: 1 1 auto;
 }
 
 .interview-stat-label,
 .interview-stat-sub {
-    overflow-wrap: anywhere;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
 }
 
 .interview-stat-icon {
@@ -158,13 +175,11 @@
     box-shadow: 0 0 0 3px var(--dash-primary-border), var(--dash-shadow-card);
 }
 
-.interview-stats-grid,
 .interview-recent-grid {
-    margin-inline: 0;
-}
-
-.interview-recent-grid > [class*="col-"] {
-    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    gap: 1rem;
+    width: 100%;
 }
 
 .interview-recent-grid .card {
@@ -179,6 +194,11 @@
 @media (max-width: 767.98px) {
     .interview-section-note {
         display: none;
+    }
+
+    .interview-stats-grid,
+    .interview-recent-grid {
+        grid-template-columns: 1fr;
     }
 }
 
