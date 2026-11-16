@@ -68,12 +68,12 @@
                         Build a clear, focused resume and get useful feedback before you apply.
                     </p>
                 </div>
-                <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div class="hub-header-actions d-flex align-items-center gap-2 flex-wrap">
                     <a href="{% url 'ai_resume:analyze' %}" class="dash-btn dash-btn-secondary dash-btn-sm d-inline-flex align-items-center gap-1.5">
-                        <i class="bi bi-shield-check"></i> Run ATS Scan
+                        <i class="bi bi-shield-check"></i> Scan a resume
                     </a>
                     <a href="{% url 'resume:create' %}" class="dash-btn dash-btn-primary dash-btn-sm d-inline-flex align-items-center gap-1.5">
-                        <i class="bi bi-plus-lg"></i> Create Resume
+                        <i class="bi bi-plus-lg"></i> Create your resume
                     </a>
                 </div>
             </div>
@@ -123,7 +123,7 @@
                                 <a href="{% url 'resume:preview' default_resume.pk %}" target="_blank" class="dash-btn dash-btn-outline dash-btn-sm">
                                     <i class="bi bi-box-arrow-up-right me-1"></i> Preview
                                 </a>
-                                <a href="{% url 'ai_resume:analyze' %}?resume={{ default_resume.pk }}" class="dash-btn dash-btn-secondary dash-btn-sm" title="Scan this resume with ATS Analyzer">
+                                <a href="{% url 'ai_resume:analyze' %}?resume={{ default_resume.pk }}" class="dash-btn dash-btn-link dash-btn-sm" title="Scan this resume with ATS Analyzer">
                                     <i class="bi bi-shield-check me-1"></i> Scan ATS
                                 </a>
                             </div>

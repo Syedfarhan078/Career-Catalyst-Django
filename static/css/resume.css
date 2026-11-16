@@ -44,6 +44,20 @@
     margin: 0;
 }
 
+.hub-header-actions {
+    flex-shrink: 0;
+}
+
+.default-resume-actions .dash-btn-link {
+    color: var(--dash-text-muted);
+    padding-inline: 0.35rem;
+}
+
+.default-resume-actions .dash-btn-link:hover {
+    color: var(--dash-primary);
+    background: transparent;
+}
+
 /* --------------------------------------------------------------------------
    2. RESUME HUB CARDS & OVERVIEW DECK
    -------------------------------------------------------------------------- */
@@ -160,6 +174,12 @@
 .resume-mini-card:hover {
     border-color: var(--dash-primary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.resume-mini-card:focus-within,
+.hub-card:focus-within {
+    border-color: var(--dash-primary);
+    box-shadow: 0 0 0 3px var(--dash-primary-border), var(--dash-shadow-card);
 }
 
 .resume-mini-title {
@@ -296,6 +316,18 @@
     max-width: 380px;
     margin: 0 auto 1.25rem auto;
     line-height: 1.5;
+}
+
+@media (max-width: 575.98px) {
+    .hub-header-actions,
+    .hub-header-actions .dash-btn {
+        width: 100%;
+    }
+
+    .hub-header-actions {
+        flex-direction: column-reverse;
+        align-items: stretch !important;
+    }
 }
 
 /* --------------------------------------------------------------------------
