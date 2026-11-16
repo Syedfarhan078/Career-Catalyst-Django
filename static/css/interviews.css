@@ -29,6 +29,10 @@
     margin-bottom: 1.5rem;
 }
 
+.interview-hub-content {
+    max-width: 1500px;
+}
+
 .interview-breadcrumb {
     display: flex;
     align-items: center;
@@ -106,6 +110,7 @@
 }
 
 .interview-stats-grid > .col-md-4,
+.interview-practice-section .row > [class*="col-"],
 .interview-recent-grid > .col-lg-6 {
     min-width: 0;
 }
@@ -155,6 +160,7 @@
     box-shadow: var(--dash-shadow-card);
     transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     position: relative;
+    min-width: 0;
 }
 
 .interview-track-card:hover {
@@ -235,6 +241,8 @@
     padding-top: 1rem;
     border-top: 1px solid var(--dash-border);
     gap: 0.5rem;
+    min-width: 0;
+    flex-wrap: wrap;
 }
 
 /* --------------------------------------------------------------------------
