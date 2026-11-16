@@ -1047,7 +1047,7 @@ html[data-theme='dark'] .dash-logout-mobile-btn:active,
     font-weight: 600;
     line-height: 1.4;
     padding: 0.45rem 1.15rem;
-    border-radius: var(--dash-radius-sm, 6px);
+    border-radius: var(--dash-radius, 8px);
     text-decoration: none;
     cursor: pointer;
     border: 1px solid transparent;
@@ -1203,7 +1203,87 @@ html[data-theme='dark'] .dash-logout-mobile-btn:active,
 
 /* Neutralize oversized pill and glowing box-shadow inside dash-shell */
 .dash-shell .rounded-pill {
-    border-radius: var(--dash-radius-sm, 6px) !important;
+    border-radius: var(--dash-radius, 8px) !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. SHARED PAGE HIERARCHY & SURFACE LANGUAGE
+   -------------------------------------------------------------------------- */
+.dash-shell .resume-page-header,
+.dash-shell .interview-page-header,
+.dash-shell .roadmap-page-header,
+.dash-shell .guidance-page-header {
+    margin-bottom: 1.75rem;
+}
+
+.dash-shell .resume-page-title,
+.dash-shell .interview-page-title,
+.dash-shell .roadmap-page-title,
+.dash-shell .guidance-page-title {
+    color: var(--dash-text);
+    font-size: clamp(1.6rem, 2vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.15;
+    margin-bottom: 0.4rem;
+}
+
+.dash-shell .resume-page-subtitle,
+.dash-shell .interview-page-subtitle,
+.dash-shell .roadmap-page-subtitle,
+.dash-shell .guidance-page-subtitle {
+    color: var(--dash-text-muted);
+    font-size: 0.925rem;
+    line-height: 1.6;
+    max-width: 62ch;
+}
+
+.dash-shell .resume-breadcrumb,
+.dash-shell .interview-breadcrumb,
+.dash-shell .roadmap-breadcrumb,
+.dash-shell .guidance-breadcrumb {
+    font-size: 0.75rem;
+    letter-spacing: 0.01em;
+    margin-bottom: 0.65rem;
+}
+
+.dash-shell .hub-card,
+.dash-shell .interview-stat-card,
+.dash-shell .interview-track-card,
+.dash-shell .roadmap-hero-card,
+.dash-shell .dash-panel-card {
+    border-radius: var(--dash-radius-lg, 10px);
+    box-shadow: var(--dash-shadow-card);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.dash-shell .hub-card:hover,
+.dash-shell .interview-stat-card:hover,
+.dash-shell .interview-track-card:hover,
+.dash-shell .roadmap-hero-card:hover,
+.dash-shell .dash-panel-card:hover {
+    border-color: var(--dash-border-strong);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.dash-shell .dash-btn,
+.dash-shell .dash-btn-primary,
+.dash-shell .dash-btn-secondary,
+.dash-shell .dash-btn-outline {
+    min-height: 40px;
+}
+
+.dash-shell .dash-btn-sm,
+.dash-shell .dash-btn-xs {
+    min-height: 34px;
+}
+
+html[data-theme='dark'] .dash-shell .hub-card:hover,
+html[data-theme='dark'] .dash-shell .interview-stat-card:hover,
+html[data-theme='dark'] .dash-shell .interview-track-card:hover,
+html[data-theme='dark'] .dash-shell .roadmap-hero-card:hover,
+html[data-theme='dark'] .dash-shell .dash-panel-card:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
 }
 
 /* Standardize Bootstrap outline buttons inside dash-shell in Dark Mode */
