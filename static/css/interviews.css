@@ -75,7 +75,8 @@
     border-radius: var(--dash-radius-lg, 10px);
     padding: 1.25rem 1.5rem;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 1rem;
     box-shadow: var(--dash-shadow-sm);
     transition: transform 0.15s ease, border-color 0.15s ease;
@@ -92,8 +93,8 @@
 }
 
 .interview-stat-card > div:last-child {
+    width: 100%;
     min-width: 0;
-    flex: 1 1 auto;
 }
 
 .interview-stat-label,
@@ -210,6 +211,13 @@
     font-weight: 600;
     color: var(--dash-text);
     margin-bottom: 0.5rem;
+    min-width: 0;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+
+.interview-track-card > .d-flex .interview-track-title {
+    flex: 1 1 auto;
 }
 
 .interview-track-desc {
