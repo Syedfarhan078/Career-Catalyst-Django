@@ -235,7 +235,8 @@ html[data-theme="dark"] body.home-page {
    4. HERO SECTION WITH REALISTIC WORKSPACE MOCKUP
    ------------------------------------------------------------ */
 .hero-section {
-    padding: 4.5rem 0 4.5rem;
+    padding: 5.25rem 0 5rem;
+    background: var(--home-bg);
 }
 
 .hero-intro {
@@ -277,7 +278,10 @@ html[data-theme="dark"] body.home-page {
     font-weight: 800;
     color: var(--home-text);
     line-height: 1.15;
-    letter-spacing: -0.035em;
+    letter-spacing: -0.04em;
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
     margin-bottom: 1.25rem;
 }
 
@@ -311,6 +315,11 @@ html[data-theme="dark"] body.home-page {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
+}
+
+.hero-trust-item i {
+    font-size: 0.95rem;
+    line-height: 1;
 }
 
 @media (max-width: 767.98px) {
@@ -366,8 +375,12 @@ html[data-theme="dark"] body.home-page {
     background: var(--home-surface);
     border: 1px solid var(--home-border);
     border-radius: var(--home-radius-lg);
-    box-shadow: var(--home-shadow-lg);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
     overflow: hidden;
+}
+
+html[data-theme="dark"] .product-window {
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
 }
 
 .window-header {
