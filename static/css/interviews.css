@@ -69,18 +69,6 @@
 /* --------------------------------------------------------------------------
    2. HUB QUICK STATS & TRACK CARDS
    -------------------------------------------------------------------------- */
-.interview-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-    gap: 1rem;
-    width: 100%;
-}
-
-.interview-stat-item,
-.interview-recent-item {
-    min-width: 0;
-}
-
 .interview-stat-card {
     background: var(--dash-surface);
     border: 1px solid var(--dash-border);
@@ -101,7 +89,6 @@
     background: var(--dash-surface-muted);
     box-shadow: none;
     min-width: 0;
-    width: 100%;
 }
 
 .interview-stat-card > div:last-child {
@@ -115,6 +102,11 @@
     overflow-wrap: normal;
     word-break: normal;
     hyphens: none;
+}
+
+.interview-stats-grid > .col-md-4,
+.interview-recent-grid > .col-lg-6 {
+    min-width: 0;
 }
 
 .interview-stat-icon {
@@ -176,10 +168,11 @@
 }
 
 .interview-recent-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
-    gap: 1rem;
-    width: 100%;
+    margin-inline: 0;
+}
+
+.interview-recent-grid > [class*="col-"] {
+    min-width: 0;
 }
 
 .interview-recent-grid .card {
@@ -196,10 +189,6 @@
         display: none;
     }
 
-    .interview-stats-grid,
-    .interview-recent-grid {
-        grid-template-columns: 1fr;
-    }
 }
 
 .interview-track-icon-wrapper {
