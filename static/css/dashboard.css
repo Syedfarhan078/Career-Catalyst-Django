@@ -493,11 +493,11 @@ html[data-theme='dark'] .dash-logout-mobile-btn:active,
    -------------------------------------------------------------------------- */
 .dash-next-step-card {
     background-color: var(--dash-surface);
-    border: 1px solid var(--dash-border);
+    border: 1px solid var(--dash-primary-border);
     border-radius: var(--dash-radius-lg);
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1.65rem;
-    box-shadow: var(--dash-shadow-card);
+    padding: 1.6rem 1.75rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
     position: relative;
     overflow: hidden;
 }
@@ -560,7 +560,7 @@ html[data-theme='dark'] .dash-logout-mobile-btn:active,
 }
 
 .dash-step-title {
-    font-size: 1.225rem;
+    font-size: 1.4rem;
     font-weight: 700;
     letter-spacing: -0.015em;
     color: var(--dash-text);
@@ -601,7 +601,8 @@ html[data-theme='dark'] .dash-logout-mobile-btn:active,
 
 .dash-step-btn {
     flex-shrink: 0;
-    padding: 0.5rem 1.25rem;
+    min-width: 150px;
+    padding: 0.6rem 1.25rem;
 }
 
 /* --------------------------------------------------------------------------
@@ -772,6 +773,18 @@ html[data-theme='dark'] .dash-logout-mobile-btn:active,
     display: flex;
     flex-direction: column;
     box-shadow: var(--dash-shadow-card);
+}
+
+.dash-readiness-panel {
+    background: var(--dash-surface-muted);
+}
+
+.dash-readiness-panel .dash-panel-header {
+    margin-bottom: 0.9rem;
+}
+
+.dash-readiness-panel .dash-readiness-big-score {
+    font-size: 2.1rem;
 }
 
 .dash-panel-header {
@@ -1479,6 +1492,10 @@ html[data-theme='dark'] .dash-shell .btn-outline-danger:hover {
     .dash-grid-2col {
         grid-template-columns: 1fr;
     }
+
+    .dash-next-step-card {
+        padding: 1.4rem 1.35rem;
+    }
 }
 
 @media (max-width: 575.98px) {
@@ -1488,6 +1505,34 @@ html[data-theme='dark'] .dash-shell .btn-outline-danger:hover {
     
     .dash-greeting {
         font-size: 1.45rem;
+    }
+
+    .dash-next-step-card {
+        padding: 1.15rem 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dash-step-top,
+    .dash-step-footer {
+        align-items: flex-start;
+    }
+
+    .dash-step-top {
+        flex-direction: column;
+        gap: 0.65rem;
+    }
+
+    .dash-step-title {
+        font-size: 1.2rem;
+    }
+
+    .dash-step-why {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .dash-step-btn {
+        width: 100%;
     }
     
     .dash-journey-track {
