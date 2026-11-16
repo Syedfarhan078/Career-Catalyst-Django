@@ -25,7 +25,7 @@
     <div class="dash-main">
         <!-- Top Header Bar on Mobile -->
         <header class="dash-mobile-header" aria-label="Mobile Header">
-            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-label="Open navigation sidebar">
+            <button type="button" class="dash-mobile-toggle" id="sidebarToggleBtn" aria-controls="dashboardSidebar" aria-expanded="false" aria-label="Open navigation sidebar">
                 <i class="bi bi-list"></i>
             </button>
             <a href="{% url 'dashboard' %}" class="dash-brand">
@@ -342,18 +342,29 @@
         function openSidebar() {
             if (sidebar) sidebar.classList.add('open');
             if (overlay) overlay.classList.add('active');
+            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+            if (closeBtn) closeBtn.focus();
             document.body.style.overflow = 'hidden';
         }
 
         function closeSidebar() {
             if (sidebar) sidebar.classList.remove('open');
             if (overlay) overlay.classList.remove('active');
+            if (toggleBtn) {
+                toggleBtn.setAttribute('aria-expanded', 'false');
+                toggleBtn.focus();
+            }
             document.body.style.overflow = '';
         }
 
         if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
         if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
         if (overlay) overlay.addEventListener('click', closeSidebar);
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && sidebar && sidebar.classList.contains('open')) {
+                closeSidebar();
+            }
+        });
     })();
 </script>
 {% endblock %}

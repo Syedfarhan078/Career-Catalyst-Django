@@ -118,6 +118,8 @@
 </head>
 <body class="{% block body_class %}{% endblock %}">
 
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
 {% block navbar %}
 {% include "partials/navbar.html" %}
 {% endblock %}
@@ -144,6 +146,8 @@
         {% endfor %}
     {% endif %}
 </div>
+
+<span id="main-content" class="skip-target" tabindex="-1"></span>
 
 {% block main_wrapper %}
 <main class="container py-5">
