@@ -131,11 +131,11 @@
 
             <!-- Tabs: All vs Unread -->
             <div class="notif-tabs">
-                <a href="?filter=all" class="notif-tab {% if filter_type != 'unread' %}active{% endif %}">
+                <a href="?filter=all" class="notif-tab {% if filter_type != 'unread' %}active{% endif %}" {% if filter_type != 'unread' %}aria-current="page"{% endif %}>
                     <i class="bi bi-inbox me-1"></i> All Notifications
                     <span class="badge bg-secondary-subtle text-secondary ms-1 rounded-pill">{{ total_count }}</span>
                 </a>
-                <a href="?filter=unread" class="notif-tab {% if filter_type == 'unread' %}active{% endif %}">
+                <a href="?filter=unread" class="notif-tab {% if filter_type == 'unread' %}active{% endif %}" {% if filter_type == 'unread' %}aria-current="page"{% endif %}>
                     <i class="bi bi-bell-fill me-1"></i> Unread Only
                     {% if unread_count > 0 %}
                     <span class="badge bg-primary text-white ms-1 rounded-pill">{{ unread_count }}</span>
@@ -210,19 +210,25 @@
                 </div>
                 {% empty %}
                 <!-- Empty State -->
-                <div class="community-card text-center py-5">
+                <div class="community-card feedback-empty-state text-center py-5" role="status" aria-live="polite">
                     <i class="bi bi-bell-slash display-4 text-muted mb-3 d-block opacity-50"></i>
-                    <h5 class="fw-semibold text-body">No notifications found</h5>
+                    <h2 class="h5 fw-semibold text-body">
+                        {% if filter_type == 'unread' %}You are all caught up{% else %}Your notification inbox is empty{% endif %}
+                    </h2>
                     <p class="text-muted small mb-3">
                         {% if filter_type == 'unread' %}
-                        You have caught up with all your notifications! Check "All Notifications" to view your history.
+                        There are no unread updates right now. You can check your full history whenever you need it.
                         {% else %}
-                        You have no notifications in your history yet. When events occur, you will see alerts here.
+                        Booking updates, mentorship activity, and account notices will appear here as they happen.
                         {% endif %}
                     </p>
                     {% if filter_type == 'unread' %}
                     <a href="?filter=all" class="dash-btn dash-btn-outline dash-btn-sm px-3 py-2">
-                        View All Notifications
+                        View notification history
+                    </a>
+                    {% else %}
+                    <a href="{% if active_workspace == 'mentor' %}{% url 'community:mentor_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}" class="dash-btn dash-btn-primary dash-btn-sm px-3 py-2">
+                        Return to workspace
                     </a>
                     {% endif %}
                 </div>

@@ -206,6 +206,17 @@
     gap: 0.5rem;
 }
 
+.feedback-empty-state {
+    background: var(--dash-surface-muted);
+    border: 1px dashed var(--dash-border-strong);
+    border-radius: var(--dash-radius-lg, 10px);
+    padding-inline: 1.5rem;
+}
+
+.feedback-empty-state .display-4 {
+    font-size: 2.5rem;
+}
+
 /* --------------------------------------------------------------------------
    5. FORUM & DISCUSSION THREADS
    -------------------------------------------------------------------------- */

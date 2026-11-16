@@ -88,6 +88,16 @@
 .interview-stat-card {
     background: var(--dash-surface-muted);
     box-shadow: none;
+    min-width: 0;
+}
+
+.interview-stat-card > div:last-child {
+    min-width: 0;
+}
+
+.interview-stat-label,
+.interview-stat-sub {
+    overflow-wrap: anywhere;
 }
 
 .interview-stat-icon {
@@ -146,6 +156,30 @@
 .interview-track-card:focus-within {
     border-color: var(--dash-primary);
     box-shadow: 0 0 0 3px var(--dash-primary-border), var(--dash-shadow-card);
+}
+
+.interview-stats-grid,
+.interview-recent-grid {
+    margin-inline: 0;
+}
+
+.interview-recent-grid > [class*="col-"] {
+    min-width: 0;
+}
+
+.interview-recent-grid .card {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.interview-recent-grid .table-responsive {
+    max-width: 100%;
+}
+
+@media (max-width: 767.98px) {
+    .interview-section-note {
+        display: none;
+    }
 }
 
 .interview-track-icon-wrapper {
