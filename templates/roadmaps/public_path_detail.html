@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}{{ path.name }} Roadmap for Freshers & Students (2026 Guide) | CareerCatalyst{% endblock %}
-{% block meta_description %}Complete step-by-step {{ path.name }} roadmap for engineering students, fresh graduates, and freshers. Master {{ path.difficulty|lower }}-level skills in {{ path.estimated_weeks }} weeks with curated tutorials, project milestones, and career guidance on CareerCatalyst.{% endblock %}
+{% block meta_description %}Follow a practical {{ path.name }} roadmap for engineering students and freshers. Build {{ path.difficulty|lower }}-level skills in {{ path.estimated_weeks }} weeks with projects, milestones, and official learning resources.{% endblock %}
 {% block meta_keywords %}{{ path.name|lower }} roadmap for freshers, {{ path.name|lower }} roadmap 2026, learn {{ path.name|lower }} from scratch, {{ path.name|lower }} engineering syllabus, tech career roadmaps, career catalyst roadmaps{% endblock %}
 
 {% block robots %}
@@ -71,6 +71,35 @@
         "courseMode": "Online",
         "courseWorkload": "PT{{ total_estimated_hours }}H"
       }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is the {{ path.name|escapejs }} roadmap free?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The {{ path.name|escapejs }} roadmap, lesson checkpoints, and reference links are free for students."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I track progress on this roadmap?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "After enrolling, use the interactive learning workspace to complete topics week by week and track milestone progress."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I take more than one roadmap?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. You can enroll in multiple career tracks and monitor each one independently from your workspace."
+          }
+        }
+      ]
     }
   ]
 }

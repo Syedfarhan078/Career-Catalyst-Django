@@ -2,11 +2,15 @@
 {% load static %}
 
 {% block title %}Tech Career Roadmaps for Engineering Students & Freshers (2026) | CareerCatalyst{% endblock %}
-{% block meta_description %}Explore 15+ curated, step-by-step tech career roadmaps for engineering students, fresh graduates, and freshers. Master Software Engineering, Full Stack, Frontend, Backend, Data Science, AI/ML, DevOps, and Cloud with weekly milestones and official documentation.{% endblock %}
+{% block meta_description %}Explore free tech career roadmaps for engineering students, fresh graduates, and freshers. Follow practical weekly plans for software engineering, full stack, data, AI/ML, DevOps, and cloud careers with projects and official resources.{% endblock %}
 {% block meta_keywords %}career catalyst roadmaps, career catalyst roadmap, engineering roadmaps for freshers, software engineer roadmap, computer science roadmap, college students tech roadmap, fresher developer roadmap, btech placements roadmap, full stack developer roadmap, data scientist roadmap{% endblock %}
 
 {% block robots %}
+{% if search_query or selected_difficulty %}
+<meta name="robots" content="noindex, follow">
+{% else %}
 <meta name="robots" content="index, follow">
+{% endif %}
 {% endblock %}
 
 {% block canonical %}
@@ -31,7 +35,7 @@
   "@context": "https://schema.org",
   "@type": "ItemList",
   "name": "CareerCatalyst Engineering Learning Roadmaps",
-  "description": "Curated week-by-week learning paths for engineering students and technology professionals.",
+  "description": "Free, practical week-by-week learning paths for engineering students, fresh graduates, and early-career developers.",
   "numberOfItems": {{ annotated_paths|length }},
   "itemListElement": [
     {% for item in annotated_paths %}
@@ -40,7 +44,7 @@
       "position": {{ forloop.counter }},
       "item": {
         "@type": "Course",
-        "name": "{{ item.path.name }}",
+        "name": "{{ item.path.name|escapejs }}",
         "description": "{{ item.path.description|escapejs }}",
         "url": "{{ CANONICAL_ORIGIN }}{% url 'roadmaps:path_detail' item.path.slug %}",
         "educationalLevel": "{{ item.path.difficulty }}",
