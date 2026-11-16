@@ -31,19 +31,40 @@
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "ItemList",
-  "name": "CareerCatalyst Career Guides",
-  "description": "Curated, in-depth career and technical guides for engineering students and fresh graduates.",
-  "numberOfItems": {{ guides|length }},
-  "itemListElement": [
-    {% for g in guides %}
+  "@graph": [
     {
-      "@type": "ListItem",
-      "position": {{ forloop.counter }},
-      "name": "{{ g.title|escapejs }}",
-      "url": "{{ CANONICAL_ORIGIN }}{% url 'guide_detail' g.slug %}"
-    }{% if not forloop.last %},{% endif %}
-    {% endfor %}
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "{{ CANONICAL_ORIGIN }}{% url 'home' %}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Career Guides",
+          "item": "{{ CANONICAL_ORIGIN }}{% url 'guide_list' %}"
+        }
+      ]
+    },
+    {
+      "@type": "ItemList",
+      "name": "CareerCatalyst Career Guides",
+      "description": "Practical career and technical guides for engineering students and fresh graduates.",
+      "numberOfItems": {{ guides|length }},
+      "itemListElement": [
+        {% for g in guides %}
+        {
+          "@type": "ListItem",
+          "position": {{ forloop.counter }},
+          "name": "{{ g.title|escapejs }}",
+          "url": "{{ CANONICAL_ORIGIN }}{% url 'guide_detail' g.slug %}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }
   ]
 }
 </script>
