@@ -5,7 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=1.1">
-<link rel="stylesheet" href="{% static 'css/interviews.css' %}?v=1.1">
+<link rel="stylesheet" href="{% static 'css/interviews.css' %}?v=1.2">
 {% endblock %}
 
 {# Override public marketing navbar, footer, and chatbot for authenticated workspace shell #}
@@ -76,8 +76,8 @@
             {% endif %}
 
             <!-- Quick Metrics Row -->
-            <div class="interview-stats-grid mb-4">
-                <div class="interview-stat-item">
+            <div class="interview-stats-grid row g-3 mb-4">
+                <div class="col-md-4">
                     <div class="interview-stat-card">
                         <div class="interview-stat-icon" style="background: var(--dash-primary-subtle); color: var(--dash-primary); border: 1px solid var(--dash-primary-border);">
                             <i class="bi bi-check2-circle"></i>
@@ -89,7 +89,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="interview-stat-item">
+                <div class="col-md-4">
                     <div class="interview-stat-card">
                         <div class="interview-stat-icon" style="background: rgba(16, 185, 129, 0.08); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.22);">
                             <i class="bi bi-robot"></i>
@@ -101,7 +101,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="interview-stat-item">
+                <div class="col-md-4">
                     <div class="interview-stat-card">
                         <div class="interview-stat-icon" style="background: var(--interview-danger-subtle); color: var(--interview-danger); border: 1px solid var(--interview-danger-border);">
                             <i class="bi bi-shield-exclamation"></i>
@@ -200,9 +200,9 @@
 
             <!-- Recent Activity Section -->
             {% if recent_attempts or recent_mocks %}
-            <div class="interview-recent-grid">
+            <div class="interview-recent-grid row g-3">
                 {% if recent_attempts %}
-                <div class="interview-recent-item">
+                <div class="col-lg-6">
                     <div class="card border-0 shadow-sm rounded-4 p-3" style="background: var(--dash-surface); border: 1px solid var(--dash-border) !important;">
                         <h6 class="fw-bold text-secondary mb-3 d-flex align-items-center justify-content-between">
                             <span><i class="bi bi-clock-history me-1"></i> Recent Quiz Attempts</span>
@@ -230,7 +230,7 @@
                 {% endif %}
 
                 {% if recent_mocks %}
-                <div class="interview-recent-item">
+                <div class="col-lg-6">
                     <div class="card border-0 shadow-sm rounded-4 p-3" style="background: var(--dash-surface); border: 1px solid var(--dash-border) !important;">
                         <h6 class="fw-bold text-secondary mb-3 d-flex align-items-center justify-content-between">
                             <span><i class="bi bi-robot me-1"></i> Recent Mock Interviews</span>
