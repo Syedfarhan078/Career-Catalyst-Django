@@ -64,7 +64,7 @@
                 </p>
             </section>
 
-            <!-- 2. Primary Hero Feature: "Your Next Step" (Compact Height) -->
+            <!-- 2. Primary Hero Feature: "Your Next Step" -->
             <section class="dash-next-step-card" aria-label="Your Next Step">
                 <div class="dash-step-top">
                     <div class="dash-step-pretitle">
@@ -88,7 +88,7 @@
 
                 <div class="dash-step-footer">
                     <div class="dash-step-why">
-                        <strong>Why this matters:</strong> {{ next_step.why }}
+                        <strong>Why it helps:</strong> {{ next_step.why }}
                     </div>
                     <a href="{{ next_step.cta_url }}" class="dash-btn-primary dash-step-btn">
                         <span>{{ next_step.cta_text }}</span>
@@ -208,27 +208,27 @@
                 </section>
 
                 <!-- Column 2: Career Readiness -->
-                <section class="dash-panel-card" aria-label="Career Readiness">
+                <section class="dash-panel-card dash-readiness-panel" aria-label="Career Readiness">
                     <div class="dash-panel-header">
                         <h3 class="dash-panel-title">
                             <i class="bi bi-speedometer2 text-primary"></i>
-                            <span>CareerCatalyst Readiness</span>
+                            <span>Career Readiness</span>
                         </h3>
                         {% if readiness_data.has_analysis %}
                             <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small fw-semibold">
-                                Calibrated
+                                Updated
                             </span>
                         {% endif %}
                     </div>
 
                     <p class="dash-readiness-desc">
-                        An internal progress indicator based on your current profile, skills, roadmap progress, resume, and preparation.
+                        A quick snapshot of your progress across your profile, skills, roadmap, resume, and interview practice.
                     </p>
 
                     {% if readiness_data.has_analysis %}
                         <div class="dash-readiness-score-row">
                             <span class="dash-readiness-big-score">{{ readiness_data.score }}%</span>
-                            <span class="dash-readiness-score-unit">CareerCatalyst readiness</span>
+                            <span class="dash-readiness-score-unit">overall progress</span>
                         </div>
                     {% else %}
                         <div class="dash-readiness-score-row">
@@ -252,7 +252,7 @@
                             <span class="dash-breakdown-val">{{ readiness_data.roadmap_metric }}</span>
                         </div>
                         <div class="dash-breakdown-row">
-                            <span class="dash-breakdown-label">ATS resume benchmark</span>
+                            <span class="dash-breakdown-label">Resume feedback</span>
                             <span class="dash-breakdown-val">{{ readiness_data.resume_metric }}</span>
                         </div>
                         <div class="dash-breakdown-row">
@@ -263,7 +263,7 @@
 
                     <div class="mt-auto pt-2">
                         <a href="{% url 'recommendation:dashboard' %}" class="dash-btn-secondary w-100">
-                            <span>{% if readiness_data.has_analysis %}View readiness report{% else %}Check readiness{% endif %}</span>
+                            <span>{% if readiness_data.has_analysis %}View progress snapshot{% else %}Check your progress{% endif %}</span>
                             <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
@@ -273,7 +273,7 @@
             <!-- 5. "Recommended for You" - 2 to 4 Meaningful Actions -->
             <section class="dash-recommendations-section" aria-label="Recommended For You">
                 <div class="dash-section-header">
-                    <h3 class="dash-section-title">Recommended for You</h3>
+                    <h3 class="dash-section-title">Good next moves</h3>
                 </div>
 
                 <div class="dash-rec-grid">
@@ -298,7 +298,7 @@
                         <i class="bi bi-kanban"></i>
                     </div>
                     <div>
-                        <div class="dash-tracker-title">Job Applications</div>
+                        <div class="dash-tracker-title">Application tracker</div>
                         <div class="dash-tracker-metrics">
                             {% if total_apps_count > 0 %}
                                 <span><strong>{{ total_apps_count }}</strong> application{{ total_apps_count|pluralize }}</span>
