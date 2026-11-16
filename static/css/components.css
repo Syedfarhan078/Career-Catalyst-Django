@@ -963,20 +963,21 @@ html[data-theme="dark"] .btn-back:hover {
    6. NAVBAR OVERRIDES (Global)
    ------------------------------------------------------------ */
 .navbar-custom {
-    background-color: #FFFFFF;
-    border-bottom: 1px solid #E5E7EB;
+    background-color: rgba(255, 255, 255, 0.96);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
     min-height: 68px;
     padding: 0.625rem 0;
+    backdrop-filter: blur(12px);
     transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
 
 html[data-theme="dark"] .navbar-custom {
-    background-color: #09090B;
+    background-color: rgba(9, 9, 11, 0.94);
     border-bottom-color: #27272A;
 }
 
 .navbar-custom.scrolled {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
 html[data-theme="dark"] .navbar-custom.scrolled {
@@ -1025,7 +1026,7 @@ html[data-theme="dark"] .dash-brand img {
     font-weight: var(--font-medium, 500);
     font-size: 0.875rem;
     padding: 0.5rem 0.875rem !important;
-    transition: color 150ms ease;
+    transition: color 150ms ease, background-color 150ms ease;
     position: relative;
 }
 
@@ -1038,6 +1039,18 @@ html[data-theme="dark"] .dash-brand img {
     font-weight: var(--font-semibold, 600);
 }
 
+.navbar-custom .nav-link.active::after {
+    content: "";
+    position: absolute;
+    left: 0.875rem;
+    right: 0.875rem;
+    bottom: 0.15rem;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.8;
+}
+
 html[data-theme="dark"] .navbar-custom .nav-link {
     color: #9CA3AF;
 }
@@ -1048,6 +1061,10 @@ html[data-theme="dark"] .navbar-custom .nav-link:hover {
 
 html[data-theme="dark"] .navbar-custom .nav-link.active {
     color: #3B82F6;
+}
+
+html[data-theme="dark"] .navbar-custom .nav-link.active::after {
+    background: currentColor;
 }
 
 .navbar-custom .theme-toggle-btn {
