@@ -84,11 +84,12 @@
             <!-- Search and Filter Form -->
             <form method="GET" action="{% url 'roadmaps:path_list' %}" class="row g-2 justify-content-center align-items-center mb-3">
                 <div class="col-12 col-md-6 col-lg-5">
+                    <label class="visually-hidden" for="roadmap-search">Search roadmaps</label>
                     <div class="input-group shadow-sm">
                         <span class="input-group-text border-end-0 text-muted">
                             <i class="bi bi-search"></i>
                         </span>
-                        <input type="text" name="q" value="{{ search_query }}" class="form-control border-start-0 ps-0" placeholder="Search by role or keyword (e.g. Backend, ML, DevOps)..." aria-label="Search roadmaps">
+                        <input type="text" id="roadmap-search" name="q" value="{{ search_query }}" class="form-control border-start-0 ps-0" placeholder="Search by role or keyword (e.g. Backend, ML, DevOps)..." aria-describedby="roadmap-search-help">
                         {% if selected_difficulty %}
                         <input type="hidden" name="difficulty" value="{{ selected_difficulty }}">
                         {% endif %}
@@ -96,6 +97,7 @@
                     </div>
                 </div>
             </form>
+            <p id="roadmap-search-help" class="visually-hidden">Search by a career role, technology, or learning area.</p>
 
             <!-- Difficulty Filter Pills -->
             <nav class="d-flex flex-wrap justify-content-center gap-2 mt-2" aria-label="Roadmap Difficulty Filter">
@@ -208,7 +210,7 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <div class="text-center py-5 rounded-3 border pub-sidebar-card">
+                <div class="text-center py-5 rounded-3 border pub-empty-state" role="status" aria-live="polite">
                     <i class="bi bi-compass text-muted" style="font-size: 2.5rem;"></i>
                     <h3 class="h5 fw-bold mt-3">No matching roadmaps found</h3>
                     <p class="text-muted small mb-3">Try adjusting your search keyword or selected difficulty filter.</p>

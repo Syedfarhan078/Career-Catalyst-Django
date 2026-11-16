@@ -141,6 +141,10 @@ html {
 }
 
 body {
+    min-width: 320px;
+}
+
+body {
     background-color: var(--bg);
     font-family: var(--font-sans);
     color: var(--text);
@@ -173,6 +177,53 @@ a {
 
 a:hover {
     color: #1e40af;
+}
+
+*:focus-visible {
+    outline: 3px solid var(--primary-border);
+    outline-offset: 3px;
+}
+
+.skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 2000;
+    padding: 0.65rem 0.9rem;
+    border-radius: var(--radius-md);
+    background: var(--secondary);
+    color: #ffffff;
+    font-weight: 600;
+    transform: translateY(-180%);
+    transition: transform 150ms ease;
+}
+
+.skip-link:focus {
+    color: #ffffff;
+    transform: translateY(0);
+}
+
+.skip-target {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 /* --- Paragraphs --- */
