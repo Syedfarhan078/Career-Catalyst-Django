@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ path.name }} Roadmap for Freshers & Students (2026 Guide) | CareerCatalyst{% endblock %}
-{% block meta_description %}Follow a practical {{ path.name }} roadmap for engineering students and freshers. Build {{ path.difficulty|lower }}-level skills in {{ path.estimated_weeks }} weeks with projects, milestones, and official learning resources.{% endblock %}
-{% block meta_keywords %}{{ path.name|lower }} roadmap for freshers, {{ path.name|lower }} roadmap 2026, learn {{ path.name|lower }} from scratch, {{ path.name|lower }} engineering syllabus, tech career roadmaps, career catalyst roadmaps{% endblock %}
+{% block title %}{{ path.name }} Roadmap for Freshers & Students (2027 Guide) | CareerCatalyst{% endblock %}
+{% block meta_description %}Follow a practical {{ path.name }} roadmap for engineering students and freshers updated for 2027. Build {{ path.difficulty|lower }}-level skills in {{ path.estimated_weeks }} weeks with capstone projects, milestones, code quizzes, and a verifiable credential.{% endblock %}
+{% block meta_keywords %}{{ path.name|lower }} roadmap for freshers, {{ path.name|lower }} roadmap 2027, {{ path.name|lower }} developer roadmap 2027, {{ path.name|lower }} engineer roadmap 2027, learn {{ path.name|lower }} from scratch, {{ path.name|lower }} engineering syllabus, tech career roadmaps, career catalyst roadmaps{% endblock %}
 
 {% block robots %}
 <meta name="robots" content="index, follow">
@@ -15,15 +15,15 @@
 
 {% block extra_meta %}
 <!-- Open Graph / Social Sharing -->
-<meta property="og:title" content="{{ path.name }} Roadmap for Freshers & Students (2026 Guide) | CareerCatalyst">
-<meta property="og:description" content="Master {{ path.name }} with a structured {{ path.estimated_weeks }}-week learning roadmap designed for engineering students and freshers. Complete milestones and build verifiable skills.">
+<meta property="og:title" content="{{ path.name }} Roadmap for Freshers & Students (2027 Guide) | CareerCatalyst">
+<meta property="og:description" content="Master {{ path.name }} with a structured {{ path.estimated_weeks }}-week learning roadmap designed for engineering students and freshers updated for 2027. Complete milestones and build verifiable skills.">
 <meta property="og:url" content="{{ CANONICAL_ORIGIN }}{% url 'roadmaps:path_detail' path.slug %}">
 <meta property="og:type" content="article">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{{ path.name }} Roadmap for Freshers & Students (2026 Guide) | CareerCatalyst">
-<meta name="twitter:description" content="Master {{ path.name }} with a structured {{ path.estimated_weeks }}-week learning roadmap for engineering students and freshers.">
+<meta name="twitter:title" content="{{ path.name }} Roadmap for Freshers & Students (2027 Guide) | CareerCatalyst">
+<meta name="twitter:description" content="Master {{ path.name }} with a structured {{ path.estimated_weeks }}-week learning roadmap for engineering students and freshers updated for 2027.">
 
 <!-- Structured Data: BreadcrumbList + Course -->
 <script type="application/ld+json">
@@ -55,7 +55,7 @@
     },
     {
       "@type": "Course",
-      "name": "{{ path.name }} Roadmap",
+      "name": "{{ path.name }} Roadmap (2027 Guide)",
       "description": "{{ path.description|escapejs }}",
       "educationalLevel": "{{ path.difficulty }}",
       "timeRequired": "P{{ path.estimated_weeks }}W",
@@ -77,18 +77,34 @@
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "Is the {{ path.name|escapejs }} roadmap free?",
+          "name": "What is covered in the 2027 {{ path.name|escapejs }} roadmap?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes. The {{ path.name|escapejs }} roadmap, lesson checkpoints, and reference links are free for students."
+            "text": "The 2027 {{ path.name|escapejs }} curriculum covers foundational principles, industry toolchains, hands-on portfolio projects, and structured weekly checkpoints designed to help freshers crack technical campus placements and entry-level engineering roles."
           }
         },
         {
           "@type": "Question",
-          "name": "How do I track progress on this roadmap?",
+          "name": "Is the {{ path.name|escapejs }} roadmap free?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "After enrolling, use the interactive learning workspace to complete topics week by week and track milestone progress."
+            "text": "Yes. The {{ path.name|escapejs }} roadmap, lesson checkpoints, code references, and official documentation links are 100% free for engineering students."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How long does it take to complete the {{ path.name|escapejs }} roadmap?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The {{ path.name|escapejs }} track is structured into {{ path.estimated_weeks }} weekly milestones, requiring approximately 8-10 hours of focused study per week."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I earn a verified certificate upon completion?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Once you complete 100% of the milestone topics, CareerCatalyst generates an official, tamper-evident certificate with a unique credential ID and verification QR code."
           }
         },
         {
@@ -96,7 +112,7 @@
           "name": "Can I take more than one roadmap?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes. You can enroll in multiple career tracks and monitor each one independently from your workspace."
+            "text": "Yes. You can enroll in multiple career tracks and monitor each one independently from your personalized student workspace."
           }
         }
       ]
@@ -134,6 +150,9 @@
                 <div class="col-lg-8">
                     <!-- Badges -->
                     <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                        <span class="badge bg-primary text-white px-2.5 py-1">
+                            <i class="bi bi-stars me-1 text-warning"></i>2027 Edition
+                        </span>
                         <span class="level-badge level-{{ path.difficulty|lower }}">
                             {{ path.difficulty }} Level
                         </span>
@@ -152,9 +171,9 @@
                     </div>
 
                     <!-- Title & Description -->
-                    <h1 class="display-6 fw-bold text-secondary mb-3">{{ path.name }} Roadmap for Freshers &amp; Students</h1>
+                    <h1 class="display-6 fw-bold text-secondary mb-3">{{ path.name }} Roadmap for Freshers &amp; Students (2027 Guide)</h1>
                     <p class="lead text-muted mb-4" style="line-height: 1.6; font-size: 1.05rem;">
-                        Part of the official <strong>Career Catalyst Roadmaps</strong> series. {{ path.description }} Structured curriculum for engineering students, fresh graduates, and tech freshers preparing for software developer placements.
+                        Part of the official <strong>Career Catalyst Roadmaps</strong> series updated for the 2027 hiring cycle. {{ path.description }} Structured curriculum for engineering students, fresh graduates, and tech freshers preparing for software developer placements and internships.
                     </p>
 
                     <!-- Enrollment & CTA States -->
@@ -328,7 +347,7 @@
                         When you complete 100% of the topics in this roadmap, CareerCatalyst generates a signed certificate with a unique tamper-proof ID and verification QR code.
                     </p>
                     <div class="p-2 rounded text-center small font-monospace pub-cert-format-box">
-                        Format: CC-2026-XXXXXXXXXXXX
+                        Format: CC-2027-XXXXXXXXXXXX
                     </div>
                 </div>
 
@@ -340,13 +359,18 @@
                     </h3>
                     
                     <div class="mb-3">
-                        <h4 class="small fw-bold text-secondary mb-1">Is this roadmap free?</h4>
-                        <p class="text-muted small mb-0">Yes. All roadmap curriculums, lesson checkpoints, and reference links are 100% free for students.</p>
+                        <h4 class="small fw-bold text-secondary mb-1">Is this 2027 roadmap free?</h4>
+                        <p class="text-muted small mb-0">Yes. All roadmap curriculums, weekly milestones, and reference links are 100% free for students.</p>
                     </div>
                     <hr class="my-2">
                     <div class="mb-3">
                         <h4 class="small fw-bold text-secondary mb-1">How do I track progress?</h4>
-                        <p class="text-muted small mb-0">Once enrolled, use the interactive learning workspace to check off topics week by week. Your profile automatically synchronizes your earned skills.</p>
+                        <p class="text-muted small mb-0">Once enrolled, use the interactive learning console to check off topics week by week and earn verifiable skill badges.</p>
+                    </div>
+                    <hr class="my-2">
+                    <div class="mb-3">
+                        <h4 class="small fw-bold text-secondary mb-1">What if I am a complete beginner?</h4>
+                        <p class="text-muted small mb-0">The curriculum starts from foundational prerequisites and progressively advances into real-world projects and capstones.</p>
                     </div>
                     <hr class="my-2">
                     <div>

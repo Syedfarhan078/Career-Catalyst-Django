@@ -80,10 +80,35 @@
                                 <span>Practical milestone project requirements for your public portfolio</span>
                             </div>
                         </div>
+
+                        <!-- 2027 Trending Roadmaps Deep Links (Passes Homepage Equity) -->
+                        <div class="mt-3 pt-3 border-top">
+                            <div class="small fw-bold text-secondary mb-2 d-flex align-items-center gap-1">
+                                <i class="bi bi-stars text-warning"></i>
+                                <span>Trending 2027 Curricula:</span>
+                            </div>
+                            <div class="d-flex flex-wrap gap-1">
+                                <a href="{% url 'roadmaps:path_detail' 'cybersecurity-analyst' %}" class="badge bg-light text-secondary text-decoration-none border px-2 py-1 small hover-primary" title="Cybersecurity Analyst Roadmap 2027">
+                                    Cybersecurity (2027)
+                                </a>
+                                <a href="{% url 'roadmaps:path_detail' 'blockchain-developer' %}" class="badge bg-light text-secondary text-decoration-none border px-2 py-1 small hover-primary" title="Blockchain Developer Roadmap 2027">
+                                    Blockchain (2027)
+                                </a>
+                                <a href="{% url 'roadmaps:path_detail' 'data-scientist' %}" class="badge bg-light text-secondary text-decoration-none border px-2 py-1 small hover-primary" title="Data Scientist Roadmap 2027">
+                                    Data Science (2027)
+                                </a>
+                                <a href="{% url 'roadmaps:path_detail' 'software-engineer' %}" class="badge bg-light text-secondary text-decoration-none border px-2 py-1 small hover-primary" title="Software Engineer Roadmap 2027">
+                                    Software Eng (2027)
+                                </a>
+                                <a href="{% url 'roadmaps:path_detail' 'full-stack-developer' %}" class="badge bg-light text-secondary text-decoration-none border px-2 py-1 small hover-primary" title="Full Stack Developer Roadmap 2027">
+                                    Full Stack (2027)
+                                </a>
+                            </div>
+                        </div>
                     </div>
                     <div class="spotlight-footer mt-auto pt-3">
                         <a href="{% url 'roadmaps:path_list' %}" class="spotlight-link">
-                            <span>Explore Tech Roadmaps</span>
+                            <span>Explore All 15 Roadmaps (2027 Edition)</span>
                             <i class="bi bi-arrow-right ms-1"></i>
                         </a>
                     </div>

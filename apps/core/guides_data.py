@@ -11,10 +11,10 @@ from typing import List, Dict, Optional, Any
 GUIDES: Dict[str, Dict[str, Any]] = {
     'how-to-become-a-data-scientist': {
         'slug': 'how-to-become-a-data-scientist',
-        'title': 'How to Become a Data Scientist: Skills, Roadmap, and Career Path',
-        'h1': 'How to Become a Data Scientist: Complete Skills, Roadmap, and Career Guide',
-        'meta_title': 'How to Become a Data Scientist: 2026 Roadmap, Skills & Guide | CareerCatalyst',
-        'meta_description': 'A comprehensive guide on how to become a data scientist. Master essential mathematics, Python, SQL, machine learning, and project portfolio building.',
+        'title': 'How to Become a Data Scientist (2027 Guide): Skills, Roadmap, and Career Path',
+        'h1': 'How to Become a Data Scientist in 2027: Complete Skills, Roadmap, and Career Guide',
+        'meta_title': 'How to Become a Data Scientist (2027 Guide): Roadmap, Skills & Syllabus | CareerCatalyst',
+        'meta_description': 'A comprehensive 2027 guide on how to become a data scientist. Master essential mathematics, Python, SQL, machine learning algorithms, and project portfolio building.',
         'category': 'Career Roadmaps',
         'target_audience': 'Engineering students and STEM graduates seeking a structured entry path into data science.',
         'reading_time': '14 min read',

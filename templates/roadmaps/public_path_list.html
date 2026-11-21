@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Tech Career Roadmaps for Engineering Students & Freshers (2026) | CareerCatalyst{% endblock %}
-{% block meta_description %}Explore free tech career roadmaps for engineering students, fresh graduates, and freshers. Follow practical weekly plans for software engineering, full stack, data, AI/ML, DevOps, and cloud careers with projects and official resources.{% endblock %}
-{% block meta_keywords %}career catalyst roadmaps, career catalyst roadmap, engineering roadmaps for freshers, software engineer roadmap, computer science roadmap, college students tech roadmap, fresher developer roadmap, btech placements roadmap, full stack developer roadmap, data scientist roadmap{% endblock %}
+{% block title %}Tech Career Roadmaps for Engineering Students & Freshers (2027 Guide) | CareerCatalyst{% endblock %}
+{% block meta_description %}Explore free tech career roadmaps for engineering students, fresh graduates, and freshers updated for 2027. Follow practical weekly plans for software engineering, blockchain, cybersecurity, full stack, data science, AI/ML, and cloud careers with projects and official resources.{% endblock %}
+{% block meta_keywords %}career catalyst roadmaps, career catalyst roadmap 2027, engineering roadmaps for freshers, cybersecurity analyst roadmap 2027, blockchain developer roadmap 2027, software engineer roadmap, computer science roadmap 2027, fresher developer roadmap, btech placements roadmap, full stack developer roadmap, data scientist roadmap{% endblock %}
 
 {% block robots %}
 {% if search_query or selected_difficulty %}
@@ -19,23 +19,23 @@
 
 {% block extra_meta %}
 <!-- Open Graph / Social Sharing -->
-<meta property="og:title" content="Tech Career Roadmaps for Engineering Students & Freshers (2026) | CareerCatalyst">
-<meta property="og:description" content="Step-by-step tech career roadmaps for computer science students, fresh graduates, and tech freshers. Master software engineering, data science, AI/ML, and DevOps.">
+<meta property="og:title" content="Tech Career Roadmaps for Engineering Students & Freshers (2027 Guide) | CareerCatalyst">
+<meta property="og:description" content="Step-by-step tech career roadmaps for computer science students, fresh graduates, and tech freshers updated for 2027. Master software engineering, blockchain, cybersecurity, data science, AI/ML, and DevOps.">
 <meta property="og:url" content="{{ CANONICAL_ORIGIN }}{% url 'roadmaps:path_list' %}">
 <meta property="og:type" content="website">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Tech Career Roadmaps for Engineering Students & Freshers (2026) | CareerCatalyst">
-<meta name="twitter:description" content="Step-by-step tech career roadmaps for engineering students, freshers, and college graduates.">
+<meta name="twitter:title" content="Tech Career Roadmaps for Engineering Students & Freshers (2027 Guide) | CareerCatalyst">
+<meta name="twitter:description" content="Step-by-step tech career roadmaps for engineering students, freshers, and college graduates updated for 2027.">
 
 <!-- Structured Data: ItemList of Courses -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "ItemList",
-  "name": "CareerCatalyst Engineering Learning Roadmaps",
-  "description": "Free, practical week-by-week learning paths for engineering students, fresh graduates, and early-career developers.",
+  "name": "CareerCatalyst Engineering Learning Roadmaps (2027)",
+  "description": "Free, practical week-by-week learning paths for engineering students, fresh graduates, and early-career developers updated for 2027.",
   "numberOfItems": {{ annotated_paths|length }},
   "itemListElement": [
     {% for item in annotated_paths %}
@@ -73,12 +73,12 @@
     <header class="pub-roadmaps-hero">
         <div class="container text-center max-w-3xl mx-auto px-3">
             <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(37, 99, 235, 0.08); color: #2563eb; font-size: 0.85rem; font-weight: 600;">
-                <i class="bi bi-compass"></i>
-                <span>Curated Engineering Curricula for Freshers &amp; Students</span>
+                <i class="bi bi-stars text-warning"></i>
+                <span>Updated for 2027 Engineering Placement &amp; Hiring Cycles</span>
             </div>
-            <h1 class="display-6 fw-bold mb-3 text-secondary">Tech Career Roadmaps for Engineering Students &amp; Freshers</h1>
+            <h1 class="display-6 fw-bold mb-3 text-secondary">Tech Career Roadmaps for Engineering Students &amp; Freshers (2027 Guide)</h1>
             <p class="lead text-muted mb-4 mx-auto" style="max-width: 720px; font-size: 1.05rem;">
-                Explore official <strong>Career Catalyst Roadmaps</strong> featuring step-by-step, week-by-week learning curricula designed for computer science engineering students, fresh graduates, and tech freshers. Master industry-demanded technical skills, prepare for software developer placements, and earn verified milestone certificates.
+                Explore official <strong>Career Catalyst Roadmaps</strong> featuring step-by-step, week-by-week learning curricula designed for computer science engineering students, fresh graduates, and tech freshers entering the 2027 job market. Master industry-demanded skills, prepare for placements, and earn verified milestone certificates.
             </p>
 
             <!-- Search and Filter Form -->
